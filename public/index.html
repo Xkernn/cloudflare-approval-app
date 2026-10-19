@@ -24797,7 +24797,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       });
       const totalLeft = calc.reduce((a, c) => a + Math.max(c.left, 0), 0);
       const empty = calc.filter(c => c.left <= 0).length;
-      const rows = calc.map(c => `<tr title="ຕັດແລ້ວ ${Number(c.x.used) || 0} • ຈອງໃນຖ້ຽວ ${Number(c.x.reserved) || 0} • ຈອງໃນແຜນ ${Number(c.x.planned) || 0}"><td style="padding:2px 12px 2px 0;">${esc(c.label)}</td><td style="padding:2px 0; text-align:right; white-space:nowrap; font-weight:600; color:${c.left <= 0 ? '#b91c1c' : '#166534'};">ເຫຼືອ ${c.left} ຈາກ ${c.quota}</td></tr>`).join('');
+      const rows = calc.map(c => `<tr title="ຕັດແລ້ວ ${Number(c.x.used) || 0} • ຈອງໃນຖ້ຽວ ${Number(c.x.reserved) || 0} • ຈອງໃນແຜນ ${Number(c.x.planned) || 0}"><td style="padding:2px 12px 2px 0;">${esc(c.label)}</td><td style="padding:2px 0; text-align:right; white-space:nowrap; font-weight:600; color:${c.left <= 0 ? '#b91c1c' : '#166534'};">ເຫຼືອ ${c.left}</td></tr>`).join('');
       return `<details style="margin-top:4px; font-size:12px;">
         <summary style="cursor:pointer; color:var(--text-muted);">ງົບເຫຼືອ <b style="color:#166534;">${totalLeft}</b> ໜ່ວຍ${empty ? ` • <b style="color:#b91c1c;">ໝົດ ${empty} ລາຍການ</b>` : ''} <span style="text-decoration:underline;">(ເບິ່ງລາຍລະອຽດ)</span></summary>
         <div style="max-height:150px; overflow-y:auto; margin-top:4px;"><table style="font-size:12px; border-collapse:collapse;">${rows}</table></div>
