@@ -6896,7 +6896,25 @@ export default {
     // 2h-5. Admin: ເພີ່ມ/ແກ້ໄຂ ປະກາດ (ແນບຮູບປະກອບໄດ້ 1 ຮູບ: image = data URL ຮູບໃໝ່, removeImage = ລຶບຮູບເກົ່າອອກ)
     // ===================== ແຈ້ງເຕືອນພິເສດ (Special Alert) — ບັງຄັບ MDE ດຳເນີນການກ່ອນຈຶ່ງໃຊ້ເມນູອື່ນໄດ້ =====================
     // ຕາຕະລາງ: special_alerts / special_alert_acks (migration_add_special_alerts.sql)
-    const SA_RULES = ["unsigned_loan", "manual"];
+    // rule ຂອງແຈ້ງເຕືອນ = ຫົວຂໍ້ທີ່ admin ເລືອກ (dropdown 3 ແບບ) — unsigned_loan / manual ເປັນຂອງເກົ່າ ຍັງໃຊ້ໄດ້ (ບໍ່ສະແດງໃນຟອມສ້າງໃໝ່)
+    //   powerapp      = ເອກະສານຍັງບໍ່ຊັບມິດ PowerApp (assets.status = "ຍັງບໍ່ຊັບມິດ PowerApp") — ຫາຍເອງເມື່ອ MDE ຊັບມິດຄົບ
+    //   unsigned_docs = ເອກະສານຄ້າງເຊັນ (ໃບສັນຍາຢືມ/ໃບເກັບຕູ້ ສະຖານະ draft = MDE ຍັງບໍ່ເຊັນ) — ຫາຍເອງເມື່ອເຊັນຄົບ
+    //   dsm_pending   = ຄ້າງ DSM ເຊັນ (ສະຖານະ awaiting_dsm) — MDE ເຊັນແລ້ວ ລໍຖ້າ DSM; MDE ກົດ "ຮັບຊາບ" ໄດ້ (ຫຼື ຫາຍເອງເມື່ອ DSM ເຊັນ)
+    const SA_RULES = ["powerapp", "unsigned_docs", "dsm_pending", "unsigned_loan", "manual"];
+    const SA_ACK_RULES = ["manual", "dsm_pending"];
+    const SA_ACTION_VIEW = { powerapp: "asset", unsigned_docs: "loanContract:queue", unsigned_loan: "loanContract:queue", dsm_pending: "", manual: "" };
+    const SA_POWERAPP_STATUS = NOTIFY_PENDING_STATUSES[1];
+    // ຈຳນວນລາຍການຄ້າງ ຕາມ rule ແຍກຕາມ MDE Code (key = MDE Code ຕົວພິມໃຫຍ່) — rule manual = ບໍ່ມີ (ບໍ່ອີງຂໍ້ມູນ)
+    const saCountsByMde = async (rule) => {
+      let sql = null;
+      if (rule === "powerapp") sql = { q: "SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM assets WHERE status = ? AND IFNULL(TRIM(mde_code), '') != '' GROUP BY UPPER(TRIM(mde_code))", b: [SA_POWERAPP_STATUS] };
+      else if (rule === "unsigned_docs") sql = { q: "SELECT m, SUM(c) AS c FROM (SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status = 'draft' GROUP BY UPPER(TRIM(mde_code)) UNION ALL SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM cancel_contracts WHERE status = 'draft' GROUP BY UPPER(TRIM(mde_code))) WHERE IFNULL(m, '') != '' GROUP BY m", b: [] };
+      else if (rule === "dsm_pending") sql = { q: "SELECT m, SUM(c) AS c FROM (SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status = 'awaiting_dsm' GROUP BY UPPER(TRIM(mde_code)) UNION ALL SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM cancel_contracts WHERE status = 'awaiting_dsm' GROUP BY UPPER(TRIM(mde_code))) WHERE IFNULL(m, '') != '' GROUP BY m", b: [] };
+      else if (rule === "unsigned_loan") sql = { q: "SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status != 'completed' AND IFNULL(TRIM(mde_code), '') != '' GROUP BY UPPER(TRIM(mde_code))", b: [] };
+      if (!sql) return new Map();
+      const { results } = await env.DB.prepare(sql.q).bind(...sql.b).all();
+      return new Map((results || []).map((r) => [r.m, Number(r.c) || 0]));
+    };
     const SA_TARGETS = ["all", "team", "mde"];
     const saCodes = (v) => String(v || "").split(/[\s,;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean);
     // ແຈ້ງເຕືອນນີ້ ໃຊ້ກັບຜູ້ໃຊ້ (role user) ຄົນນີ້ບໍ?
@@ -6917,23 +6935,23 @@ export default {
         ).all();
         const mine = (results || []).filter((a) => saMatchesUser(a, me));
         if (!mine.length) return Response.json({ alerts: [] });
-        let draftCount = null;
+        const countCache = new Map(); // rule -> Map(mde -> count) (ຄຳນວນເທື່ອດຽວຕໍ່ rule ຕໍ່ request)
+        const myMde = String(me.mde_code || "").trim().toUpperCase();
         const out = [];
         for (const a of mine) {
           let pending = 0;
-          if (a.rule === "unsigned_loan") {
-            if (draftCount === null) {
-              const r = await env.DB.prepare(
-                "SELECT COUNT(*) AS c FROM loan_contracts WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) AND status != 'completed'"
-              ).bind(me.mde_code || "").first();
-              draftCount = (r && r.c) || 0;
-            }
-            pending = draftCount;
-          } else {
+          if (a.rule === "manual") {
             const ack = await env.DB.prepare("SELECT 1 AS ok FROM special_alert_acks WHERE alert_id = ? AND user_id = ?").bind(a.id, me.id).first();
             pending = ack ? 0 : 1;
+          } else {
+            if (!countCache.has(a.rule)) countCache.set(a.rule, await saCountsByMde(a.rule));
+            pending = myMde ? (countCache.get(a.rule).get(myMde) || 0) : 0;
+            if (pending > 0 && SA_ACK_RULES.includes(a.rule)) {
+              const ack = await env.DB.prepare("SELECT 1 AS ok FROM special_alert_acks WHERE alert_id = ? AND user_id = ?").bind(a.id, me.id).first();
+              if (ack) pending = 0;
+            }
           }
-          if (pending > 0) out.push({ id: a.id, title: a.title, content: a.content, rule: a.rule, action_view: a.action_view || "", pending_count: pending });
+          if (pending > 0) out.push({ id: a.id, title: a.title, content: a.content, rule: a.rule, action_view: a.action_view || "", pending_count: pending, can_ack: SA_ACK_RULES.includes(a.rule) });
         }
         return Response.json({ alerts: out });
       } catch (e) {
@@ -6948,7 +6966,7 @@ export default {
         const { id } = await request.json();
         const a = id ? await env.DB.prepare("SELECT id, rule FROM special_alerts WHERE id = ?").bind(id).first() : null;
         if (!a) return Response.json({ error: "ບໍ່ພົບແຈ້ງເຕືອນນີ້" }, { status: 404 });
-        if (a.rule !== "manual") return Response.json({ error: "ແຈ້ງເຕືອນນີ້ຕ້ອງດຳເນີນການໃຫ້ສຳເລັດ ບໍ່ສາມາດກົດຮັບຊາບໄດ້" }, { status: 400 });
+        if (!SA_ACK_RULES.includes(a.rule)) return Response.json({ error: "ແຈ້ງເຕືອນນີ້ຕ້ອງດຳເນີນການໃຫ້ສຳເລັດ ບໍ່ສາມາດກົດຮັບຊາບໄດ້" }, { status: 400 });
         await env.DB.prepare("INSERT INTO special_alert_acks (alert_id, user_id) VALUES (?, ?) ON CONFLICT(alert_id, user_id) DO NOTHING").bind(a.id, session.id).run();
         return Response.json({ message: "ບັນທຶກແລ້ວ" });
       } catch (e) {
@@ -6963,23 +6981,44 @@ export default {
         const { results } = await env.DB.prepare("SELECT * FROM special_alerts ORDER BY id DESC LIMIT 200").all();
         const alerts = results || [];
         const users = (await env.DB.prepare("SELECT id, team, mde_code, role FROM users WHERE role = 'user' AND status = 'approved'").all()).results || [];
-        const draftRows = (await env.DB.prepare(
-          "SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status != 'completed' GROUP BY UPPER(TRIM(mde_code))"
-        ).all()).results || [];
-        const drafts = new Map(draftRows.map((r) => [r.m, r.c]));
         const ackRows = (await env.DB.prepare("SELECT alert_id, user_id FROM special_alert_acks").all()).results || [];
         const acked = new Set(ackRows.map((r) => `${r.alert_id}:${r.user_id}`));
+        const countCache = new Map();
         for (const a of alerts) {
+          if (a.rule !== "manual" && !countCache.has(a.rule)) countCache.set(a.rule, await saCountsByMde(a.rule));
+          const counts = countCache.get(a.rule) || new Map();
           const targets = users.filter((u) => saMatchesUser(a, u));
           a.target_users = targets.length;
-          a.pending_users = a.rule === "unsigned_loan"
-            ? targets.filter((u) => (drafts.get(String(u.mde_code || "").trim().toUpperCase()) || 0) > 0).length
-            : targets.filter((u) => !acked.has(`${a.id}:${u.id}`)).length;
+          a.pending_users = a.rule === "manual"
+            ? targets.filter((u) => !acked.has(`${a.id}:${u.id}`)).length
+            : targets.filter((u) => (counts.get(String(u.mde_code || "").trim().toUpperCase()) || 0) > 0
+                && !(SA_ACK_RULES.includes(a.rule) && acked.has(`${a.id}:${u.id}`))).length;
         }
         return Response.json(alerts);
       } catch (e) {
         console.error("/api/admin/special-alerts", e);
         return Response.json({ error: "ໂຫລດບໍ່ສຳເລັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_special_alerts.sql ກະລຸນາຮັນກ່ອນ)" }, { status: 500 });
+      }
+    }
+
+    // Admin: ລາຍຊື່ MDE Code ທີ່ "ຕົງເງື່ອນໄຂ" ຂອງຫົວຂໍ້ (rule) — ໃຊ້ເຕີມ dropdown "ສົ່ງຫາໃຜ" (ສະເພາະ MDE ທີ່ຍັງຄ້າງຢູ່ຈິງ)
+    if (url.pathname === "/api/admin/special-alert-targets" && request.method === "GET") {
+      try {
+        const rule = url.searchParams.get("rule") || "";
+        if (!SA_RULES.includes(rule) || rule === "manual") return Response.json({ error: "ຫົວຂໍ້ບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+        const counts = await saCountsByMde(rule);
+        const mdes = (await env.DB.prepare("SELECT mde_code, mde_name, team FROM mde_list").all()).results || [];
+        const info = new Map(mdes.map((m) => [String(m.mde_code || "").trim().toUpperCase(), m]));
+        const users = (await env.DB.prepare("SELECT mde_code FROM users WHERE role = 'user' AND status = 'approved' AND mde_code IS NOT NULL").all()).results || [];
+        const hasUser = new Set(users.map((u) => String(u.mde_code).trim().toUpperCase()));
+        const items = [...counts.entries()].filter(([, c]) => c > 0).map(([code, c]) => {
+          const m = info.get(code) || {};
+          return { mde_code: m.mde_code || code, mde_name: m.mde_name || "", team: m.team || "", count: c, has_user: hasUser.has(code) ? 1 : 0 };
+        }).sort((a, b) => b.count - a.count || String(a.mde_code).localeCompare(String(b.mde_code)));
+        return Response.json({ rule, items });
+      } catch (e) {
+        console.error("/api/admin/special-alert-targets", e);
+        return Response.json({ error: "ໂຫລດລາຍຊື່ບໍ່ສຳເລັດ" }, { status: 500 });
       }
     }
 
@@ -6989,13 +7028,13 @@ export default {
         const b = await request.json();
         const title = String(b.title || "").trim().slice(0, 200);
         const content = String(b.content || "").trim().slice(0, 2000);
-        const rule = SA_RULES.includes(b.rule) ? b.rule : "unsigned_loan";
+        const rule = SA_RULES.includes(b.rule) ? b.rule : "unsigned_docs";
         const targetType = SA_TARGETS.includes(b.targetType) ? b.targetType : "all";
         const targetValue = targetType === "all" ? null : String(b.targetValue || "").trim().slice(0, 2000);
-        if (!title) return Response.json({ error: "ກະລຸນາປ້ອນຫົວຂໍ້" }, { status: 400 });
+        if (!title) return Response.json({ error: "ກະລຸນາເລືອກຫົວຂໍ້" }, { status: 400 });
         if (!content) return Response.json({ error: "ກະລຸນາປ້ອນເນື້ອຫາ" }, { status: 400 });
         if (targetType !== "all" && !targetValue) return Response.json({ error: targetType === "team" ? "ກະລຸນາເລືອກທີມ" : "ກະລຸນາໃສ່ MDE Code ຢ່າງໜ້ອຍ 1 ລາຍການ" }, { status: 400 });
-        const actionView = rule === "unsigned_loan" ? "loanContract:queue" : "";
+        const actionView = SA_ACTION_VIEW[rule] || "";
         const activeVal = b.isActive === false ? 0 : 1;
         const expiresVal = b.expiresAt || null;
         if (b.id) {
@@ -7013,13 +7052,10 @@ export default {
           const alertRow = { target_type: targetType, target_value: targetValue };
           runInBackground(ctx, (async () => {
             const us = (await env.DB.prepare("SELECT id, team, mde_code, role FROM users WHERE role = 'user' AND status = 'approved'").all()).results || [];
-            let drafts = new Map();
-            if (rule === "unsigned_loan") {
-              drafts = new Map(((await env.DB.prepare("SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status != 'completed' GROUP BY UPPER(TRIM(mde_code))").all()).results || []).map((r) => [r.m, r.c]));
-            }
+            const counts = rule === "manual" ? null : await saCountsByMde(rule);
             for (const u of us) {
               if (!saMatchesUser(alertRow, u)) continue;
-              if (rule === "unsigned_loan" && !(drafts.get(String(u.mde_code || "").trim().toUpperCase()) > 0)) continue;
+              if (counts && !(counts.get(String(u.mde_code || "").trim().toUpperCase()) > 0)) continue;
               try {
                 await sendWebPushToUser(env, u.id, { title: `⚠️ ແຈ້ງເຕືອນພິເສດ: ${title}`, body: content.slice(0, 180), url: actionView || "announcements" });
               } catch (pe) { /* ຂ້າມຄົນທີ່ສົ່ງບໍ່ໄດ້ */ }

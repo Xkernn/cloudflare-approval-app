@@ -6287,28 +6287,21 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       <input type="hidden" id="saEditId">
       <div class="form-group">
         <label>ຫົວຂໍ້</label>
-        <input type="text" id="saTitle" class="form-control" style="padding-left:14px;" maxlength="200" placeholder="ເຊັ່ນ ມີໃບສັນຍາຢືມຄ້າງເຊັນ">
+        <select id="saTitle" class="form-control" style="padding-left:14px;" onchange="onSaTitleChange()">
+          <option value="powerapp">ເອກະສານຍັງບໍ່ຊັບມິດ PowerApp</option>
+          <option value="unsigned_docs">ເອກະສານຄ້າງເຊັນ</option>
+          <option value="dsm_pending">ຄ້າງ DSM ເຊັນ</option>
+        </select>
+        <div id="saTitleHint" style="font-size:12px; color:var(--text-muted); margin-top:6px;"></div>
       </div>
       <div class="form-group">
         <label>ເນື້ອຫາ</label>
-        <textarea id="saContent" class="form-control" rows="4" style="padding-left:14px; resize:vertical;" maxlength="2000" placeholder="ເຊັ່ນ ກະລຸນາເຂົ້າໄປເຊັນໃບສັນຍາຢືມທີ່ຄ້າງຢູ່ໃຫ້ຄົບ ກ່ອນໃຊ້ງານເມນູອື່ນ"></textarea>
-      </div>
-      <div class="form-group">
-        <label>ເງື່ອນໄຂການສຳເລັດ</label>
-        <select id="saRule" class="form-control" style="padding-left:14px;">
-          <option value="unsigned_loan">MDE ຄ້າງເຊັນໃບສັນຍາຢືມ — ປິດເອງເມື່ອເຊັນຄົບ (ປຸ່ມພາໄປໜ້າເຊັນ)</option>
-          <option value="manual">ໃຫ້ກົດ "ຮັບຊາບ" — ປິດເມື່ອ MDE ກົດຢືນຢັນ</option>
-        </select>
+        <textarea id="saContent" class="form-control" rows="4" style="padding-left:14px; resize:vertical;" maxlength="2000" placeholder="ລາຍລະອຽດແຈ້ງເຕືອນ..."></textarea>
       </div>
       <div class="form-group">
         <label>ສົ່ງຫາໃຜ</label>
-        <select id="saTargetType" class="form-control" style="padding-left:14px;" onchange="onSaTargetTypeChange()">
-          <option value="all">MDE ທັງໝົດ</option>
-          <option value="team">ສະເພາະທີມ</option>
-          <option value="mde">ສະເພາະ MDE Code ທີ່ກຳນົດ</option>
-        </select>
-        <select id="saTeam" class="form-control hidden" style="padding-left:14px; margin-top:8px;"></select>
-        <textarea id="saMdeCodes" class="form-control hidden" rows="2" style="padding-left:14px; margin-top:8px; resize:vertical;" placeholder="ໃສ່ MDE Code ຄັ່ນດ້ວຍ , ຫຼື ຂັ້ນບັນທັດ"></textarea>
+        <select id="saTarget" class="form-control" style="padding-left:14px;"></select>
+        <div id="saTargetHint" style="font-size:12px; color:var(--text-muted); margin-top:6px;"></div>
       </div>
       <div class="form-group">
         <label>ວັນໝົດອາຍຸ (ບໍ່ບັງຄັບ)</label>
@@ -8350,12 +8343,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div style="padding:10px 0; border-bottom:1px solid #e2e8f0;">
           <div style="font-weight:700; font-size:16px; color:#0f172a;">${esc(a.title)}</div>
           <div style="font-size:14px; color:#475569; margin-top:6px; white-space:pre-line;">${esc(a.content)}</div>
-          ${a.rule === 'unsigned_loan' ? `<div style="margin-top:8px; font-size:13px; font-weight:700; color:#b91c1c;">ຄ້າງເຊັນ ${Number(a.pending_count) || 0} ໃບ</div>` : ''}
+          ${a.rule !== 'manual' ? `<div style="margin-top:8px; font-size:13px; font-weight:700; color:#b91c1c;">${a.rule === 'powerapp' ? 'ຄ້າງຊັບມິດ PowerApp' : (a.rule === 'dsm_pending' ? 'ຄ້າງ DSM ເຊັນ' : 'ຄ້າງເຊັນ')} ${Number(a.pending_count) || 0} ${a.rule === 'powerapp' ? 'ລາຍການ' : 'ໃບ'}</div>` : ''}
         </div>`).join('');
       const acts = [];
       specialAlerts.forEach(a => {
-        if (a.action_view) acts.push(`<button type="button" class="btn-submit" style="margin-top:0;" onclick="specialAlertGo(${a.id})"><i class="fa-solid fa-arrow-right mr-1"></i> ${a.rule === 'unsigned_loan' ? 'ໄປໜ້າເຊັນເອກະສານ' : 'ໄປດຳເນີນການ'}</button>`);
-        if (a.rule === 'manual') acts.push(`<button type="button" class="btn-submit" style="margin-top:0; background:#15803d;" onclick="specialAlertAck(${a.id})"><i class="fa-solid fa-check mr-1"></i> ຮັບຊາບແລ້ວ</button>`);
+        if (a.action_view) acts.push(`<button type="button" class="btn-submit" style="margin-top:0;" onclick="specialAlertGo(${a.id})"><i class="fa-solid fa-arrow-right mr-1"></i> ${a.rule === 'powerapp' ? 'ໄປໜ້າ Asset Tracking' : (a.rule === 'unsigned_loan' || a.rule === 'unsigned_docs' ? 'ໄປໜ້າເຊັນເອກະສານ' : 'ໄປດຳເນີນການ')}</button>`);
+        if (a.rule === 'manual' || a.can_ack) acts.push(`<button type="button" class="btn-submit" style="margin-top:0; background:#15803d;" onclick="specialAlertAck(${a.id})"><i class="fa-solid fa-check mr-1"></i> ຮັບຊາບແລ້ວ</button>`);
       });
       document.getElementById('saOvActions').innerHTML = acts.join('');
       document.getElementById('specialAlertOverlay').classList.remove('hidden');
@@ -27593,7 +27586,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     /* ---- Admin: ແຈ້ງເຕືອນພິເສດ ---- */
     let adminSpecialAlerts = [];
-    const SA_RULE_LABEL = { unsigned_loan: 'ຄ້າງເຊັນໃບສັນຍາຢືມ', manual: 'ກົດຮັບຊາບ' };
+    const SA_RULE_LABEL = { powerapp: 'ຍັງບໍ່ຊັບມິດ PowerApp', unsigned_docs: 'ເອກະສານຄ້າງເຊັນ', dsm_pending: 'ຄ້າງ DSM ເຊັນ', unsigned_loan: 'ຄ້າງເຊັນໃບສັນຍາຢືມ', manual: 'ກົດຮັບຊາບ' };
     function saTargetLabel(a) {
       if (a.target_type === 'team') return 'ທີມ ' + (a.target_value || '-');
       if (a.target_type === 'mde') return 'MDE: ' + String(a.target_value || '').split(/[\s,;]+/).filter(Boolean).slice(0, 4).join(', ') + (String(a.target_value || '').split(/[\s,;]+/).filter(Boolean).length > 4 ? ' ...' : '');
@@ -27626,36 +27619,98 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         list.innerHTML = `<div class="card-list-error">${esc(e.message || 'ໂຫລດບໍ່ສຳເລັດ')}</div>`;
       }
     }
-    function onSaTargetTypeChange() {
-      const t = document.getElementById('saTargetType').value;
-      document.getElementById('saTeam').classList.toggle('hidden', t !== 'team');
-      document.getElementById('saMdeCodes').classList.toggle('hidden', t !== 'mde');
+    // ຫົວຂໍ້ (dropdown) = ເງື່ອນໄຂ — ເລືອກຫົວຂໍ້ແລ້ວ dropdown "ສົ່ງຫາໃຜ" ຈະສະແດງສະເພາະ MDE Code ທີ່ຕົງເງື່ອນໄຂນັ້ນ
+    const SA_TITLES = {
+      powerapp:      { label: 'ເອກະສານຍັງບໍ່ຊັບມິດ PowerApp', unit: 'ລາຍການ', hint: 'MDE ທີ່ມີ Asset ສະຖານະ "ຍັງບໍ່ຊັບມິດ PowerApp" — ຫາຍເອງເມື່ອຊັບມິດຄົບ', content: 'ກະລຸນາຊັບມິດເອກະສານເຂົ້າ PowerApp ໃຫ້ຄົບ ກ່ອນໃຊ້ງານເມນູອື່ນ' },
+      unsigned_docs: { label: 'ເອກະສານຄ້າງເຊັນ', unit: 'ໃບ', hint: 'MDE ທີ່ມີໃບສັນຍາຢືມ / ໃບເກັບຕູ້ ທີ່ຍັງບໍ່ເຊັນ — ຫາຍເອງເມື່ອເຊັນຄົບ', content: 'ກະລຸນາເຂົ້າໄປເຊັນເອກະສານທີ່ຄ້າງຢູ່ໃຫ້ຄົບ ກ່ອນໃຊ້ງານເມນູອື່ນ' },
+      dsm_pending:   { label: 'ຄ້າງ DSM ເຊັນ', unit: 'ໃບ', hint: 'MDE ທີ່ເຊັນແລ້ວ ແຕ່ເອກະສານຍັງລໍຖ້າ DSM ເຊັນ — MDE ກົດ "ຮັບຊາບ" ໄດ້ ຫຼື ຫາຍເອງເມື່ອ DSM ເຊັນ', content: 'ເອກະສານຂອງທ່ານຍັງລໍຖ້າ DSM ເຊັນ ກະລຸນາຕິດຕາມ DSM ຂອງທີມ' }
+    };
+    let saTargetsReq = 0;
+    async function loadSaTargets(selected) {
+      // selected: { type, value } ຂອງລາຍການທີ່ແກ້ໄຂ (ເພື່ອຮັກສາຄ່າເດີມໄວ້ ເຖິງວ່າ MDE ນັ້ນບໍ່ຄ້າງແລ້ວ)
+      const rule = document.getElementById('saTitle').value;
+      const sel = document.getElementById('saTarget');
+      const hint = document.getElementById('saTargetHint');
+      const req = ++saTargetsReq;
+      sel.innerHTML = '<option value="">ກຳລັງໂຫລດ...</option>';
+      hint.textContent = '';
+      let items = [];
+      let failed = false;
+      try {
+        const res = await fetch('/api/admin/special-alert-targets?rule=' + encodeURIComponent(rule));
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'ໂຫລດບໍ່ສຳເລັດ');
+        items = d.items || [];
+      } catch (e) { failed = true; hint.textContent = e.message || 'ໂຫລດບໍ່ສຳເລັດ'; }
+      if (req !== saTargetsReq) return; // ມີການປ່ຽນຫົວຂໍ້ໃໝ່ແລ້ວ
+      const unit = SA_TITLES[rule] ? SA_TITLES[rule].unit : 'ລາຍການ';
+      const opts = [`<option value="all">MDE ທັງໝົດທີ່ຕົງເງື່ອນໄຂ (${items.length} ຄົນ)</option>`];
+      items.forEach(it => {
+        const name = it.mde_name ? ' — ' + it.mde_name : '';
+        opts.push(`<option value="mde:${esc(it.mde_code)}">${esc(it.mde_code)}${esc(name)}${it.team ? ' [' + esc(it.team) + ']' : ''} · ຄ້າງ ${it.count} ${unit}${it.has_user ? '' : ' (ຍັງບໍ່ມີ User)'}</option>`);
+      });
+      // ຄ່າເດີມຂອງລາຍການທີ່ແກ້ໄຂ ທີ່ບໍ່ຢູ່ໃນລາຍການປັດຈຸບັນ (ຂອງເກົ່າ: ທີມ / ຫຼາຍ MDE / MDE ທີ່ບໍ່ຄ້າງແລ້ວ)
+      if (selected && selected.type === 'team') opts.push(`<option value="keep">ທີມ ${esc(selected.value)} (ຄ່າເດີມ)</option>`);
+      else if (selected && selected.type === 'mde') {
+        const codes = String(selected.value || '').split(/[\s,;]+/).filter(Boolean);
+        const single = codes.length === 1 ? 'mde:' + codes[0] : null;
+        if (!single || !opts.some(o => o.includes(`value="${'mde:' + esc(codes[0])}"`))) opts.push(`<option value="keep">MDE: ${esc(codes.slice(0, 4).join(', '))}${codes.length > 4 ? ' ...' : ''} (ຄ່າເດີມ)</option>`);
+      }
+      sel.innerHTML = opts.join('');
+      if (selected && selected.type === 'mde') {
+        const codes = String(selected.value || '').split(/[\s,;]+/).filter(Boolean);
+        const want = codes.length === 1 ? 'mde:' + codes[0] : 'keep';
+        sel.value = [...sel.options].some(o => o.value === want) ? want : 'keep';
+      } else if (selected && selected.type === 'team') sel.value = 'keep';
+      else sel.value = 'all';
+      if (!failed && !items.length) hint.textContent = 'ຕອນນີ້ບໍ່ມີ MDE ຄົນໃດຕົງເງື່ອນໄຂຂອງຫົວຂໍ້ນີ້';
+    }
+    function onSaTitleChange(keepContent) {
+      const rule = document.getElementById('saTitle').value;
+      const t = SA_TITLES[rule];
+      document.getElementById('saTitleHint').textContent = t ? t.hint : '';
+      const c = document.getElementById('saContent');
+      // ເຕີມເນື້ອຫາຕົ້ນແບບໃຫ້ ຖ້າຍັງຫວ່າງ ຫຼື ຍັງເປັນຂໍ້ຄວາມຕົ້ນແບບຂອງຫົວຂໍ້ກ່ອນໜ້າ (ບໍ່ທັບສິ່ງທີ່ admin ພິມເອງ)
+      if (!keepContent && t && (!c.value.trim() || Object.values(SA_TITLES).some(x => x.content === c.value.trim()))) c.value = t.content;
+      if (!keepContent) loadSaTargets(null);
     }
     function openSpecialAlertModal(id) {
       const a = id ? adminSpecialAlerts.find(x => Number(x.id) === Number(id)) : null;
-      const teams = [...new Set((dbMdeList || []).map(i => i.team))].filter(Boolean).sort();
-      document.getElementById('saTeam').innerHTML = '<option value="">-- ເລືອກທີມ --</option>' + teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+      const titleSel = document.getElementById('saTitle');
+      // ລາຍການເກົ່າທີ່ rule ບໍ່ຢູ່ໃນ 3 ຫົວຂໍ້ (unsigned_loan / manual) — ເພີ່ມເປັນຕົວເລືອກຊົ່ວຄາວ ເພື່ອແກ້ໄຂໄດ້ໂດຍບໍ່ເສຍຄ່າເດີມ
+      titleSel.querySelectorAll('option[data-legacy]').forEach(o => o.remove());
+      if (a && !SA_TITLES[a.rule]) {
+        const o = document.createElement('option');
+        o.value = a.rule; o.dataset.legacy = '1'; o.textContent = a.title + ' (ເດີມ)';
+        titleSel.appendChild(o);
+      }
       document.getElementById('specialAlertModalTitle').textContent = a ? 'ແກ້ໄຂແຈ້ງເຕືອນພິເສດ' : 'ສ້າງແຈ້ງເຕືອນພິເສດ';
       document.getElementById('saEditId').value = a ? a.id : '';
-      document.getElementById('saTitle').value = a ? a.title : '';
+      titleSel.value = a ? a.rule : 'powerapp';
       document.getElementById('saContent').value = a ? a.content : '';
-      document.getElementById('saRule').value = a ? a.rule : 'unsigned_loan';
-      document.getElementById('saTargetType').value = a ? a.target_type : 'all';
-      document.getElementById('saTeam').value = (a && a.target_type === 'team') ? a.target_value : '';
-      document.getElementById('saMdeCodes').value = (a && a.target_type === 'mde') ? a.target_value : '';
       document.getElementById('saExpires').value = a && a.expires_at ? String(a.expires_at).slice(0, 10) : '';
       document.getElementById('saActive').checked = a ? !!a.is_active : true;
-      onSaTargetTypeChange();
+      onSaTitleChange(!!a);
+      if (!a) document.getElementById('saContent').value = SA_TITLES.powerapp.content;
       document.getElementById('specialAlertModal').classList.remove('hidden');
+      const legacyTarget = a ? { type: a.target_type, value: a.target_value } : null;
+      loadSaTargets(legacyTarget && legacyTarget.type !== 'all' ? legacyTarget : null);
     }
     function closeSpecialAlertModal() { document.getElementById('specialAlertModal').classList.add('hidden'); }
     async function saveSpecialAlert() {
-      const targetType = document.getElementById('saTargetType').value;
-      const targetValue = targetType === 'team' ? document.getElementById('saTeam').value : (targetType === 'mde' ? document.getElementById('saMdeCodes').value : '');
+      const rule = document.getElementById('saTitle').value;
+      const tSel = document.getElementById('saTarget').value;
+      const editId = document.getElementById('saEditId').value || null;
+      const orig = editId ? adminSpecialAlerts.find(x => Number(x.id) === Number(editId)) : null;
+      let targetType = 'all', targetValue = '';
+      if (tSel.startsWith('mde:')) { targetType = 'mde'; targetValue = tSel.slice(4); }
+      else if (tSel === 'keep' && orig) { targetType = orig.target_type; targetValue = orig.target_value || ''; }
+      const titleOpt = document.getElementById('saTitle').selectedOptions[0];
       const body = {
-        id: document.getElementById('saEditId').value || null,
-        title: document.getElementById('saTitle').value, content: document.getElementById('saContent').value,
-        rule: document.getElementById('saRule').value, targetType, targetValue,
+        id: editId,
+        title: SA_TITLES[rule] ? SA_TITLES[rule].label : (orig ? orig.title : (titleOpt ? titleOpt.textContent : '')),
+        content: document.getElementById('saContent').value,
+        rule, targetType, targetValue,
         expiresAt: document.getElementById('saExpires').value || null, isActive: document.getElementById('saActive').checked
       };
       const btn = document.getElementById('saSaveBtn'); btn.disabled = true;
