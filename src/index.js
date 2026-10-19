@@ -5693,7 +5693,16 @@ export default {
         const base = { title: cfg.title, doc_no: doc.doc_no || "", outlet_code: doc.outlet_code || "", outlet_name: doc.outlet_name || "", mde_code: doc.mde_code || "" };
         if (l.status === "signed") return Response.json({ state: "signed", ...base, signer_name: l.signer_name, signed_at: l.signed_at }, { headers: RECEIPT_NO_CACHE });
         if (l.expired) return Response.json({ state: "expired", ...base }, { status: 410, headers: RECEIPT_NO_CACHE });
-        return Response.json({ state: "pending", ...base, dsm_name: doc.sig_dsm_name || "", cooler_brand: doc.cooler_brand || "", qr_cd: doc.qr_cd || "", serial_no: doc.serial_no || "" }, { headers: RECEIPT_NO_CACHE });
+        // ລາຍລະອຽດຮ້ານຄ້າ + Asset ສຳລັບສະແດງໃນໜ້າເຊັນ DSM (ເອົາສະເພາະຄໍລຳທີ່ມີຄ່າ; ໃບ loan/cancel ມີຄໍລຳບໍ່ເທົ່າກັນ)
+        const detail = {};
+        for (const k of ["outlet_owner", "outlet_phone", "outlet_type", "outlet_grade", "village", "district", "province", "mde_phone",
+          "contract_type", "handover_type", "doors", "door_variant", "cooler_type", "capx", "tracking_no",
+          "old_doc_no", "old_outlet_code", "old_outlet_name", "old_outlet_phone", "move_reason",
+          "loan_doc_no", "reasons", "informer_name",
+          "sales_beer", "sales_premium", "sales_csd_energy", "sales_water_soda"]) {
+          if (doc[k] != null && String(doc[k]).trim() !== "") detail[k] = doc[k];
+        }
+        return Response.json({ state: "pending", ...base, ...detail, kind: l.kind, dsm_name: doc.sig_dsm_name || "", cooler_brand: doc.cooler_brand || "", qr_cd: doc.qr_cd || "", serial_no: doc.serial_no || "" }, { headers: RECEIPT_NO_CACHE });
       } catch (e) {
         console.error("/api/public/dsm-sign", e);
         return Response.json({ state: "invalid" }, { status: 500, headers: RECEIPT_NO_CACHE });

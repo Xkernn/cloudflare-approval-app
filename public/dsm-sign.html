@@ -20,6 +20,8 @@ h1 { font-size: 20px; margin: 0 0 4px; }
 .sub { color: var(--muted); font-size: 13px; }
 .kv { display: grid; grid-template-columns: 110px 1fr; gap: 4px 10px; margin-top: 10px; font-size: 14px; }
 .kv b { color: var(--muted); font-weight: 600; }
+.kv span { word-break: break-word; }
+.sec { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 700; font-size: 14px; }
 .items { margin-top: 8px; max-height: 280px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
 .it { padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
 .it:last-child { border-bottom: 0; }
@@ -62,10 +64,12 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
       <div class="sub">Lao Brewery Co., Ltd.</div>
       <div class="kv">
         <b>ເລກເອກະສານ</b><span id="vDoc"></span>
-        <b>ຮ້ານຄ້າ</b><span id="vOutlet"></span>
         <b>MDE</b><span id="vMde"></span>
-        <b>ຕູ້ແຊ່</b><span id="vCooler"></span>
       </div>
+      <div class="sec">ຂໍ້ມູນຮ້ານຄ້າ</div>
+      <div class="kv" id="vOutletKv"></div>
+      <div class="sec">ຂໍ້ມູນ Asset (ຕູ້ແຊ່)</div>
+      <div class="kv" id="vAssetKv"></div>
       <a id="btnPdf" class="pdf-btn" href="#" target="_blank" rel="noopener">📄 ເປີດເບິ່ງເອກະສານ (PDF)</a>
     </div>
 
@@ -142,9 +146,40 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
 
     $('vTitle').textContent = 'DSM ເຊັນ' + (d.title || 'ເອກະສານ');
     $('vDoc').textContent = d.doc_no || '-';
-    $('vOutlet').textContent = ((d.outlet_code || '') + (d.outlet_name ? ' - ' + d.outlet_name : '')) || '-';
-    $('vMde').textContent = d.mde_code || '-';
-    $('vCooler').textContent = [d.cooler_brand, d.qr_cd, d.serial_no].filter(Boolean).join(' · ') || '-';
+    $('vMde').textContent = [d.mde_code, d.mde_phone].filter(Boolean).join(' · ') || '-';
+    var CONTRACT = { partner_club: 'partner club', competitive: 'competitive', none: 'None Contract' };
+    var HANDOVER = { 'new': 'ມອບໃໝ່ຄັ້ງແລກ', move: 'ຕູ້ເຄື່ອນຍ້າຍ', extra: 'ມອບຕູ້ເພີ່ມ', replace: 'ຕູ້ປ່ຽນແທນ', survey: 'ຕູ້ສຳຫຼວດຄືນ' };
+    var REASON = { damaged: 'ຍ້ອນຕູ້ແຊ່ເປ່ເພ ເກັບຄືນເຂົ້າສາງ', closed: 'ຮ້ານຄ້າປິດ-ຢຸດດຳເນີນກິດຈະການ', small_business: 'ຂະໜາດທຸລະກິດນ້ອຍລົງ', replace: 'ມອບຕູ້ໃໝ່ປ່ຽນແທນ' };
+    var VARIANT = { modern_small: '1 door modern small (1 ປະຕູລຸ້ນຕ່ຳ)', table_cooler: 'table cooler (ຕູ້ຕັ້ງໂຕະ)' };
+    var reasons = String(d.reasons || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean)
+      .map(function (x) { return REASON[x] || x; }).join(', ');
+    var doors = d.doors ? d.doors + ' ປະຕູ' + (d.door_variant ? ' (' + (VARIANT[d.door_variant] || d.door_variant) + ')' : '') : (d.door_variant ? (VARIANT[d.door_variant] || d.door_variant) : '');
+    function fill(id, rows) {
+      var box = $(id); box.textContent = '';
+      rows.forEach(function (r) {
+        var v = r[1] == null || r[1] === '' ? (r[2] ? '-' : '') : String(r[1]);
+        if (!v) return;
+        var b = document.createElement('b'); b.textContent = r[0];
+        var sp = document.createElement('span'); sp.textContent = v;
+        box.appendChild(b); box.appendChild(sp);
+      });
+    }
+    // r[2] = true -> ສະແດງ "-" ເມື່ອບໍ່ມີຂໍ້ມູນ; ບໍ່ມີ = ເຊື່ອງແຖວ
+    fill('vOutletKv', [
+      ['ລະຫັດຮ້ານ', d.outlet_code, true], ['ຊື່ຮ້ານ', d.outlet_name, true], ['ເຈົ້າຂອງຮ້ານ', d.outlet_owner, true],
+      ['ເບີໂທ', d.outlet_phone, true], ['ປະເພດຮ້ານ', d.outlet_type], ['ເກຣດ', d.outlet_grade],
+      ['ບ້ານ', d.village], ['ເມືອງ', d.district], ['ແຂວງ', d.province]
+    ]);
+    fill('vAssetKv', [
+      ['ປະເພດສັນຍາ', CONTRACT[d.contract_type] || d.contract_type], ['ການມອບຕູ້', HANDOVER[d.handover_type] || d.handover_type],
+      ['ໃບສັນຍາເດີມ', d.loan_doc_no], ['ເຫດຜົນ', reasons], ['ຜູ້ແຈ້ງ', d.informer_name],
+      ['Brand', d.cooler_brand, true], ['Type', d.cooler_type], ['ປະຕູ', doors],
+      ['QR', d.qr_cd, true], ['Serial', d.serial_no, true], ['CapEx', d.capx], ['Tracking', d.tracking_no],
+      ['ໃບເກົ່າ (ຍ້າຍ)', d.old_doc_no], ['ຮ້ານເກົ່າ', [d.old_outlet_code, d.old_outlet_name].filter(Boolean).join(' - ')],
+      ['ເບີໂທຮ້ານເກົ່າ', d.old_outlet_phone], ['ເຫດຜົນຍ້າຍ', d.move_reason],
+      ['ຍອດຂາຍ Beer', d.sales_beer], ['ຍອດຂາຍ Premium', d.sales_premium],
+      ['ຍອດຂາຍ CSD/Energy', d.sales_csd_energy], ['ຍອດຂາຍ Water/Soda', d.sales_water_soda]
+    ]);
     $('fName').value = d.dsm_name || '';
     $('btnPdf').href = '/api/public/dsm-sign/pdf?t=' + encodeURIComponent(token);
     $('loading').classList.add('hidden'); $('stateBox').classList.add('hidden'); $('formBox').classList.remove('hidden');
