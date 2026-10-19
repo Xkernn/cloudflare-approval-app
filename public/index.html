@@ -6384,6 +6384,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       <div id="stRecvSigView" class="hidden" style="margin-top:10px;">
         <div id="stRecvSigInfo" style="font-size:13px; margin-bottom:6px;"></div>
         <img id="stRecvSigImg" alt="" style="max-width:100%; max-height:160px; background:#fff; border:1px solid #cbd5e1; border-radius:8px;">
+        <div style="font-size:12.5px; font-weight:700; margin:10px 0 4px;">ຮູບຖ່າຍຕອນຮັບຕູ້</div>
+        <div id="stRecvPhotos" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
       </div>
       <div style="display:flex; gap:10px; margin-top:12px;">
         <button type="button" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:0;" onclick="stCloseRecv()">ປິດ</button>
@@ -15792,6 +15794,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       document.getElementById('stRecvLinkInput').value = '';
       document.getElementById('stRecvLinkBox').classList.add('hidden');
       setPhotoSrc(document.getElementById('stRecvSigImg'), '');
+      { const pb = document.getElementById('stRecvPhotos'); if (pb) pb.innerHTML = ''; }
       stRecvTripId = null;
       stRecvLast = null;
     }
@@ -15897,6 +15900,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!rec) return;
       document.getElementById('stRecvSigInfo').textContent = `ລາຍເຊັນ: ${rec.receiver_name || ''}${rec.receiver_phone ? ' · ' + rec.receiver_phone : ''} (ແຂວງ ${ncRecvLabel(rec.province, rec.warehouse || '')})`;
       setPhotoSrc(document.getElementById('stRecvSigImg'), rec.sig_receiver);
+      let keys = []; try { const a = JSON.parse(rec.recv_photos || '[]'); if (Array.isArray(a)) keys = a; } catch (e) { /* ignore */ }
+      const pbox = document.getElementById('stRecvPhotos');
+      pbox.innerHTML = keys.length
+        ? keys.map(k => { const u = '/api/photo?key=' + encodeURIComponent(k); return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="" style="width:96px; height:96px; object-fit:cover; border:1px solid #cbd5e1; border-radius:8px;"></a>`; }).join('')
+        : '<span style="font-size:12.5px; color:#64748b;">ບໍ່ມີຮູບ (ເຊັນກ່ອນເພີ່ມຟັງຊັນນີ້)</span>';
       document.getElementById('stRecvSigView').classList.remove('hidden');
     }
 

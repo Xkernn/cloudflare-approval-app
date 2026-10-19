@@ -1542,6 +1542,12 @@ async function deleteR2Photos(env, keys) {
 // ==========================================================================
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 
+// ຮູບຖ່າຍຕອນຮັບຕູ້ (ລິ້ງເຊັນຮັບຕູ້ຕ່າງແຂວງ): ຢ່າງໜ້ອຍ 1 ຮູບ, ສູງສຸດ 5 ຮູບ — ເກັບ key ເປັນ JSON array ໃນ ship_trip_receipts.recv_photos
+const RECV_PHOTO_MAX = 5;
+function parseRecvPhotoKeys(v) {
+  try { const a = JSON.parse(v || "[]"); return Array.isArray(a) ? a.filter((k) => typeof k === "string" && k) : []; } catch (e) { return []; }
+}
+
 function sniffImageType(b) {
   if (b.length >= 3 && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return "image/jpeg";
   if (b.length >= 4 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return "image/png";
@@ -5382,7 +5388,7 @@ export default {
     if (url.pathname === "/api/admin/ship-trip-receipts" && request.method === "GET") {
       const { results } = await env.DB.prepare(
         `SELECT id, trip_id, province, warehouse, status, expected_count, expires_at, created_at, receiver_name, receiver_phone,
-                received_count, note, sig_receiver, signed_at,
+                received_count, note, sig_receiver, recv_photos, signed_at,
                 CASE WHEN status = 'pending' AND expires_at <= CURRENT_TIMESTAMP THEN 1 ELSE 0 END AS expired
            FROM ship_trip_receipts ORDER BY id DESC LIMIT 3000`
       ).all();
@@ -5447,10 +5453,10 @@ export default {
     if (url.pathname === "/api/admin/ship-trip-receipts/reset" && request.method === "POST") {
       try {
         const { id } = await request.json();
-        const row = id ? await env.DB.prepare("SELECT id, sig_receiver FROM ship_trip_receipts WHERE id = ?").bind(id).first() : null;
+        const row = id ? await env.DB.prepare("SELECT id, sig_receiver, recv_photos FROM ship_trip_receipts WHERE id = ?").bind(id).first() : null;
         if (!row) return Response.json({ error: "ບໍ່ພົບລາຍການ" }, { status: 400 });
         await env.DB.prepare("DELETE FROM ship_trip_receipts WHERE id = ?").bind(row.id).run();
-        await deleteR2Photos(env, [row.sig_receiver]);
+        await deleteR2Photos(env, [row.sig_receiver, ...parseRecvPhotoKeys(row.recv_photos)]);
         return Response.json({ message: "ລ້າງແລ້ວ" });
       } catch (e) {
         console.error("/api/admin/ship-trip-receipts/reset", e);
@@ -5563,10 +5569,19 @@ export default {
         if (!Number.isInteger(count) || count < 0 || count > 9999) return Response.json({ error: "ຈຳນວນຕູ້ທີ່ຮັບບໍ່ຖືກຕ້ອງ" }, { status: 400, headers: RECEIPT_NO_CACHE });
         if (count !== expected && !note) return Response.json({ error: "ຈຳນວນທີ່ຮັບບໍ່ກົງກັບໃບສົ່ງ — ກະລຸນາໃສ່ໝາຍເຫດ" }, { status: 400, headers: RECEIPT_NO_CACHE });
         if (!b.signature) return Response.json({ error: "ກະລຸນາເຊັນຊື່" }, { status: 400, headers: RECEIPT_NO_CACHE });
+        // ຕ້ອງຖ່າຍຮູບຕອນຮັບຕູ້ ຢ່າງໜ້ອຍ 1 ຮູບ (ສູງສຸດ RECV_PHOTO_MAX ຮູບ)
+        const photosIn = Array.isArray(b.photos) ? b.photos.filter((p) => typeof p === "string" && p) : [];
+        if (photosIn.length < 1) return Response.json({ error: "ກະລຸນາຖ່າຍຮູບຕອນຮັບຕູ້ ຢ່າງໜ້ອຍ 1 ຮູບ" }, { status: 400, headers: RECEIPT_NO_CACHE });
+        if (photosIn.length > RECV_PHOTO_MAX) return Response.json({ error: `ແນບຮູບໄດ້ສູງສຸດ ${RECV_PHOTO_MAX} ຮູບ` }, { status: 400, headers: RECEIPT_NO_CACHE });
 
-        let sigKey;
+        let sigKey, photoKeys;
         try {
-          [sigKey] = await savePhotosToR2(env, [[b.signature, `trip/${r.trip_id}/recv-${r.id}-${Date.now()}.png`]]);
+          const ts = Date.now();
+          const saved = await savePhotosToR2(env, [
+            [b.signature, `trip/${r.trip_id}/recv-${r.id}-${ts}.png`],
+            ...photosIn.map((p, i) => [p, `trip/${r.trip_id}/recvphoto-${r.id}-${ts}-${i + 1}.jpg`]),
+          ]);
+          sigKey = saved[0]; photoKeys = saved.slice(1);
         } catch (photoErr) {
           console.error("/api/public/receipt/sign", photoErr);
           const pr = photoErrorResponse(photoErr);
@@ -5577,11 +5592,11 @@ export default {
         const upd = await env.DB.prepare(
           `UPDATE ship_trip_receipts
               SET status = 'signed', receiver_name = ?1, receiver_phone = ?2, received_count = ?3, note = ?4,
-                  sig_receiver = ?5, signed_at = CURRENT_TIMESTAMP, expected_count = ?6
+                  sig_receiver = ?5, signed_at = CURRENT_TIMESTAMP, expected_count = ?6, recv_photos = ?8
             WHERE id = ?7 AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP`
-        ).bind(name, phone || null, count, note || null, sigKey, expected, r.id).run();
+        ).bind(name, phone || null, count, note || null, sigKey, expected, r.id, JSON.stringify(photoKeys)).run();
         if (!upd.meta || upd.meta.changes !== 1) {
-          await deleteR2Photos(env, [sigKey]);
+          await deleteR2Photos(env, [sigKey, ...photoKeys]);
           return Response.json({ error: "ລິ້ງນີ້ຖືກໃຊ້ເຊັນແລ້ວ ຫຼື ໝົດອາຍຸ" }, { status: 409, headers: RECEIPT_NO_CACHE });
         }
         return Response.json({ message: "ບັນທຶກການຮັບຕູ້ແລ້ວ ຂອບໃຈ" }, { headers: RECEIPT_NO_CACHE });

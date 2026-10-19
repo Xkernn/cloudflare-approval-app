@@ -43,6 +43,12 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
 .state { text-align: center; padding: 28px 12px; }
 .state .big { font-size: 42px; }
 .state h2 { margin: 8px 0 4px; font-size: 18px; }
+.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+.ph { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #f8fafc; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(15,23,42,.8); color: #fff; font-size: 15px; line-height: 1; cursor: pointer; }
+.ph-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; aspect-ratio: 1 / 1; border: 1.5px dashed #94a3b8; border-radius: 10px; background: #fff; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.ph-add .ic { font-size: 24px; }
 .hidden { display: none !important; }
 </style>
 </head>
@@ -79,6 +85,9 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
       <input id="fCount" type="number" inputmode="numeric" min="0" max="9999" step="1">
       <label for="fNote">ໝາຍເຫດ <span id="noteReq" class="req hidden">* (ຈຳນວນບໍ່ກົງກັບໃບສົ່ງ)</span></label>
       <textarea id="fNote" maxlength="500" placeholder="ເຊັ່ນ ຕູ້ເສຍຫາຍ, ຮັບບໍ່ຄົບ..."></textarea>
+      <label>ຮູບຖ່າຍຕອນຮັບຕູ້ <span class="req">*</span> <span class="sub" style="font-weight:400;">(ຢ່າງໜ້ອຍ 1 ຮູບ, ສູງສຸດ 5 ຮູບ)</span></label>
+      <div class="photos" id="photoGrid"></div>
+      <input id="fPhoto" type="file" accept="image/*" capture="environment" class="hidden">
       <div class="row" style="margin-top:12px;">
         <label style="margin:0;">ລາຍເຊັນຜູ້ຮັບ <span class="req">*</span></label>
         <button type="button" class="link-btn" id="btnClear">ລ້າງ</button>
@@ -136,6 +145,48 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
   $('btnClear').addEventListener('click', function () { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; });
   window.addEventListener('resize', function () { if (!$('formBox').classList.contains('hidden')) sizeCanvas(); });
 
+  /* ---------- ຮູບຖ່າຍຕອນຮັບຕູ້ (ຢ່າງໜ້ອຍ 1 ຮູບ) ---------- */
+  var MAX_PHOTOS = 5, photos = [];
+  function renderPhotos() {
+    var g = $('photoGrid'); g.textContent = '';
+    photos.forEach(function (src, i) {
+      var d = document.createElement('div'); d.className = 'ph';
+      var im = document.createElement('img'); im.src = src; im.alt = 'ຮູບທີ່ ' + (i + 1);
+      var x = document.createElement('button'); x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'ລຶບຮູບ');
+      x.addEventListener('click', function () { photos.splice(i, 1); renderPhotos(); });
+      d.appendChild(im); d.appendChild(x); g.appendChild(d);
+    });
+    if (photos.length < MAX_PHOTOS) {
+      var a = document.createElement('button'); a.type = 'button'; a.className = 'ph-add';
+      a.innerHTML = '<span class="ic">📷</span><span>' + (photos.length ? 'ເພີ່ມຮູບ' : 'ຖ່າຍຮູບ') + '</span>';
+      a.addEventListener('click', function () { $('fPhoto').click(); });
+      g.appendChild(a);
+    }
+  }
+  function compressPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || (file.type && file.type.indexOf('image/') !== 0)) return reject(new Error('ກະລຸນາເລືອກໄຟລ໌ຮູບພາບ'));
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        try {
+          var sc = Math.min(1, 1280 / im.width, 1280 / im.height);
+          var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * sc)); c.height = Math.max(1, Math.round(im.height * sc));
+          var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.7));
+        } catch (e) { reject(new Error('ບໍ່ສາມາດປະມວນຜົນຮູບນີ້ໄດ້')); }
+        finally { URL.revokeObjectURL(u); }
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); reject(new Error('ບໍ່ສາມາດອ່ານຮູບນີ້ໄດ້ ກະລຸນາລອງຖ່າຍໃໝ່')); };
+      im.src = u;
+    });
+  }
+  $('fPhoto').addEventListener('change', async function () {
+    var f = this.files && this.files[0]; this.value = '';
+    if (!f || photos.length >= MAX_PHOTOS) return;
+    try { photos.push(await compressPhoto(f)); setMsg('', ''); } catch (e) { setMsg('warn', e.message || 'ເພີ່ມຮູບບໍ່ສຳເລັດ'); }
+    renderPhotos();
+  });
+
   function updateNoteReq() {
     var c = $('fCount').value === '' ? NaN : Number($('fCount').value);
     $('noteReq').classList.toggle('hidden', c === expected);
@@ -159,7 +210,7 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
     $('vDate').textContent = fmtDate(d.trip_date); $('vProv').textContent = (d.province || '-') + (d.warehouse ? ' / ' + d.warehouse : '');
     $('vCount').textContent = expected + ' ຕູ້';
     $('btnPdf').href = '/api/public/receipt/pdf?t=' + encodeURIComponent(token);
-    $('fCount').value = expected; updateNoteReq();
+    $('fCount').value = expected; updateNoteReq(); renderPhotos();
     $('loading').classList.add('hidden'); $('stateBox').classList.add('hidden'); $('formBox').classList.remove('hidden');
     sizeCanvas();
   }
@@ -171,13 +222,14 @@ canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor
     if (!name) return setMsg('warn', 'ກະລຸນາໃສ່ຊື່ຜູ້ຮັບ');
     if (!Number.isInteger(count) || count < 0) return setMsg('warn', 'ກະລຸນາໃສ່ຈຳນວນຕູ້ທີ່ຮັບຈິງ');
     if (count !== expected && !note) return setMsg('warn', 'ຈຳນວນບໍ່ກົງກັບໃບສົ່ງ — ກະລຸນາໃສ່ໝາຍເຫດ');
+    if (!photos.length) return setMsg('warn', 'ກະລຸນາຖ່າຍຮູບຕອນຮັບຕູ້ ຢ່າງໜ້ອຍ 1 ຮູບ');
     if (!dirty) return setMsg('warn', 'ກະລຸນາເຊັນຊື່');
     var btn = $('btnSubmit'); btn.disabled = true; setMsg('', 'ກຳລັງສົ່ງ...');
     var res, d;
     try {
       res = await fetch('/api/public/receipt/sign', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ t: token, receiver_name: name, receiver_phone: $('fPhone').value.trim(), received_count: count, note: note, signature: canvas.toDataURL('image/png') })
+        body: JSON.stringify({ t: token, receiver_name: name, receiver_phone: $('fPhone').value.trim(), received_count: count, note: note, photos: photos, signature: canvas.toDataURL('image/png') })
       });
       d = await res.json().catch(function () { return {}; });
     } catch (e) { btn.disabled = false; return setMsg('err', 'ເຊື່ອມຕໍ່ບໍ່ໄດ້ ກະລຸນາລອງໃໝ່'); }
