@@ -1,0 +1,46 @@
+name = "cloudflare-approval-app"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# ตั้งค่าความคุ้มครองไฟล์สาธารณะ (Frontend)
+# binding = "ASSETS" ເພີ່ມເຂົ້າມາ ໃຫ້ src/index.js ອ່ານ public/forms/loan.pdf + ຟອນ (env.ASSETS.fetch)
+# ໄດ້ຕອນສ້າງ PDF ໃບສັນຍາຢືມ (ເບິ່ງ src/lib/clpdf.js)
+assets = { directory = "./public", binding = "ASSETS" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "user-approval-db"
+database_id = "9b6c5b76-6c0e-41dc-ba71-e5b3539f127f" # ใส่ ID จริงหลังจากสั่ง npx wrangler d1 create
+
+# R2 Bucket สำหรับเก็บรูปถ่ายยืนยันการจัดส่ง (QR/Serial/CapEx/Asset)
+# ต้องสร้าง bucket ก่อนด้วยคำสั่ง: npx wrangler r2 bucket create asset-delivery-photos
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "asset-delivery-photos"
+
+# ຄວາມປອດໄພ: Secret ສຳລັບເຊັນ Session Token (ບັງຄັບ - ບໍ່ມີແລ້ວ login ບໍ່ໄດ້)
+# ຕັ້ງດ້ວຍຄຳສັ່ງ (ຫ້າມໃສ່ໃນໄຟລ໌ນີ້):
+#   npx wrangler secret put SESSION_SECRET
+# ສ້າງຄ່າແບບສຸ່ມ: node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+# ໝາຍເຫດ: ຖ້າປ່ຽນຄ່ານີ້ ຜູ້ໃຊ້ງານທຸກຄົນຈະຖືກເດັ້ງອອກ ແລະ ຕ້ອງ login ໃໝ່
+
+# Push Notification (VAPID) - ค่า Public Key ส่งให้ browser ได้ ไม่ใช่ความลับ
+# ส่วน Private Key ต้องตั้งแยกด้วยคำสั่ง (ห้ามใส่ในไฟล์นี้):
+#   npx wrangler secret put VAPID_PRIVATE_KEY_JWK
+# (ดูวิธีสร้างคีย์ทั้งคู่ได้จาก: node generate-vapid-keys.js)
+[vars]
+VAPID_PUBLIC_KEY = "BOP-JhUKrD3WIoRCJzUXrQG2gvZb0UgUHyAlrRbS-N65EeVY5Q8RbaqLfNux7CPQ7HDzCkhdVcLjtLxinpVsuFg"
+VAPID_SUBJECT = "mailto:admin@example.com"
+
+# ສົ່ງ OTP ລືມລະຫັດຜ່ານທາງ Gmail API (ເບິ່ງ src/lib/mailer.js)
+# ແກ້ GMAIL_SENDER ເປັນ Gmail ຂອງທ່ານ ແລ້ວຕັ້ງ secret 3 ຕົວ:
+#   npx wrangler secret put GMAIL_CLIENT_ID
+#   npx wrangler secret put GMAIL_CLIENT_SECRET
+#   npx wrangler secret put GMAIL_REFRESH_TOKEN
+GMAIL_SENDER = "kernlaleo@gmail.com"
+GMAIL_SENDER_NAME = "cooler-system"
+
+# ແຈ້ງເຕືອນອັດຕະໂນມັດ (ຄຳຂໍຄ້າງ / ອະນຸມັດແລ້ວແຕ່ບໍ່ໄດ້ຈັດສົ່ງ / ງົບປະມານໃກ້ໝົດ)
+# ຮັນທຸກມື້ເວລາ 01:00 UTC = 08:00 ໂມງເຊົ້າ ເວລາລາວ (UTC+7)
+[triggers]
+crons = ["0 1 * * *"]

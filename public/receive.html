@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>ຢືນຢັນຮັບຕູ້ແຊ່</title>
+<style>
+@font-face { font-family: 'LaoUI'; src: url('/forms/NotoSansLao-Regular.ttf'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'LaoUI'; src: url('/forms/NotoSansLao-Bold.ttf'); font-weight: 700; font-display: swap; }
+:root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f1f5f9; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --accent:#0f172a; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: 'LaoUI','Noto Sans Lao','Phetsarath OT','Saysettha OT',system-ui,sans-serif; background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.55;
+  padding: env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0); }
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--muted); font-size: 13px; }
+.kv { display: grid; grid-template-columns: 110px 1fr; gap: 4px 10px; margin-top: 10px; font-size: 14px; }
+.kv b { color: var(--muted); font-weight: 600; }
+.items { margin-top: 8px; max-height: 280px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+.it { padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.it:last-child { border-bottom: 0; }
+.it .t { font-weight: 700; }
+.it .m { color: var(--muted); word-break: break-all; }
+label { display: block; font-weight: 700; font-size: 13.5px; margin: 12px 0 4px; }
+label .req { color: var(--err); }
+input, textarea { width: 100%; font: inherit; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; color: var(--ink); }
+input:focus, textarea:focus { outline: 2px solid #94a3b8; outline-offset: 1px; }
+textarea { min-height: 70px; resize: vertical; }
+.sigwrap { border: 1px dashed #94a3b8; border-radius: 10px; background: #fff; touch-action: none; }
+canvas { display: block; width: 100%; height: 170px; border-radius: 10px; cursor: crosshair; }
+.row { display: flex; justify-content: space-between; align-items: center; }
+.link-btn { background: none; border: 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 2px 4px; }
+.btn { width: 100%; margin-top: 16px; padding: 14px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 16px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.msg { margin-top: 10px; font-size: 14px; min-height: 20px; }
+.msg.err { color: var(--err); } .msg.warn { color: var(--warn); }
+.pdf-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 12px; border: 1.5px solid var(--accent); border-radius: 12px; background: #fff; color: var(--accent); font: inherit; font-weight: 700; font-size: 15px; text-decoration: none; }
+.pdf-btn:active { background: var(--bg); }
+.state { text-align: center; padding: 28px 12px; }
+.state .big { font-size: 42px; }
+.state h2 { margin: 8px 0 4px; font-size: 18px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" class="card state"><div class="sub">ກຳລັງໂຫລດ...</div></div>
+
+  <div id="stateBox" class="card state hidden">
+    <div class="big" id="stateIcon"></div>
+    <h2 id="stateTitle"></h2>
+    <div class="sub" id="stateText"></div>
+  </div>
+
+  <div id="formBox" class="hidden">
+    <div class="card">
+      <h1>ຢືນຢັນຮັບຕູ້ແຊ່</h1>
+      <div class="sub">Lao Brewery Co., Ltd.</div>
+      <div class="kv">
+        <b>ເລກຖ້ຽວ</b><span id="vTrip"></span>
+        <b>ເລກທະບຽນລົດ</b><span id="vPlate"></span>
+        <b>ວັນທີອອກລົດ</b><span id="vDate"></span>
+        <b>ແຂວງປາຍທາງ</b><span id="vProv"></span>
+        <b>ຈຳນວນຕູ້</b><span id="vCount"></span>
+      </div>
+      <a id="btnPdf" class="pdf-btn" href="#" target="_blank" rel="noopener">📄 ເປີດເບິ່ງໃບສົ່ງ (PDF)</a>
+    </div>
+
+    <div class="card">
+      <label for="fName" style="margin-top:0;">ຊື່ຜູ້ຮັບ <span class="req">*</span></label>
+      <input id="fName" maxlength="100" autocomplete="name" placeholder="ຊື່ ແລະ ນາມສະກຸນ">
+      <label for="fPhone">ເບີໂທ</label>
+      <input id="fPhone" maxlength="30" inputmode="tel" autocomplete="tel" placeholder="020 xxxx xxxx">
+      <label for="fCount">ຈຳນວນຕູ້ທີ່ຮັບຈິງ <span class="req">*</span></label>
+      <input id="fCount" type="number" inputmode="numeric" min="0" max="9999" step="1">
+      <label for="fNote">ໝາຍເຫດ <span id="noteReq" class="req hidden">* (ຈຳນວນບໍ່ກົງກັບໃບສົ່ງ)</span></label>
+      <textarea id="fNote" maxlength="500" placeholder="ເຊັ່ນ ຕູ້ເສຍຫາຍ, ຮັບບໍ່ຄົບ..."></textarea>
+      <div class="row" style="margin-top:12px;">
+        <label style="margin:0;">ລາຍເຊັນຜູ້ຮັບ <span class="req">*</span></label>
+        <button type="button" class="link-btn" id="btnClear">ລ້າງ</button>
+      </div>
+      <div class="sigwrap"><canvas id="sig"></canvas></div>
+      <div id="msg" class="msg"></div>
+      <button type="button" class="btn" id="btnSubmit">ຢືນຢັນຮັບຕູ້ ແລະ ສົ່ງ</button>
+      <div class="sub" style="margin-top:8px; text-align:center;">ລິ້ງນີ້ໃຊ້ໄດ້ຄັ້ງດຽວ — ເມື່ອສົ່ງແລ້ວຈະແກ້ໄຂບໍ່ໄດ້</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var token = new URLSearchParams(location.search).get('t') || '';
+  var expected = 0;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function showState(icon, title, text) {
+    $('loading').classList.add('hidden'); $('formBox').classList.add('hidden');
+    $('stateIcon').textContent = icon; $('stateTitle').textContent = title; $('stateText').textContent = text || '';
+    $('stateBox').classList.remove('hidden');
+  }
+  function fmtDate(d) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || '');
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : (d || '-');
+  }
+  function setMsg(kind, text) { var el = $('msg'); el.className = 'msg ' + (kind || ''); el.textContent = text || ''; }
+
+  /* ---------- ຊ່ອງເຊັນ ---------- */
+  var canvas = $('sig'), ctx = canvas.getContext('2d'), dirty = false, drawing = false, last = null;
+  function sizeCanvas() {
+    var w = canvas.clientWidth || 300, h = canvas.clientHeight || 170, dpr = Math.min(window.devicePixelRatio || 1, 3);
+    var old = dirty ? canvas.toDataURL('image/png') : null;
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0b1020'; ctx.fillStyle = '#0b1020';
+    if (old) { var im = new Image(); im.onload = function () { ctx.drawImage(im, 0, 0, w, h); }; im.src = old; }
+  }
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+    drawing = true; last = pos(e); dirty = true;
+    ctx.beginPath(); ctx.arc(last.x, last.y, 1.3, 0, Math.PI * 2); ctx.fill();
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drawing) return; e.preventDefault();
+    var pts = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    (pts.length ? pts : [e]).forEach(function (ev) {
+      var p = pos(ev); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
+    });
+  });
+  function stop() { drawing = false; last = null; }
+  canvas.addEventListener('pointerup', stop); canvas.addEventListener('pointercancel', stop); canvas.addEventListener('pointerleave', stop);
+  $('btnClear').addEventListener('click', function () { ctx.clearRect(0, 0, canvas.width, canvas.height); dirty = false; });
+  window.addEventListener('resize', function () { if (!$('formBox').classList.contains('hidden')) sizeCanvas(); });
+
+  function updateNoteReq() {
+    var c = $('fCount').value === '' ? NaN : Number($('fCount').value);
+    $('noteReq').classList.toggle('hidden', c === expected);
+  }
+  $('fCount').addEventListener('input', updateNoteReq);
+
+  /* ---------- ໂຫລດຂໍ້ມູນ ---------- */
+  async function load() {
+    if (!token) return showState('⚠️', 'ລິ້ງບໍ່ຖືກຕ້ອງ', 'ກະລຸນາຂໍລິ້ງໃໝ່ຈາກຜູ້ສົ່ງ');
+    var res, d;
+    try {
+      res = await fetch('/api/public/receipt?t=' + encodeURIComponent(token), { cache: 'no-store' });
+      d = await res.json().catch(function () { return {}; });
+    } catch (e) { return showState('📶', 'ເຊື່ອມຕໍ່ບໍ່ໄດ້', 'ກະລຸນາກວດອິນເຕີເນັດ ແລ້ວໂຫລດໜ້ານີ້ໃໝ່'); }
+    if (d.state === 'signed') return showState('✅', 'ລິ້ງນີ້ຖືກໃຊ້ເຊັນຮັບແລ້ວ', 'ແຂວງ ' + (d.province || '') + (d.warehouse ? ' / ' + d.warehouse : '') + (d.receiver_name ? ' · ຜູ້ຮັບ: ' + d.receiver_name : ''));
+    if (d.state === 'expired') return showState('⏰', 'ລິ້ງໝົດອາຍຸແລ້ວ', 'ກະລຸນາຂໍລິ້ງໃໝ່ຈາກຜູ້ສົ່ງ');
+    if (d.state !== 'pending') return showState('⚠️', 'ລິ້ງບໍ່ຖືກຕ້ອງ', 'ກະລຸນາຂໍລິ້ງໃໝ່ຈາກຜູ້ສົ່ງ');
+
+    expected = d.expected_count || 0;
+    $('vTrip').textContent = d.trip_no || '-'; $('vPlate').textContent = d.truck_plate || '-';
+    $('vDate').textContent = fmtDate(d.trip_date); $('vProv').textContent = (d.province || '-') + (d.warehouse ? ' / ' + d.warehouse : '');
+    $('vCount').textContent = expected + ' ຕູ້';
+    $('btnPdf').href = '/api/public/receipt/pdf?t=' + encodeURIComponent(token);
+    $('fCount').value = expected; updateNoteReq();
+    $('loading').classList.add('hidden'); $('stateBox').classList.add('hidden'); $('formBox').classList.remove('hidden');
+    sizeCanvas();
+  }
+
+  /* ---------- ສົ່ງ ---------- */
+  $('btnSubmit').addEventListener('click', async function () {
+    var name = $('fName').value.trim(), note = $('fNote').value.trim();
+    var cRaw = $('fCount').value, count = cRaw === '' ? NaN : Number(cRaw);
+    if (!name) return setMsg('warn', 'ກະລຸນາໃສ່ຊື່ຜູ້ຮັບ');
+    if (!Number.isInteger(count) || count < 0) return setMsg('warn', 'ກະລຸນາໃສ່ຈຳນວນຕູ້ທີ່ຮັບຈິງ');
+    if (count !== expected && !note) return setMsg('warn', 'ຈຳນວນບໍ່ກົງກັບໃບສົ່ງ — ກະລຸນາໃສ່ໝາຍເຫດ');
+    if (!dirty) return setMsg('warn', 'ກະລຸນາເຊັນຊື່');
+    var btn = $('btnSubmit'); btn.disabled = true; setMsg('', 'ກຳລັງສົ່ງ...');
+    var res, d;
+    try {
+      res = await fetch('/api/public/receipt/sign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ t: token, receiver_name: name, receiver_phone: $('fPhone').value.trim(), received_count: count, note: note, signature: canvas.toDataURL('image/png') })
+      });
+      d = await res.json().catch(function () { return {}; });
+    } catch (e) { btn.disabled = false; return setMsg('err', 'ເຊື່ອມຕໍ່ບໍ່ໄດ້ ກະລຸນາລອງໃໝ່'); }
+    if (!res.ok) { btn.disabled = res.status === 409 || res.status === 410 || res.status === 404; return setMsg('err', d.error || 'ບັນທຶກບໍ່ສຳເລັດ'); }
+    showState('✅', 'ບັນທຶກການຮັບຕູ້ແລ້ວ', 'ຂອບໃຈ — ສາມາດປິດໜ້ານີ້ໄດ້');
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
