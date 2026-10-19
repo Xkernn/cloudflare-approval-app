@@ -8545,6 +8545,28 @@ export default {
     }
 
     // 8. Asset Request API (ดึงคำขอ - admin เห็นทุกคำขอ, user เห็นแค่ของตัวเอง)
+    // ຮູບຮ້ານຄ້າຂອງຄຳຂໍ Asset: admin/warehouse/delivery ເບິ່ງໄດ້ທັງໝົດ, DSM ເບິ່ງສະເພາະທີມຕົນ, ຜູ້ຂໍ (ເຈົ້າຂອງຄຳຂໍ) ເບິ່ງຂອງຕົນເອງ
+    if (url.pathname === "/api/asset-request-photo" && request.method === "GET") {
+      const rid = url.searchParams.get("id");
+      const row = rid ? await env.DB.prepare("SELECT user_id, mde_code, shop_photo FROM asset_requests WHERE id = ?").bind(rid).first() : null;
+      if (!row || !row.shop_photo) return new Response("Not found", { status: 404 });
+      let allowed = canViewAll(session.role) || Number(row.user_id) === Number(session.id);
+      if (!allowed && session.role === "dsm" && session.team && row.mde_code) {
+        const ok = await env.DB.prepare("SELECT 1 AS ok FROM mde_list WHERE team = ? AND UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) LIMIT 1").bind(session.team, row.mde_code).first();
+        allowed = !!ok;
+      }
+      if (!allowed) return new Response("Forbidden", { status: 403 });
+      const obj = await env.PHOTOS.get(row.shop_photo);
+      if (!obj) return new Response("Not found", { status: 404 });
+      const headers = new Headers();
+      obj.writeHttpMetadata(headers);
+      if (!/^image\/(jpeg|png|webp)$/i.test(headers.get("content-type") || "")) headers.set("Content-Type", "image/jpeg");
+      headers.set("X-Content-Type-Options", "nosniff");
+      headers.set("Content-Security-Policy", "default-src 'none'; sandbox");
+      headers.set("Cache-Control", "private, max-age=3600");
+      return new Response(obj.body, { headers });
+    }
+
     if (url.pathname === "/api/asset-requests" && request.method === "GET") {
       const userId = url.searchParams.get("userId");
       if (!userId) return Response.json({ error: "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ງານ" }, { status: 400 });
@@ -8647,11 +8669,24 @@ export default {
           }
         }
 
+        // ຮູບຮ້ານຄ້າ (ບໍ່ບັງຄັບ): ກວດ + ອັບຂຶ້ນ R2 ກ່ອນ INSERT (ຮູບຜິດ -> ຈົບທີ່ນີ້ ບໍ່ສ້າງຄຳຂໍຄ້າງ)
+        let shopPhotoKey = null;
+        if (reqBody.shop_photo) {
+          try {
+            [shopPhotoKey] = await savePhotosToR2(env, [[reqBody.shop_photo, `request/${userId}/shop-${Date.now()}.jpg`]]);
+          } catch (photoErr) {
+            console.error("/api/asset-requests (shop_photo)", photoErr);
+            const pr = photoErrorResponse(photoErr);
+            if (pr) return pr;
+            throw photoErr;
+          }
+        }
+
         // INSERT ແບບ atomic (ຄຳສັ່ງດຽວ): ກັນກໍລະນີ 2 ຄຳຂໍເຂົ້າມາພ້ອມກັນ ທີ່ຜ່ານການກວດ dupRow ດ້ານເທິງທັງຄູ່ (race condition)
         const reqIns = await env.DB.prepare(
           `INSERT INTO asset_requests (user_id, team, mde_code, outlet_code, outlet_name, cooler_brand, cooler_type, doc_type, contract_type, asset_condition, reason,
-                                     outlet_owner, outlet_type, outlet_level, outlet_province, outlet_village, outlet_district, outlet_phone)
-           SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                                     outlet_owner, outlet_type, outlet_level, outlet_province, outlet_village, outlet_district, outlet_phone, shop_photo)
+           SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             WHERE NOT EXISTS (
               SELECT 1 FROM asset_requests
                WHERE user_id = ? AND outlet_code = ? AND outlet_name = ?
@@ -8659,9 +8694,10 @@ export default {
                  AND IFNULL(doc_type,'') = ? AND IFNULL(asset_condition,'new') = ? AND IFNULL(contract_type,'') = ?
                  AND requested_at >= datetime('now', '-30 seconds'))`
         ).bind(userId, requester.team, requester.mde_code, outlet_code, outlet_name, cooler_brand, cooler_type, doc_type, contract_type, condition, reason,
-          mo.owner, mo.type, mo.level, mo.province, mo.village, mo.district, mo.phone,
+          mo.owner, mo.type, mo.level, mo.province, mo.village, mo.district, mo.phone, shopPhotoKey,
           userId, outlet_code, outlet_name, cooler_brand || '', cooler_type || '', doc_type || '', condition, contract_type || '').run();
         if (!reqIns.meta || !reqIns.meta.changes) {
+          await deleteR2Photos(env, [shopPhotoKey]); // ຄຳຂໍຊ້ຳ -> ບໍ່ເກັບຮູບທີ່ອັບໄປແລ້ວ
           return Response.json({ message: "ສົ່ງຄຳຂໍເບີກ Asset ຮຽບຮ້ອຍແລ້ວ ກະລຸນາລໍຖ້າ Admin ອະນຸມັດ" });
         }
 
@@ -8696,11 +8732,12 @@ export default {
 
         // ດຶງຂໍ້ມູນຄຳຂໍໄວ້ກ່ອນລຶບ ເພື່ອກວດວ່າການລຶບນີ້ຄືນໂຄຕ້າໃຫ້ງົບທີ່ເຄີຍເຕັມບໍ
         const delRow = await env.DB.prepare(
-          "SELECT team, cooler_brand, cooler_type, asset_condition, status FROM asset_requests WHERE id = ?"
+          "SELECT team, cooler_brand, cooler_type, asset_condition, status, shop_photo FROM asset_requests WHERE id = ?"
         ).bind(id).first();
 
         const delReqRes = await env.DB.prepare("DELETE FROM asset_requests WHERE id = ?").bind(id).run();
         const reqRemoved = !delReqRes.meta || delReqRes.meta.changes > 0; // ກົດລຶບຊ້ຳ: ບໍ່ສົ່ງ Push "ງົບວ່າງ" ຊ້ຳ
+        if (reqRemoved && delRow && delRow.shop_photo) await deleteR2Photos(env, [delRow.shop_photo]);
 
         // ນັບໂຄຕ້າສະເພາະຄຳຂໍ 'ໃໝ່' ທີ່ pending/approved ເທົ່ານັ້ນ (rejected ບໍ່ນັບຢູ່ແລ້ວ -> ລຶບບໍ່ປ່ຽນໂຄຕ້າ)
         if (reqRemoved && delRow && (delRow.asset_condition || 'new') === 'new' && ['pending', 'approved'].includes(delRow.status)) {
