@@ -24303,7 +24303,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const data = await res.json();
         if (!res.ok) { alert(data.error || 'ໂຫຼດແຜນສົ່ງຕູ້ບໍ່ສຳເລັດ'); return; }
         spData = data;
-        await Promise.all([spLoadProvinces(), spLoadBrands()]);
+        await Promise.all([spLoadProvinces(), spLoadBrands(), spLoadBudgets()]);
         document.getElementById('spMigrationWarn').classList.toggle('hidden', !data.table_missing);
         spRows = (data.pending || []).map(r => ({ prov: r.province || '', wh: r.warehouse || '', brand: r.brand || '', n: Object.assign({}, r.counts || {}) }));
         spUnknownPending = (data.pending || []).reduce((a, r) => a + (r.unknown || 0), 0);
@@ -24746,6 +24746,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <select class="form-control" style="flex:1; min-width:120px;" onchange="spSetWh(${i}, this.value)">${spWhOptions(r.prov, r.wh)}</select>
               <select class="form-control" style="flex:1; min-width:120px;" title="ກຳນົດ Brand ຕູ້ຂອງແຖວນີ້" onchange="spSetBrand(${i}, this.value)">${spBrandOptions(r.brand)}</select>
             </div>
+            ${spBudgetNote(r)}
+            <div id="spBudgetWarn${i}">${spRowWarnHtml(i)}</div>
           </td>
           ${t.sizes.map(z => `<td>${qtyBox(`<input type="number" min="0" step="1" class="form-control" value="${r.n[z.id] || 0}" oninput="spRows[${i}].n[${z.id}]=Math.max(0,parseInt(this.value)||0); spSchedulePlan()">`)}</td>`).join('')}
           <td><button type="button" class="pb-pill" title="ລຶບແຖວ" onclick="spRemoveRow(${i})">×</button></td>
@@ -24765,6 +24767,86 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function spRowLabel(r) {
       const p = (r.prov || '').trim(), w = (r.wh || '').trim(), b = (r.brand || '').trim();
       return p ? (w ? p + ' / ' + w : p) + (b ? ' • ' + b : '') : '';
+    }
+    // ---------- ງົບຕູ້ແຊ່ຕ່າງແຂວງ: ສະແດງງົບທີ່ເຫຼືອຂອງແຂວງ/ສາງ ຢູ່ແຖວຂອງ "ຄິດແຜນສົ່ງຕູ້" ----------
+    let spBudgets = []; // ຈາກ /api/admin/prov-budgets (budgets: quota, used, reserved, planned)
+    async function spLoadBudgets() {
+      try {
+        const res = await fetch('/api/admin/prov-budgets');
+        if (!res.ok) return;
+        const j = await res.json();
+        spBudgets = j.budgets || [];
+      } catch (e) { /* ບໍ່ມີຂໍ້ມູນງົບ = ບໍ່ສະແດງ ແຕ່ບໍ່ກະທົບການຄິດແຜນ */ }
+    }
+    function spBudgetNote(r) {
+      const prov = (r.prov || '').trim();
+      if (!prov) return '';
+      const wh = (r.wh || '').trim(), brand = (r.brand || '').trim().toLowerCase();
+      const list = spBudgets.filter(x =>
+        (x.province || '').trim() === prov
+        && (!wh || (x.warehouse || '').trim() === wh || !(x.warehouse || '').trim())
+        && (!brand || (x.cooler_brand || '').trim().toLowerCase() === brand));
+      if (!list.length) {
+        return '<div style="margin-top:6px; font-size:12px; color:var(--text-muted);">ງົບ: ແຂວງນີ້ຍັງບໍ່ໄດ້ກຳນົດງົບ (ບໍ່ຈຳກັດ)</div>';
+      }
+      const chips = list.map(x => {
+        const quota = Number(x.quota) || 0;
+        const left = quota - (Number(x.used) || 0) - (Number(x.reserved) || 0) - (Number(x.planned) || 0);
+        const bad = left <= 0;
+        const label = [x.cooler_brand, x.cooler_type].filter(Boolean).join(' ') + ((x.warehouse || '').trim() ? ' (' + x.warehouse + ')' : '');
+        return `<span title="ງົບທັງໝົດ ${quota} • ຕັດແລ້ວ ${Number(x.used) || 0} • ຈອງໃນຖ້ຽວ ${Number(x.reserved) || 0} • ຈອງໃນແຜນ ${Number(x.planned) || 0}" style="display:inline-block; margin:2px 4px 0 0; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid ${bad ? '#fca5a5' : '#86efac'}; background:${bad ? '#fef2f2' : '#f0fdf4'}; color:${bad ? '#b91c1c' : '#166534'};">${esc(label)}: ເຫຼືອ ${left} / ${quota}</span>`;
+      }).join('');
+      return `<div style="margin-top:6px; font-size:12px; color:var(--text-muted);">ງົບຂອງແຂວງ ${esc(prov)}${wh ? ' / ' + esc(wh) : ''}:</div><div>${chips}</div>`;
+    }
+    // ---------- ເຕືອນສີແດງເມື່ອຈຳນວນທີ່ໃສ່ເກີນງົບທີ່ເຫຼືອ (ໃຊ້ API ກວດງົບຕົວດຽວກັບຕອນສ້າງຖ້ຽວ) ----------
+    let spLiveProblems = [], spLiveTimer = null, spLiveSeq = 0;
+    function spLiveItems() {
+      const items = [];
+      spRows.forEach((r, i) => {
+        const prov = (r.prov || '').trim();
+        if (!prov) return;
+        Object.keys(r.n || {}).forEach(sid => {
+          const n = Number(r.n[sid]) || 0;
+          if (n >= 1 && Number.isInteger(Number(sid))) items.push({ province: prov, warehouse: (r.wh || '').trim(), brand: (r.brand || '').trim(), size_id: Number(sid), n, ref: i + ':' + sid });
+        });
+      });
+      return items;
+    }
+    function spBudgetLiveSchedule() {
+      clearTimeout(spLiveTimer);
+      spLiveTimer = setTimeout(spBudgetLiveCheck, 400);
+    }
+    async function spBudgetLiveCheck() {
+      const items = spLiveItems();
+      const seq = ++spLiveSeq;
+      if (!items.length) { spLiveProblems = []; spApplyRowWarns(); return; }
+      try {
+        const res = await fetch('/api/admin/ship-plan/budget-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trucks: [{ items }] }) });
+        if (!res.ok) return;
+        const j = await res.json();
+        if (seq !== spLiveSeq) return; // ມີການແກ້ໃໝ່ກວ່າແລ້ວ
+        spLiveProblems = (j.problems || []).filter(p => !p.no_budget);
+        spApplyRowWarns();
+      } catch (e) { /* ເຄືອຂ່າຍມີບັນຫາ: ບໍ່ເຕືອນ ແຕ່ບໍ່ກະທົບການຄິດແຜນ */ }
+    }
+    function spRowWarnHtml(i) {
+      const mine = spLiveProblems.filter(p => (p.refs || []).some(ref => String(ref).split(':')[0] === String(i)));
+      if (!mine.length) return '';
+      return mine.map(p => {
+        const label = [p.brand, p.type].filter(Boolean).join(' ') + (p.warehouse ? ' (' + p.warehouse + ')' : '');
+        const total = Number(p.need) || 0, left = Number(p.remaining) || 0;
+        return `<div style="margin-top:6px; padding:4px 8px; border-radius:6px; background:#fef2f2; border:1px solid #fca5a5; color:#b91c1c; font-size:12px; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> ເກີນງົບ ${esc(label)}: ໃສ່ລວມ ${total} ແຕ່ເຫຼືອ ${left}</div>`;
+      }).join('');
+    }
+    function spApplyRowWarns() {
+      spRows.forEach((r, i) => {
+        const el = document.getElementById('spBudgetWarn' + i);
+        if (!el) return;
+        const html = spRowWarnHtml(i);
+        el.innerHTML = html;
+        const tr = el.closest('tr');
+        if (tr) tr.style.background = html ? '#fff5f5' : '';
+      });
     }
     function spProvOptions(cur) {
       const names = spProvinces.map(p => p.name);
@@ -24796,6 +24878,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function spSetBrand(i, v) {
       if (!spRows[i]) return;
       spRows[i].brand = v;
+      spRenderDemand();
       spRefresh();
     }
     function spSetProv(i, v) {
@@ -24809,6 +24892,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function spSetWh(i, v) {
       if (!spRows[i]) return;
       spRows[i].wh = v;
+      spRenderDemand();
       spRefresh();
     }
     function spRemoveRow(i) {
@@ -24820,6 +24904,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     // ລາຍລະອຽດ (ຮູບລົດ/KPI) ຕ້ອງ refresh ຕາມທຸກການແກ້ໄຂ — ບໍ່ໃຫ້ error ເຮັດໃຫ້ຮູບເກົ່າຄ້າງ
     function spRefresh() {
       clearTimeout(spPlanTimer);
+      spBudgetLiveSchedule();
       const box = document.getElementById('spTrucks'), kp = document.getElementById('spKpis');
       try {
         spRenderPlan();

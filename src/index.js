@@ -1243,8 +1243,9 @@ async function shipPlanBudgetCheck(env, sz, trucks) {
         g.n += it.n;
         continue;
       }
-      const g = (need[m.key] = need[m.key] || { n: 0 });
+      const g = (need[m.key] = need[m.key] || { n: 0, refs: [] });
       g.n += it.n;
+      if (it.ref) g.refs.push(it.ref);
     }
   }
   for (const g of Object.values(noBudget)) {
@@ -1264,7 +1265,7 @@ async function shipPlanBudgetCheck(env, sz, trucks) {
     if (g.n > remaining) {
       out.problems.push({
         province: b.province, warehouse: b.warehouse, brand: b.cooler_brand, type: b.cooler_type,
-        quota: idx.quota[k], used, reserved, need: g.n, remaining: Math.max(remaining, 0),
+        quota: idx.quota[k], used, reserved, need: g.n, remaining: Math.max(remaining, 0), refs: g.refs || [],
         text: `${pbLabel(b.province, b.warehouse, b.cooler_brand, b.cooler_type)}: ງົບ ${idx.quota[k]}, ຕັດແລ້ວ ${used}, ຈອງ/ຢູ່ໃນແຜນ ${reserved}, ແຜນນີ້ຕ້ອງການ ${g.n} (ເຫຼືອ ${Math.max(remaining, 0)})`
       });
     }
@@ -4347,7 +4348,7 @@ export default {
         const clean = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
         const trucks = (Array.isArray(b.trucks) ? b.trucks : []).slice(0, 20).map((t) => ({
           items: (Array.isArray(t && t.items) ? t.items : []).map((it) => ({
-            province: clean(it.province, 100), warehouse: clean(it.warehouse, 100), brand: clean(it.brand, 100), size_id: Number(it.size_id), n: Number(it.n)
+            province: clean(it.province, 100), warehouse: clean(it.warehouse, 100), brand: clean(it.brand, 100), size_id: Number(it.size_id), n: Number(it.n), ref: clean(it.ref, 40)
           })).filter((it) => it.province && Number.isInteger(it.size_id) && Number.isInteger(it.n) && it.n >= 1)
         }));
         const sz = await loadShipSizes(env);
