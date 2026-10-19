@@ -6901,8 +6901,9 @@ export default {
     //   unsigned_docs = ເອກະສານຄ້າງເຊັນ (ໃບສັນຍາຢືມ/ໃບເກັບຕູ້ ສະຖານະ draft = MDE ຍັງບໍ່ເຊັນ) — ຫາຍເອງເມື່ອເຊັນຄົບ
     //   dsm_pending   = ຄ້າງ DSM ເຊັນ (ສະຖານະ awaiting_dsm) — MDE ເຊັນແລ້ວ ລໍຖ້າ DSM; MDE ກົດ "ຮັບຊາບ" ໄດ້ (ຫຼື ຫາຍເອງເມື່ອ DSM ເຊັນ)
     const SA_RULES = ["powerapp", "unsigned_docs", "dsm_pending", "unsigned_loan", "manual"];
-    const SA_ACK_RULES = ["manual", "dsm_pending"];
-    const SA_ACTION_VIEW = { powerapp: "asset", unsigned_docs: "loanContract:queue", unsigned_loan: "loanContract:queue", dsm_pending: "", manual: "" };
+    // ຮັບຊາບໄດ້ສະເພາະ rule manual (ຂອງເກົ່າ)
+    const saAckable = (a) => a.rule === "manual"; // ຫົວຂໍ້ທັງ 3 ແບບ ບໍ່ມີປຸ່ມຮັບຊາບ — ຕ້ອງດຳເນີນການຄົບຈຶ່ງຫາຍ (ບັງຄັບ)
+    const SA_ACTION_VIEW = { powerapp: "asset", unsigned_docs: "loanContract:queue", unsigned_loan: "loanContract:queue", dsm_pending: "loanContract:queue", manual: "" };
     const SA_POWERAPP_STATUS = NOTIFY_PENDING_STATUSES[1];
     // ຈຳນວນລາຍການຄ້າງ ຕາມ rule ແຍກຕາມ MDE Code (key = MDE Code ຕົວພິມໃຫຍ່) — rule manual = ບໍ່ມີ (ບໍ່ອີງຂໍ້ມູນ)
     const saCountsByMde = async (rule) => {
@@ -6946,12 +6947,12 @@ export default {
           } else {
             if (!countCache.has(a.rule)) countCache.set(a.rule, await saCountsByMde(a.rule));
             pending = myMde ? (countCache.get(a.rule).get(myMde) || 0) : 0;
-            if (pending > 0 && SA_ACK_RULES.includes(a.rule)) {
+            if (pending > 0 && saAckable(a)) {
               const ack = await env.DB.prepare("SELECT 1 AS ok FROM special_alert_acks WHERE alert_id = ? AND user_id = ?").bind(a.id, me.id).first();
               if (ack) pending = 0;
             }
           }
-          if (pending > 0) out.push({ id: a.id, title: a.title, content: a.content, rule: a.rule, action_view: a.action_view || "", pending_count: pending, can_ack: SA_ACK_RULES.includes(a.rule) });
+          if (pending > 0) out.push({ id: a.id, title: a.title, content: a.content, rule: a.rule, action_view: a.action_view || "", pending_count: pending, can_ack: saAckable(a) });
         }
         return Response.json({ alerts: out });
       } catch (e) {
@@ -6966,7 +6967,7 @@ export default {
         const { id } = await request.json();
         const a = id ? await env.DB.prepare("SELECT id, rule FROM special_alerts WHERE id = ?").bind(id).first() : null;
         if (!a) return Response.json({ error: "ບໍ່ພົບແຈ້ງເຕືອນນີ້" }, { status: 404 });
-        if (!SA_ACK_RULES.includes(a.rule)) return Response.json({ error: "ແຈ້ງເຕືອນນີ້ຕ້ອງດຳເນີນການໃຫ້ສຳເລັດ ບໍ່ສາມາດກົດຮັບຊາບໄດ້" }, { status: 400 });
+        if (!saAckable(a)) return Response.json({ error: "ແຈ້ງເຕືອນນີ້ຕ້ອງດຳເນີນການໃຫ້ສຳເລັດ ບໍ່ສາມາດກົດຮັບຊາບໄດ້" }, { status: 400 });
         await env.DB.prepare("INSERT INTO special_alert_acks (alert_id, user_id) VALUES (?, ?) ON CONFLICT(alert_id, user_id) DO NOTHING").bind(a.id, session.id).run();
         return Response.json({ message: "ບັນທຶກແລ້ວ" });
       } catch (e) {
@@ -6992,7 +6993,7 @@ export default {
           a.pending_users = a.rule === "manual"
             ? targets.filter((u) => !acked.has(`${a.id}:${u.id}`)).length
             : targets.filter((u) => (counts.get(String(u.mde_code || "").trim().toUpperCase()) || 0) > 0
-                && !(SA_ACK_RULES.includes(a.rule) && acked.has(`${a.id}:${u.id}`))).length;
+                && !(saAckable(a) && acked.has(`${a.id}:${u.id}`))).length;
         }
         return Response.json(alerts);
       } catch (e) {

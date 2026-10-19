@@ -6295,6 +6295,13 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div id="saTitleHint" style="font-size:12px; color:var(--text-muted); margin-top:6px;"></div>
       </div>
       <div class="form-group">
+        <label>ເງື່ອນໄຂການສຳເລັດ</label>
+        <select id="saMode" class="form-control" style="padding-left:14px;" disabled>
+          <option value="auto">ບັງຄັບ — ປິດເອງເມື່ອ MDE ດຳເນີນການຄົບ (ມີປຸ່ມພາໄປຈຸດທີ່ຄ້າງ, ໃຊ້ເມນູອື່ນບໍ່ໄດ້ຈົນກວ່າຈະສຳເລັດ)</option>
+          <option value="ack">ໃຫ້ກົດ "ຮັບຊາບ" (ແຈ້ງເຕືອນແບບເກົ່າ)</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>ເນື້ອຫາ</label>
         <textarea id="saContent" class="form-control" rows="4" style="padding-left:14px; resize:vertical;" maxlength="2000" placeholder="ລາຍລະອຽດແຈ້ງເຕືອນ..."></textarea>
       </div>
@@ -8347,7 +8354,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         </div>`).join('');
       const acts = [];
       specialAlerts.forEach(a => {
-        if (a.action_view) acts.push(`<button type="button" class="btn-submit" style="margin-top:0;" onclick="specialAlertGo(${a.id})"><i class="fa-solid fa-arrow-right mr-1"></i> ${a.rule === 'powerapp' ? 'ໄປໜ້າ Asset Tracking' : (a.rule === 'unsigned_loan' || a.rule === 'unsigned_docs' ? 'ໄປໜ້າເຊັນເອກະສານ' : 'ໄປດຳເນີນການ')}</button>`);
+        if (a.action_view) acts.push(`<button type="button" class="btn-submit" style="margin-top:0;" onclick="specialAlertGo(${a.id})"><i class="fa-solid fa-arrow-right mr-1"></i> ${a.rule === 'powerapp' ? 'ໄປໜ້າ Asset Tracking' : (['unsigned_loan', 'unsigned_docs', 'dsm_pending'].includes(a.rule) ? (a.rule === 'dsm_pending' ? 'ໄປເບິ່ງເອກະສານທີ່ລໍຖ້າ DSM' : 'ໄປໜ້າເຊັນເອກະສານ') : 'ໄປດຳເນີນການ')}</button>`);
         if (a.rule === 'manual' || a.can_ack) acts.push(`<button type="button" class="btn-submit" style="margin-top:0; background:#15803d;" onclick="specialAlertAck(${a.id})"><i class="fa-solid fa-check mr-1"></i> ຮັບຊາບແລ້ວ</button>`);
       });
       document.getElementById('saOvActions').innerHTML = acts.join('');
@@ -27623,7 +27630,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     const SA_TITLES = {
       powerapp:      { label: 'ເອກະສານຍັງບໍ່ຊັບມິດ PowerApp', unit: 'ລາຍການ', hint: 'MDE ທີ່ມີ Asset ສະຖານະ "ຍັງບໍ່ຊັບມິດ PowerApp" — ຫາຍເອງເມື່ອຊັບມິດຄົບ', content: 'ກະລຸນາຊັບມິດເອກະສານເຂົ້າ PowerApp ໃຫ້ຄົບ ກ່ອນໃຊ້ງານເມນູອື່ນ' },
       unsigned_docs: { label: 'ເອກະສານຄ້າງເຊັນ', unit: 'ໃບ', hint: 'MDE ທີ່ມີໃບສັນຍາຢືມ / ໃບເກັບຕູ້ ທີ່ຍັງບໍ່ເຊັນ — ຫາຍເອງເມື່ອເຊັນຄົບ', content: 'ກະລຸນາເຂົ້າໄປເຊັນເອກະສານທີ່ຄ້າງຢູ່ໃຫ້ຄົບ ກ່ອນໃຊ້ງານເມນູອື່ນ' },
-      dsm_pending:   { label: 'ຄ້າງ DSM ເຊັນ', unit: 'ໃບ', hint: 'MDE ທີ່ເຊັນແລ້ວ ແຕ່ເອກະສານຍັງລໍຖ້າ DSM ເຊັນ — MDE ກົດ "ຮັບຊາບ" ໄດ້ ຫຼື ຫາຍເອງເມື່ອ DSM ເຊັນ', content: 'ເອກະສານຂອງທ່ານຍັງລໍຖ້າ DSM ເຊັນ ກະລຸນາຕິດຕາມ DSM ຂອງທີມ' }
+      dsm_pending:   { label: 'ຄ້າງ DSM ເຊັນ', unit: 'ໃບ', hint: 'MDE ທີ່ເຊັນແລ້ວ ແຕ່ເອກະສານຍັງລໍຖ້າ DSM ເຊັນ — ຫາຍເອງເມື່ອ DSM ເຊັນຄົບ (MDE ໄປໜ້າເອກະສານເພື່ອຕິດຕາມ)', content: 'ເອກະສານຂອງທ່ານຍັງລໍຖ້າ DSM ເຊັນ ກະລຸນາຕິດຕາມ DSM ຂອງທີມ' }
     };
     let saTargetsReq = 0;
     async function loadSaTargets(selected) {
@@ -27691,6 +27698,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       document.getElementById('saExpires').value = a && a.expires_at ? String(a.expires_at).slice(0, 10) : '';
       document.getElementById('saActive').checked = a ? !!a.is_active : true;
       onSaTitleChange(!!a);
+      document.getElementById('saMode').value = (a && a.rule === 'manual') ? 'ack' : 'auto';
       if (!a) document.getElementById('saContent').value = SA_TITLES.powerapp.content;
       document.getElementById('specialAlertModal').classList.remove('hidden');
       const legacyTarget = a ? { type: a.target_type, value: a.target_value } : null;
