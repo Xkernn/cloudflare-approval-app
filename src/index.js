@@ -6894,6 +6894,161 @@ export default {
     }
 
     // 2h-5. Admin: ເພີ່ມ/ແກ້ໄຂ ປະກາດ (ແນບຮູບປະກອບໄດ້ 1 ຮູບ: image = data URL ຮູບໃໝ່, removeImage = ລຶບຮູບເກົ່າອອກ)
+    // ===================== ແຈ້ງເຕືອນພິເສດ (Special Alert) — ບັງຄັບ MDE ດຳເນີນການກ່ອນຈຶ່ງໃຊ້ເມນູອື່ນໄດ້ =====================
+    // ຕາຕະລາງ: special_alerts / special_alert_acks (migration_add_special_alerts.sql)
+    const SA_RULES = ["unsigned_loan", "manual"];
+    const SA_TARGETS = ["all", "team", "mde"];
+    const saCodes = (v) => String(v || "").split(/[\s,;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean);
+    // ແຈ້ງເຕືອນນີ້ ໃຊ້ກັບຜູ້ໃຊ້ (role user) ຄົນນີ້ບໍ?
+    const saMatchesUser = (a, u) => {
+      if (!u || u.role !== "user") return false;
+      if (a.target_type === "team") return String(u.team || "").trim().toLowerCase() === String(a.target_value || "").trim().toLowerCase();
+      if (a.target_type === "mde") return !!u.mde_code && saCodes(a.target_value).includes(String(u.mde_code).trim().toUpperCase());
+      return true; // all
+    };
+
+    // ຜູ້ໃຊ້ເອີ້ນ: ແຈ້ງເຕືອນພິເສດທີ່ "ຍັງຄ້າງ" ຂອງຕົນເອງ (ຄຳນວນສົດທຸກຄັ້ງ — ເຊັນຄົບແລ້ວ = ຫາຍເອງ)
+    if (url.pathname === "/api/my-special-alerts" && request.method === "GET") {
+      try {
+        const me = await env.DB.prepare("SELECT id, role, team, mde_code FROM users WHERE id = ?").bind(session.id).first();
+        if (!me || me.role !== "user") return Response.json({ alerts: [] });
+        const { results } = await env.DB.prepare(
+          "SELECT * FROM special_alerts WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > datetime('now')) ORDER BY id DESC LIMIT 50"
+        ).all();
+        const mine = (results || []).filter((a) => saMatchesUser(a, me));
+        if (!mine.length) return Response.json({ alerts: [] });
+        let draftCount = null;
+        const out = [];
+        for (const a of mine) {
+          let pending = 0;
+          if (a.rule === "unsigned_loan") {
+            if (draftCount === null) {
+              const r = await env.DB.prepare(
+                "SELECT COUNT(*) AS c FROM loan_contracts WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) AND status != 'completed'"
+              ).bind(me.mde_code || "").first();
+              draftCount = (r && r.c) || 0;
+            }
+            pending = draftCount;
+          } else {
+            const ack = await env.DB.prepare("SELECT 1 AS ok FROM special_alert_acks WHERE alert_id = ? AND user_id = ?").bind(a.id, me.id).first();
+            pending = ack ? 0 : 1;
+          }
+          if (pending > 0) out.push({ id: a.id, title: a.title, content: a.content, rule: a.rule, action_view: a.action_view || "", pending_count: pending });
+        }
+        return Response.json({ alerts: out });
+      } catch (e) {
+        console.error("/api/my-special-alerts", e);
+        return Response.json({ alerts: [] }); // ຖ້າຍັງບໍ່ໄດ້ຮັນ migration ຫຼື error -> ບໍ່ບລັອກຜູ້ໃຊ້
+      }
+    }
+
+    // ຜູ້ໃຊ້ກົດ "ຮັບຊາບ" (ສະເພາະ rule = manual)
+    if (url.pathname === "/api/special-alerts/ack" && request.method === "POST") {
+      try {
+        const { id } = await request.json();
+        const a = id ? await env.DB.prepare("SELECT id, rule FROM special_alerts WHERE id = ?").bind(id).first() : null;
+        if (!a) return Response.json({ error: "ບໍ່ພົບແຈ້ງເຕືອນນີ້" }, { status: 404 });
+        if (a.rule !== "manual") return Response.json({ error: "ແຈ້ງເຕືອນນີ້ຕ້ອງດຳເນີນການໃຫ້ສຳເລັດ ບໍ່ສາມາດກົດຮັບຊາບໄດ້" }, { status: 400 });
+        await env.DB.prepare("INSERT INTO special_alert_acks (alert_id, user_id) VALUES (?, ?) ON CONFLICT(alert_id, user_id) DO NOTHING").bind(a.id, session.id).run();
+        return Response.json({ message: "ບັນທຶກແລ້ວ" });
+      } catch (e) {
+        console.error("/api/special-alerts/ack", e);
+        return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    // Admin: ລາຍການ + ຈຳນວນຄົນທີ່ຍັງຄ້າງ
+    if (url.pathname === "/api/admin/special-alerts" && request.method === "GET") {
+      try {
+        const { results } = await env.DB.prepare("SELECT * FROM special_alerts ORDER BY id DESC LIMIT 200").all();
+        const alerts = results || [];
+        const users = (await env.DB.prepare("SELECT id, team, mde_code, role FROM users WHERE role = 'user' AND status = 'approved'").all()).results || [];
+        const draftRows = (await env.DB.prepare(
+          "SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status != 'completed' GROUP BY UPPER(TRIM(mde_code))"
+        ).all()).results || [];
+        const drafts = new Map(draftRows.map((r) => [r.m, r.c]));
+        const ackRows = (await env.DB.prepare("SELECT alert_id, user_id FROM special_alert_acks").all()).results || [];
+        const acked = new Set(ackRows.map((r) => `${r.alert_id}:${r.user_id}`));
+        for (const a of alerts) {
+          const targets = users.filter((u) => saMatchesUser(a, u));
+          a.target_users = targets.length;
+          a.pending_users = a.rule === "unsigned_loan"
+            ? targets.filter((u) => (drafts.get(String(u.mde_code || "").trim().toUpperCase()) || 0) > 0).length
+            : targets.filter((u) => !acked.has(`${a.id}:${u.id}`)).length;
+        }
+        return Response.json(alerts);
+      } catch (e) {
+        console.error("/api/admin/special-alerts", e);
+        return Response.json({ error: "ໂຫລດບໍ່ສຳເລັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_special_alerts.sql ກະລຸນາຮັນກ່ອນ)" }, { status: 500 });
+      }
+    }
+
+    // Admin: ສ້າງ/ແກ້ໄຂ
+    if (url.pathname === "/api/admin/save-special-alert" && request.method === "POST") {
+      try {
+        const b = await request.json();
+        const title = String(b.title || "").trim().slice(0, 200);
+        const content = String(b.content || "").trim().slice(0, 2000);
+        const rule = SA_RULES.includes(b.rule) ? b.rule : "unsigned_loan";
+        const targetType = SA_TARGETS.includes(b.targetType) ? b.targetType : "all";
+        const targetValue = targetType === "all" ? null : String(b.targetValue || "").trim().slice(0, 2000);
+        if (!title) return Response.json({ error: "ກະລຸນາປ້ອນຫົວຂໍ້" }, { status: 400 });
+        if (!content) return Response.json({ error: "ກະລຸນາປ້ອນເນື້ອຫາ" }, { status: 400 });
+        if (targetType !== "all" && !targetValue) return Response.json({ error: targetType === "team" ? "ກະລຸນາເລືອກທີມ" : "ກະລຸນາໃສ່ MDE Code ຢ່າງໜ້ອຍ 1 ລາຍການ" }, { status: 400 });
+        const actionView = rule === "unsigned_loan" ? "loanContract:queue" : "";
+        const activeVal = b.isActive === false ? 0 : 1;
+        const expiresVal = b.expiresAt || null;
+        if (b.id) {
+          const r = await env.DB.prepare(
+            `UPDATE special_alerts SET title = ?, content = ?, rule = ?, target_type = ?, target_value = ?, action_view = ?, is_active = ?, expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+          ).bind(title, content, rule, targetType, targetValue, actionView, activeVal, expiresVal, b.id).run();
+          if (!r.meta || !r.meta.changes) return Response.json({ error: "ບໍ່ພົບລາຍການທີ່ຈະແກ້ໄຂ" }, { status: 404 });
+          return Response.json({ message: "ແກ້ໄຂແຈ້ງເຕືອນພິເສດແລ້ວ" });
+        }
+        const ins = await env.DB.prepare(
+          `INSERT INTO special_alerts (title, content, rule, target_type, target_value, action_view, is_active, expires_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(title, content, rule, targetType, targetValue, actionView, activeVal, expiresVal, session.id).run();
+        // ສົ່ງ Push ຫາ MDE ທີ່ກ່ຽວຂ້ອງ ແລະ ຍັງຕ້ອງດຳເນີນການ (ພື້ນຫຼັງ ບໍ່ໃຫ້ save ຊ້າ)
+        if (activeVal) {
+          const alertRow = { target_type: targetType, target_value: targetValue };
+          runInBackground(ctx, (async () => {
+            const us = (await env.DB.prepare("SELECT id, team, mde_code, role FROM users WHERE role = 'user' AND status = 'approved'").all()).results || [];
+            let drafts = new Map();
+            if (rule === "unsigned_loan") {
+              drafts = new Map(((await env.DB.prepare("SELECT UPPER(TRIM(mde_code)) AS m, COUNT(*) AS c FROM loan_contracts WHERE status != 'completed' GROUP BY UPPER(TRIM(mde_code))").all()).results || []).map((r) => [r.m, r.c]));
+            }
+            for (const u of us) {
+              if (!saMatchesUser(alertRow, u)) continue;
+              if (rule === "unsigned_loan" && !(drafts.get(String(u.mde_code || "").trim().toUpperCase()) > 0)) continue;
+              try {
+                await sendWebPushToUser(env, u.id, { title: `⚠️ ແຈ້ງເຕືອນພິເສດ: ${title}`, body: content.slice(0, 180), url: actionView || "announcements" });
+              } catch (pe) { /* ຂ້າມຄົນທີ່ສົ່ງບໍ່ໄດ້ */ }
+            }
+          })());
+        }
+        return Response.json({ message: "ສ້າງແຈ້ງເຕືອນພິເສດແລ້ວ", id: ins.meta && ins.meta.last_row_id });
+      } catch (e) {
+        console.error("/api/admin/save-special-alert", e);
+        return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_special_alerts.sql ກະລຸນາຮັນກ່ອນ)" }, { status: 500 });
+      }
+    }
+
+    // Admin: ລຶບ
+    if (url.pathname === "/api/admin/delete-special-alert" && request.method === "POST") {
+      try {
+        const { id } = await request.json();
+        if (!id) return Response.json({ error: "ບໍ່ພົບລາຍການ" }, { status: 400 });
+        await env.DB.batch([
+          env.DB.prepare("DELETE FROM special_alert_acks WHERE alert_id = ?").bind(id),
+          env.DB.prepare("DELETE FROM special_alerts WHERE id = ?").bind(id),
+        ]);
+        return Response.json({ message: "ລຶບແລ້ວ" });
+      } catch (e) {
+        console.error("/api/admin/delete-special-alert", e);
+        return Response.json({ error: "ລຶບບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     if (url.pathname === "/api/admin/save-announcement" && request.method === "POST") {
       let newImageKey = null;
       try {
