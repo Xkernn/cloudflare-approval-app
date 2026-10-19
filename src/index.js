@@ -572,21 +572,21 @@ async function ownerDocBytesFor(env, session, row, forDsm) {
 
 // ==========================================================================
 // ເອກະສານເຈົ້າຂອງຮ້ານ (ແນບກ່ອນ MDE ເຊັນ ທັງໃບ DOC- ແລະ T-)
-// - ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຢ່າງ: ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ (ເປັນຮູບ JPEG/PNG/WebP ≤ 5MB)
+// - ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຢ່າງ: ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ (ເປັນຮູບ JPEG/PNG/WebP ≤ 5MB)
 // - ເກັບໃນ R2 key: loan-contract/<id>/owner-doc-<ts>.jpg | cancel-contract/<id>/owner-doc-<ts>.jpg
 // - ເບິ່ງໄດ້ສະເພາະ admin ແລະ MDE ເຈົ້າຂອງໃບ ຜ່ານ GET /api/contract-owner-doc (ເປັນຂໍ້ມູນສ່ວນຕົວ ຈຶ່ງບໍ່ເປີດຜ່ານ /api/photo)
 // ==========================================================================
-const OWNER_DOC_TYPES = { id_card: "ບັດປະຈຳໂຕ", passport: "Passport", business_reg: "ໃບທະບຽນວິສາຫະກິດ" };
+const OWNER_DOC_TYPES = { id_card: "ບັດປະຈຳໂຕ", passport: "Passport", business_reg: "ໃບທະບຽນວິສາຫະກິດ", census: "ສຳມະໂນຄົວ" };
 
 // ກວດກ່ອນສ້າງ/ບັນທຶກໃບ ເມື່ອມີລາຍເຊັນ MDE ສົ່ງມາ: ຕ້ອງມີເອກະສານເຈົ້າຂອງຮ້ານ (ສົ່ງມາໃໝ່ ຫຼື ມີໃນໃບຢູ່ແລ້ວ) ພ້ອມຊະນິດທີ່ຖືກຕ້ອງ
 function validateOwnerDocInput(body, existingRow) {
   const hasExisting = !!(existingRow && existingRow.owner_doc_photo);
   if (!body.owner_doc_photo && !hasExisting) {
-    return "ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ) ຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ";
+    return "ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ) ຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ";
   }
   const type = body.owner_doc_type || (existingRow && existingRow.owner_doc_type) || null;
   if (!type || !Object.prototype.hasOwnProperty.call(OWNER_DOC_TYPES, type)) {
-    return "ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ)";
+    return "ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ)";
   }
   return null;
 }
@@ -1590,7 +1590,7 @@ async function savePhotosToR2(env, entries) {
 
 function photoErrorResponse(e) {
   if (e && e.message === "INVALID_OWNER_DOC") {
-    return Response.json({ error: "ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ)" }, { status: 400 });
+    return Response.json({ error: "ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ)" }, { status: 400 });
   }
   if (e && e.message === "INVALID_PHOTO") {
     return Response.json({ error: "ຮູບພາບບໍ່ຖືກຕ້ອງ (ຮອງຮັບ JPEG/PNG/WebP ຂະໜາດບໍ່ເກີນ 5MB)" }, { status: 400 });

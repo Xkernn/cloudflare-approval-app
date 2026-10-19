@@ -20438,9 +20438,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     
 /* ==================== ເອກະສານເຈົ້າຂອງຮ້ານ (ແນບກ່ອນ MDE ເຊັນ) — ໃຊ້ຮ່ວມ 4 ຈຸດ: loan (wizard DOC-), cancel (wizard T-), loanSign (modal ເຊັນຮັບ), historyLoan (modal ປະຫວັດການຂໍ Asset)
-       - ຕ້ອງແນບຮູບ 1 ຢ່າງ: ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ; ກ່ອນແນບ ຊ່ອງເຊັນຈະຖືກລັອກ
+       - ຕ້ອງແນບຮູບ 1 ຢ່າງ: ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ; ກ່ອນແນບ ຊ່ອງເຊັນຈະຖືກລັອກ
        - server ກວດຊ້ຳອີກຄັ້ງ (validateOwnerDocInput) ==================== */
-    const OWNER_DOC_LABELS = { id_card: 'ບັດປະຈຳໂຕ', passport: 'Passport', business_reg: 'ໃບທະບຽນວິສາຫະກິດ' };
+    const OWNER_DOC_LABELS = { id_card: 'ບັດປະຈຳໂຕ', passport: 'Passport', business_reg: 'ໃບທະບຽນວິສາຫະກິດ', census: 'ສຳມະໂນຄົວ' };
     const OWNER_DOC_CANVAS = { loan: 'loanSigMdeCanvas', cancel: 'cancelSigMdeCanvas', loanSign: 'loanSignCanvas', historyLoan: 'historyLoanCanvas' };
     const ownerDocState = {};
 
@@ -20451,12 +20451,13 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!box) return;
       box.innerHTML = `
         <div class="owner-doc-title"><i class="fa-solid fa-id-card mr-1"></i> ແນບເອກະສານເຈົ້າຂອງຮ້ານ <span style="color:#dc2626;">*</span></div>
-        <div class="owner-doc-sub">ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ: ບັດປະຈຳໂຕ ຫຼື Passport ຫຼື ໃບທະບຽນວິສາຫະກິດ (ຮູບ JPG / PNG / WebP)</div>
+        <div class="owner-doc-sub">ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ: ບັດປະຈຳໂຕ ຫຼື Passport ຫຼື ໃບທະບຽນວິສາຫະກິດ ຫຼື ສຳມະໂນຄົວ (ຮູບ JPG / PNG / WebP)</div>
         <select id="${key}OwnerDocType" class="form-control" style="margin-bottom:8px;" onchange="ownerDocTypeChanged('${key}')">
           <option value="">-- ເລືອກຊະນິດເອກະສານ --</option>
           <option value="id_card">ບັດປະຈຳໂຕ</option>
           <option value="passport">Passport</option>
           <option value="business_reg">ໃບທະບຽນວິສາຫະກິດ</option>
+          <option value="census">ສຳມະໂນຄົວ</option>
         </select>
         <input type="file" id="${key}OwnerDocFile" class="form-control" accept="image/*" onchange="ownerDocPicked('${key}', event)">
         <img id="${key}OwnerDocPreview" class="owner-doc-preview hidden" alt="">
@@ -20522,8 +20523,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function ownerDocError(key) {
       const st = ownerDocState[key];
       if (!st) return 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ';
-      if (!st.type) return 'ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ)';
-      if (!st.photo && !st.existing) return 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ) ຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ';
+      if (!st.type) return 'ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ)';
+      if (!st.photo && !st.existing) return 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ) ຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ';
       return null;
     }
 
