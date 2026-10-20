@@ -5053,6 +5053,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             </div>
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
               <button type="button" class="btn-act btn-edit" onclick="ncToggleReceipts()"><i class="fa-solid fa-clock-rotate-left"></i> ປະຫວັດລ໋ອດທີ່ຮັບເຂົ້າສາງ</button>
+<button type="button" class="btn-act btn-edit" style="margin-left:6px;" onclick="ncExportLots()"><i class="fa-solid fa-file-export"></i> Export Excel ທຸກລ໋ອດ</button>
               <div id="ncReceiptsBox" class="hidden" style="margin-top: 10px;"></div>
             </div>
           </div>
@@ -14910,7 +14911,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         const per = units.length ? units.join(', ') : '-';
         return `<div class="mgmt-card" style="margin-bottom:8px;">
           <div class="mgmt-card-top"><div class="mgmt-card-title"><i class="fa-solid fa-layer-group"></i> ລ໋ອດ ${esc(r.lot_no)}</div>
-            <div>${r.closed_at
+            <div style="display:flex; gap:6px; align-items:center;"><button type="button" class="btn-act btn-edit" onclick='ncExportLots(${JSON.stringify(String(r.lot_no)).replace(/'/g, "&#39;")})'><i class="fa-solid fa-file-export"></i> Export</button>${r.closed_at
               ? `<span class="badge badge-default"><i class="fa-solid fa-lock mr-1"></i>ປິດແລ້ວ</span>`
               : `<button type="button" class="btn-act btn-delete" onclick='ncCloseLot(${JSON.stringify(String(r.lot_no)).replace(/'/g, "&#39;")})'><i class="fa-solid fa-lock"></i> ປິດລ໋ອດ</button>`}</div></div>
           <div class="mgmt-card-sub">
@@ -14923,6 +14924,43 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         </div>`;
       }).join('');
     }
+
+/* Export ປະຫວັດລ໋ອດເປັນ Excel — lot = ເລກລ໋ອດດຽວ, ບໍ່ໃສ່ = ທຸກລ໋ອດ. 3 sheet: Lots (ສະຫຼຸບຕໍ່ລ໋ອດ), Containers (ຄອນເທນເນີ), Coolers (ຕູ້ໃນລ໋ອດ) — ແຕ່ລະ sheet ມີຄໍລຳ Lot No ໄວ້ກອງ/ແຍກຕໍ່ລ໋ອດ */
+async function ncExportLots(lot) {
+  let data;
+  try {
+    const res = await fetch('/api/admin/new-cooler-receipts/export' + (lot ? '?lot=' + encodeURIComponent(lot) : ''));
+    data = await res.json().catch(() => ({}));
+    if (!res.ok) { alert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
+  } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
+  const receipts = data.receipts || [], coolers = data.coolers || [];
+  if (!receipts.length && !coolers.length) { alert('ຍັງບໍ່ມີຂໍ້ມູນລ໋ອດໃຫ້ Export'); return; }
+  const statusLabel = { received: 'ຮັບເຂົ້າສາງແລ້ວ', confirmed: 'ຢືນຢັນແລ້ວ (ລໍຖ້າຮັບເຂົ້າສາງ)', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', pending: 'ຍັງບໍ່ໄດ້ສະແກນ' };
+  const lotRows = [], contRows = [];
+  receipts.forEach(r => {
+    let units = [];
+    try { units = JSON.parse(r.container_units || '[]'); } catch (e) { units = []; }
+    lotRows.push({
+      'Lot No': r.lot_no, 'ຈຳນວນຄອນເທນເນີ': r.container_count || 0, 'ໜ່ວຍ/ຄອນ': units.join(', '),
+      'ລວມທີ່ແຈ້ງ': r.total_units || 0, 'ຮັບເຂົ້າແລ້ວ': r.received_count || 0, 'ສາງ': r.warehouse_name || '',
+      'ວັນທີຮັບເຂົ້າ': fmtLaoTs(r.received_at) || '', 'ຜູ້ຮັບ': r.received_by || '',
+      'ສະຖານະລ໋ອດ': r.closed_at ? 'ປິດແລ້ວ' : 'ເປີດຢູ່', 'ວັນທີປິດ': r.closed_at ? (fmtLaoTs(r.closed_at) || '') : '', 'ໝາຍເຫດ': r.note || ''
+    });
+    units.forEach((u, i) => contRows.push({ 'Lot No': r.lot_no, 'ຄອນເທນເນີ ທີ': i + 1, 'ຈຳນວນໜ່ວຍ': u }));
+  });
+  const coolerRows = coolers.map(n => ({
+    'Lot No': n.lot_no || '', 'Cooler Brand': n.cooler_brand || '', 'Cooler Type': n.cooler_type || '', 'Model': n.cooler_model || '',
+    'QR Code': n.qr_code || '', 'Serial Number': n.serial_number || '', 'CapEx': n.capex || '', 'Notes': n.notes || '',
+    'ສະຖານະ': statusLabel[n.status] || n.status || '', 'ສາງທີ່ຮັບເຂົ້າ': n.warehouse_name || '', 'ຜູ້ຮັບ': n.received_by || ''
+  }));
+  const wb = XLSX.utils.book_new();
+  const add = (rows, headers, name) => XLSX.utils.book_append_sheet(wb, rows.length ? XLSX.utils.json_to_sheet(rows) : XLSX.utils.aoa_to_sheet([headers]), name);
+  add(lotRows, ['Lot No'], 'Lots');
+  add(contRows, ['Lot No', 'ຄອນເທນເນີ ທີ', 'ຈຳນວນໜ່ວຍ'], 'Containers');
+  add(coolerRows, ['Lot No'], 'Coolers');
+  const safe = lot ? String(lot).replace(/[^\w\-]+/g, '_') : 'all';
+  XLSX.writeFile(wb, `lot-history-${safe}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
 
     // ຂັ້ນ 2: ຮັບເຂົ້າສາງ (ສົ່ງເປັນກ້ອນລະ 10 ລາຍການ)
     async function ncReceiveSelected() {

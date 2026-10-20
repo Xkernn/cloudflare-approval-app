@@ -1469,6 +1469,7 @@ const ROUTE_ROLES = {
   "/api/admin/new-cooler-receipts": ROLE_WH, // ບັນທຶກ/ເບິ່ງ ລ໋ອດ + ຄອນເທນເນີ ຂອງຕູ້ທີ່ຮັບເຂົ້າສາງ (warehouse ໃຊ້ໄດ້)
   "/api/admin/new-cooler-receipts/assign": ROLE_WH, // ໃສ່ລ໋ອດໃຫ້ຕູ້ທີ່ຮັບເຂົ້າສາງແລ້ວ
   "/api/admin/new-cooler-receipts/close": ROLE_WH, // ປິດລ໋ອດ (ເພີ່ມຕູ້ເຂົ້າລ໋ອດບໍ່ໄດ້ອີກ)
+  "/api/admin/new-cooler-receipts/export": ROLE_WH, // Export ປະຫວັດລ໋ອດ + ຕູ້ໃນລ໋ອດ ເປັນ Excel (ບໍ່ຈຳກັດ 200 ລ໋ອດ)
   // ຖ້ຽວລົດສົ່ງຕູ້ຕ່າງແຂວງ: warehouse ໃຊ້ໄດ້ທັງໜ້າ ຍົກເວັ້ນ "ລຶບຖ້ຽວ" (/api/admin/ship-trips/delete ຍັງເປັນ admin ເທົ່ານັ້ນ)
   "/api/admin/ship-trips": ROLE_WH,
   "/api/admin/ship-trips/update": ROLE_WH,
@@ -4255,6 +4256,31 @@ export default {
     }
 
     // ໃສ່ລ໋ອດໃຫ້ຕູ້ທີ່ "ຮັບເຂົ້າສາງແລ້ວ" ແຕ່ຍັງບໍ່ມີລ໋ອດ { receipt_id, ids } (ຕູ້ທີ່ມີລ໋ອດແລ້ວ ຈະບໍ່ຖືກຍ້າຍໄປລ໋ອດອື່ນ; ລ໋ອດທີ່ປິດແລ້ວເພີ່ມບໍ່ໄດ້)
+    // Export ປະຫວັດລ໋ອດ: ?lot=ເລກລ໋ອດ (ບໍ່ໃສ່ = ທຸກລ໋ອດ) -> { receipts: [...], coolers: [...] } ໃຫ້ໜ້າເວັບສ້າງ Excel
+    if (url.pathname === "/api/admin/new-cooler-receipts/export" && request.method === "GET") {
+      try {
+        const lot = (url.searchParams.get("lot") || "").trim();
+        const rb = lot ? [lot] : [];
+        const { results: receipts } = await env.DB.prepare(
+          `SELECT r.*, w.name AS warehouse_name
+             FROM new_cooler_receipts r
+             LEFT JOIN wh_warehouses w ON w.id = r.warehouse_id
+            ${lot ? "WHERE r.lot_no = ? COLLATE NOCASE" : ""}
+            ORDER BY r.lot_no COLLATE NOCASE, r.id`
+        ).bind(...rb).all();
+        const { results: coolers } = await env.DB.prepare(
+          `SELECT n.lot_no, n.cooler_brand, n.cooler_type, n.cooler_model, n.qr_code, n.serial_number, n.capex, n.notes, n.status, n.received_by, w.name AS warehouse_name
+             FROM new_coolers n
+             LEFT JOIN wh_warehouses w ON w.id = n.received_warehouse_id
+            ${lot ? "WHERE n.lot_no = ? COLLATE NOCASE" : "WHERE n.lot_no IS NOT NULL AND n.lot_no != ''"}
+            ORDER BY n.lot_no COLLATE NOCASE, n.id`
+        ).bind(...rb).all();
+        return Response.json({ receipts: receipts || [], coolers: coolers || [] });
+      } catch (e) {
+        console.error("/api/admin/new-cooler-receipts/export", e);
+        return Response.json({ error: "Export ປະຫວັດລ໋ອດບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
     if (url.pathname === "/api/admin/new-cooler-receipts/assign" && request.method === "POST") {
       try {
         const { receipt_id, ids } = await request.json();
