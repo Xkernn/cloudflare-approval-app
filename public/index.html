@@ -1221,6 +1221,16 @@
     .pb-tag.ok { background: var(--success-soft); color: var(--success); }
 
     /* ===== Modern shipping UI: ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ແຜນສົ່ງຕູ້ / ງົບຕ່າງແຂວງ (CSS ລ້ວນ + motion ເບົາ) ===== */
+    /* ແຈ້ງເຕືອນພິເສດ: ກະພິບ/ສັ່ນ ເພື່ອດຶງຄວາມສົນໃຈ */
+    @keyframes saGlow { 0%,100% { box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 0 0 rgba(239,68,68,.65); } 50% { box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 0 10px rgba(239,68,68,0); } }
+    @keyframes saBlink { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(1.18); } }
+    @keyframes saBell { 0%,60%,100% { transform: rotate(0); } 10%,30%,50% { transform: rotate(-14deg); } 20%,40% { transform: rotate(14deg); } }
+    @keyframes saStripe { from { background-position: 0 0; } to { background-position: 28px 0; } }
+    #saOvCard { animation: csRise .35s var(--ease-out) backwards, saGlow 1.6s ease-out infinite .35s; border-top: 6px solid #ef4444; position: relative; }
+    #saOvCard::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; height: 6px; border-radius: 18px 18px 0 0;
+      background: repeating-linear-gradient(135deg, #ef4444 0 14px, #f59e0b 14px 28px); background-size: 28px 6px; animation: saStripe .8s linear infinite; }
+    #saOvIcon { display: inline-block; animation: saBlink 1s ease-in-out infinite, saBell 2.4s ease-in-out infinite; color: #dc2626; transform-origin: 50% 20%; }
+    @media (prefers-reduced-motion: reduce) { #saOvCard, #saOvCard::before, #saOvIcon { animation: none !important; } }
     @keyframes csRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     @keyframes csGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
     .nc-ro, .nc-ro:disabled { background:#e5e7eb !important; color:#6b7280 !important; cursor:not-allowed; }
@@ -6331,9 +6341,9 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
   <!-- ==================== ແຈ້ງເຕືອນພິເສດ: ໜ້າເຕັມຈໍບັງຄັບຜູ້ໃຊ້ (MDE) ==================== -->
   <div id="specialAlertOverlay" class="hidden" role="alertdialog" aria-modal="true" style="position:fixed; inset:0; z-index:6000; background:rgba(15,23,42,.92); align-items:center; justify-content:center; padding:16px; overflow:auto;">
-    <div style="background:#fff; border-radius:18px; max-width:460px; width:100%; padding:22px 20px; box-shadow:0 20px 60px rgba(0,0,0,.4);">
+    <div id="saOvCard" style="background:#fff; border-radius:18px; max-width:460px; width:100%; padding:22px 20px; box-shadow:0 20px 60px rgba(0,0,0,.4);">
       <div style="display:flex; align-items:center; gap:10px; color:#b45309; font-weight:700; font-size:13px; letter-spacing:.2px;">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size:20px;"></i> ແຈ້ງເຕືອນພິເສດ — ຕ້ອງດຳເນີນການ
+        <i id="saOvIcon" class="fa-solid fa-triangle-exclamation" style="font-size:20px;"></i> ແຈ້ງເຕືອນພິເສດ — ຕ້ອງດຳເນີນການ
       </div>
       <div id="saOvBody" style="margin-top:12px;"></div>
       <div id="saOvActions" style="display:flex; flex-direction:column; gap:8px; margin-top:16px;"></div>
@@ -8388,15 +8398,62 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         if (a.rule === 'manual' || a.can_ack) acts.push(`<button type="button" class="btn-submit" style="margin-top:0; background:#15803d;" onclick="specialAlertAck(${a.id})"><i class="fa-solid fa-check mr-1"></i> ຮັບຊາບແລ້ວ</button>`);
       });
       document.getElementById('saOvActions').innerHTML = acts.join('');
-      document.getElementById('specialAlertOverlay').classList.remove('hidden');
-      document.getElementById('specialAlertOverlay').style.display = 'flex';
+      const ov = document.getElementById('specialAlertOverlay');
+      const wasHidden = ov.classList.contains('hidden');
+      ov.classList.remove('hidden');
+      ov.style.display = 'flex';
+      if (wasHidden) { saPlayAlert(); saStartRepeat(); }
     }
     function hideSpecialAlertOverlay() {
       const ov = document.getElementById('specialAlertOverlay');
       if (!ov) return;
       ov.classList.add('hidden');
       ov.style.display = '';
+      saStopRepeat();
     }
+
+    /* ---- ສຽງ + ສັ່ນ ຂອງແຈ້ງເຕືອນພິເສດ (WebAudio ບໍ່ຕ້ອງມີໄຟລ໌ສຽງ) ----
+       ບຣາວເຊີບາງຕົວບໍ່ໃຫ້ເຫຼ່ນສຽງຈົນກວ່າຜູ້ໃຊ້ຈະແຕະໜ້າຈໍ 1 ຄັ້ງ — ຖ້າຖືກບລັອກ ຈະເຫຼ່ນໃຫ້ໃນການແຕະຄັ້ງທຳອິດ ແລະ ຄັ້ງຕໍ່ໄປຕາມຮອບ */
+    let saAudioCtx = null, saRepeatTimer = null, saPendingPlay = false;
+    // ສຽງເຕືອນເປີດຕະຫຼອດ — MDE ປິດບໍ່ໄດ້ (ບັງຄັບ)
+    function saBeepSequence(ctx) {
+      // 2 ໂທນສູງ-ຕ່ຳ ຊ້ຳ 2 ຮອບ (ສຽງເຕືອນ)
+      const t0 = ctx.currentTime + 0.02;
+      [[880, 0], [660, 0.18], [880, 0.5], [660, 0.68]].forEach(([f, off]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0 + off);
+        g.gain.exponentialRampToValueAtTime(0.18, t0 + off + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.16);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t0 + off); o.stop(t0 + off + 0.18);
+      });
+    }
+    function saPlayAlert() {
+      try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) { /* ignore */ }
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!saAudioCtx) saAudioCtx = new AC();
+        const run = () => { saPendingPlay = false; saBeepSequence(saAudioCtx); };
+        if (saAudioCtx.state === 'running') { run(); return; }
+        saAudioCtx.resume().then(() => { if (saAudioCtx.state === 'running') run(); else saPendingPlay = true; }).catch(() => { saPendingPlay = true; });
+      } catch (e) { saPendingPlay = true; }
+    }
+    function saStartRepeat() {
+      saStopRepeat();
+      saRepeatTimer = setInterval(() => {
+        const ov = document.getElementById('specialAlertOverlay');
+        if (!ov || ov.classList.contains('hidden')) { saStopRepeat(); return; }
+        if (!document.hidden) saPlayAlert();
+      }, 15000);
+    }
+    function saStopRepeat() { if (saRepeatTimer) { clearInterval(saRepeatTimer); saRepeatTimer = null; } saPendingPlay = false; }
+    // ຖ້າສຽງຖືກບລັອກ (ຍັງບໍ່ເຄີຍແຕະໜ້າຈໍ) -> ເຫຼ່ນຕອນແຕະຄັ້ງທຳອິດ
+    document.addEventListener('pointerdown', () => {
+      const ov = document.getElementById('specialAlertOverlay');
+      if (saPendingPlay && ov && !ov.classList.contains('hidden')) saPlayAlert();
+    }, { passive: true });
     function specialAlertGo(id) {
       const a = specialAlerts.find(x => Number(x.id) === Number(id));
       if (!a || !a.action_view) return;
