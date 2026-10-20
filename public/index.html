@@ -2800,7 +2800,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <!-- แท็บ 3: ตารางຈັດການງົບປະມານ -->
         <div id="admin-sec-budget" class="content-card hidden">
           <div style="padding: 16px 16px 0 16px;">
-            <input type="text" id="budgetSearchInput" class="form-control" placeholder="ຄົ້ນຫາຈາກ Team..." oninput="filterBudgetTable()" style="max-width: 320px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <input type="text" id="budgetSearchInput" class="form-control" placeholder="ຄົ້ນຫາຈາກ Team..." oninput="filterBudgetTable()" style="max-width: 320px;">
+              <button type="button" id="budgetViewActiveBtn" class="btn-act btn-approve" onclick="setBudgetView(false)">ງົບທີ່ໃຊ້ງານ</button>
+              <button type="button" id="budgetViewArchivedBtn" class="btn-act" onclick="setBudgetView(true)"><i class="fa-solid fa-box-archive mr-1"></i> Archive</button>
+            </div>
+            <div id="budgetArchiveHint" class="hidden" style="font-size:12.5px; color:var(--text-muted); margin-top:8px;">ງົບທີ່ເກັບເຂົ້າ Archive ແລ້ວ (ບໍ່ຖືກນັບໃນໂຄຕ້າ). ຍອດ "ໃຊ້ໄປແລ້ວ" ແມ່ນຄ່າຕອນ archive.</div>
           </div>
           <div class="table-container">
             <table>
@@ -6338,6 +6343,24 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     </div>
   </div>
 
+  <!-- ==================== MODAL: Archive ງົບ ==================== -->
+  <div id="budgetArchiveModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 10px;"><i class="fa-solid fa-box-archive mr-2"></i>Archive ງົບ</h3>
+      <input type="hidden" id="budgetArchiveId">
+      <div id="budgetArchiveInfo" style="font-size:13.5px; color:#475569; margin-bottom:12px;"></div>
+      <div class="form-group">
+        <label>ຊື່ຮອບງົບ (ເຊັ່ນ ປີ 2026)</label>
+        <input type="text" id="budgetArchiveLabel" class="form-control" style="padding-left:14px;" maxlength="40">
+      </div>
+      <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 12px;">ງົບນີ້ຈະບໍ່ຖືກນັບອີກ ແລະ ເມື່ອເພີ່ມງົບໃໝ່ (Team + Brand + Type ດຽວກັນ) ຈະເລີ່ມນັບໃຊ້ໄປຈາກ 0. ຄຳຂໍເກົ່າບໍ່ຖືກລຶບ.</p>
+      <div style="display:flex; gap:10px;">
+        <button onclick="confirmArchiveBudget()" id="budgetArchiveSaveBtn" class="btn-submit" style="margin-top:0;">Archive</button>
+        <button onclick="document.getElementById('budgetArchiveModal').classList.add('hidden')" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:0;">ຍົກເລີກ</button>
+      </div>
+    </div>
+  </div>
+
   <div id="announcementModal" class="modal-overlay hidden">
     <div class="modal-card">
       <h3 id="announcementModalTitle" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ປະກາດຂ່າວໃໝ່</h3>
@@ -7077,6 +7100,13 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <label>ໂຄຕ້າ (ຈຳນວນທີ່ເບີກໄດ້ສູງສຸດ)</label>
         <div class="input-wrapper"><i class="fa-solid fa-hashtag"></i>
           <input type="number" min="0" id="editBudgetQuota" class="form-control" placeholder="ເຊັ່ນ 10">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>ຮອບງົບ / ປີ <span style="font-weight:400; color:#64748b;">(ບໍ່ບັງຄັບ — ສະແດງໃຫ້ User ເຫັນ)</span></label>
+        <div class="input-wrapper"><i class="fa-solid fa-calendar"></i>
+          <input type="text" maxlength="40" id="editBudgetPeriod" class="form-control" placeholder="ເຊັ່ນ 2027">
         </div>
       </div>
 
@@ -19839,12 +19869,22 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     /* ===================== Budget Management (Admin) ===================== */
     let allBudgetsData = [];
+    let budgetShowArchived = false;
+    function setBudgetView(archived) {
+      budgetShowArchived = !!archived;
+      document.getElementById('budgetViewActiveBtn').classList.toggle('btn-approve', !archived);
+      document.getElementById('budgetViewArchivedBtn').classList.toggle('btn-approve', !!archived);
+      document.getElementById('budgetArchiveHint').classList.toggle('hidden', !archived);
+      const add = document.getElementById('btnAddBudget'); if (add) add.style.display = archived ? 'none' : '';
+      loadBudgetTable();
+    }
 
     async function loadBudgetTable() {
       const tbody = document.getElementById('budgetTableBody');
       try {
-        const res = await fetch(`/api/budgets?userId=${currentUser.id}`);
+        const res = await fetch(`/api/budgets?userId=${currentUser.id}${budgetShowArchived ? '&archived=1' : ''}`);
         allBudgetsData = await res.json();
+        if (!res.ok || !Array.isArray(allBudgetsData)) throw new Error('load');
         document.getElementById('budgetSearchInput').value = '';
         renderBudgetTable(allBudgetsData);
       } catch (err) {
@@ -19872,14 +19912,18 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const remaining = b.quota - b.used;
         return `
           <tr ${budgetItemRowAttrs('admin', g)}>
-            <td>${esc(b.cooler_brand || 'ທຸກຍີ່ຫໍ້')}</td>
+            <td>${esc(b.cooler_brand || 'ທຸກຍີ່ຫໍ້')}${b.period_label && !budgetShowArchived ? ` <span class="badge badge-default">${esc(b.period_label)}</span>` : ''}</td>
             <td>${esc(b.cooler_type || 'ທຸກປະເພດ')}</td>
             <td>${b.quota}</td>
             <td>${b.used}</td>
             <td><span class="badge ${remaining > 0 ? 'badge-approved' : 'badge-rejected'}">${remaining}</span></td>
             <td>
-              <button onclick="openEditBudgetModal(${b.id}, ${jsq(b.team || '')}, ${jsq(b.cooler_brand || '')}, ${jsq(b.cooler_type || '')}, ${b.quota})" class="btn-act btn-edit">ແກ້ໄຂ</button>
-              <button onclick="deleteBudget(${b.id})" class="btn-act btn-delete">ລຶບ</button>
+              ${budgetShowArchived
+                ? `<span class="badge badge-default" title="${esc(String(b.archived_at || ''))}">${esc(b.period_label || 'Archive')}</span>
+                   <button onclick="deleteBudget(${b.id})" class="btn-act btn-delete">ລຶບ</button>`
+                : `<button onclick="openEditBudgetModal(${b.id}, ${jsq(b.team || '')}, ${jsq(b.cooler_brand || '')}, ${jsq(b.cooler_type || '')}, ${b.quota}, ${jsq(b.period_label || '')})" class="btn-act btn-edit">ແກ້ໄຂ</button>
+                   <button onclick="openArchiveBudgetModal(${b.id}, ${jsq(b.team || '')}, ${jsq(b.cooler_brand || '')}, ${jsq(b.cooler_type || '')}, ${b.quota}, ${b.used}, ${jsq(b.period_label || '')})" class="btn-act ${remaining <= 0 ? 'btn-approve' : ''}" title="ເກັບເຂົ້າ Archive"><i class="fa-solid fa-box-archive"></i> Archive</button>
+                   <button onclick="deleteBudget(${b.id})" class="btn-act btn-delete">ລຶບ</button>`}
             </td>
           </tr>`;
       }).join('')).join('');
@@ -23991,6 +24035,16 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     let tbData = [], tbUpdated = null, tbCollapsed = new Set();
     const tbState = { group: 'overview', q: '', f: 'all' };
 
+    // ປ້າຍຮອບງົບ (ປີ) — ໃຫ້ User ຮູ້ວ່າງົບທີ່ເຫັນເປັນຮອບໃດ ແລະ ເລີ່ມນັບແຕ່ເມື່ອໃດ
+    const bpTag = b => (b && b.period_label) ? ` · ຮອບ ${b.period_label}` : '';
+    function budgetPeriodChipHtml(list) {
+      const labels = [...new Set(list.map(b => b.period_label).filter(Boolean))];
+      const starts = list.map(b => b.period_start).filter(Boolean).sort();
+      if (!labels.length && !starts.length) return '';
+      const d = starts.length ? new Date(String(starts[starts.length - 1]).replace(' ', 'T') + 'Z') : null;
+      const since = d && !isNaN(d) ? ` · ເລີ່ມນັບ ${d.toLocaleDateString('en-GB')}` : '';
+      return `<span class="tb-chip-id tb-chip-period"><i class="fa-solid fa-calendar-days"></i>ຮອບງົບ ${esc(labels.length ? labels.join(', ') : 'ໃໝ່')}${since}</span>`;
+    }
     function tbCalc(quota, used) {
       const q = Number(quota) || 0, u = Number(used) || 0, r = q - u;
       const p = q > 0 ? Math.round(u / q * 100) : (u > 0 ? 100 : 0);
@@ -24057,6 +24111,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const brandOf = b => b.cooler_brand || 'ທຸກຍີ່ຫໍ້', typeOf = b => b.cooler_type || 'ທຸກປະເພດ';
 
       // hero: ແຖບລວມ + ຕົວເລກ
+      { const ch = document.getElementById('tbChips'); ch.querySelectorAll('.tb-chip-period').forEach(e => e.remove()); ch.insertAdjacentHTML('beforeend', budgetPeriodChipHtml(tbData)); }
       document.getElementById('tbLedger').innerHTML = `
         <div class="tb-gauge ${T.cls}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(T.p, 100)}"><i data-w="${Math.min(T.p, 100)}%" style="width:${animate ? '0' : Math.min(T.p, 100) + '%'}"></i></div>
         <div class="tb-stats">
@@ -24090,7 +24145,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!rows.length) {
         body.innerHTML = `<div class="tb-empty">ບໍ່ພົບລາຍການທີ່ກົງກັບການຄົ້ນຫາ</div>`;
       } else if (tbState.group === 'overview') {
-        body.innerHTML = budgetOverviewHtml(rows.map(x => ({ name: brandOf(x.b), sub: typeOf(x.b), q: Number(x.b.quota) || 0, u: Number(x.b.used) || 0 })));
+        body.innerHTML = budgetOverviewHtml(rows.map(x => ({ name: brandOf(x.b), sub: typeOf(x.b) + bpTag(x.b), q: Number(x.b.quota) || 0, u: Number(x.b.used) || 0 })));
       } else {
         const byType = tbState.group === 'type';
         const groups = groupBudgets(rows.map(x => x.b), byType ? typeOf : brandOf, byType ? typeOf : brandOf,
@@ -24106,7 +24161,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
                 <span class="tb-n"><i class="fa-solid fa-chevron-down tb-chev"></i>${esc(g.label)}<small>${g.items.length} ລາຍການ</small></span>${cells(gc, tbBar(gc, animate))}
               </button>
               <div${col ? ' hidden' : ''}>${g.items.map(b => { const c = tbCalc(b.quota, b.used);
-                return `<div class="tb-r"><span class="tb-n">${esc(byType ? brandOf(b) : typeOf(b))}</span>${cells(c, tbBar(c, animate))}</div>`; }).join('')}</div>
+                return `<div class="tb-r"><span class="tb-n">${esc((byType ? brandOf(b) : typeOf(b)) + bpTag(b))}</span>${cells(c, tbBar(c, animate))}</div>`; }).join('')}</div>
             </div>`;
           }).join('');
       }
@@ -24173,7 +24228,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const nWarn = scope.filter(x => x.c.s === 'warn').length;
       const nTeams = new Set(scope.map(x => x.b.team)).size;
 
-      document.getElementById('vteChips').innerHTML = `<span class="tb-chip-id"><i class="fa-solid fa-users"></i>${nTeams} ທີມ</span><span class="tb-chip-id"><i class="fa-solid fa-list"></i>${scope.length} ລາຍການ</span>`;
+      document.getElementById('vteChips').innerHTML = `<span class="tb-chip-id"><i class="fa-solid fa-users"></i>${nTeams} ທີມ</span><span class="tb-chip-id"><i class="fa-solid fa-list"></i>${scope.length} ລາຍການ</span>` + budgetPeriodChipHtml(scope.map(x => x.b));
       document.getElementById('vteLedger').innerHTML = `
         <div class="tb-gauge ${T.cls}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(T.p, 100)}"><i data-w="${Math.min(T.p, 100)}%" style="width:${animate ? '0' : Math.min(T.p, 100) + '%'}"></i></div>
         <div class="tb-stats">
@@ -24205,7 +24260,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         body.innerHTML = `<div class="tb-empty">ບໍ່ພົບລາຍການທີ່ກົງກັບການຄົ້ນຫາ</div>`;
       } else if (vteState.group === 'overview') {
         if (vteState.team) {
-          body.innerHTML = budgetOverviewHtml(rows.map(x => ({ name: brandOf(x.b), sub: typeOf(x.b), q: Number(x.b.quota) || 0, u: Number(x.b.used) || 0 })));
+          body.innerHTML = budgetOverviewHtml(rows.map(x => ({ name: brandOf(x.b), sub: typeOf(x.b) + bpTag(x.b), q: Number(x.b.quota) || 0, u: Number(x.b.used) || 0 })));
         } else {
           const byTeam = new Map();
           rows.forEach(x => {
@@ -24219,7 +24274,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const g = vteState.group;
         const keyFn = g === 'team' ? teamOf : (g === 'type' ? typeOf : brandOf);
         // ຊື່ແຖວລູກ: ຖ້າແຍກຕາມທີມ = Brand / Type · ຖ້າແຍກຕາມ Type/Brand = ທີມ + (Brand ຫຼື Type)
-        const childLabel = b => g === 'team' ? `${brandOf(b)} / ${typeOf(b)}` : `${teamOf(b)} · ${g === 'type' ? brandOf(b) : typeOf(b)}`;
+        const childLabel = b => (g === 'team' ? `${brandOf(b)} / ${typeOf(b)}` : `${teamOf(b)} · ${g === 'type' ? brandOf(b) : typeOf(b)}`) + bpTag(b);
         const colTitle = g === 'team' ? 'Brand / Type' : (g === 'type' ? 'ທີມ · Brand' : 'ທີມ · Type');
         const groups = groupBudgets(rows.map(x => x.b), keyFn, keyFn,
           (x, y) => budgetTextCompare(childLabel(x), childLabel(y))).sort((x, y) => budgetTextCompare(x.label, y.label));
@@ -25971,16 +26026,18 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       fillBudgetTeamSelect('');
       fillBrandTypeSelects('editBudgetBrand', 'editBudgetType', '', '', true);
       document.getElementById('editBudgetQuota').value = '';
+      document.getElementById('editBudgetPeriod').value = String(new Date().getFullYear());
       document.getElementById('budgetModal').classList.remove('hidden');
     }
 
-    async function openEditBudgetModal(id, team, cooler_brand, cooler_type, quota) {
+    async function openEditBudgetModal(id, team, cooler_brand, cooler_type, quota, periodLabel) {
       document.getElementById('budgetModalTitle').textContent = 'ແກ້ໄຂງົບປະມານ';
       document.getElementById('editBudgetId').value = id;
       if (!dbMdeList.length) await fetchMdeList();
       fillBudgetTeamSelect(team);
       fillBrandTypeSelects('editBudgetBrand', 'editBudgetType', cooler_brand, cooler_type, true);
       document.getElementById('editBudgetQuota').value = quota;
+      document.getElementById('editBudgetPeriod').value = periodLabel || '';
       document.getElementById('budgetModal').classList.remove('hidden');
     }
 
@@ -26003,7 +26060,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const res = await fetch('/api/admin/save-budget', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, team, cooler_brand, cooler_type, quota: parseInt(quota, 10) })
+        body: JSON.stringify({ id, team, cooler_brand, cooler_type, quota: parseInt(quota, 10), period_label: document.getElementById('editBudgetPeriod').value })
       });
 
       const data = await res.json();
@@ -26015,6 +26072,24 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }
     }
 
+    function openArchiveBudgetModal(id, team, brand, type, quota, used, periodLabel) {
+      document.getElementById('budgetArchiveId').value = id;
+      document.getElementById('budgetArchiveInfo').innerHTML = `<b>${esc(team)}</b> · ${esc(brand || 'ທຸກຍີ່ຫໍ້')} ${esc(type || '')}<br>ໂຄຕ້າ ${quota} · ໃຊ້ໄປແລ້ວ ${used} · ຄົງເຫຼືອ ${quota - used}`;
+      document.getElementById('budgetArchiveLabel').value = periodLabel || String(new Date().getFullYear());
+      document.getElementById('budgetArchiveModal').classList.remove('hidden');
+    }
+    async function confirmArchiveBudget() {
+      const btn = document.getElementById('budgetArchiveSaveBtn'); btn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/archive-budget', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: Number(document.getElementById('budgetArchiveId').value), label: document.getElementById('budgetArchiveLabel').value }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { alert(d.error || 'Archive ບໍ່ສຳເລັດ'); return; }
+        document.getElementById('budgetArchiveModal').classList.add('hidden');
+        loadBudgetTable();
+      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      finally { btn.disabled = false; }
+    }
     async function deleteBudget(id) {
       if (!await appConfirm('ທ່ານຕ້ອງການລຶບງົບປະມານລາຍການນີ້ຫຼືບໍ່?')) return;
 

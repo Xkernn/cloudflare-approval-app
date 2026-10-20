@@ -54,23 +54,22 @@ function budgetModelFor(...texts) {
 }
 async function computeStockBudgetAlerts(env) {
   const budgets = (await env.DB.prepare(
-    `SELECT IFNULL(cooler_brand,'') AS brand, IFNULL(cooler_type,'') AS type, SUM(quota) AS total FROM budgets GROUP BY 1, 2`
-  ).all()).results || [];
-  const approved = (await env.DB.prepare(
-    `SELECT IFNULL(cooler_brand,'') AS brand, IFNULL(cooler_type,'') AS type, COUNT(*) AS cnt FROM asset_requests
-      WHERE status = 'approved' AND IFNULL(asset_condition,'new') = 'new' GROUP BY 1, 2`
+    `SELECT IFNULL(cooler_brand,'') AS brand, IFNULL(cooler_type,'') AS type, SUM(quota) AS total,
+            SUM((SELECT COUNT(*) FROM asset_requests r WHERE r.status = 'approved' AND IFNULL(r.asset_condition,'new') = 'new'
+                  AND r.team = budgets.team AND IFNULL(r.cooler_brand,'') = IFNULL(budgets.cooler_brand,'') AND IFNULL(r.cooler_type,'') = IFNULL(budgets.cooler_type,'')
+                  AND (budgets.period_start IS NULL OR r.requested_at >= budgets.period_start))) AS approved_in_period
+       FROM budgets WHERE archived_at IS NULL GROUP BY 1, 2`
   ).all()).results || [];
   const stock = (await env.DB.prepare(
     `SELECT IFNULL(cooler_brand,'') AS brand, REPLACE(REPLACE(UPPER(IFNULL(cooler_model,'')), ' ', ''), '-', '_') AS model, COUNT(*) AS cnt
        FROM warehouse_stock WHERE status = 'in_warehouse' AND IFNULL(cooler_status,'new') = 'new' GROUP BY 1, 2`
   ).all()).results || [];
-  const apprMap = {}; for (const r of approved) apprMap[r.brand + '\u0001' + r.type] = r.cnt;
   const stockMap = {}; for (const r of stock) stockMap[r.brand + '\u0001' + r.model] = r.cnt;
   const alerts = [];
   for (const b of budgets) {
     const model = budgetModelFor(b.type);
     if (!model) continue;
-    const outstanding = Math.max((b.total || 0) - (apprMap[b.brand + '\u0001' + b.type] || 0), 0);
+    const outstanding = Math.max((b.total || 0) - (b.approved_in_period || 0), 0);
     const inStock = stockMap[b.brand + '\u0001' + model] || 0;
     if (outstanding > 0 && inStock < outstanding) {
       alerts.push({ brand: b.brand, type: b.type, model, in_stock: inStock, outstanding, short: outstanding - inStock });
@@ -860,19 +859,21 @@ async function getBudgetUsed(env, team, brand, type) {
   const row = await env.DB.prepare(
     `SELECT COUNT(*) AS cnt FROM asset_requests
      WHERE status IN ('pending','approved') AND IFNULL(asset_condition,'new') = 'new'
-     AND team = ? AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '')`
+     AND team = ?1 AND IFNULL(cooler_brand,'') = IFNULL(?2, '') AND IFNULL(cooler_type,'') = IFNULL(?3, '')
+     AND requested_at >= COALESCE((SELECT period_start FROM budgets WHERE team = ?1 AND IFNULL(cooler_brand,'') = IFNULL(?2, '') AND IFNULL(cooler_type,'') = IFNULL(?3, '') AND archived_at IS NULL LIMIT 1), '0000-01-01')`
   ).bind(team, brand ?? null, type ?? null).first();
   return (row && row.cnt) || 0;
 }
 
-async function notifyTeamBudgetAvailable(env, { team, brand, type, quota, remaining, freed }) {
+async function notifyTeamBudgetAvailable(env, { team, brand, type, quota, remaining, freed, newPeriod, periodLabel }) {
   const users = await env.DB.prepare(
     "SELECT id FROM users WHERE team = ? AND role = 'user' AND status = 'approved'"
   ).bind(team).all();
   const label = [brand, type].filter(Boolean).join(' ') || 'Asset';
   const payload = {
-    title: freed ? "ງົບປະມານກັບມາເບີກໄດ້ແລ້ວ" : "ມີງົບປະມານໃໝ່ສຳລັບທີມຂອງທ່ານ",
-    body: `${label}\nເຫຼືອເບີກໄດ້ ${remaining} ຕູ້ (ໂຄຕ້າທັງໝົດ ${quota})`,
+    title: freed ? "ງົບປະມານກັບມາເບີກໄດ້ແລ້ວ"
+      : (newPeriod ? `ງົບປະມານຮອບໃໝ່ເປີດແລ້ວ${periodLabel ? ' (' + periodLabel + ')' : ''}` : "ມີງົບປະມານໃໝ່ສຳລັບທີມຂອງທ່ານ"),
+    body: `${label}\n${newPeriod ? 'ເລີ່ມນັບໃໝ່ ' : ''}ເຫຼືອເບີກໄດ້ ${remaining} ຕູ້ (ໂຄຕ້າທັງໝົດ ${quota})`,
     url: "teamBudget",
   };
   for (const u of (users.results || [])) {
@@ -884,7 +885,7 @@ async function notifyTeamBudgetAvailable(env, { team, brand, type, quota, remain
 async function notifyBudgetFreedIfWasFull(env, team, brand, type) {
   try {
     const budget = await env.DB.prepare(
-      "SELECT quota FROM budgets WHERE team = ? AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '')"
+      "SELECT quota FROM budgets WHERE team = ? AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '') AND archived_at IS NULL"
     ).bind(team, brand ?? null, type ?? null).first();
     if (!budget) return;
     const usedAfter = await getBudgetUsed(env, team, brand, type);
@@ -8443,16 +8444,26 @@ export default {
 
       const usedSubquery = `(SELECT COUNT(*) FROM asset_requests r WHERE r.status IN ('pending','approved')
         AND IFNULL(r.asset_condition, 'new') = 'new'
-        AND r.team = b.team AND IFNULL(r.cooler_brand,'') = IFNULL(b.cooler_brand,'') AND IFNULL(r.cooler_type,'') = IFNULL(b.cooler_type,''))`;
+        AND r.team = b.team AND IFNULL(r.cooler_brand,'') = IFNULL(b.cooler_brand,'') AND IFNULL(r.cooler_type,'') = IFNULL(b.cooler_type,'')
+        AND (b.period_start IS NULL OR r.requested_at >= b.period_start))`;
+
+      // ?archived=1 -> ງົບທີ່ archive ແລ້ວ (ສະເພາະ admin/ຜູ້ເບິ່ງໄດ້ທັງໝົດ) — ຍອດ "ໃຊ້ໄປ" ໃຊ້ຄ່າທີ່ບັນທຶກຕອນ archive
+      if (url.searchParams.get("archived") === "1") {
+        if (!canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດ" }, { status: 403 });
+        const { results: ar } = await env.DB.prepare(
+          `SELECT b.*, IFNULL(b.archived_used, 0) AS used FROM budgets b WHERE b.archived_at IS NOT NULL ORDER BY b.archived_at DESC, b.team, b.cooler_brand`
+        ).all();
+        return Response.json(ar || []);
+      }
 
       let results;
       if (canViewAll(requester.role)) {
         ({ results } = await env.DB.prepare(
-          `SELECT b.*, ${usedSubquery} AS used FROM budgets b ORDER BY b.team, b.cooler_brand`
+          `SELECT b.*, ${usedSubquery} AS used FROM budgets b WHERE b.archived_at IS NULL ORDER BY b.team, b.cooler_brand`
         ).all());
       } else {
         ({ results } = await env.DB.prepare(
-          `SELECT b.*, ${usedSubquery} AS used FROM budgets b WHERE b.team = ? ORDER BY b.cooler_brand`
+          `SELECT b.*, ${usedSubquery} AS used FROM budgets b WHERE b.archived_at IS NULL AND b.team = ? ORDER BY b.cooler_brand`
         ).bind(requester.team).all());
       }
       return Response.json(results || []);
@@ -8461,13 +8472,14 @@ export default {
     // 7b. Admin Save Budget API (เพิ่ม / แก้ไข)
     if (url.pathname === "/api/admin/save-budget" && request.method === "POST") {
       try {
-        const { id, team, cooler_brand, cooler_type, quota } = await request.json();
+        const { id, team, cooler_brand, cooler_type, quota, period_label } = await request.json();
+        const periodLabel = String(period_label || "").trim().slice(0, 40) || null;
         if (!team || quota === undefined || quota === null || quota === '') {
           return Response.json({ error: "ກະລຸນາປ້ອນ Team ແລະ ໂຄຕ້າ (ຈຳນວນທີ່ເບີກໄດ້) ໃຫ້ຄົບ" }, { status: 400 });
         }
 
         // ແຈ້ງເຕືອນ user ຂອງທີມ ຖ້າງົບເພີ່ມ/ມີໃໝ່ ແລະ ຍັງເຫຼືອໃຫ້ເບີກ (ຄິດຫຼັງບັນທຶກແລ້ວ ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມ)
-        const notifyBudgetAdded = (oldRow) => {
+        const notifyBudgetAdded = (oldRow, newPeriod) => {
           const newQuota = Number(quota);
           if (!Number.isFinite(newQuota) || newQuota <= 0) return;
           const identityChanged = !oldRow
@@ -8480,7 +8492,7 @@ export default {
             const used = await getBudgetUsed(env, team, cooler_brand, cooler_type);
             const remaining = newQuota - used;
             if (remaining > 0) {
-              await notifyTeamBudgetAvailable(env, { team, brand: cooler_brand, type: cooler_type, quota: newQuota, remaining, freed: false });
+              await notifyTeamBudgetAvailable(env, { team, brand: cooler_brand, type: cooler_type, quota: newQuota, remaining, freed: false, newPeriod: !!newPeriod, periodLabel });
             }
           })());
         };
@@ -8488,26 +8500,54 @@ export default {
         if (id) {
           const oldRow = await env.DB.prepare("SELECT team, cooler_brand, cooler_type, quota FROM budgets WHERE id = ?").bind(id).first();
           await env.DB.prepare(
-            "UPDATE budgets SET team = ?, cooler_brand = ?, cooler_type = ?, quota = ? WHERE id = ?"
-          ).bind(team, cooler_brand, cooler_type, quota, id).run();
+            "UPDATE budgets SET team = ?, cooler_brand = ?, cooler_type = ?, quota = ?, period_label = ? WHERE id = ?"
+          ).bind(team, cooler_brand, cooler_type, quota, periodLabel, id).run();
           if (oldRow) notifyBudgetAdded(oldRow);
           return Response.json({ message: "ແກ້ໄຂງົບປະມານຮຽບຮ້ອຍແລ້ວ" });
         } else {
           // ກັນກົດຊ້ຳ: ຖ້າງົບ Team/Brand/Type/ໂຄຕ້າ ດຽວກັນ ຖືກເພີ່ມພາຍໃນ 30 ວິນາທີ ຈະບໍ່ເພີ່ມແຖວຊ້ຳ ແລະ ບໍ່ແຈ້ງເຕືອນຊ້ຳ
           const budIns = await env.DB.prepare(
-            `INSERT INTO budgets (team, cooler_brand, cooler_type, quota)
-             SELECT ?, ?, ?, ?
+            // period_start = ເວລາ archive ຫຼ້າສຸດຂອງງົບເກົ່າ (Team/Brand/Type ດຽວກັນ) -> ງົບໃໝ່ເລີ່ມນັບຈາກ 0 ບໍ່ຊ້ອນກັບຍອດຮອບກ່ອນ
+            `INSERT INTO budgets (team, cooler_brand, cooler_type, quota, period_label, period_start)
+             SELECT ?1, ?2, ?3, ?4, ?5,
+                    (SELECT MAX(archived_at) FROM budgets WHERE team = ?1 AND IFNULL(cooler_brand, '') = IFNULL(?2, '') AND IFNULL(cooler_type, '') = IFNULL(?3, '') AND archived_at IS NOT NULL)
               WHERE NOT EXISTS (
                 SELECT 1 FROM budgets
-                 WHERE team = ? AND IFNULL(cooler_brand, '') = IFNULL(?, '') AND IFNULL(cooler_type, '') = IFNULL(?, '')
-                   AND quota = ? AND created_at >= datetime('now', '-30 seconds'))`
-          ).bind(team, cooler_brand, cooler_type, quota, team, cooler_brand, cooler_type, quota).run();
-          if (budIns.meta && budIns.meta.changes) notifyBudgetAdded(null);
+                 WHERE team = ?1 AND IFNULL(cooler_brand, '') = IFNULL(?2, '') AND IFNULL(cooler_type, '') = IFNULL(?3, '')
+                   AND quota = ?4 AND archived_at IS NULL AND created_at >= datetime('now', '-30 seconds'))`
+          ).bind(team, cooler_brand, cooler_type, quota, periodLabel).run();
+          if (budIns.meta && budIns.meta.changes) {
+            // ງົບຮອບໃໝ່ = ມີງົບ archive ຂອງ Team/Brand/Type ດຽວກັນມາກ່ອນ (ຫຼື admin ໃສ່ຊື່ຮອບ) -> ແຈ້ງເຕືອນວ່າ "ງົບຮອບໃໝ່ເປີດແລ້ວ"
+            const prev = await env.DB.prepare(
+              "SELECT 1 AS x FROM budgets WHERE team = ? AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '') AND archived_at IS NOT NULL LIMIT 1"
+            ).bind(team, cooler_brand, cooler_type).first();
+            notifyBudgetAdded(null, !!prev || !!periodLabel);
+          }
           return Response.json({ message: "ເພີ່ມງົບປະມານໃໝ່ຮຽບຮ້ອຍແລ້ວ" });
         }
       } catch (e) {
         console.error("/api/admin/save-budget", e);
         return Response.json({ error: "ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້" }, { status: 500 });
+      }
+    }
+
+    // 7b-2. Admin Archive Budget — ເກັບງົບທີ່ໃຊ້ໝົດ/ໝົດປີ ເຂົ້າ Archive (ບໍ່ຖືກນັບອີກ) ເພື່ອເພີ່ມງົບຮອບໃໝ່ (Team/Brand/Type ດຽວກັນ) ໂດຍບໍ່ຊ້ອນ
+    if (url.pathname === "/api/admin/archive-budget" && request.method === "POST") {
+      try {
+        const { id, label } = await request.json();
+        if (!id) return Response.json({ error: "ບໍ່ພົບລາຍການ" }, { status: 400 });
+        const row = await env.DB.prepare("SELECT team, cooler_brand, cooler_type, period_start, period_label, archived_at FROM budgets WHERE id = ?").bind(id).first();
+        if (!row) return Response.json({ error: "ບໍ່ພົບງົບນີ້" }, { status: 404 });
+        if (row.archived_at) return Response.json({ error: "ງົບນີ້ຖືກ archive ແລ້ວ" }, { status: 409 });
+        const used = await getBudgetUsed(env, row.team, row.cooler_brand, row.cooler_type);
+        const lbl = String(label || "").trim().slice(0, 40) || row.period_label || String(new Date().getUTCFullYear());
+        await env.DB.prepare(
+          "UPDATE budgets SET archived_at = CURRENT_TIMESTAMP, archived_used = ?, period_label = ? WHERE id = ? AND archived_at IS NULL"
+        ).bind(used, lbl, id).run();
+        return Response.json({ message: "Archive ງົບຮຽບຮ້ອຍແລ້ວ — ເພີ່ມງົບຮອບໃໝ່ໄດ້ເລີຍ (ເລີ່ມນັບຈາກ 0)" });
+      } catch (e) {
+        console.error("/api/admin/archive-budget", e);
+        return Response.json({ error: "Archive ບໍ່ສຳເລັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_budget_archive.sql ກະລຸນາຮັນກ່ອນ)" }, { status: 500 });
       }
     }
 
@@ -8519,12 +8559,12 @@ export default {
 
         // ດຶງຂໍ້ມູນໄວ້ກ່ອນລຶບ ເພື່ອແຈ້ງເຕືອນທີມທີ່ກ່ຽວຂ້ອງວ່າງົບປະມານນີ້ຖືກເອົາອອກແລ້ວ
         const budgetRow = await env.DB.prepare(
-          "SELECT team, cooler_brand, cooler_type FROM budgets WHERE id = ?"
+          "SELECT team, cooler_brand, cooler_type, archived_at FROM budgets WHERE id = ?"
         ).bind(id).first();
 
         await env.DB.prepare("DELETE FROM budgets WHERE id = ?").bind(id).run();
 
-        if (budgetRow) {
+        if (budgetRow && !budgetRow.archived_at) { // ລຶບງົບທີ່ archive ແລ້ວ ບໍ່ແຈ້ງເຕືອນທີມ
           const label = [budgetRow.cooler_brand, budgetRow.cooler_type].filter(Boolean).join(' ') || 'Asset';
           runInBackground(ctx, (async () => {
             const users = await env.DB.prepare(
@@ -8845,7 +8885,7 @@ export default {
         // (ນັບຄຳຂໍທີ່ຍັງ pending ນຳ ບໍ່ແມ່ນນັບສະເພາະ approved - ຕັດງົບທັນທີທີ່ຍື່ນຄຳຂໍ ບໍ່ຕ້ອງລໍຖ້າ admin ອະນຸມັດ)
         if (condition === 'new') {
           const budgetRow = await env.DB.prepare(
-            "SELECT * FROM budgets WHERE team = ? AND cooler_brand = ? AND cooler_type = ?"
+            "SELECT * FROM budgets WHERE team = ? AND cooler_brand = ? AND cooler_type = ? AND archived_at IS NULL"
           ).bind(requester.team, cooler_brand, cooler_type).first();
           if (!budgetRow) {
             return Response.json({ error: "ທີມຂອງທ່ານບໍ່ມີງົບປະມານສຳລັບ Brand/Type ນີ້ (ສຳລັບຂອງໃໝ່)" }, { status: 400 });
@@ -8853,8 +8893,9 @@ export default {
           const usedRow = await env.DB.prepare(
             `SELECT COUNT(*) AS cnt FROM asset_requests
              WHERE status IN ('pending','approved') AND IFNULL(asset_condition,'new') = 'new'
-             AND team = ? AND IFNULL(cooler_brand,'') = ? AND IFNULL(cooler_type,'') = ?`
-          ).bind(requester.team, cooler_brand, cooler_type).first();
+             AND team = ? AND IFNULL(cooler_brand,'') = ? AND IFNULL(cooler_type,'') = ?
+             AND (? IS NULL OR requested_at >= ?)`
+          ).bind(requester.team, cooler_brand, cooler_type, budgetRow.period_start || null, budgetRow.period_start || null).first();
           const used = (usedRow && usedRow.cnt) || 0;
           if (used >= budgetRow.quota) {
             return Response.json({ error: `ງົບປະມານຂອງທີມສຳລັບ ${cooler_brand} ${cooler_type} ເຕັມແລ້ວ (ໃຊ້ໄປ ${used}/${budgetRow.quota} ນັບທັງຄຳຂໍທີ່ຍັງ pending)` }, { status: 400 });
@@ -8967,7 +9008,7 @@ export default {
         let overBudgetNote = "";
         if ((reqRow.asset_condition || "new") === "new") {
           const budgetRow = await env.DB.prepare(
-            "SELECT quota FROM budgets WHERE team = ? AND cooler_brand = ? AND cooler_type = ?"
+            "SELECT quota, period_start FROM budgets WHERE team = ? AND cooler_brand = ? AND cooler_type = ? AND archived_at IS NULL"
           ).bind(reqRow.team, newBrand, newType).first();
           let problem = null;
           if (!budgetRow) {
@@ -8976,8 +9017,9 @@ export default {
             const usedRow = await env.DB.prepare(
               `SELECT COUNT(*) AS cnt FROM asset_requests
                WHERE id != ? AND status IN ('pending','approved') AND IFNULL(asset_condition,'new') = 'new'
-               AND team = ? AND IFNULL(cooler_brand,'') = ? AND IFNULL(cooler_type,'') = ?`
-            ).bind(requestId, reqRow.team, newBrand, newType).first();
+               AND team = ? AND IFNULL(cooler_brand,'') = ? AND IFNULL(cooler_type,'') = ?
+               AND (? IS NULL OR requested_at >= ?)`
+            ).bind(requestId, reqRow.team, newBrand, newType, budgetRow.period_start || null, budgetRow.period_start || null).first();
             const used = (usedRow && usedRow.cnt) || 0;
             if (used >= budgetRow.quota) problem = `ງົບຂອງທີມ ${reqRow.team || "-"} ສຳລັບ ${newBrand} ${newType} ເຕັມແລ້ວ (ໃຊ້ໄປ ${used}/${budgetRow.quota})`;
           }
@@ -9087,12 +9129,14 @@ export default {
             if (budgetModel) {
               const q = await env.DB.prepare(
                 `SELECT IFNULL(SUM(quota), 0) AS total FROM budgets
-                  WHERE IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '')`
+                  WHERE archived_at IS NULL AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '')`
               ).bind(reqRow.cooler_brand ?? null, reqRow.cooler_type ?? null).first();
               const a = await env.DB.prepare(
-                `SELECT COUNT(*) AS cnt FROM asset_requests
-                  WHERE status = 'approved' AND IFNULL(asset_condition,'new') = 'new'
-                    AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '')`
+                `SELECT IFNULL(SUM((SELECT COUNT(*) FROM asset_requests r WHERE r.status = 'approved' AND IFNULL(r.asset_condition,'new') = 'new'
+                          AND r.team = b.team AND IFNULL(r.cooler_brand,'') = IFNULL(b.cooler_brand,'') AND IFNULL(r.cooler_type,'') = IFNULL(b.cooler_type,'')
+                          AND (b.period_start IS NULL OR r.requested_at >= b.period_start))), 0) AS cnt
+                   FROM budgets b
+                  WHERE b.archived_at IS NULL AND IFNULL(b.cooler_brand,'') = IFNULL(?, '') AND IFNULL(b.cooler_type,'') = IFNULL(?, '')`
               ).bind(reqRow.cooler_brand ?? null, reqRow.cooler_type ?? null).first();
               const outstanding = Math.max(((q && q.total) || 0) - ((a && a.cnt) || 0), 0);
               const st = await env.DB.prepare(
