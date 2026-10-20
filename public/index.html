@@ -499,6 +499,15 @@
     }
 
     /* Modal Pop-up */
+    /* Lightbox: ກົດຮູບໃນ modal ຮູບ (ການຈັດສົ່ງ/ຕູ້ແຊ່/ຕັດຈຳໜ່າຍ) ເພື່ອເບິ່ງເຕັມຈໍ */
+    #deliveryPhotoModal img[src], #coolerEventPhotoModal img[src], #coolerWriteOffPhotoModal img[src] { cursor: zoom-in; }
+    #photoLightbox { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; }
+    #photoLightbox.hidden { display: none; }
+    #photoLightboxStage { flex: 1; overflow: auto; display: flex; padding: 56px 8px 8px; box-sizing: border-box; }
+    #photoLightboxImg { margin: auto; display: block; max-width: 96vw; max-height: 92vh; object-fit: contain; cursor: zoom-in; }
+    #photoLightboxBar { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 10px 12px; z-index: 3001; }
+    #photoLightboxBar button { background: rgba(255,255,255,0.16); color: #fff; border: 0; border-radius: 8px; min-width: 40px; height: 40px; font-size: 18px; cursor: pointer; }
+    #photoLightboxBar button:hover { background: rgba(255,255,255,0.3); }
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(8, 22, 30, 0.55); display: flex;
@@ -6673,6 +6682,16 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
   </div>
 
   <!-- ==================== MODAL (ดูຮູບຢືນຢັນການຈັດສົ່ງ) ==================== -->
+  <div id="photoLightbox" class="hidden">
+    <div id="photoLightboxBar">
+      <button type="button" onclick="setLbScale(_lb.scale - 0.5)" title="ຍ່ໍລົງ">&minus;</button>
+      <button type="button" onclick="setLbScale(_lb.scale + 0.5)" title="ຂະຫຍາຍ">+</button>
+      <button type="button" onclick="setLbScale(1)" title="ພໍດີຈໍ">&#8634;</button>
+      <button type="button" onclick="closePhotoLightbox()" title="ປິດ">&times;</button>
+    </div>
+    <div id="photoLightboxStage"><img id="photoLightboxImg" alt=""></div>
+  </div>
+
   <div id="deliveryPhotoModal" class="modal-overlay hidden" onclick="if(event.target===this) closeDeliveryPhotoModal()">
     <div class="modal-card" style="max-width: 560px; text-align:center;">
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">ຮູບຢືນຢັນການຈັດສົ່ງ</h3>
@@ -19359,6 +19378,46 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     /* รูปเก่า (ก่อนย้ายไป R2) เก็บเป็น base64 data URL ตรงๆ / รูปໃໝ່เก็บเป็น R2 object key ต้องดึงผ่าน /api/photo */
+    /* ===== Photo Lightbox: ກົດຮູບໃນ modal ຮູບເພື່ອເບິ່ງເຕັມຈໍ (ຂະຫຍາຍ/ຍ່ໍ ດ້ວຍປຸ່ມ, ລໍ້ເມົ້າ ຫຼື ກົດທີ່ຮູບ) ===== */
+    const _lb = { scale: 1, base: 0 };
+    function setLbScale(s) {
+      const img = document.getElementById('photoLightboxImg');
+      s = Math.max(1, Math.min(6, s)); _lb.scale = s;
+      if (s === 1) { img.style.width = ''; img.style.maxWidth = '96vw'; img.style.maxHeight = '92vh'; img.style.cursor = 'zoom-in'; return; }
+      const base = _lb.base || img.clientWidth;
+      img.style.maxWidth = 'none'; img.style.maxHeight = 'none'; img.style.width = (base * s) + 'px'; img.style.cursor = 'zoom-out';
+    }
+    function openPhotoLightbox(src) {
+      const lb = document.getElementById('photoLightbox'), img = document.getElementById('photoLightboxImg');
+      _lb.base = 0; setLbScale(1);
+      lb.classList.remove('hidden');
+      img.onload = () => { _lb.base = img.clientWidth; };
+      img.src = src;
+    }
+    function closePhotoLightbox() {
+      document.getElementById('photoLightbox').classList.add('hidden');
+      document.getElementById('photoLightboxImg').removeAttribute('src');
+    }
+    document.addEventListener('click', (e) => {
+      const lb = document.getElementById('photoLightbox');
+      if (!lb) return;
+      if (!lb.classList.contains('hidden')) {
+        if (e.target.id === 'photoLightboxImg') setLbScale(_lb.scale > 1 ? 1 : 2.5);
+        else if (e.target.id === 'photoLightboxStage' || e.target.id === 'photoLightbox') closePhotoLightbox();
+        return;
+      }
+      const img = e.target.closest && e.target.closest('#deliveryPhotoModal img, #coolerEventPhotoModal img, #coolerWriteOffPhotoModal img');
+      if (img && img.getAttribute('src')) openPhotoLightbox(img.getAttribute('src'));
+    });
+    document.addEventListener('keydown', (e) => {
+      const lb = document.getElementById('photoLightbox');
+      if (e.key === 'Escape' && lb && !lb.classList.contains('hidden')) { e.stopImmediatePropagation(); closePhotoLightbox(); }
+    }, true);
+    document.addEventListener('wheel', (e) => {
+      const lb = document.getElementById('photoLightbox');
+      if (lb && !lb.classList.contains('hidden')) { e.preventDefault(); setLbScale(_lb.scale + (e.deltaY < 0 ? 0.5 : -0.5)); }
+    }, { passive: false });
+
     function resolvePhotoUrl(value) {
       if (!value) return '';
       if (value.startsWith('data:')) return value;
