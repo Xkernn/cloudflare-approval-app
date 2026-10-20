@@ -8599,6 +8599,47 @@ export default {
       }
     }
 
+    // 7b-0b. Admin Back up (Excel): ດຶງຂໍ້ມູນ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດ (ບໍ່ຕິດຕົວກອງ) ໃນຄັ້ງດຽວ
+    // ໜ້າເວັບຈະສ້າງໄຟລ໌ .xlsx ດຽວ (ແຍກ sheet) ຈາກຂໍ້ມູນນີ້. ບໍ່ລວມຮູບ (R2) ແລະ ບໍ່ມີ hash ລະຫັດຜ່ານ
+    if (url.pathname === "/api/admin/backup-excel" && request.method === "GET") {
+      try {
+        const { results: stock } = await env.DB.prepare(
+          `SELECT ws.id, w.code AS warehouse_code, w.name AS warehouse_name,
+                  ws.cooler_brand, ws.cooler_type, ws.cooler_model, ws.cooler_status,
+                  ws.qr_code, ws.serial_number, ws.capex, ws.status, ws.notes,
+                  ws.created_at, ws.updated_at
+           FROM warehouse_stock ws
+           LEFT JOIN wh_warehouses w ON w.id = ws.warehouse_id
+           ORDER BY w.code, ws.id`
+        ).all();
+
+        const { results: deliveredRaw } = await env.DB.prepare(
+          `SELECT a.id, a.tracking_no, a.outlet_code, a.outlet_name, a.cooler_brand, a.cooler_type,
+                  a.mde_code, m.mde_name, a.doc_type, a.asset_condition, a.qr_code, a.serial_number, a.capex,
+                  a.latitude, a.longitude, a.old_outlet_code, a.old_outlet_name, a.old_latitude, a.old_longitude,
+                  a.status, a.delivered_at, a.delivered_by, a.self_moved,
+                  a.admin_verified, a.admin_verified_by, a.admin_verified_at,
+                  a.flagged, a.contract_doc_manual, a.delivery_photo_document, a.last_update
+           FROM assets a
+           LEFT JOIN mde_list m ON m.mde_code = a.mde_code
+           WHERE a.status = ?
+           ORDER BY a.last_update DESC`
+        ).bind("ສຳເລັດ").all();
+        const delivered = await attachDocStates(env, deliveredRaw || []);
+        // ບໍ່ສົ່ງ key ຂອງຮູບໄປໜ້າເວັບ (ສົ່ງສະເພາະ delivery_doc_state ທີ່ຄຳນວນແລ້ວ)
+        delivered.forEach((a) => { delete a.delivery_photo_document; });
+
+        return Response.json({
+          exported_at: new Date().toISOString(),
+          warehouse_stock: stock || [],
+          asset_delivery_history: delivered,
+        }, { headers: { "Cache-Control": "no-store" } });
+      } catch (e) {
+        console.error("/api/admin/backup-excel", e);
+        return Response.json({ error: "ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     // 7b-1. Admin ໂອນ Spare Cooler ໃຫ້ທີມ (ເມື່ອງົບທີມໝົດ) — ຫັກໂຄຕ້າຈາກແຖວ Spare ແລ້ວເພີ່ມໃຫ້ທີມ (Brand/Type ດຽວກັນກັບ Spare)
     if (url.pathname === "/api/admin/transfer-spare" && request.method === "POST") {
       try {

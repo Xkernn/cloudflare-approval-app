@@ -2720,7 +2720,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
             <div style="font-weight:700;"><i class="fa-solid fa-database"></i> ສຳຮອງຂໍ້ມູນ (Back up data)</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">ດາວໂຫລດຂໍ້ມູນທຸກຕາຕະລາງເປັນໄຟລ໌ JSON. ບໍ່ລວມຮູບໃນ R2. ໄຟລ໌ມີຂໍ້ມູນລະອຽດອ່ອນ (ເຊັ່ນ ລະຫັດຜ່ານທີ່ເຂົ້າລະຫັດ) ກະລຸນາເກັບຮັກສາໃຫ້ປອດໄພ.</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">ດາວໂຫລດ <b>ສະຕັອກສາງ</b> ແລະ <b>ປະຫວັດການຈັດສົ່ງ Asset</b> ທັງໝົດ (ບໍ່ຕິດຕົວກອງ) ເປັນໄຟລ໌ Excel (.xlsx) ດຽວ ແຍກເປັນ 2 sheet ໃນຄັ້ງດຽວ. ບໍ່ລວມຮູບ.</div>
           </div>
           <button type="button" id="backupBtn" class="btn-add" onclick="downloadBackup()"><i class="fa-solid fa-download mr-1"></i> Back up ດຽວນີ້</button>
         </div>
@@ -7625,20 +7625,92 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         renderMaintenanceCard(d);
       } catch (err) { /* ignore */ }
     }
+    /* Back up (Excel): ດຶງ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດຈາກ server (ບໍ່ຕິດຕົວກອງໜ້າຈໍ)
+       ແລ້ວສ້າງ workbook ດຽວ 3 sheet: Backup Info / Warehouse Stock / Delivery History */
     async function downloadBackup() {
       const btn = document.getElementById('backupBtn');
-      if (!confirm('ສຳຮອງຂໍ້ມູນທັງໝົດ? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາຫຼາຍນາທີ — ກະລຸນາຢ່າປິດໜ້າຈໍ.')) return;
+      if (!confirm('ສຳຮອງສະຕັອກສາງ + ປະຫວັດການຈັດສົ່ງ Asset ເປັນໄຟລ໌ Excel? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາສັກຄູ່ — ກະລຸນາຢ່າປິດໜ້າຈໍ.')) return;
       const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> ກຳລັງສຳຮອງ...';
       try {
-        const res = await fetch('/api/admin/backup');
+        const res = await fetch('/api/admin/backup-excel');
         if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ'); return; }
-        const blob = await res.blob();
-        const cd = res.headers.get('Content-Disposition') || '';
-        const m = cd.match(/filename="([^"]+)"/);
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = m ? m[1] : 'backup.json';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+        const d = await res.json();
+        const stock = d.warehouse_stock || [];
+        const delivery = d.asset_delivery_history || [];
+
+        const LOAN_STATE_LABEL = { none: 'ບໍ່ມີ', draft: 'ຮ່າງ', awaiting_dsm: 'ລໍຖ້າ DSM ເຊັນ', completed: 'ເຊັນຄົບແລ້ວ' };
+        const stockRows = stock.map(s => ({
+          'Warehouse Code': s.warehouse_code || '',
+          'Warehouse Name': s.warehouse_name || '',
+          'Cooler Brand': s.cooler_brand || '',
+          'Cooler Type': s.cooler_type || '',
+          'Model': s.cooler_model || '',
+          'Cooler Status': STOCK_COOLER_STATUS_LABEL[s.cooler_status] || s.cooler_status || '',
+          'QR Code': s.qr_code || '',
+          'Serial Number': s.serial_number || '',
+          'CapEx': s.capex || '',
+          'Status': STOCK_STATUS_LABEL[s.status] || s.status || '',
+          'Notes': s.notes || '',
+          'Created At': s.created_at || '',
+          'Updated At': s.updated_at || ''
+        }));
+        const deliveryRows = delivery.map(a => ({
+          'Tracking No': a.tracking_no || '',
+          'Outlet Code': a.outlet_code || '',
+          'Outlet Name': a.outlet_name || '',
+          'Cooler Brand': a.cooler_brand || '',
+          'Cooler Type': a.cooler_type || '',
+          'MDE Code': a.mde_code || '',
+          'MDE Name': a.mde_name || '',
+          'Doc Type': a.doc_type || '',
+          'ສະພາບ': a.asset_condition === 'used' ? 'ມືສອງ' : 'ໃໝ່',
+          'QR Code': a.qr_code || '',
+          'Serial Number': a.serial_number || '',
+          'CapEx': a.capex || '',
+          'Latitude': a.latitude ?? '',
+          'Longitude': a.longitude ?? '',
+          'Old Outlet Code': a.old_outlet_code || '',
+          'Old Outlet Name': a.old_outlet_name || '',
+          'Old Latitude': a.old_latitude ?? '',
+          'Old Longitude': a.old_longitude ?? '',
+          'Delivered At': a.delivered_at || '',
+          'Delivered By': a.delivered_by || '',
+          'MDE ຍ້າຍເອງ': a.self_moved ? 'ແມ່ນ' : '',
+          'Status': a.status || '',
+          'ເອກະສານສັນຍາ/ໃບເກັບຕູ້': LOAN_STATE_LABEL[a.loan_state] || a.loan_state || '',
+          'ສັນຍາ: ໝາຍມີເອກະສານດ້ວຍມື': a.contract_doc_manual ? 'ແມ່ນ' : '',
+          'ເອກະສານຈັດສົ່ງ': a.delivery_doc_state === 'with_doc' ? 'ມີເອກະສານ' : (a.delivery_doc_state === 'no_doc' ? 'ບໍ່ມີເອກະສານ' : ''),
+          'Admin ຢືນຢັນ': a.admin_verified ? 'ຢືນຢັນແລ້ວ' : 'ຍັງບໍ່ທັນຢືນຢັນ',
+          'ຢືນຢັນໂດຍ': a.admin_verified_by || '',
+          'ຢືນຢັນເວລາ': a.admin_verified_at || '',
+          'ຕິດທຸງ': a.flagged ? 'ແມ່ນ' : '',
+          'Last Update': a.last_update || ''
+        }));
+
+        const exportedAt = d.exported_at ? new Date(d.exported_at) : new Date();
+        const infoRows = [
+          { 'ລາຍການ': 'ເວລາສຳຮອງ', 'ຄ່າ': exportedAt.toLocaleString('lo-LA') },
+          { 'ລາຍການ': 'ຈຳນວນແຖວ - Warehouse Stock', 'ຄ່າ': stockRows.length },
+          { 'ລາຍການ': 'ຈຳນວນແຖວ - Delivery History', 'ຄ່າ': deliveryRows.length },
+          { 'ລາຍການ': 'ໝາຍເຫດ', 'ຄ່າ': 'ລວມທຸກສາງ/ທຸກລາຍການ ບໍ່ຕິດຕົວກອງ; ບໍ່ລວມຮູບ' }
+        ];
+
+        // ຖ້າ sheet ວ່າງ ໃຫ້ມີແຕ່ຫົວຄໍລຳ (ບໍ່ໃຫ້ sheet ຫວ່າງເປົ່າ)
+        const makeSheet = (rows, headers) => {
+          const ws = rows.length ? XLSX.utils.json_to_sheet(rows) : XLSX.utils.aoa_to_sheet([headers]);
+          const keys = rows.length ? Object.keys(rows[0]) : headers;
+          ws['!cols'] = keys.map(k => ({ wch: Math.min(40, Math.max(String(k).length + 2, 12)) }));
+          return ws;
+        };
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, makeSheet(infoRows, ['ລາຍການ', 'ຄ່າ']), 'Backup Info');
+        XLSX.utils.book_append_sheet(wb, makeSheet(stockRows, ['Warehouse Code', 'Warehouse Name', 'Cooler Brand', 'Cooler Type', 'Model', 'Cooler Status', 'QR Code', 'Serial Number', 'CapEx', 'Status', 'Notes', 'Created At', 'Updated At']), 'Warehouse Stock');
+        XLSX.utils.book_append_sheet(wb, makeSheet(deliveryRows, ['Tracking No', 'Outlet Code', 'Outlet Name', 'Cooler Brand', 'Cooler Type', 'MDE Code', 'MDE Name', 'Doc Type']), 'Delivery History');
+
+        const pad = n => String(n).padStart(2, '0');
+        const now = new Date();
+        const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+        XLSX.writeFile(wb, `backup_${stamp}.xlsx`);
       } catch (err) { alert('ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ (ການເຊື່ອມຕໍ່ຂາດ ຫຼື ຂໍ້ມູນໃຫຍ່ເກີນໄປ)'); }
       finally { btn.disabled = false; btn.innerHTML = old; }
     }
