@@ -4269,9 +4269,18 @@ export default {
             ORDER BY r.lot_no COLLATE NOCASE, r.id`
         ).bind(...rb).all();
         const { results: coolers } = await env.DB.prepare(
-          `SELECT n.lot_no, n.cooler_brand, n.cooler_type, n.cooler_model, n.qr_code, n.serial_number, n.capex, n.notes, n.status, n.received_by, w.name AS warehouse_name
+          `SELECT n.lot_no, n.cooler_brand, n.cooler_type, n.cooler_model, n.qr_code, n.serial_number, n.capex, n.notes, n.status, n.received_by, w.name AS warehouse_name, s.status AS stock_status, cw.name AS current_warehouse_name,
+                    COALESCE(NULLIF(TRIM(st.ship_province), ''), n.ship_province) AS ship_province,
+                    COALESCE(NULLIF(TRIM(st.ship_warehouse), ''), n.ship_warehouse) AS ship_warehouse,
+                    COALESCE(tr.trip_no, tn.trip_no) AS trip_no,
+                    COALESCE(tr.departed_at, tn.departed_at, n.shipped_at) AS shipped_at
              FROM new_coolers n
              LEFT JOIN wh_warehouses w ON w.id = n.received_warehouse_id
+             LEFT JOIN warehouse_stock s ON s.id = n.received_stock_id
+             LEFT JOIN wh_warehouses cw ON cw.id = s.warehouse_id
+             LEFT JOIN ship_trip_stock st ON st.stock_id = n.received_stock_id
+             LEFT JOIN ship_trips tr ON tr.id = st.trip_id
+             LEFT JOIN ship_trips tn ON tn.id = n.trip_id
             ${lot ? "WHERE n.lot_no = ? COLLATE NOCASE" : "WHERE n.lot_no IS NOT NULL AND n.lot_no != ''"}
             ORDER BY n.lot_no COLLATE NOCASE, n.id`
         ).bind(...rb).all();

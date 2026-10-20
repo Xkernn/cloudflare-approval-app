@@ -14936,6 +14936,7 @@ async function ncExportLots(lot) {
   const receipts = data.receipts || [], coolers = data.coolers || [];
   if (!receipts.length && !coolers.length) { alert('ຍັງບໍ່ມີຂໍ້ມູນລ໋ອດໃຫ້ Export'); return; }
   const statusLabel = { received: 'ຮັບເຂົ້າສາງແລ້ວ', confirmed: 'ຢືນຢັນແລ້ວ (ລໍຖ້າຮັບເຂົ້າສາງ)', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', pending: 'ຍັງບໍ່ໄດ້ສະແກນ' };
+  const stockLabel = { in_warehouse: 'ຢູ່ໃນສາງ', reserved: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ', outlet: 'ອອກໄປຮ້ານແລ້ວ', event: 'ກຳລັງໃຊ້ງານ Event', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', write_off: 'ສະສາງ' };
   const lotRows = [], contRows = [];
   receipts.forEach(r => {
     let units = [];
@@ -14951,7 +14952,9 @@ async function ncExportLots(lot) {
   const coolerRows = coolers.map(n => ({
     'Lot No': n.lot_no || '', 'Cooler Brand': n.cooler_brand || '', 'Cooler Type': n.cooler_type || '', 'Model': n.cooler_model || '',
     'QR Code': n.qr_code || '', 'Serial Number': n.serial_number || '', 'CapEx': n.capex || '', 'Notes': n.notes || '',
-    'ສະຖານະ': statusLabel[n.status] || n.status || '', 'ສາງທີ່ຮັບເຂົ້າ': n.warehouse_name || '', 'ຜູ້ຮັບ': n.received_by || ''
+    'ສະຖານະການຮັບເຂົ້າ': statusLabel[n.status] || n.status || '', 'ສາງທີ່ຮັບເຂົ້າ': n.warehouse_name || '', 'ຜູ້ຮັບ': n.received_by || '',
+    'ສະຖານະປັດຈຸບັນ': stockLabel[n.stock_status] || n.stock_status || '', 'ສາງ/ທີ່ຢູ່ປັດຈຸບັນ': n.current_warehouse_name || '',
+    'ແຂວງປາຍທາງ': n.ship_province || '', 'ສາງປາຍທາງ (ແຂວງ)': n.ship_warehouse || '', 'ຖ້ຽວລົດ': n.trip_no || '', 'ວັນທີລົດອອກ': n.shipped_at ? (fmtLaoTs(n.shipped_at) || '') : ''
   }));
   const wb = XLSX.utils.book_new();
   const add = (rows, headers, name) => XLSX.utils.book_append_sheet(wb, rows.length ? XLSX.utils.json_to_sheet(rows) : XLSX.utils.aoa_to_sheet([headers]), name);
