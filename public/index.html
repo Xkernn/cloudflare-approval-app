@@ -4856,9 +4856,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div id="stListWrap">
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
             <div id="stFilterTabs" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
-            <div class="input-wrapper fl-search" style="flex:1; min-width:200px; max-width:360px; margin-left:auto;"><i class="fa-solid fa-magnifying-glass"></i>
+            <select id="stTruckFilter" class="form-control fl-ctl" style="max-width:220px; margin-left:auto;" onchange="stRenderList()" title="ກອງຕາມລົດ (ທະບຽນ)"></select>
+            <div class="input-wrapper fl-search" style="flex:1; min-width:200px; max-width:360px;"><i class="fa-solid fa-magnifying-glass"></i>
               <input type="text" id="stSearchInput" class="form-control" placeholder="ຄົ້ນຫາ ເລກຖ້ຽວ, ເລກທະບຽນລົດ, ຄົນຂັບ, ແຂວງ" autocomplete="off" oninput="stRenderList()">
             </div>
+            <button type="button" class="btn-add" style="background:#0d9488;" onclick="stExportExcel()" title="Export Excel ຕາມລາຍການທີ່ກອງຢູ່ (ແຖບ + ລົດ + ຄົ້ນຫາ)"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel</button>
           </div>
           <div id="stList" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
@@ -16160,6 +16162,69 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     function stSetFilter(k) { stFilter = k; stRenderList(); }
 
+    // ລາຍການລົດ (ທະບຽນ) ໃນ dropdown ກອງ — ຮັກສາຄ່າທີ່ເລືອກໄວ້
+    function stFillTruckFilter() {
+      const sel = document.getElementById('stTruckFilter');
+      if (!sel) return;
+      const prev = sel.value;
+      const cnt = new Map();
+      ncTrips.forEach(t => { const k = (t.truck_plate || '').trim(); if (k) cnt.set(k, (cnt.get(k) || 0) + 1); });
+      const plates = [...cnt.keys()].sort((a, b) => a.localeCompare(b));
+      sel.innerHTML = `<option value="">ທຸກລົດ</option>` + plates.map(p => `<option value="${esc(p)}">${esc(p)} (${cnt.get(p)} ຖ້ຽວ)</option>`).join('');
+      sel.value = plates.includes(prev) ? prev : '';
+    }
+
+    // ຖ້ຽວທີ່ກອງແລ້ວ: ແຖບສະຖານະ + ລົດ + ຄົ້ນຫາ (ໃຊ້ທັງສະແດງລາຍການ ແລະ Export Excel)
+    function stFilteredTrips() {
+      const q = (document.getElementById('stSearchInput').value || '').trim().toLowerCase();
+      const truckEl = document.getElementById('stTruckFilter');
+      const truck = truckEl ? truckEl.value : '';
+      let list = ncTrips.filter(t => stFilter === 'open' ? t.status === 'open' : stFilter === 'done' ? stTripDone(t) : (t.status !== 'open' && !stTripDone(t)));
+      if (truck) list = list.filter(t => (t.truck_plate || '').trim() === truck);
+      if (q) list = list.filter(t => [t.trip_no, t.truck_plate, t.driver_name, t.driver_phone, t.provinces].some(v => (v || '').toString().toLowerCase().includes(q)));
+      return list;
+    }
+
+    // Export Excel: ຖ້ຽວ + ຕູ້ໃນແຕ່ລະຖ້ຽວ ຕາມລາຍການທີ່ກອງຢູ່ (ເລືອກລົດໃນ dropdown ເພື່ອ export ສະເພາະລົດນັ້ນ)
+    function stExportExcel() {
+      const trips = stFilteredTrips();
+      if (!trips.length) { alert('ບໍ່ມີຖ້ຽວໃຫ້ Export (ກວດແຖບສະຖານະ / ລົດ / ຄົ້ນຫາ)'); return; }
+      const statusText = t => t.status === 'open' ? 'ກຳລັງຈັດຕູ້ຂຶ້ນລົດ' : (stTripDone(t) ? 'ສົ່ງສຳເລັດແລ້ວ' : 'ລົດອອກແລ້ວ');
+      const tripRows = [], itemRows = [];
+      trips.forEach(t => {
+        const items = ncTripItems(t.id);
+        const provs = new Set(items.map(n => ncProvLabel(ncProvKey(n))));
+        tripRows.push({
+          'Trip No': t.trip_no || '', 'ທະບຽນລົດ': t.truck_plate || '', 'ຄົນຂັບ': t.driver_name || '', 'ເບີຄົນຂັບ': t.driver_phone || '',
+          'ວັນທີອອກລົດ': ncFmtDate(t.trip_date), 'ສະຖານະ': statusText(t), 'ລົດອອກເວລາ': t.departed_at || '',
+          'ຈຳນວນຕູ້': items.length, 'ສະແກນຂຶ້ນລົດແລ້ວ': items.filter(stItemScanned).length,
+          'ແຂວງ': [...provs].join(', '), 'ໝາຍເຫດ': t.note || ''
+        });
+        items.forEach(n => {
+          itemRows.push({
+            'Trip No': t.trip_no || '', 'ທະບຽນລົດ': t.truck_plate || '', 'ຄົນຂັບ': t.driver_name || '',
+            'ວັນທີອອກລົດ': ncFmtDate(t.trip_date), 'ສະຖານະຖ້ຽວ': statusText(t),
+            'ແຂວງປາຍທາງ': ncProvLabel(ncProvKey(n)), 'ສາງປາຍທາງ': n.ship_warehouse || '',
+            'Cooler Brand': n.cooler_brand || '', 'Cooler Type': n.cooler_type || '', 'Model': n.cooler_model || '',
+            'QR Code': n.qr_code || '', 'Serial Number': n.serial_number || '', 'CapEx': n.capex || '',
+            'ທີ່ມາ': n.kind === 'stock' ? ('ຈາກສາງ' + (n.warehouse_name ? ' ' + n.warehouse_name : '')) : 'ຕູ້ໃໝ່',
+            'ສະແກນຂຶ້ນລົດ': stItemScanned(n) ? 'ແລ້ວ' : '', 'ໝາຍເຫດ': n.ship_note || ''
+          });
+        });
+      });
+      const mk = (rows, headers) => {
+        const ws = rows.length ? XLSX.utils.json_to_sheet(rows) : XLSX.utils.aoa_to_sheet([headers]);
+        const keys = rows.length ? Object.keys(rows[0]) : headers;
+        ws['!cols'] = keys.map(k => ({ wch: Math.min(36, Math.max(String(k).length + 2, 12)) }));
+        return ws;
+      };
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, mk(tripRows, ['Trip No']), 'Trips');
+      XLSX.utils.book_append_sheet(wb, mk(itemRows, ['Trip No']), 'Trip Coolers');
+      const truck = (document.getElementById('stTruckFilter').value || '').replace(/[^\w\u0E80-\u0EFF-]+/g, '_');
+      XLSX.writeFile(wb, `ship-trips-${truck || 'all-trucks'}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
     function stRenderList() {
       const el = document.getElementById('stList');
       const tabs = document.getElementById('stFilterTabs');
@@ -16170,9 +16235,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       tabs.innerHTML = defs.map(([k, label, c]) =>
         `<button type="button" class="at-pill ${stFilter === k ? 'active' : ''}" onclick="stSetFilter('${k}')">${label}<span class="at-pill-count">${c}</span></button>`).join('');
 
-      const q = (document.getElementById('stSearchInput').value || '').trim().toLowerCase();
-      let list = ncTrips.filter(t => stFilter === 'open' ? t.status === 'open' : stFilter === 'done' ? stTripDone(t) : (t.status !== 'open' && !stTripDone(t)));
-      if (q) list = list.filter(t => [t.trip_no, t.truck_plate, t.driver_name, t.driver_phone, t.provinces].some(v => (v || '').toString().toLowerCase().includes(q)));
+      stFillTruckFilter();
+      const list = stFilteredTrips();
       if (!list.length) {
         el.innerHTML = `<div class="mgmt-card-list-empty">${ncTrips.length ? 'ບໍ່ມີຖ້ຽວທີ່ກົງກັບເງື່ອນໄຂ' : 'ຍັງບໍ່ມີຖ້ຽວລົດ — ກົດ "ສ້າງຖ້ຽວລົດໃໝ່" ເພື່ອເລີ່ມ'}</div>`;
         return;
