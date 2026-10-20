@@ -855,6 +855,8 @@ async function notifyMdeUserOfStatusChange(env, mdeCode, trackingNo, outletName,
 // ບໍ່ throw error ອອກໄປ ເພື່ອບໍ່ໃຫ້ການບັນທຶກງົບ/ອະນຸມັດຄຳຂໍລົ້ມເຫລວ ຖ້າສົ່ງແຈ້ງເຕືອນບໍ່ສຳເລັດ
 // ==========================================================================
 // ໂຄຕ້າທີ່ຖືກນັບແລ້ວ (ຄຳຂໍ 'ໃໝ່' ທີ່ pending/approved) - ນັບແບບດຽວກັບ /api/budgets ແລະ /api/asset-requests
+// ຊື່ team ພິເສດຂອງ Spare Cooler ຂອງ admin (ແຖວໃນ budgets) — ໂອນໃຫ້ທີມເມື່ອງົບທີມໝົດ ຜ່ານ /api/admin/transfer-spare
+const SPARE_TEAM = "ADMIN_SPARE";
 async function getBudgetUsed(env, team, brand, type) {
   const row = await env.DB.prepare(
     `SELECT COUNT(*) AS cnt FROM asset_requests
@@ -8528,6 +8530,67 @@ export default {
       } catch (e) {
         console.error("/api/admin/save-budget", e);
         return Response.json({ error: "ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້" }, { status: 500 });
+      }
+    }
+
+    // 7b-1. Admin ໂອນ Spare Cooler ໃຫ້ທີມ (ເມື່ອງົບທີມໝົດ) — ຫັກໂຄຕ້າຈາກແຖວ Spare ແລ້ວເພີ່ມໃຫ້ທີມ (Brand/Type ດຽວກັນກັບ Spare)
+    if (url.pathname === "/api/admin/transfer-spare" && request.method === "POST") {
+      try {
+        const { spare_id, to_team, quantity, note } = await request.json();
+        const qty = Number(quantity);
+        const toTeam = String(to_team || "").trim();
+        if (!spare_id || !toTeam || !Number.isInteger(qty) || qty <= 0) {
+          return Response.json({ error: "ກະລຸນາເລືອກທີມ ແລະ ປ້ອນຈຳນວນທີ່ໂອນ (ຈຳນວນເຕັມ ຫຼາຍກວ່າ 0)" }, { status: 400 });
+        }
+        if (toTeam === SPARE_TEAM) return Response.json({ error: "ບໍ່ສາມາດໂອນໃຫ້ Spare ດ້ວຍກັນເອງ" }, { status: 400 });
+        const spare = await env.DB.prepare(
+          "SELECT id, cooler_brand, cooler_type, quota, period_label FROM budgets WHERE id = ? AND team = ? AND archived_at IS NULL"
+        ).bind(spare_id, SPARE_TEAM).first();
+        if (!spare) return Response.json({ error: "ບໍ່ພົບ Spare Cooler ລາຍການນີ້" }, { status: 404 });
+        if (qty > Number(spare.quota)) {
+          return Response.json({ error: `Spare ເຫຼືອ ${spare.quota} ຕູ້ ໂອນເກີນບໍ່ໄດ້` }, { status: 409 });
+        }
+        // ຫັກ Spare ກ່ອນ (ມີເງື່ອນໄຂ quota >= qty ກັນສອງຄົນກົດພ້ອມກັນຈົນຕິດລົບ)
+        const ded = await env.DB.prepare(
+          "UPDATE budgets SET quota = quota - ?1 WHERE id = ?2 AND quota >= ?1 AND archived_at IS NULL"
+        ).bind(qty, spare.id).run();
+        if (!(ded.meta && ded.meta.changes)) {
+          return Response.json({ error: "Spare ບໍ່ພໍ — ກະລຸນາໂຫລດໜ້າໃໝ່ແລ້ວລອງອີກຄັ້ງ" }, { status: 409 });
+        }
+        let newQuota = qty;
+        try {
+          const tgt = await env.DB.prepare(
+            "SELECT id, quota FROM budgets WHERE team = ? AND IFNULL(cooler_brand,'') = IFNULL(?, '') AND IFNULL(cooler_type,'') = IFNULL(?, '') AND archived_at IS NULL"
+          ).bind(toTeam, spare.cooler_brand ?? null, spare.cooler_type ?? null).first();
+          if (tgt) {
+            newQuota = Number(tgt.quota) + qty;
+            await env.DB.prepare("UPDATE budgets SET quota = quota + ? WHERE id = ?").bind(qty, tgt.id).run();
+          } else {
+            await env.DB.prepare(
+              `INSERT INTO budgets (team, cooler_brand, cooler_type, quota, period_label, period_start)
+               SELECT ?1, ?2, ?3, ?4, ?5,
+                      (SELECT MAX(archived_at) FROM budgets WHERE team = ?1 AND IFNULL(cooler_brand,'') = IFNULL(?2,'') AND IFNULL(cooler_type,'') = IFNULL(?3,'') AND archived_at IS NOT NULL)`
+            ).bind(toTeam, spare.cooler_brand ?? null, spare.cooler_type ?? null, qty, spare.period_label ?? null).run();
+          }
+        } catch (addErr) {
+          // ເພີ່ມໃຫ້ທີມບໍ່ສຳເລັດ -> ຄືນໂຄຕ້າໃຫ້ Spare
+          await env.DB.prepare("UPDATE budgets SET quota = quota + ? WHERE id = ?").bind(qty, spare.id).run();
+          throw addErr;
+        }
+        try { // ບັນທຶກປະຫວັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration ກໍບໍ່ກະທົບການໂອນ)
+          await env.DB.prepare(
+            "INSERT INTO budget_transfers (from_team, to_team, cooler_brand, cooler_type, quantity, note, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)"
+          ).bind(SPARE_TEAM, toTeam, spare.cooler_brand ?? null, spare.cooler_type ?? null, qty, String(note || "").trim().slice(0, 200) || null, url.searchParams.get("userId") || null).run();
+        } catch (logErr) { console.error("budget_transfers log", logErr); }
+        runInBackground(ctx, (async () => {
+          const used = await getBudgetUsed(env, toTeam, spare.cooler_brand, spare.cooler_type);
+          const remaining = newQuota - used;
+          if (remaining > 0) await notifyTeamBudgetAvailable(env, { team: toTeam, brand: spare.cooler_brand, type: spare.cooler_type, quota: newQuota, remaining, freed: false });
+        })());
+        return Response.json({ message: `ໂອນ Spare ${qty} ຕູ້ ໃຫ້ທີມ ${toTeam} ຮຽບຮ້ອຍແລ້ວ`, spare_left: Number(spare.quota) - qty });
+      } catch (e) {
+        console.error("/api/admin/transfer-spare", e);
+        return Response.json({ error: "ໂອນ Spare ບໍ່ສຳເລັດ" }, { status: 500 });
       }
     }
 

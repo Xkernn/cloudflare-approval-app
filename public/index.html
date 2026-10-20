@@ -6372,6 +6372,31 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     </div>
   </div>
 
+  <div id="spareTransferModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 10px;"><i class="fa-solid fa-right-left mr-2"></i>ໂອນ Spare Cooler ໃຫ້ທີມ</h3>
+      <input type="hidden" id="spareTransferId">
+      <div id="spareTransferInfo" style="font-size:13.5px; color:#475569; margin-bottom:10px;"></div>
+      <div id="spareTransferHint" style="font-size:12.5px; margin-bottom:10px;"></div>
+      <div class="form-group">
+        <label>ໂອນໃຫ້ທີມ</label>
+        <select id="spareTransferTeam" class="form-control" style="padding-left:14px;"></select>
+      </div>
+      <div class="form-group">
+        <label>ຈຳນວນ (ຕູ້)</label>
+        <input type="number" id="spareTransferQty" class="form-control" style="padding-left:14px;" min="1" step="1">
+      </div>
+      <div class="form-group">
+        <label>ໝາຍເຫດ (ບໍ່ບັງຄັບ)</label>
+        <input type="text" id="spareTransferNote" class="form-control" style="padding-left:14px;" maxlength="200">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="confirmSpareTransfer()" id="spareTransferSaveBtn" class="btn-submit" style="margin-top:0;">ໂອນ</button>
+        <button onclick="document.getElementById('spareTransferModal').classList.add('hidden')" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:0;">ຍົກເລີກ</button>
+      </div>
+    </div>
+  </div>
+
   <div id="announcementModal" class="modal-overlay hidden">
     <div class="modal-card">
       <h3 id="announcementModalTitle" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ປະກາດຂ່າວໃໝ່</h3>
@@ -8126,13 +8151,15 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
 
     /* เติมตัวเลือก Team ใน dropdown จาก Team ที่มีอยู่ใน MDE List (dbMdeList) - ใช้กับหน้า "ຈັດການງົບປະມານ" */
+    const SPARE_TEAM_KEY = 'ADMIN_SPARE';
+    const budgetTeamLabel = (t) => t === SPARE_TEAM_KEY ? '⭐ Spare Cooler (Admin)' : (t || '-');
     function fillBudgetTeamSelect(selectedTeam) {
       const el = document.getElementById('editBudgetTeam');
       if (!el) return;
       let teams = [...new Set((dbMdeList || []).map(item => item.team))].filter(Boolean);
       // ถ้า Team เดิมของรายการนี้ไม่มีอยู่ใน MDE List แล้ว (เช่น ลบ MDE ออกไปหมด) ให้ใส่ไว้ด้วยเพื่อไม่ให้ค่าหาย
       if (selectedTeam && !teams.includes(selectedTeam)) teams.push(selectedTeam);
-      el.innerHTML = '<option value="">-- ເລືອກ Team --</option>' +
+      el.innerHTML = '<option value="">-- ເລືອກ Team --</option><option value="ADMIN_SPARE">⭐ Spare Cooler (Admin)</option>' +
         teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
       el.value = selectedTeam || '';
     }
@@ -20017,7 +20044,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const groups = groupBudgets(
         budgets,
         b => b.team || '-',
-        b => b.team || '-',
+        b => budgetTeamLabel(b.team),
         (x, y) => budgetTextCompare(x.cooler_brand, y.cooler_brand) || budgetTextCompare(x.cooler_type, y.cooler_type)
       );
 
@@ -20034,7 +20061,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               ${budgetShowArchived
                 ? `<span class="badge badge-default" title="${esc(String(b.archived_at || ''))}">${esc(b.period_label || 'Archive')}</span>
                    <button onclick="deleteBudget(${b.id})" class="btn-act btn-delete">ລຶບ</button>`
-                : `<button onclick="openEditBudgetModal(${b.id}, ${jsq(b.team || '')}, ${jsq(b.cooler_brand || '')}, ${jsq(b.cooler_type || '')}, ${b.quota}, ${jsq(b.period_label || '')})" class="btn-act btn-edit">ແກ້ໄຂ</button>
+                : `${b.team === SPARE_TEAM_KEY ? `<button onclick="openSpareTransferModal(${b.id})" class="btn-act btn-edit" style="background:#f59e0b;color:#fff;">ໂອນໃຫ້ທີມ</button>` : ''}<button onclick="openEditBudgetModal(${b.id}, ${jsq(b.team || '')}, ${jsq(b.cooler_brand || '')}, ${jsq(b.cooler_type || '')}, ${b.quota}, ${jsq(b.period_label || '')})" class="btn-act btn-edit">ແກ້ໄຂ</button>
                    <button onclick="openArchiveBudgetModal(${b.id}, ${jsq(b.team || '')}, ${jsq(b.cooler_brand || '')}, ${jsq(b.cooler_type || '')}, ${b.quota}, ${b.used}, ${jsq(b.period_label || '')})" class="btn-act ${remaining <= 0 ? 'btn-approve' : ''}" title="ເກັບເຂົ້າ Archive"><i class="fa-solid fa-box-archive"></i> Archive</button>
                    <button onclick="deleteBudget(${b.id})" class="btn-act btn-delete">ລຶບ</button>`}
             </td>
@@ -26185,6 +26212,44 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }
     }
 
+    async function openSpareTransferModal(id) {
+      const sp = (allBudgetsData || []).find(b => Number(b.id) === Number(id));
+      if (!sp) return;
+      if (!dbMdeList.length) await fetchMdeList();
+      const left = Number(sp.quota) - Number(sp.used || 0);
+      document.getElementById('spareTransferId').value = id;
+      document.getElementById('spareTransferInfo').innerHTML = `<b>Spare</b> · ${esc(sp.cooler_brand || 'ທຸກຍີ່ຫໍ້')} ${esc(sp.cooler_type || '')}<br>ເຫຼືອໂອນໄດ້ <b>${left}</b> ຕູ້`;
+      const teams = [...new Set((dbMdeList || []).map(i => i.team))].filter(t => t && t !== SPARE_TEAM_KEY);
+      const rem = {};
+      (allBudgetsData || []).forEach(b => {
+        if (b.team !== SPARE_TEAM_KEY && (b.cooler_brand || '') === (sp.cooler_brand || '') && (b.cooler_type || '') === (sp.cooler_type || '')) rem[b.team] = Number(b.quota) - Number(b.used || 0);
+      });
+      const out = teams.filter(t => rem[t] === undefined || rem[t] <= 0);
+      teams.sort((a, b) => (out.includes(b) ? 1 : 0) - (out.includes(a) ? 1 : 0) || String(a).localeCompare(String(b)));
+      document.getElementById('spareTransferTeam').innerHTML = '<option value="">-- ເລືອກທີມ --</option>' +
+        teams.map(t => `<option value="${esc(t)}">${esc(t)}${out.includes(t) ? ' (ງົບໝົດ/ບໍ່ມີ)' : ' (ເຫຼືອ ' + rem[t] + ')'}</option>`).join('');
+      document.getElementById('spareTransferHint').innerHTML = out.length
+        ? `<span style="color:#b91c1c;">ທີມທີ່ງົບ Brand/Type ນີ້ໝົດ: ${out.map(esc).join(', ')}</span>` : '';
+      document.getElementById('spareTransferQty').value = '';
+      document.getElementById('spareTransferQty').max = left;
+      document.getElementById('spareTransferNote').value = '';
+      document.getElementById('spareTransferModal').classList.remove('hidden');
+    }
+    async function confirmSpareTransfer() {
+      const to_team = document.getElementById('spareTransferTeam').value;
+      const quantity = parseInt(document.getElementById('spareTransferQty').value, 10);
+      if (!to_team || !(quantity > 0)) { alert('ກະລຸນາເລືອກທີມ ແລະ ປ້ອນຈຳນວນທີ່ໂອນ'); return; }
+      const btn = document.getElementById('spareTransferSaveBtn'); btn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/transfer-spare', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ spare_id: Number(document.getElementById('spareTransferId').value), to_team, quantity, note: document.getElementById('spareTransferNote').value }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { alert(d.error || 'ໂອນບໍ່ສຳເລັດ'); return; }
+        document.getElementById('spareTransferModal').classList.add('hidden');
+        loadBudgetTable();
+      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      finally { btn.disabled = false; }
+    }
     function openArchiveBudgetModal(id, team, brand, type, quota, used, periodLabel) {
       document.getElementById('budgetArchiveId').value = id;
       document.getElementById('budgetArchiveInfo').innerHTML = `<b>${esc(team)}</b> · ${esc(brand || 'ທຸກຍີ່ຫໍ້')} ${esc(type || '')}<br>ໂຄຕ້າ ${quota} · ໃຊ້ໄປແລ້ວ ${used} · ຄົງເຫຼືອ ${quota - used}`;

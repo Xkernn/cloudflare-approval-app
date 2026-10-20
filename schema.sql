@@ -809,3 +809,15 @@ CREATE TABLE IF NOT EXISTS app_settings (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 INSERT OR IGNORE INTO app_settings (key, value) VALUES ('maintenance_enabled', '0');
+CREATE TABLE IF NOT EXISTS budget_transfers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_team TEXT NOT NULL,
+    to_team TEXT NOT NULL,
+    cooler_brand TEXT,
+    cooler_type TEXT,
+    quantity INTEGER NOT NULL,
+    note TEXT,
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_budget_transfers_to_team ON budget_transfers(to_team, created_at);
