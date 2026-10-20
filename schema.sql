@@ -625,7 +625,9 @@ CREATE TABLE new_cooler_receipts (
     warehouse_id     INTEGER REFERENCES wh_warehouses(id),
     note             TEXT,
     received_by      TEXT,
-    received_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+    received_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    closed_at        DATETIME,   -- ປິດລ໋ອດແລ້ວ (ເພີ່ມຕູ້ບໍ່ໄດ້)
+    closed_by        TEXT
 );
 CREATE INDEX idx_new_cooler_receipts_lot ON new_cooler_receipts(lot_no);
 CREATE INDEX idx_new_coolers_lot ON new_coolers(lot_no);
