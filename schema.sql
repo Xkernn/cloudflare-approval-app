@@ -25,6 +25,7 @@ DROP TABLE IF EXISTS ship_trip_stops;
 DROP TABLE IF EXISTS ship_trip_stock;
 DROP TABLE IF EXISTS ship_trips;
 DROP TABLE IF EXISTS new_coolers;
+DROP TABLE IF EXISTS new_cooler_receipts;
 DROP TABLE IF EXISTS stock_count_items;
 DROP TABLE IF EXISTS stock_counts;
 DROP TABLE IF EXISTS wh_warehouses;
@@ -607,9 +608,27 @@ CREATE TABLE new_coolers (
     received_stock_id      INTEGER,                          -- id ຂອງແຖວທີ່ສ້າງໃນ warehouse_stock ຕອນຮັບເຂົ້າ
     received_by            TEXT,
     received_at            DATETIME,
+    receipt_id             INTEGER,                          -- ການຮັບເຂົ້າ (new_cooler_receipts.id) ທີ່ຕູ້ນີ້ຢູ່ — ລ໋ອດ/ຄອນເທນເນີ
+    lot_no                 TEXT,                             -- ເລກລ໋ອດ (ສຳເນົາຈາກ new_cooler_receipts)
     created_by             TEXT,
     created_at             DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ລ໋ອດ + ຄອນເທນເນີ ຂອງຕູ້ທີ່ຮັບເຂົ້າສາງ (1 ການຮັບເຂົ້າ = 1 ແຖວ)
+CREATE TABLE new_cooler_receipts (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    lot_no           TEXT NOT NULL,
+    container_count  INTEGER NOT NULL DEFAULT 0,
+    container_units  TEXT,
+    total_units      INTEGER NOT NULL DEFAULT 0,
+    received_count   INTEGER NOT NULL DEFAULT 0,
+    warehouse_id     INTEGER REFERENCES wh_warehouses(id),
+    note             TEXT,
+    received_by      TEXT,
+    received_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_new_cooler_receipts_lot ON new_cooler_receipts(lot_no);
+CREATE INDEX idx_new_coolers_lot ON new_coolers(lot_no);
 
 CREATE INDEX idx_new_coolers_status ON new_coolers(status);
 CREATE INDEX idx_new_coolers_qr ON new_coolers(qr_code);

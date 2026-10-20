@@ -5029,6 +5029,22 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
               <button type="button" id="ncReceiveBtn" class="btn-add" onclick="ncReceiveSelected()" disabled><i class="fa-solid fa-box-open mr-1"></i> ຮັບເຂົ້າສາງທີ່ເລືອກ (0)</button>
               <button type="button" id="ncUnconfirmBulkBtn" class="btn-act btn-edit hidden" onclick="ncUnconfirmSelected()" disabled title="ຍົກເລີກການຢືນຢັນຕູ້ທີ່ຕິກເລືອກ (admin)"><i class="fa-solid fa-rotate-left"></i> ຍົກເລີກການຢືນຢັນທີ່ເລືອກ (0)</button>
             </div>
+            <!-- ລ໋ອດ + ຄອນເທນເນີ ຂອງຕູ້ທີ່ຮັບເຂົ້າສາງ (ບໍ່ບັງຄັບ) -->
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+              <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;"><i class="fa-solid fa-layer-group mr-1"></i> ລ໋ອດ ແລະ ຄອນເທນເນີ <span style="font-weight:400; color:var(--text-muted);">(ບໍ່ບັງຄັບ — ໃສ່ເພື່ອບັນທຶກວ່າຕູ້ທີ່ຮັບເຂົ້າຄັ້ງນີ້ ແມ່ນລ໋ອດໃດ ມີຈັກຄອນ ແຕ່ລະຄອນມີຈັກໜ່ວຍ)</span></div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="ncLotNo" class="form-control" style="max-width: 200px;" maxlength="60" placeholder="ເລກລ໋ອດ" autocomplete="off" oninput="ncUpdateLotSummary()">
+                <input type="number" id="ncContainerCount" class="form-control" style="max-width: 170px;" min="0" max="200" step="1" placeholder="ຈຳນວນຄອນເທນເນີ" oninput="ncRenderContainerInputs()">
+                <input type="number" id="ncUnitsAll" class="form-control" style="max-width: 200px;" min="1" step="1" placeholder="ໜ່ວຍ/ຄອນ (ເທົ່າກັນທຸກຄອນ)" oninput="ncFillAllContainerUnits()" title="ໃສ່ຄ່າດຽວ ແລ້ວຕື່ມໃຫ້ທຸກຄອນ — ແກ້ແຕ່ລະຄອນຕ່າງຫາກໄດ້">
+                <button type="button" class="btn-act btn-edit" onclick="ncClearLot()"><i class="fa-solid fa-eraser"></i> ລ້າງ</button>
+              </div>
+              <div id="ncContainerUnits" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;"></div>
+              <div id="ncLotSummary" style="margin-top: 6px; font-size: 12.5px; color: var(--text-muted);"></div>
+            </div>
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+              <button type="button" class="btn-act btn-edit" onclick="ncToggleReceipts()"><i class="fa-solid fa-clock-rotate-left"></i> ປະຫວັດລ໋ອດທີ່ຮັບເຂົ້າສາງ</button>
+              <div id="ncReceiptsBox" class="hidden" style="margin-top: 10px;"></div>
+            </div>
           </div>
 
           <div id="ncPanelShip" class="content-card hidden" style="padding: 16px; margin-bottom: 16px;">
@@ -5053,7 +5069,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           <div id="ncListCard" class="content-card">
             <div style="padding: 16px 16px 0 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <div class="input-wrapper fl-search" style="max-width: 320px; flex: 1; min-width: 220px;"><i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="ncSearchInput" class="form-control" placeholder="ຄົ້ນຫາ QR, Serial, CapEx, Model..." oninput="ncRender()">
+                <input type="text" id="ncSearchInput" class="form-control" placeholder="ຄົ້ນຫາ QR, Serial, CapEx, Model, ລ໋ອດ..." oninput="ncRender()">
               </div>
               <select id="ncStatusFilter" class="form-control fl-ctl" style="max-width: 220px;" onchange="ncRender()"></select>
               <div id="ncExtraFilters" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -13504,7 +13520,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       else if (fd === 'no_capex') rows = rows.filter(n => !n.capex);
       else if (fd === 'missing_any') rows = rows.filter(n => !n.serial_number || !n.capex);
       if (q) {
-        rows = rows.filter(n => [n.qr_code, n.serial_number, n.capex, n.cooler_model, n.cooler_brand, n.cooler_type, ncIsShipSub() ? n.ship_province : '']
+        rows = rows.filter(n => [n.qr_code, n.serial_number, n.capex, n.cooler_model, n.cooler_brand, n.cooler_type, n.lot_no, ncIsShipSub() ? n.ship_province : '']
           .some(v => (v || '').toString().toLowerCase().includes(q)));
       }
       return rows;
@@ -13623,6 +13639,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         let info = '';
         if (eff === 'received') {
           info = `<span><i class="fa-solid fa-warehouse"></i>${esc(n.warehouse_name || '-')}</span>
+            ${n.lot_no ? `<span><i class="fa-solid fa-layer-group"></i>ລ໋ອດ: <b>${esc(n.lot_no)}</b></span>` : ''}
             ${n.received_at ? `<span><i class="fa-solid fa-clock"></i>ຮັບເຂົ້າ: ${esc(fmtLaoTs(n.received_at))}</span>` : ''}`;
         } else if (eff === 'confirmed') {
           info = n.confirmed_at ? `<span><i class="fa-solid fa-clock"></i>ຢືນຢັນ: ${esc(fmtLaoTs(n.confirmed_at))}</span>` : '';
@@ -13688,6 +13705,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
 
     function ncUpdateSelectionUI() {
+      ncUpdateLotSummary();
       const btn = document.getElementById('ncReceiveBtn');
       btn.innerHTML = `<i class="fa-solid fa-box-open mr-1"></i> ຮັບເຂົ້າສາງທີ່ເລືອກ (${ncSelected.size})`;
       btn.disabled = ncSelected.size === 0;
@@ -14697,6 +14715,129 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       ncSetMsg(data.skipped ? 'warn' : 'ok', `ຍົກເລີກການຢືນຢັນແລ້ວ ${data.unconfirmed || 0} ໜ່ວຍ` + (data.skipped ? ` · ຂ້າມ ${data.skipped} ໜ່ວຍ (ຮັບເຂົ້າສາງ/ຢູ່ໃນຖ້ຽວແລ້ວ ຫຼື ບໍ່ພົບ)` : ''));
     }
 
+    /* ===== ລ໋ອດ + ຄອນເທນເນີ ຂອງຕູ້ທີ່ຮັບເຂົ້າສາງ =====
+       ໃສ່ເລກລ໋ອດ + ຈຳນວນຄອນເທນເນີ + ຈຳນວນໜ່ວຍຂອງແຕ່ລະຄອນ (ບໍ່ບັງຄັບ). ຕອນກົດຮັບເຂົ້າສາງ ລະບົບບັນທຶກເປັນ "ການຮັບເຂົ້າ" 1 ແຖວ
+       (new_cooler_receipts) ແລ້ວຜູກຕູ້ທີ່ຮັບສຳເລັດເຂົ້າກັບລ໋ອດນັ້ນ. ຖ້າກົດຮັບທີລະໜ່ວຍດ້ວຍຂໍ້ມູນດຽວກັນ ຈະໃຊ້ການຮັບເຂົ້າເດີມຕໍ່ (ບໍ່ສ້າງຊ້ຳ) */
+    let ncActiveReceipt = null; // { key, id } ການຮັບເຂົ້າທີ່ສ້າງຫຼ້າສຸດ ໃນໜ້ານີ້
+
+    function ncContainerUnitInputs() { return [...document.querySelectorAll('#ncContainerUnits .nc-cu')]; }
+
+    function ncRenderContainerInputs() {
+      const box = document.getElementById('ncContainerUnits');
+      if (!box) return;
+      let n = parseInt(document.getElementById('ncContainerCount').value, 10);
+      if (!Number.isFinite(n) || n < 0) n = 0;
+      if (n > 200) n = 200;
+      const prev = ncContainerUnitInputs().map(i => i.value);
+      const all = document.getElementById('ncUnitsAll').value;
+      let html = '';
+      for (let i = 0; i < n; i++) {
+        const v = prev[i] !== undefined && prev[i] !== '' ? prev[i] : all;
+        html += `<label style="display:flex; flex-direction:column; gap:2px; font-size:12px; color:var(--text-muted);">ຄອນທີ ${i + 1}
+          <input type="number" class="form-control nc-cu" style="width:110px;" min="1" step="1" placeholder="ໜ່ວຍ" value="${esc(v)}" oninput="ncUpdateLotSummary()"></label>`;
+      }
+      box.innerHTML = html;
+      ncUpdateLotSummary();
+    }
+
+    function ncFillAllContainerUnits() {
+      const v = document.getElementById('ncUnitsAll').value;
+      ncContainerUnitInputs().forEach(i => { i.value = v; });
+      ncUpdateLotSummary();
+    }
+
+    function ncClearLot() {
+      ['ncLotNo', 'ncContainerCount', 'ncUnitsAll'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+      ncActiveReceipt = null;
+      ncRenderContainerInputs();
+    }
+
+    // ອ່ານຄ່າທີ່ປ້ອນ -> { lot_no, units } | null (ບໍ່ໄດ້ປ້ອນຫຍັງ) | { error }
+    function ncReadLot() {
+      const lot = (document.getElementById('ncLotNo').value || '').trim();
+      const cnt = parseInt(document.getElementById('ncContainerCount').value, 10) || 0;
+      const inputs = ncContainerUnitInputs();
+      if (!lot && !cnt) return null;
+      if (!lot) return { error: 'ກະລຸນາລະບຸເລກລ໋ອດ (ມີການປ້ອນຈຳນວນຄອນເທນເນີແລ້ວ)' };
+      const units = inputs.map(i => Number(i.value));
+      if (units.some(n => !Number.isInteger(n) || n <= 0)) return { error: 'ກະລຸນາໃສ່ຈຳນວນໜ່ວຍຂອງທຸກຄອນເທນເນີ (ຈຳນວນເຕັມ ຫຼາຍກວ່າ 0)' };
+      return { lot_no: lot, units };
+    }
+
+    function ncUpdateLotSummary() {
+      const el = document.getElementById('ncLotSummary');
+      if (!el) return;
+      const inputs = ncContainerUnitInputs();
+      const nums = inputs.map(i => Number(i.value) || 0);
+      const sum = nums.reduce((a, b) => a + b, 0);
+      if (!inputs.length) { el.innerHTML = ''; return; }
+      const sel = (typeof ncSelected !== 'undefined') ? ncSelected.size : 0;
+      let html = `ລວມ <b>${sum}</b> ໜ່ວຍ ໃນ <b>${inputs.length}</b> ຄອນເທນເນີ`;
+      if (sel) html += ` · ເລືອກຮັບຕອນນີ້ <b>${sel}</b> ໜ່ວຍ` + (sel !== sum ? ' <span style="color:#b45309;">(ບໍ່ເທົ່າກັນ)</span>' : ' <span style="color:#15803d;">(ກົງກັນ)</span>');
+      el.innerHTML = html;
+    }
+
+    // ສ້າງ/ໃຊ້ການຮັບເຂົ້າ -> receipt_id (null = ບໍ່ໃສ່ລ໋ອດ, false = ຜິດພາດ ຢຸດຮັບ)
+    async function ncEnsureReceipt(lot, whId, count) {
+      if (!lot) return null;
+      const key = JSON.stringify([lot.lot_no, lot.units, whId]);
+      if (ncActiveReceipt && ncActiveReceipt.key === key) return ncActiveReceipt.id;
+      if (lot.units.length) {
+        const sum = lot.units.reduce((a, b) => a + b, 0);
+        if (sum !== count && !await appConfirm(`ຈຳນວນລວມຕາມຄອນເທນເນີ (${sum}) ບໍ່ເທົ່າກັບຕູ້ທີ່ຈະຮັບ (${count}) — ສືບຕໍ່ບັນທຶກແບບນີ້ບໍ?`)) return false;
+      }
+      try {
+        const res = await fetch('/api/admin/new-cooler-receipts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lot_no: lot.lot_no, container_units: lot.units, warehouse_id: Number(whId) })
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok || !d.id) { alert(d.error || 'ບັນທຶກລ໋ອດບໍ່ສຳເລັດ — ຍັງບໍ່ໄດ້ຮັບຕູ້ເຂົ້າສາງ'); return false; }
+        ncActiveReceipt = { key, id: d.id };
+        return d.id;
+      } catch (e) {
+        alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້ — ຍັງບໍ່ໄດ້ຮັບຕູ້ເຂົ້າສາງ');
+        return false;
+      }
+    }
+
+    async function ncToggleReceipts() {
+      const box = document.getElementById('ncReceiptsBox');
+      if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      await ncLoadReceipts();
+    }
+
+    async function ncLoadReceipts() {
+      const box = document.getElementById('ncReceiptsBox');
+      if (!box || box.classList.contains('hidden')) return;
+      box.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">ກຳລັງໂຫຼດ...</div>';
+      let list = [];
+      try {
+        const res = await fetch('/api/admin/new-cooler-receipts');
+        const d = await res.json().catch(() => ([]));
+        if (!res.ok) { box.innerHTML = `<div style="font-size:13px; color:#b91c1c;">${esc((d && d.error) || 'ໂຫຼດບໍ່ສຳເລັດ')}</div>`; return; }
+        list = Array.isArray(d) ? d : [];
+      } catch (e) { box.innerHTML = '<div style="font-size:13px; color:#b91c1c;">ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້</div>'; return; }
+      if (!list.length) { box.innerHTML = '<div style="font-size:13px; color:var(--text-muted);">ຍັງບໍ່ມີການບັນທຶກລ໋ອດ</div>'; return; }
+      box.innerHTML = list.map(r => {
+        let units = [];
+        try { units = JSON.parse(r.container_units || '[]'); } catch (e) { units = []; }
+        const per = units.length ? units.join(', ') : '-';
+        return `<div class="mgmt-card" style="margin-bottom:8px;">
+          <div class="mgmt-card-top"><div class="mgmt-card-title"><i class="fa-solid fa-layer-group"></i> ລ໋ອດ ${esc(r.lot_no)}</div></div>
+          <div class="mgmt-card-sub">
+            <span><i class="fa-solid fa-box-archive"></i>ຄອນເທນເນີ: <b>${r.container_count || 0}</b></span>
+            <span><i class="fa-solid fa-boxes-stacked"></i>ໜ່ວຍ/ຄອນ: <b>${esc(per)}</b></span>
+            <span>ລວມທີ່ແຈ້ງ: <b>${r.total_units || 0}</b> · ຮັບເຂົ້າແລ້ວ: <b style="color:#15803d;">${r.received_count || 0}</b></span>
+            <span><i class="fa-solid fa-warehouse"></i>${esc(r.warehouse_name || '-')}</span>
+            <span><i class="fa-solid fa-clock"></i>${esc(fmtLaoTs(r.received_at))}${r.received_by ? ' · ' + esc(r.received_by) : ''}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
     // ຂັ້ນ 2: ຮັບເຂົ້າສາງ (ສົ່ງເປັນກ້ອນລະ 10 ລາຍການ)
     async function ncReceiveSelected() {
       await ncReceiveIds([...ncSelected]);
@@ -14708,10 +14849,15 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const whId = sel.value;
       if (!whId) { alert('ກະລຸນາເລືອກສາງທີ່ຈະຮັບເຂົ້າ'); return; }
       const whName = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
-      if (!await appConfirm(`ຮັບຕູ້ ${ids.length} ລາຍການ ເຂົ້າສາງ "${whName}" ຫຼືບໍ?`)) return;
+      const lot = ncReadLot();
+      if (lot && lot.error) { alert(lot.error); return; }
+      const lotText = lot ? ` (ລ໋ອດ ${lot.lot_no}${lot.units.length ? ` · ${lot.units.length} ຄອນ` : ''})` : '';
+      if (!await appConfirm(`ຮັບຕູ້ ${ids.length} ລາຍການ ເຂົ້າສາງ "${whName}"${lotText} ຫຼືບໍ?`)) return;
 
       const btn = document.getElementById('ncReceiveBtn');
       btn.disabled = true;
+      const receiptId = await ncEnsureReceipt(lot, whId, ids.length);
+      if (receiptId === false) { ncUpdateSelectionUI(); return; }
       let received = 0;
       const failures = [];
       for (let i = 0; i < ids.length; i += 10) {
@@ -14720,7 +14866,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           const res = await fetch('/api/admin/receive-new-coolers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: chunk, warehouse_id: Number(whId) })
+            body: JSON.stringify({ ids: chunk, warehouse_id: Number(whId), receipt_id: receiptId || undefined })
           });
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
@@ -14735,10 +14881,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       }
       ids.forEach(id => ncSelected.delete(id));
       await ncLoadList({ ids });
+      ncLoadReceipts();
       if (failures.length) {
         ncSetMsg(received ? 'warn' : 'err', `ຮັບເຂົ້າສາງສຳເລັດ ${received} ລາຍການ, ບໍ່ສຳເລັດ ${failures.length}: ${failures.slice(0, 5).join(', ')}${failures.length > 5 ? ' ...' : ''}`);
       } else {
-        ncSetMsg('ok', `ຮັບເຂົ້າສາງ "${whName}" ແລ້ວ ${received} ລາຍການ`);
+        ncSetMsg('ok', `ຮັບເຂົ້າສາງ "${whName}" ແລ້ວ ${received} ລາຍການ${lot ? ' · ລ໋ອດ ' + lot.lot_no : ''}`);
       }
     }
 
@@ -16720,7 +16867,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           'Cooler Brand': n.cooler_brand || '', 'Cooler Type': n.cooler_type || '', 'Model': n.cooler_model || '',
           'QR Code': n.qr_code || '', 'Serial Number': n.serial_number || '', 'CapEx': n.capex || '',
           'Notes': n.notes || '', 'ສະຖານະ': labels[ncEff(n)] || ncEff(n),
-          'ສາງທີ່ຮັບເຂົ້າ': n.warehouse_name || '', 'ແຂວງສົ່ງອອກ': n.ship_province || '', 'ຖ້ຽວ': n.trip_no || ''
+          'ສາງທີ່ຮັບເຂົ້າ': n.warehouse_name || '', 'ລ໋ອດ': n.lot_no || '', 'ແຂວງສົ່ງອອກ': n.ship_province || '', 'ຖ້ຽວ': n.trip_no || ''
         };
       });
       const ws = XLSX.utils.json_to_sheet(rows);

@@ -1466,6 +1466,7 @@ const ROUTE_ROLES = {
   "/api/admin/confirm-new-cooler": ROLE_WH,
   "/api/admin/confirm-new-coolers-bulk": ROLE_ADMIN, // admin ຢືນຢັນຫຼາຍຕູ້ພ້ອມກັນ
   "/api/admin/receive-new-coolers": ROLE_WH,
+  "/api/admin/new-cooler-receipts": ROLE_WH, // ບັນທຶກ/ເບິ່ງ ລ໋ອດ + ຄອນເທນເນີ ຂອງຕູ້ທີ່ຮັບເຂົ້າສາງ (warehouse ໃຊ້ໄດ້)
   // ຖ້ຽວລົດສົ່ງຕູ້ຕ່າງແຂວງ: warehouse ໃຊ້ໄດ້ທັງໜ້າ ຍົກເວັ້ນ "ລຶບຖ້ຽວ" (/api/admin/ship-trips/delete ຍັງເປັນ admin ເທົ່ານັ້ນ)
   "/api/admin/ship-trips": ROLE_WH,
   "/api/admin/ship-trips/update": ROLE_WH,
@@ -4202,10 +4203,52 @@ export default {
       }
     }
 
+    // ລ໋ອດ + ຄອນເທນເນີ ຂອງຕູ້ທີ່ຮັບເຂົ້າສາງ (new_cooler_receipts)
+    // GET  -> ປະຫວັດການຮັບເຂົ້າ (ລ່າສຸດ 200 ລາຍການ)
+    // POST -> ສ້າງບັນທຶກກ່ອນຮັບເຂົ້າ { lot_no, container_units: [ຈຳນວນໜ່ວຍຂອງແຕ່ລະຄອນ], warehouse_id, note } -> { id }
+    //         frontend ສົ່ງ receipt_id ນີ້ໄປກັບ /api/admin/receive-new-coolers ເພື່ອຜູກຕູ້ເຂົ້າກັບລ໋ອດ
+    if (url.pathname === "/api/admin/new-cooler-receipts" && request.method === "GET") {
+      try {
+        const { results } = await env.DB.prepare(
+          `SELECT r.*, w.name AS warehouse_name
+             FROM new_cooler_receipts r
+             LEFT JOIN wh_warehouses w ON w.id = r.warehouse_id
+            ORDER BY r.id DESC LIMIT 200`
+        ).all();
+        return Response.json(results || []);
+      } catch (e) {
+        console.error("/api/admin/new-cooler-receipts GET", e);
+        return Response.json({ error: "ໂຫຼດປະຫວັດລ໋ອດບໍ່ສຳເລັດ (ກວດວ່າຮັນ migration_add_new_cooler_receipts.sql ແລ້ວ)" }, { status: 500 });
+      }
+    }
+    if (url.pathname === "/api/admin/new-cooler-receipts" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const lotNo = String(body.lot_no || "").trim().slice(0, 60);
+        if (!lotNo) return Response.json({ error: "ກະລຸນາລະບຸເລກລ໋ອດ" }, { status: 400 });
+        const units = Array.isArray(body.container_units) ? body.container_units.map(Number) : [];
+        if (units.length > 200 || units.some((n) => !Number.isInteger(n) || n <= 0 || n > 100000)) {
+          return Response.json({ error: "ຈຳນວນໜ່ວຍຕໍ່ຄອນເທນເນີຕ້ອງເປັນຈຳນວນເຕັມ ຫຼາຍກວ່າ 0 (ສູງສຸດ 200 ຄອນເທນເນີ)" }, { status: 400 });
+        }
+        const total = units.reduce((a, b) => a + b, 0);
+        const whId = Number(body.warehouse_id) || null;
+        const note = String(body.note || "").trim().slice(0, 300) || null;
+        const actorEmail = (session && session.email) || null;
+        const ins = await env.DB.prepare(
+          `INSERT INTO new_cooler_receipts (lot_no, container_count, container_units, total_units, warehouse_id, note, received_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(lotNo, units.length, JSON.stringify(units), total, whId, note, actorEmail).run();
+        return Response.json({ id: ins.meta ? ins.meta.last_row_id : null, lot_no: lotNo, container_count: units.length, total_units: total });
+      } catch (e) {
+        console.error("/api/admin/new-cooler-receipts POST", e);
+        return Response.json({ error: "ບັນທຶກລ໋ອດບໍ່ສຳເລັດ (ກວດວ່າຮັນ migration_add_new_cooler_receipts.sql ແລ້ວ)" }, { status: 500 });
+      }
+    }
+
     // ຂັ້ນ 2 - ຮັບເຂົ້າສາງ: ຮັບໄດ້ເທື່ອລະຫຼາຍລາຍການ (ids) ສະເພາະທີ່ຢືນຢັນແລ້ວ. ຈຳກັດ 10 ລາຍການຕໍ່ຄັ້ງ (ກັນເກີນຈຳນວນ query ຕໍ່ request) - frontend ແບ່ງສົ່ງເປັນກ້ອນໃຫ້
     if (url.pathname === "/api/admin/receive-new-coolers" && request.method === "POST") {
       try {
-        const { ids, warehouse_id } = await request.json();
+        const { ids, warehouse_id, receipt_id } = await request.json();
         const idList = [...new Set((Array.isArray(ids) ? ids : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
         if (!idList.length) return Response.json({ error: "ກະລຸນາເລືອກລາຍການທີ່ຈະຮັບເຂົ້າສາງ" }, { status: 400 });
         if (idList.length > 10) return Response.json({ error: "ຮັບໄດ້ສູງສຸດ 10 ລາຍການຕໍ່ຄັ້ງ" }, { status: 400 });
@@ -4214,15 +4257,30 @@ export default {
         if (!wh) return Response.json({ error: "ບໍ່ພົບສາງທີ່ເລືອກ" }, { status: 400 });
 
         const actorEmail = (session && session.email) || null;
+        // ລ໋ອດ (ບໍ່ບັງຄັບ): ຖ້າສົ່ງ receipt_id ມາ ຈະຜູກຕູ້ທີ່ຮັບສຳເລັດເຂົ້າກັບລ໋ອດນັ້ນ
+        let receipt = null;
+        if (receipt_id) {
+          receipt = await env.DB.prepare("SELECT id, lot_no FROM new_cooler_receipts WHERE id = ?").bind(Number(receipt_id)).first();
+          if (!receipt) return Response.json({ error: "ບໍ່ພົບບັນທຶກລ໋ອດ" }, { status: 400 });
+        }
         let received = 0;
+        const receivedIds = [];
         const failures = [];
         for (const rid of idList) {
           const row = await env.DB.prepare("SELECT * FROM new_coolers WHERE id = ?").bind(rid).first();
           const label = row ? (row.qr_code || row.serial_number || row.capex || `#${rid}`) : `#${rid}`;
           if (!row) { failures.push({ id: rid, label, reason: "ບໍ່ພົບລາຍການ" }); continue; }
           const r = await receiveNewCoolerRow(env, row, wh, actorEmail);
-          if (r.outcome === "received") received++;
+          if (r.outcome === "received") { received++; receivedIds.push(rid); }
           else failures.push({ id: rid, label, reason: r.error || r.message || "ຮັບເຂົ້າສາງບໍ່ສຳເລັດ" });
+        }
+        if (receipt && receivedIds.length) {
+          try {
+            await env.DB.batch([
+              env.DB.prepare(`UPDATE new_coolers SET receipt_id = ?, lot_no = ? WHERE id IN (${receivedIds.map(() => "?").join(",")})`).bind(receipt.id, receipt.lot_no, ...receivedIds),
+              env.DB.prepare("UPDATE new_cooler_receipts SET received_count = received_count + ? WHERE id = ?").bind(receivedIds.length, receipt.id),
+            ]);
+          } catch (tagErr) { console.error("/api/admin/receive-new-coolers tag lot", tagErr); }
         }
         return Response.json({ received, failures, warehouse_name: wh.name });
       } catch (e) {
