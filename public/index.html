@@ -6345,6 +6345,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       <div style="display:flex; align-items:center; gap:10px; color:#b45309; font-weight:700; font-size:13px; letter-spacing:.2px;">
         <i id="saOvIcon" class="fa-solid fa-triangle-exclamation" style="font-size:20px;"></i> ແຈ້ງເຕືອນພິເສດ — ຕ້ອງດຳເນີນການ
       </div>
+      <div id="saOvTap" class="hidden" style="margin-top:10px; padding:8px 10px; border-radius:10px; background:#fef2f2; color:#b91c1c; font-size:13px; font-weight:700; text-align:center; animation: saBlink 1s ease-in-out infinite;"><i class="fa-solid fa-volume-high mr-1"></i> ແຕະໜ້າຈໍ 1 ຄັ້ງ ເພື່ອເປີດສຽງແຈ້ງເຕືອນ</div>
       <div id="saOvBody" style="margin-top:12px;"></div>
       <div id="saOvActions" style="display:flex; flex-direction:column; gap:8px; margin-top:16px;"></div>
       <div style="text-align:center; margin-top:14px;">
@@ -8403,6 +8404,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       ov.classList.remove('hidden');
       ov.style.display = 'flex';
       if (wasHidden) { saPlayAlert(); saStartRepeat(); }
+      saTapHint();
     }
     function hideSpecialAlertOverlay() {
       const ov = document.getElementById('specialAlertOverlay');
@@ -8410,6 +8412,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       ov.classList.add('hidden');
       ov.style.display = '';
       saStopRepeat();
+      saTapHint();
     }
 
     /* ---- ສຽງ + ສັ່ນ ຂອງແຈ້ງເຕືອນພິເສດ (WebAudio ບໍ່ຕ້ອງມີໄຟລ໌ສຽງ) ----
@@ -8429,16 +8432,33 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         o.start(t0 + off); o.stop(t0 + off + 0.18);
       });
     }
+    function saCtx() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!saAudioCtx) {
+        saAudioCtx = new AC();
+        saAudioCtx.onstatechange = saTapHint;
+      }
+      return saAudioCtx;
+    }
+    // ສະແດງແຖບ "ແຕະໜ້າຈໍເພື່ອເປີດສຽງ" ຖ້າບຣາວເຊີຍັງບລັອກສຽງ (ຍັງບໍ່ມີການແຕະ)
+    function saTapHint() {
+      const el = document.getElementById('saOvTap'); if (!el) return;
+      const ov = document.getElementById('specialAlertOverlay');
+      const visible = ov && !ov.classList.contains('hidden');
+      el.classList.toggle('hidden', !(visible && (!saAudioCtx || saAudioCtx.state !== 'running')));
+    }
     function saPlayAlert() {
       try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) { /* ignore */ }
       try {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return;
-        if (!saAudioCtx) saAudioCtx = new AC();
-        const run = () => { saPendingPlay = false; saBeepSequence(saAudioCtx); };
-        if (saAudioCtx.state === 'running') { run(); return; }
-        saAudioCtx.resume().then(() => { if (saAudioCtx.state === 'running') run(); else saPendingPlay = true; }).catch(() => { saPendingPlay = true; });
+        const ctx = saCtx();
+        if (!ctx) return;
+        const run = () => { saPendingPlay = false; saBeepSequence(ctx); saTapHint(); };
+        if (ctx.state === 'running') { run(); return; }
+        saPendingPlay = true;
+        ctx.resume().then(() => { if (ctx.state === 'running') run(); }).catch(() => {});
       } catch (e) { saPendingPlay = true; }
+      saTapHint();
     }
     function saStartRepeat() {
       saStopRepeat();
@@ -8449,11 +8469,23 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       }, 2000);
     }
     function saStopRepeat() { if (saRepeatTimer) { clearInterval(saRepeatTimer); saRepeatTimer = null; } saPendingPlay = false; }
-    // ຖ້າສຽງຖືກບລັອກ (ຍັງບໍ່ເຄີຍແຕະໜ້າຈໍ) -> ເຫຼ່ນຕອນແຕະຄັ້ງທຳອິດ
-    document.addEventListener('pointerdown', () => {
-      const ov = document.getElementById('specialAlertOverlay');
-      if (saPendingPlay && ov && !ov.classList.contains('hidden')) saPlayAlert();
-    }, { passive: true });
+    // ປົດລັອກສຽງດ້ວຍການແຕະ/ກົດ ຄັ້ງທຳອິດ (ຕ້ອງເປັນ gesture: iOS ນັບ touchend/click, ບໍ່ນັບ pointerdown) — ເຮັດຕະຫຼອດຈົນກວ່າສຽງຈະ running
+    function saUnlockAudio() {
+      try {
+        const ctx = saCtx(); if (!ctx) return;
+        if (ctx.state !== 'running') {
+          ctx.resume().then(() => {
+            if (ctx.state !== 'running') return;
+            try { const b = ctx.createBuffer(1, 1, 22050), src = ctx.createBufferSource(); src.buffer = b; src.connect(ctx.destination); src.start(0); } catch (e) { /* ignore */ }
+            const ov = document.getElementById('specialAlertOverlay');
+            if (ov && !ov.classList.contains('hidden')) saPlayAlert(); // ແຕະແລ້ວ ເຫຼ່ນທັນທີ ບໍ່ຕ້ອງລໍຮອບຖັດໄປ
+            saTapHint();
+          }).catch(() => {});
+        }
+      } catch (e) { /* ignore */ }
+    }
+    ['pointerdown', 'touchstart', 'touchend', 'click', 'keydown'].forEach(ev =>
+      document.addEventListener(ev, () => { if (!saAudioCtx || saAudioCtx.state !== 'running') saUnlockAudio(); }, { capture: true, passive: true }));
     function specialAlertGo(id) {
       const a = specialAlerts.find(x => Number(x.id) === Number(id));
       if (!a || !a.action_view) return;
