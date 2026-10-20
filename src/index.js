@@ -1364,7 +1364,7 @@ const isAdminLike = (role) => role === "admin" || role === "assistant_admin";
 const ASSISTANT_ADMIN_DENIED_PATHS = new Set([
   "/api/admin/users", "/api/admin/update-status", "/api/admin/update-user-role", "/api/admin/reset-password", "/api/admin/create-dsm-users",
   "/api/admin/user-app-status", "/api/admin/login-logs", "/api/admin/maintenance",
-  "/api/admin/ship-trip-receipts/reset",
+  "/api/admin/ship-trip-receipts/reset", "/api/admin/backup",
 ]);
 // ເສັ້ນທາງທີ່ຜູ້ຊ່ວຍ admin ເຮັດບໍ່ໄດ້: ຈັດການຜູ້ໃຊ້ ແລະ ທຸກການລຶບ (delete-* ຫຼື .../delete)
 const isAssistantAdminDenied = (path) =>
@@ -8530,6 +8530,72 @@ export default {
       } catch (e) {
         console.error("/api/admin/save-budget", e);
         return Response.json({ error: "ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້" }, { status: 500 });
+      }
+    }
+
+    // 7b-0. Admin Back up data: ສົ່ງອອກທຸກຕາຕະລາງຂອງ D1 ເປັນໄຟລ໌ JSON (stream ເທື່ອລະ 100 ແຖວ ບໍ່ໃຫ້ຫນ່ວຍຄວາມຈຳເຕັມ)
+    // ໝາຍເຫດ: ບໍ່ລວມຮູບໃນ R2 (PHOTOS); ໄຟລ໌ມີຂໍ້ມູນລະອຽດອ່ອນ (ເຊັ່ນ hash ລະຫັດຜ່ານ) ຈຶ່ງໃຫ້ສະເພາະ admin (ຜູ້ຊ່ວຍ admin ຖືກຫ້າມ)
+    if (url.pathname === "/api/admin/backup" && request.method === "GET") {
+      try {
+        const tbl = await env.DB.prepare(
+          "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name"
+        ).all();
+        const tables = (tbl.results || []).filter(t => /^[A-Za-z0-9_]+$/.test(t.name));
+        const enc = new TextEncoder();
+        const { readable, writable } = new TransformStream();
+        const w = writable.getWriter();
+        const stamp = new Date().toISOString();
+        ctx.waitUntil((async () => {
+          try {
+            const schema = {}; tables.forEach(t => { schema[t.name] = t.sql || null; });
+            await w.write(enc.encode('{"meta":' + JSON.stringify({ app: "cloudflare-approval-app", exported_at: stamp, table_count: tables.length, schema }) + ',"tables":{'));
+            let firstTable = true;
+            for (const t of tables) {
+              await w.write(enc.encode((firstTable ? "" : ",") + JSON.stringify(t.name) + ":["));
+              firstTable = false;
+              let lastRid = 0, firstRow = true, page = 100, useRowid = true, offset = 0;
+              for (;;) {
+                let rows;
+                try {
+                  rows = useRowid
+                    ? (await env.DB.prepare(`SELECT rowid AS __rid, * FROM "${t.name}" WHERE rowid > ? ORDER BY rowid LIMIT ${page}`).bind(lastRid).all()).results
+                    : (await env.DB.prepare(`SELECT * FROM "${t.name}" LIMIT ${page} OFFSET ${offset}`).all()).results;
+                } catch (qErr) {
+                  if (useRowid) { useRowid = false; continue; }      // ຕາຕະລາງ WITHOUT ROWID -> ໃຊ້ OFFSET
+                  if (page > 10) { page = 10; continue; }            // ແຖວໃຫຍ່ (ເຊັ່ນ ຮູບ base64) -> ຫຼຸດຂະໜາດໜ້າ
+                  throw qErr;
+                }
+                if (!rows || !rows.length) break;
+                let chunk = "";
+                for (const r of rows) {
+                  if (useRowid) { lastRid = r.__rid; delete r.__rid; }
+                  chunk += (firstRow ? "" : ",") + JSON.stringify(r);
+                  firstRow = false;
+                }
+                if (!useRowid) offset += rows.length;
+                await w.write(enc.encode(chunk));
+                if (rows.length < page) break;
+              }
+              await w.write(enc.encode("]"));
+            }
+            await w.write(enc.encode("}}"));
+          } catch (streamErr) {
+            console.error("/api/admin/backup stream", streamErr);
+            try { await w.abort(streamErr); } catch (e) { /* ignore */ }
+            return;
+          }
+          try { await w.close(); } catch (e) { /* ignore */ }
+        })());
+        return new Response(readable, {
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Content-Disposition": `attachment; filename="backup_${stamp.slice(0, 16).replace(/[-:T]/g, "").replace(/^(\d{8})(\d{4})$/, "$1_$2")}.json"`,
+            "Cache-Control": "no-store",
+          },
+        });
+      } catch (e) {
+        console.error("/api/admin/backup", e);
+        return Response.json({ error: "ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
       }
     }
 

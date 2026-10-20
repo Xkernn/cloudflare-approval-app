@@ -2716,6 +2716,15 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <textarea id="maintMessageInput" class="form-control" rows="2" maxlength="300" style="margin-top:10px;" placeholder="ຂໍ້ຄວາມທີ່ຈະສະແດງໃຫ້ຜູ້ໃຊ້ (ບໍ່ບັງຄັບ) ເຊັ່ນ: ຈະກັບມາໃຊ້ໄດ້ເວລາ 14:00"></textarea>
         <div style="font-size:12.5px;color:var(--text-muted);margin-top:6px;">ເມື່ອເປີດ: ມີແຕ່ role <b>admin</b> ແລະ team <b>ADMIN TEAM</b> ເທົ່ານັ້ນທີ່ເຂົ້າສູ່ລະບົບໄດ້ — ຄົນອື່ນຈະເຫັນໜ້າ "ກຳລັງປັບປຸງ" (ມີຜົນພາຍໃນ ~5 ວິນາທີ).</div>
       </div>
+      <div id="backupCard" class="maint-card hidden" style="margin-top:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="font-weight:700;"><i class="fa-solid fa-database"></i> ສຳຮອງຂໍ້ມູນ (Back up data)</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">ດາວໂຫລດຂໍ້ມູນທຸກຕາຕະລາງເປັນໄຟລ໌ JSON. ບໍ່ລວມຮູບໃນ R2. ໄຟລ໌ມີຂໍ້ມູນລະອຽດອ່ອນ (ເຊັ່ນ ລະຫັດຜ່ານທີ່ເຂົ້າລະຫັດ) ກະລຸນາເກັບຮັກສາໃຫ້ປອດໄພ.</div>
+          </div>
+          <button type="button" id="backupBtn" class="btn-add" onclick="downloadBackup()"><i class="fa-solid fa-download mr-1"></i> Back up ດຽວນີ້</button>
+        </div>
+      </div>
         <div class="page-header">
           <div>
             <h1>Admin Management Dashboard</h1>
@@ -7612,8 +7621,26 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         if (!res.ok) return;
         const d = await res.json();
         document.getElementById('maintenanceCard').classList.remove('hidden');
+        const bc = document.getElementById('backupCard'); if (bc) bc.classList.remove('hidden');
         renderMaintenanceCard(d);
       } catch (err) { /* ignore */ }
+    }
+    async function downloadBackup() {
+      const btn = document.getElementById('backupBtn');
+      if (!confirm('ສຳຮອງຂໍ້ມູນທັງໝົດ? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາຫຼາຍນາທີ — ກະລຸນາຢ່າປິດໜ້າຈໍ.')) return;
+      const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> ກຳລັງສຳຮອງ...';
+      try {
+        const res = await fetch('/api/admin/backup');
+        if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ'); return; }
+        const blob = await res.blob();
+        const cd = res.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename="([^"]+)"/);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = m ? m[1] : 'backup.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      } catch (err) { alert('ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ (ການເຊື່ອມຕໍ່ຂາດ ຫຼື ຂໍ້ມູນໃຫຍ່ເກີນໄປ)'); }
+      finally { btn.disabled = false; btn.innerHTML = old; }
     }
     async function toggleMaintenance() {
       const turnOn = !maintState.enabled;
