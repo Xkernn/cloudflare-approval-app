@@ -26934,7 +26934,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const res = await fetch(`/api/asset-requests?userId=${currentUser.id}`);
         const requests = await res.json();
         // ໜ້າເມນູນີ້ໃຫ້ໂຊວ໌ສະເພາະຄຳຂໍທີ່ status ຍັງ "pending" ເທົ່ານັ້ນ (ຄຳຂໍທີ່ approved/rejected ແລ້ວ ເບິ່ງໄດ້ທີ່ໜ້າ "ປະຫວັດ")
-        const pendingOnly = (requests || []).filter(r => r.status === 'pending');
+        const pendingOnly = (requests || []).filter(r => r.status === 'pending' && !(currentUser.role === 'warehouse' && !r.admin_checked_at)); // ສາງເຫັນສະເພາະທີ່ Admin ກວດແລ້ວ
         currentRequestsData = pendingOnly;
         filterAssetRequests();
         setMenuBadge('assetRequestBadge', requestsAwaitingMe(pendingOnly));

@@ -9139,7 +9139,11 @@ export default {
           "SELECT * FROM asset_requests WHERE user_id = ? ORDER BY id DESC"
         ).bind(userId).all());
       }
-      return Response.json(results || []);
+      // ອະນຸມັດ 2 ຂັ້ນ: ສາງບໍ່ເຫັນຄຳຂໍທີ່ "ລໍຖ້າ Admin ກວດສອບ" (ເຫັນເມື່ອ Admin ກວດແລ້ວເທົ່ານັ້ນ)
+      const rows = requester.role === "warehouse"
+        ? (results || []).filter((r) => !(r.status === "pending" && !r.admin_checked_at))
+        : (results || []);
+      return Response.json(rows);
     }
 
     // 8b. Submit Asset Request API (User ສົ່ງຄຳຂໍเบิก Asset ໃໝ່)
@@ -10351,7 +10355,7 @@ export default {
       const wantsAll = (canViewAll(requester.role) || isDsmReq) && (!mdeCode || mdeCode === "ALL");
       if (!wantsAll && !mdeCode) return Response.json({ error: "ບໍ່ພົບ MDE Code" }, { status: 400 });
 
-      const { results: requests } = await (wantsAll && isDsmReq
+      const { results: requestsAll } = await (wantsAll && isDsmReq
         ? env.DB.prepare(
             `SELECT r.*, u.email AS requester_email FROM asset_requests r
              LEFT JOIN users u ON u.id = r.user_id
@@ -10367,6 +10371,11 @@ export default {
              LEFT JOIN users u ON u.id = r.user_id WHERE r.mde_code = ? ORDER BY r.id DESC`
           ).bind(mdeCode)
       ).all();
+
+      // ອະນຸມັດ 2 ຂັ້ນ: ສາງບໍ່ເຫັນຄຳຂໍທີ່ຍັງລໍຖ້າ Admin ກວດສອບ
+      const requests = requester.role === "warehouse"
+        ? (requestsAll || []).filter((r) => !(r.status === "pending" && !r.admin_checked_at))
+        : (requestsAll || []);
 
       const { results: assets } = await (wantsAll && isDsmReq
         ? env.DB.prepare(`SELECT * FROM assets WHERE ${TEAM_MDE_SQL} ORDER BY id DESC`).bind(requester.team || "")
