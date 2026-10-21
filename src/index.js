@@ -7235,6 +7235,88 @@ export default {
       }
     }
 
+    // ===== Playbook: ຂະໜາດ + ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ =====
+    // ທຸກ role ທີ່ login ແລ້ວເບິ່ງໄດ້ (GET), ສ່ວນເພີ່ມ/ແກ້ໄຂ/ລຶບ ແມ່ນ /api/admin/* (admin ເທົ່ານັ້ນ)
+    if (url.pathname === "/api/playbook" && request.method === "GET") {
+      try {
+        const { results } = await env.DB.prepare(
+          `SELECT id, name, category, width_mm, depth_mm, height_mm, capacity_l, doors, description, image_key, sort_order
+             FROM playbook_coolers ORDER BY sort_order, id`
+        ).all();
+        return Response.json({ items: results || [] });
+      } catch (e) {
+        console.error("/api/playbook", e);
+        return Response.json({ error: "ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    if (url.pathname === "/api/admin/save-playbook-item" && request.method === "POST") {
+      let newImageKey = null;
+      try {
+        const b = await request.json();
+        const name = String(b.name || "").trim().slice(0, 120);
+        if (!name) return Response.json({ error: "ກະລຸນາປ້ອນຊື່ປະເພດຕູ້" }, { status: 400 });
+        const num = (v) => {
+          if (v === null || v === undefined || String(v).trim() === "") return null;
+          const n = Number(v);
+          return Number.isFinite(n) && n >= 0 && n <= 100000 ? Math.round(n) : NaN;
+        };
+        const w = num(b.width_mm), d = num(b.depth_mm), h = num(b.height_mm), cap = num(b.capacity_l), doors = num(b.doors);
+        if ([w, d, h, cap, doors].some((x) => Number.isNaN(x))) {
+          return Response.json({ error: "ຂະໜາດ/ຄວາມຈຸ/ຈຳນວນປະຕູ ຕ້ອງເປັນຕົວເລກ" }, { status: 400 });
+        }
+        const category = String(b.category || "").trim().slice(0, 80) || null;
+        const description = String(b.description || "").trim().slice(0, 2000) || null;
+        const sortOrder = num(b.sort_order) || 0;
+
+        if (b.image) {
+          [newImageKey] = await savePhotosToR2(env, [[b.image, `playbook/${Date.now()}-${crypto.randomUUID()}.jpg`]]);
+        }
+
+        if (b.id) {
+          const old = await env.DB.prepare("SELECT image_key FROM playbook_coolers WHERE id = ?").bind(b.id).first();
+          if (!old) {
+            await deleteR2Photos(env, [newImageKey]);
+            return Response.json({ error: "ບໍ່ພົບລາຍການທີ່ຕ້ອງການແກ້ໄຂ" }, { status: 404 });
+          }
+          const oldKey = old.image_key || null;
+          const imageVal = newImageKey ? newImageKey : (b.removeImage ? null : oldKey);
+          await env.DB.prepare(
+            `UPDATE playbook_coolers SET name = ?, category = ?, width_mm = ?, depth_mm = ?, height_mm = ?, capacity_l = ?, doors = ?,
+                    description = ?, image_key = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+          ).bind(name, category, w, d, h, cap, doors, description, imageVal, sortOrder, b.id).run();
+          if (oldKey && imageVal !== oldKey) await deleteR2Photos(env, [oldKey]);
+          return Response.json({ message: "ແກ້ໄຂຂໍ້ມູນ Playbook ຮຽບຮ້ອຍແລ້ວ" });
+        }
+        await env.DB.prepare(
+          `INSERT INTO playbook_coolers (name, category, width_mm, depth_mm, height_mm, capacity_l, doors, description, image_key, sort_order, created_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(name, category, w, d, h, cap, doors, description, newImageKey, sortOrder, session ? session.id : null).run();
+        return Response.json({ message: "ເພີ່ມຂໍ້ມູນ Playbook ຮຽບຮ້ອຍແລ້ວ" });
+      } catch (e) {
+        await deleteR2Photos(env, [newImageKey]);
+        const pe = photoErrorResponse(e);
+        if (pe) return pe;
+        console.error("/api/admin/save-playbook-item", e);
+        return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    if (url.pathname === "/api/admin/delete-playbook-item" && request.method === "POST") {
+      try {
+        const { id } = await request.json();
+        if (!id) return Response.json({ error: "ບໍ່ພົບລາຍການທີ່ຕ້ອງການລຶບ" }, { status: 400 });
+        const old = await env.DB.prepare("SELECT image_key FROM playbook_coolers WHERE id = ?").bind(id).first();
+        if (!old) return Response.json({ error: "ບໍ່ພົບລາຍການທີ່ຕ້ອງການລຶບ" }, { status: 404 });
+        await env.DB.prepare("DELETE FROM playbook_coolers WHERE id = ?").bind(id).run();
+        await deleteR2Photos(env, [old.image_key]);
+        return Response.json({ message: "ລຶບຂໍ້ມູນ Playbook ຮຽບຮ້ອຍແລ້ວ" });
+      } catch (e) {
+        console.error("/api/admin/delete-playbook-item", e);
+        return Response.json({ error: "ລຶບບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     if (url.pathname === "/api/admin/save-announcement" && request.method === "POST") {
       let newImageKey = null;
       try {
@@ -9062,13 +9144,13 @@ export default {
     // 7f. ดึงรูปถ่ายยืนยันการจัดส่งจาก R2 ด้วย key (ใช้แสดงใน <img> ฝั่ง Admin)
     if (url.pathname === "/api/photo" && request.method === "GET") {
       const key = url.searchParams.get("key");
-      if (!key || !(key.startsWith("delivery/") || key.startsWith("event/") || key.startsWith("announcement/") || key.startsWith("trip/"))) {
+      if (!key || !(key.startsWith("delivery/") || key.startsWith("event/") || key.startsWith("announcement/") || key.startsWith("trip/") || key.startsWith("playbook/"))) {
         return new Response("Invalid key", { status: 400 });
       }
 
       // ສິດເບິ່ງຮູບ: admin/warehouse/delivery ເບິ່ງໄດ້ທັງໝົດ, user ທົ່ວໄປເບິ່ງໄດ້ສະເພາະຮູບຂອງ Asset ທີ່ຕົນເອງເປັນເຈົ້າຂອງ (MDE ດຽວກັນ)
       // ຮູບປະກາດ (announcement/) ທຸກ role ທີ່ login ແລ້ວເບິ່ງໄດ້ (ປະກາດຂອງບໍລິສັດເຖິງທຸກຄົນ)
-      if (!key.startsWith("announcement/") && !canViewAll(session.role)) {
+      if (!key.startsWith("announcement/") && !key.startsWith("playbook/") && !canViewAll(session.role)) {
         const m = /^delivery\/(\d+)\//.exec(key);
         const owned = m
           ? await env.DB.prepare("SELECT 1 AS ok FROM assets WHERE id = ? AND mde_code = ?").bind(Number(m[1]), session.mde_code).first()

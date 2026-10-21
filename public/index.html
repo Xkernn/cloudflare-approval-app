@@ -2105,6 +2105,27 @@
     #view-map-tracking      { --ph-ico: "\f5a0"; }
     #view-asset-request     { --ph-ico: "\f1d8"; }
     #view-user-guide        { --ph-ico: "\f518"; }
+    #view-playbook          { --ph-ico: "\f02e"; }
+    .pb-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:16px 16px 0; }
+    .pb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; padding:16px; }
+    .pb-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1px 3px rgba(15,23,42,.06); transition:transform .18s ease, box-shadow .18s ease; }
+    .pb-card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,23,42,.10); }
+    .pb-img { aspect-ratio:4/3; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:42px; cursor:zoom-in; overflow:hidden; }
+    .pb-img img { width:100%; height:100%; object-fit:contain; background:#f8fafc; }
+    .pb-body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
+    .pb-title { font-size:16px; font-weight:700; color:#0f172a; line-height:1.3; }
+    .pb-cat { font-size:12px; font-weight:600; color:#0C8CA6; background:#e6f6f9; padding:2px 10px; border-radius:999px; align-self:flex-start; }
+    .pb-specs { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:13px; }
+    .pb-specs div { background:#f8fafc; border-radius:10px; padding:6px 10px; }
+    .pb-specs span { display:block; font-size:11px; color:#64748b; }
+    .pb-specs b { color:#0f172a; font-weight:700; }
+    .pb-specs .wide { grid-column:1 / -1; }
+    .pb-desc { font-size:13px; color:#475569; white-space:pre-line; line-height:1.5; }
+    .pb-actions { display:flex; gap:8px; margin-top:auto; padding-top:6px; }
+    .pb-lightbox { position:fixed; inset:0; background:rgba(15,23,42,.88); z-index:10050; display:flex; align-items:center; justify-content:center; padding:16px; flex-direction:column; gap:12px; }
+    .pb-lightbox.hidden { display:none; }
+    .pb-lightbox img { max-width:100%; max-height:80vh; border-radius:12px; background:#fff; }
+    .pb-lightbox .pb-lb-cap { color:#fff; font-weight:700; text-align:center; }
     #view-profile           { --ph-ico: "\f007"; }
 
     @media (max-width: 640px) {
@@ -2597,6 +2618,9 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           </button>
           <button id="nav-vte-budget" class="menu-item mm-only hidden" onclick="switchView('vteBudget')">
             <i class="fa-solid fa-city"></i> ງົບຕູ້ແຊ່ນະຄອນຫຼວງ
+          </button>
+          <button id="nav-playbook" class="menu-item" onclick="switchView('playbook')">
+            <i class="fa-solid fa-book-bookmark"></i> Playbook
           </button>
         </nav>
       </div>
@@ -5697,6 +5721,25 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           </div>
         </div>
       </div>
+      <!-- VIEW: Playbook (ຂະໜາດ + ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ) -->
+      <div id="view-playbook" class="hidden">
+        <div class="page-header">
+          <div>
+            <h1>Playbook</h1>
+            <p>ຂະໜາດ ແລະ ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ</p>
+          </div>
+        </div>
+        <div class="content-card">
+          <div class="pb-toolbar">
+            <div class="input-wrapper" style="flex:1; min-width:200px; max-width:380px;"><i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="playbookSearch" class="form-control" placeholder="ຄົ້ນຫາຊື່ / ໝວດຕູ້..." oninput="renderPlaybook()">
+            </div>
+            <button type="button" id="playbookAddBtn" class="btn-act btn-approve hidden" onclick="openPlaybookModal()"><i class="fa-solid fa-plus mr-1"></i> ເພີ່ມປະເພດຕູ້</button>
+          </div>
+          <div id="playbookGrid" class="pb-grid"></div>
+        </div>
+      </div>
+
       <!-- VIEW: ຄູ່ມືການນຳໃຊ້ ສຳລັບ Role user -->
       <div id="view-user-guide" class="hidden">
         <div class="page-header">
@@ -6453,6 +6496,59 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <button onclick="document.getElementById('spareTransferModal').classList.add('hidden')" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:0;">ຍົກເລີກ</button>
       </div>
     </div>
+  </div>
+
+  <div id="playbookModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="playbookModalTitle" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ເພີ່ມປະເພດຕູ້</h3>
+      <input type="hidden" id="playbookEditId">
+      <div class="form-group">
+        <label>ຊື່ປະເພດຕູ້ *</label>
+        <div class="input-wrapper"><i class="fa-solid fa-snowflake"></i>
+          <input type="text" id="playbookName" class="form-control" placeholder="ເຊັ່ນ Deep Freezer 1 ປະຕູ" maxlength="120">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ໝວດ / ກຸ່ມ (ບໍ່ບັງຄັບ)</label>
+        <div class="input-wrapper"><i class="fa-solid fa-tag"></i>
+          <input type="text" id="playbookCategory" class="form-control" placeholder="ເຊັ່ນ Deep Freezer / Visi Cooler" maxlength="80">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ຂະໜາດ (ມມ): ກວ້າງ × ເລິກ × ສູງ</label>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">
+          <input type="number" min="0" id="playbookW" class="form-control" placeholder="ກວ້າງ">
+          <input type="number" min="0" id="playbookD" class="form-control" placeholder="ເລິກ">
+          <input type="number" min="0" id="playbookH" class="form-control" placeholder="ສູງ">
+        </div>
+      </div>
+      <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+        <div><label>ຄວາມຈຸ (ລິດ)</label><input type="number" min="0" id="playbookCap" class="form-control"></div>
+        <div><label>ຈຳນວນປະຕູ</label><input type="number" min="0" id="playbookDoors" class="form-control"></div>
+        <div><label>ລຳດັບ</label><input type="number" id="playbookSort" class="form-control" placeholder="0"></div>
+      </div>
+      <div class="form-group">
+        <label>ໝາຍເຫດ / ລາຍລະອຽດ (ບໍ່ບັງຄັບ)</label>
+        <textarea id="playbookDesc" class="form-control" rows="3" style="resize: vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>ຮູບຕູ້</label>
+        <div class="input-wrapper"><i class="fa-solid fa-image"></i>
+          <input type="file" id="playbookImageInput" class="form-control" accept="image/*" onchange="handlePlaybookImageSelect(event)">
+        </div>
+        <img id="playbookImagePreview" class="hidden" alt="" style="max-width: 100%; max-height: 220px; object-fit: contain; border-radius: 10px; margin-top: 8px; background: #f1f5f9;">
+        <button type="button" id="playbookImageRemoveBtn" class="btn-act btn-delete hidden" style="margin-top: 8px;" onclick="clearPlaybookImage()"><i class="fa-solid fa-trash"></i> ລຶບຮູບ</button>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="btn-act" style="flex:1;" onclick="closePlaybookModal()">ຍົກເລີກ</button>
+        <button type="button" id="playbookSaveBtn" class="btn-act btn-approve" style="flex:2;" onclick="savePlaybookItem()">ບັນທຶກ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="playbookLightbox" class="pb-lightbox hidden" onclick="closePlaybookLightbox()">
+    <img id="playbookLightboxImg" alt="">
+    <div id="playbookLightboxCap" class="pb-lb-cap"></div>
   </div>
 
   <div id="announcementModal" class="modal-overlay hidden">
@@ -7808,7 +7904,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       history: 'nav-history', historyHub: 'nav-history', deliveryHub: 'nav-delivery-hub', delivery: 'nav-history', deliverConfirm: 'nav-delivery-hub',
       noDocDelivery: 'nav-delivery-hub', coolerEvent: 'nav-delivery-hub', coolerWriteOff: 'nav-delivery-hub', coolerWriteOffList: 'nav-delivery-hub', noDocDeliveryList: 'nav-delivery-hub', coolerEventList: 'nav-delivery-hub', profile: 'nav-profile',
       announcements: 'nav-announcements', warehouseStock: 'nav-warehouse-stock', stockCount: 'nav-stock-count', coolerMaster: 'nav-cooler-master', lostCooler: 'nav-lost-cooler', newCooler: 'nav-new-cooler', newCoolerHub: 'nav-new-cooler', shipTrip: 'nav-new-cooler', provBudget: 'nav-prov-budget', vteBudget: 'nav-vte-budget', teamBudget: 'nav-team-budget', shipPlan: 'nav-new-cooler', ncFill: 'nav-new-cooler',
-      loanContract: 'nav-loan-contract', notifications: 'nav-notifications'
+      loanContract: 'nav-loan-contract', notifications: 'nav-notifications', playbook: 'nav-playbook'
     };
     let pendingDeepLinkView = null;
     // url ຂອງ push/ແຈ້ງເຕືອນ ອາດເປັນ "view:tab" (ເຊັ່ນ loanContract:queue = ແຖບເອກະສານຍັງບໍ່ເຊັນ, loanContract:docs = ແຖບເອກະສານສຳເລັດແລ້ວ)
@@ -8796,7 +8892,9 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       document.getElementById('view-asset-history').classList.add('hidden');
       document.getElementById('view-profile').classList.add('hidden');
       document.getElementById('view-user-guide').classList.add('hidden');
+      document.getElementById('view-playbook').classList.add('hidden');
       document.getElementById('view-dsm-sign').classList.add('hidden');
+      document.getElementById('nav-playbook').classList.remove('active');
 
       document.getElementById('nav-dashboard').classList.remove('active');
       document.getElementById('nav-home').classList.remove('active');
@@ -9000,6 +9098,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         document.getElementById('nav-dsm-sign').classList.add('active');
         document.getElementById('view-dsm-sign').classList.remove('hidden');
         loadDsmSign();
+      } else if (viewName === 'playbook') {
+        document.getElementById('nav-playbook').classList.add('active');
+        document.getElementById('view-playbook').classList.remove('hidden');
+        loadPlaybook();
+        window.scrollTo(0, 0);
       } else if (viewName === 'userGuide') {
         document.getElementById('nav-user-guide').classList.add('active');
         document.getElementById('view-user-guide').classList.remove('hidden');
@@ -9615,6 +9718,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       { key: 'teambudget', nav: 'nav-team-budget',   view: 'teamBudget',      icon: 'fa-solid fa-chart-pie', label: 'ງົບປະມານຕູ້ຂອງທີມ',        badge: null,                    tone: 'teal' },
       { key: 'vte',       nav: 'nav-vte-budget',     view: 'vteBudget',      icon: 'fa-solid fa-city',      label: 'ງົບຕູ້ແຊ່ນະຄອນຫຼວງ',        badge: null,                    tone: 'green' },
       { key: 'ann',       nav: 'nav-announcements',  view: 'announcements',  icon: 'fa-bullhorn',          label: 'ປະກາດ',              badge: 'announcementUnreadBadge', tone: 'orange' },
+      { key: 'playbook',  nav: 'nav-playbook',       view: 'playbook',       icon: 'fa-solid fa-book-bookmark',   label: 'Playbook',            badge: null,                    tone: 'sky' },
       { key: 'guide',     nav: 'nav-user-guide',     view: 'userGuide',      icon: 'fa-book-open',         label: 'ຄູ່ມືການໃຊ້',        badge: null,                    tone: 'purple' },
       { key: 'tour',      nav: 'nav-tour',           action: 'tour',          icon: 'fa-circle-question',   label: 'ແນະນຳການໃຊ້',        badge: null,                    tone: 'slate' }
     ];
@@ -24726,6 +24830,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       { nav: 'nav-new-cooler',    view: 'newCoolerHub', icon: 'fa-snowflake',          t: 'ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ', d: 'ຮັບຕູ້ເຂົ້າສາງ ແລະ ແຜນສົ່ງ' },
       { nav: 'nav-map',           view: 'map',          icon: 'fa-map-location-dot',   t: 'Map Tracking',         d: 'ຕຳແໜ່ງຕູ້ເທິງແຜນທີ່' },
       { nav: 'nav-announcements', view: 'announcements', icon: 'fa-bullhorn',          t: 'ປະກາດ',                d: 'ຂ່າວ ແລະ ປະກາດຈາກທີມງານ' },
+      { nav: 'nav-playbook',      view: 'playbook',     icon: 'fa-book-bookmark',      t: 'Playbook',             d: 'ຂະໜາດ ແລະ ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ' },
       { nav: 'nav-user-guide',    view: 'userGuide',    icon: 'fa-book-open',          t: 'ຄູ່ມືການໃຊ້',          d: 'ວິທີໃຊ້ງານແຕ່ລະເມນູ' }
     ];
     function renderWelcomeHome() {
@@ -28669,6 +28774,177 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         </div>
       `).join('');
       hydrateAnnouncementImages(list);
+    }
+
+    /* ===================== Playbook: ຂະໜາດ + ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ =====================
+       ທຸກ role ເບິ່ງໄດ້ · admin ເພີ່ມ/ແກ້ໄຂ/ລຶບໄດ້ (server ບັງຄັບສິດທີ່ /api/admin/*-playbook-item) */
+    let playbookItems = [];
+    let playbookImageState = { dataUrl: null, existingKey: null, remove: false };
+
+    async function loadPlaybook() {
+      const grid = document.getElementById('playbookGrid');
+      document.getElementById('playbookAddBtn').classList.toggle('hidden', !(currentUser && currentUser.role === 'admin'));
+      grid.innerHTML = '<div class="card-list-loading" style="grid-column:1/-1;">ກຳລັງໂຫລດ...</div>';
+      try {
+        const res = await fetch('/api/playbook');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ');
+        playbookItems = data.items || [];
+        renderPlaybook();
+      } catch (err) {
+        grid.innerHTML = '<div class="card-list-error" style="grid-column:1/-1;">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</div>';
+      }
+    }
+
+    function renderPlaybook() {
+      const grid = document.getElementById('playbookGrid');
+      const isAdmin = !!currentUser && currentUser.role === 'admin';
+      const q = (document.getElementById('playbookSearch').value || '').trim().toLowerCase();
+      const items = playbookItems.filter(i => !q || (String(i.name || '') + ' ' + String(i.category || '')).toLowerCase().includes(q));
+      if (!items.length) {
+        grid.innerHTML = `<div class="mgmt-card-list-empty" style="grid-column:1/-1;">${playbookItems.length ? 'ບໍ່ພົບຂໍ້ມູນທີ່ຄົ້ນຫາ' : 'ຍັງບໍ່ມີຂໍ້ມູນ Playbook' + (isAdmin ? ' — ກົດ "ເພີ່ມປະເພດຕູ້" ເພື່ອເລີ່ມ' : '')}</div>`;
+        return;
+      }
+      const val = (v, unit) => (v === null || v === undefined || v === '') ? '-' : esc(v) + (unit ? ' ' + unit : '');
+      grid.innerHTML = items.map(i => {
+        const hasSize = i.width_mm || i.depth_mm || i.height_mm;
+        const size = hasSize ? `${i.width_mm || '-'} × ${i.depth_mm || '-'} × ${i.height_mm || '-'} ມມ` : '-';
+        return `
+        <div class="pb-card">
+          <div class="pb-img" ${i.image_key ? `onclick="openPlaybookLightbox(${i.id})"` : ''}>
+            ${i.image_key ? `<img data-photo-key="${esc(i.image_key)}" alt="">` : '<i class="fa-solid fa-snowflake"></i>'}
+          </div>
+          <div class="pb-body">
+            <div class="pb-title">${esc(i.name)}</div>
+            ${i.category ? `<span class="pb-cat">${esc(i.category)}</span>` : ''}
+            <div class="pb-specs">
+              <div class="wide"><span>ຂະໜາດ (ກວ້າງ × ເລິກ × ສູງ)</span><b>${esc(size)}</b></div>
+              <div><span>ຄວາມຈຸ</span><b>${val(i.capacity_l, 'ລິດ')}</b></div>
+              <div><span>ຈຳນວນປະຕູ</span><b>${val(i.doors)}</b></div>
+            </div>
+            ${i.description ? `<div class="pb-desc">${esc(i.description)}</div>` : ''}
+            ${isAdmin ? `<div class="pb-actions">
+              <button type="button" class="btn-act btn-edit" onclick="openPlaybookModal(${i.id})"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂ</button>
+              <button type="button" class="btn-act btn-delete" onclick="deletePlaybookItem(${i.id})"><i class="fa-solid fa-trash mr-1"></i> ລຶບ</button>
+            </div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      hydrateAnnouncementImages(grid);
+    }
+
+    function openPlaybookLightbox(id) {
+      const it = playbookItems.find(i => i.id === id);
+      if (!it || !it.image_key) return;
+      setPhotoSrc(document.getElementById('playbookLightboxImg'), it.image_key);
+      document.getElementById('playbookLightboxCap').textContent = it.name || '';
+      document.getElementById('playbookLightbox').classList.remove('hidden');
+    }
+    function closePlaybookLightbox() {
+      document.getElementById('playbookLightbox').classList.add('hidden');
+      setPhotoSrc(document.getElementById('playbookLightboxImg'), '');
+    }
+
+    function openPlaybookModal(id) {
+      const it = id ? playbookItems.find(i => i.id === id) : null;
+      document.getElementById('playbookModalTitle').textContent = it ? 'ແກ້ໄຂປະເພດຕູ້' : 'ເພີ່ມປະເພດຕູ້';
+      document.getElementById('playbookEditId').value = it ? it.id : '';
+      const set = (el, v) => { document.getElementById(el).value = (v === null || v === undefined) ? '' : v; };
+      set('playbookName', it && it.name); set('playbookCategory', it && it.category);
+      set('playbookW', it && it.width_mm); set('playbookD', it && it.depth_mm); set('playbookH', it && it.height_mm);
+      set('playbookCap', it && it.capacity_l); set('playbookDoors', it && it.doors);
+      set('playbookSort', it && it.sort_order); set('playbookDesc', it && it.description);
+      const existingKey = it && it.image_key || null;
+      playbookImageState = { dataUrl: null, existingKey, remove: false };
+      document.getElementById('playbookImageInput').value = '';
+      const preview = document.getElementById('playbookImagePreview');
+      if (existingKey) { preview.classList.remove('hidden'); setPhotoSrc(preview, existingKey); }
+      else { setPhotoSrc(preview, ''); preview.classList.add('hidden'); }
+      document.getElementById('playbookImageRemoveBtn').classList.toggle('hidden', !existingKey);
+      document.getElementById('playbookModal').classList.remove('hidden');
+    }
+    function closePlaybookModal() { document.getElementById('playbookModal').classList.add('hidden'); }
+
+    function handlePlaybookImageSelect(event) {
+      const preview = document.getElementById('playbookImagePreview');
+      handlePhotoInput(event, 'playbookImagePreview', (dataUrl) => {
+        if (dataUrl) {
+          setPhotoSrc(preview, '');
+          preview.src = dataUrl;
+          preview.classList.remove('hidden');
+          playbookImageState.dataUrl = dataUrl;
+          playbookImageState.remove = false;
+          document.getElementById('playbookImageRemoveBtn').classList.remove('hidden');
+        } else {
+          playbookImageState.dataUrl = null;
+          if (playbookImageState.existingKey && !playbookImageState.remove) {
+            preview.classList.remove('hidden');
+            setPhotoSrc(preview, playbookImageState.existingKey);
+          }
+        }
+      });
+    }
+    function clearPlaybookImage() {
+      playbookImageState.dataUrl = null;
+      playbookImageState.remove = !!playbookImageState.existingKey;
+      document.getElementById('playbookImageInput').value = '';
+      const preview = document.getElementById('playbookImagePreview');
+      setPhotoSrc(preview, '');
+      preview.classList.add('hidden');
+      document.getElementById('playbookImageRemoveBtn').classList.add('hidden');
+    }
+
+    async function savePlaybookItem() {
+      const name = document.getElementById('playbookName').value.trim();
+      if (!name) { alert('ກະລຸນາປ້ອນຊື່ປະເພດຕູ້'); return; }
+      const btn = document.getElementById('playbookSaveBtn');
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        const id = document.getElementById('playbookEditId').value;
+        const res = await fetch('/api/admin/save-playbook-item', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: id ? Number(id) : null,
+            name,
+            category: document.getElementById('playbookCategory').value,
+            width_mm: document.getElementById('playbookW').value,
+            depth_mm: document.getElementById('playbookD').value,
+            height_mm: document.getElementById('playbookH').value,
+            capacity_l: document.getElementById('playbookCap').value,
+            doors: document.getElementById('playbookDoors').value,
+            sort_order: document.getElementById('playbookSort').value,
+            description: document.getElementById('playbookDesc').value,
+            image: playbookImageState.dataUrl,
+            removeImage: playbookImageState.remove
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { alert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+        closePlaybookModal();
+        await loadPlaybook();
+      } catch (err) {
+        alert('ບັນທຶກບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function deletePlaybookItem(id) {
+      if (!await appConfirm('ທ່ານຕ້ອງການລຶບປະເພດຕູ້ນີ້ອອກຈາກ Playbook ຫຼືບໍ່?')) return;
+      try {
+        const res = await fetch('/api/admin/delete-playbook-item', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { alert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+        await loadPlaybook();
+      } catch (err) {
+        alert('ລຶບບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່');
+      }
     }
 
     /* ---------- ຮູບປະກອບປະກາດ ---------- */

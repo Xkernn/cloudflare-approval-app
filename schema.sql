@@ -842,3 +842,22 @@ CREATE TABLE IF NOT EXISTS budget_transfers (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_budget_transfers_to_team ON budget_transfers(to_team, created_at);
+
+-- ຕາຕະລາງ "Playbook" - ຂະໜາດ + ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ (Admin ຈັດການ, ທຸກ role ເບິ່ງໄດ້)
+CREATE TABLE IF NOT EXISTS playbook_coolers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    category TEXT,
+    width_mm INTEGER,
+    depth_mm INTEGER,
+    height_mm INTEGER,
+    capacity_l INTEGER,
+    doors INTEGER,
+    description TEXT,
+    image_key TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_playbook_coolers_sort ON playbook_coolers(sort_order, id);
