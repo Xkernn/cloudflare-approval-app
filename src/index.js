@@ -6862,8 +6862,9 @@ export default {
         ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE ${TEAM_MDE_SQL} AND status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(requester.team || "", ...SHIPPING_NOTIFY_STATUSES)
         : env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE mde_code = ? AND status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(requester.mde_code, ...SHIPPING_NOTIFY_STATUSES);
 
+      // ຂັ້ນ 1 (Admin ກວດ) / ຂັ້ນ 2 (ສາງອະນຸມັດ): badge ນັບສະເພາະຄຳຂໍທີ່ລໍຖ້າໃຫ້ role ນັ້ນດຳເນີນການ
       const requestCountStmt = viewAll
-        ? env.DB.prepare("SELECT COUNT(*) AS cnt FROM asset_requests WHERE status = 'pending'")
+        ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM asset_requests WHERE status = 'pending' AND admin_checked_at IS ${isAdminLike(requester.role) ? "NULL" : "NOT NULL"}`)
         : isDsmBc
         ? env.DB.prepare("SELECT COUNT(*) AS cnt FROM asset_requests WHERE status = 'pending' AND UPPER(TRIM(mde_code)) IN (SELECT UPPER(TRIM(mde_code)) FROM mde_list WHERE team = ?)").bind(requester.team || "")
         : env.DB.prepare("SELECT COUNT(*) AS cnt FROM asset_requests WHERE user_id = ? AND status = 'pending'").bind(userId);
@@ -9253,8 +9254,9 @@ export default {
         try {
           const mdeName = await getMdeName(env, requester.mde_code);
           const detailLine = formatMdeOutletLine(requester.mde_code, mdeName, outlet_name);
-          await sendWebPushToRoles(env, ["admin", "assistant_admin", "warehouse"], {
-            title: "ມີຄຳຂໍເບີກ ຕູ້ແຊ່ເຂົ້າມາໃໝ່",
+          // ຂັ້ນ 1: ແຈ້ງສະເພາະ Admin ໃຫ້ກວດສອບກ່ອນ (ສາງຈະຖືກແຈ້ງຕໍ່ເມື່ອ Admin ກວດສອບແລ້ວ)
+          await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
+            title: "ມີຄຳຂໍເບີກ ຕູ້ແຊ່ເຂົ້າມາໃໝ່ - ລໍຖ້າ Admin ກວດສອບ",
             body: `${cooler_brand} ${cooler_type}${detailLine ? '\n' + detailLine : ''}`,
             url: "request",
           });
@@ -9380,8 +9382,8 @@ export default {
       try {
         const { userId, requestId, status, qr_code, serial_number, capex, confirm_low_stock } = await request.json();
         if (!userId || !requestId || !status) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
-        if (!["approved", "rejected"].includes(status)) {
-          return Response.json({ error: "ສະຖານະບໍ່ຖືກຕ້ອງ (ອະນຸຍາດສະເພາະ approved ຫຼື rejected)" }, { status: 400 });
+        if (!["admin_approved", "approved", "rejected"].includes(status)) {
+          return Response.json({ error: "ສະຖານະບໍ່ຖືກຕ້ອງ (ອະນຸຍາດສະເພາະ admin_approved, approved ຫຼື rejected)" }, { status: 400 });
         }
 
         const requester = await env.DB.prepare("SELECT role FROM users WHERE id = ?").bind(userId).first();
@@ -9398,6 +9400,41 @@ export default {
           { status: 409 }
         );
         if (reqRow.status !== "pending") return alreadyProcessed();
+
+        // ===== ອະນຸມັດ 2 ຂັ້ນ: (1) Admin ກວດຂໍ້ມູນ + ຮູບຮ້ານ -> (2) Warehouse ອະນຸມັດ + ໃສ່ QR/Serial/CapEx =====
+        const isAdminRole = isAdminLike(requester.role);
+        const isWhRole = requester.role === "warehouse";
+        const adminChecked = !!reqRow.admin_checked_at;
+
+        if (status === "admin_approved") {
+          if (!isAdminRole) return Response.json({ error: "ສະເພາະ Admin ເທົ່ານັ້ນທີ່ກວດສອບຂັ້ນທຳອິດໄດ້" }, { status: 403 });
+          if (adminChecked) {
+            return Response.json({ error: "Admin ກວດສອບຄຳຂໍນີ້ໄປແລ້ວ ກຳລັງລໍຖ້າສາງອະນຸມັດ ກະລຸນາໂຫລດໜ້າຈໍໃໝ່" }, { status: 409 });
+          }
+          const chk = await env.DB.prepare(
+            `UPDATE asset_requests SET admin_checked_by = ?, admin_checked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ? AND status = 'pending' AND admin_checked_at IS NULL`
+          ).bind((session && session.email) || null, requestId).run();
+          if (!chk.meta || chk.meta.changes === 0) return alreadyProcessed();
+          // ແຈ້ງເຕືອນສາງວ່າມີຄຳຂໍທີ່ Admin ກວດແລ້ວ ລໍຖ້າອະນຸມັດ + ໃສ່ລະຫັດຕູ້
+          try {
+            const mdeName = await getMdeName(env, reqRow.mde_code);
+            const detailLine = formatMdeOutletLine(reqRow.mde_code, mdeName, reqRow.outlet_name);
+            await sendWebPushToRoles(env, ["warehouse"], {
+              title: "ມີຄຳຂໍທີ່ Admin ກວດສອບແລ້ວ - ລໍຖ້າສາງອະນຸມັດ",
+              body: `${reqRow.cooler_brand} ${reqRow.cooler_type}${detailLine ? '\n' + detailLine : ''}`,
+              url: "request",
+            });
+          } catch (pushErr) { /* ບໍ່ໃຫ້ການກວດສອບລົ້ມເຫລວຍ້ອນ push */ }
+          return Response.json({ message: "ກວດສອບແລ້ວ — ສົ່ງຕໍ່ໃຫ້ສາງອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້" });
+        }
+        if (status === "approved") {
+          if (!isWhRole) return Response.json({ error: "ສະເພາະ role ສາງ (Warehouse) ເທົ່ານັ້ນທີ່ອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ໄດ້" }, { status: 403 });
+          if (!adminChecked) return Response.json({ error: "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ ສາງຈຶ່ງອະນຸມັດໄດ້" }, { status: 400 });
+        }
+        if (status === "rejected" && !isAdminRole && !(isWhRole && adminChecked)) {
+          return Response.json({ error: isWhRole ? "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ" : "ບໍ່ມີສິດປະຕິເສດຄຳຂໍນີ້" }, { status: 403 });
+        }
 
         // ถ้าອະນຸມັດ -> บังคับกรอก QR Code, Serial Number, CapEx ก่อนเสมอ
         if (status === 'approved') {
@@ -9492,7 +9529,7 @@ export default {
           const results = await env.DB.batch([
             env.DB.prepare(
               `UPDATE asset_requests SET status = 'approved', qr_code = ?, serial_number = ?, capex = ?, updated_at = CURRENT_TIMESTAMP
-               WHERE id = ? AND status = 'pending'`
+               WHERE id = ? AND status = 'pending' AND admin_checked_at IS NOT NULL`
             ).bind(qr_code, serial_number, capex, requestId),
             env.DB.prepare(
               `INSERT INTO assets (tracking_no, outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, asset_condition, qr_code, serial_number, capex, status, latitude, longitude)

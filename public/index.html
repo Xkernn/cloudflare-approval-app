@@ -509,13 +509,18 @@
     #photoLightboxBar button { background: rgba(255,255,255,0.16); color: #fff; border: 0; border-radius: 8px; min-width: 40px; height: 40px; font-size: 18px; cursor: pointer; }
     #photoLightboxBar button:hover { background: rgba(255,255,255,0.3); }
     /* Loading popup ທົ່ວແອັບ: ສະແດງເມື່ອມີການໂຫລດ/ບັນທຶກທີ່ໃຊ້ເວລາເກີນ ~0.35 ວິ */
-    #appLoading { position: fixed; inset: 0; z-index: 4000; background: rgba(8, 22, 30, 0.45); backdrop-filter: blur(2px);
+    #appLoading { position: fixed; inset: 0; z-index: 4000; background: rgba(8, 22, 30, 0.3);
       display: none; align-items: center; justify-content: center; }
     #appLoading.show { display: flex; }
     #appLoading .al-box { background: #fff; border-radius: 16px; padding: 22px 30px; display: flex; flex-direction: column; align-items: center; gap: 12px;
       box-shadow: 0 24px 48px -12px rgba(6, 20, 27, 0.35); font-size: 14px; font-weight: 600; color: #334155; }
     #appLoading .al-spin { width: 38px; height: 38px; border-radius: 50%; border: 4px solid #e2e8f0; border-top-color: #0ea5e9; animation: alSpin 0.8s linear infinite; }
     @keyframes alSpin { to { transform: rotate(360deg); } }
+    /* ແຖບບາງດ້ານເທິງ: ໃຊ້ຕອນໂຫລດຂໍ້ມູນ (GET) — ບໍ່ບັງໜ້າຈໍ ບໍ່ຕ້ອງລໍຖ້າ */
+    #appTopBar { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 4001; display: none; overflow: hidden; pointer-events: none; background: rgba(14,165,233,0.15); }
+    #appTopBar.show { display: block; }
+    #appTopBar::before { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; background: #0ea5e9; animation: alBar 1.1s ease-in-out infinite; }
+    @keyframes alBar { 0% { left: -40%; } 100% { left: 100%; } }
     .modal-overlay {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(8, 22, 30, 0.55); display: flex;
@@ -6726,7 +6731,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
   </div>
 
   <!-- ==================== MODAL (ดูຮູບຢືນຢັນການຈັດສົ່ງ) ==================== -->
-  <div id="appLoading" role="status" aria-live="polite"><div class="al-box"><div class="al-spin"></div><div>ກຳລັງໂຫລດ... ກະລຸນາລໍຖ້າ</div></div></div>
+  <div id="appTopBar"></div>
+  <div id="appLoading" role="status" aria-live="polite" onclick="loadingForceHide()"><div class="al-box"><div class="al-spin"></div><div>ກຳລັງບັນທຶກ...</div></div></div>
 
   <div id="photoLightbox" class="hidden">
     <div id="photoLightboxBar">
@@ -7522,7 +7528,18 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     /* Loading popup: ນັບຈຳນວນ request ທີ່ຍັງລໍຖ້າ; ສະແດງ popup ຖ້າເກີນ 350ms (ບໍ່ກະພິບຕອນໂຫລດໄວ), ເຊື່ອງເມື່ອຄົບທຸກອັນ
        ຂ້າມ request ພື້ນຫຼັງ/ຖີ່ໆ (poll, ping, ຮູບ, ສະແກນ) ເພື່ອບໍ່ໃຫ້ popup ຂຶ້ນເອງ. ສົ່ງ { silent: true } ໃນ options ເພື່ອຂ້າມເອງໄດ້ */
     const LOADING_SKIP = ['/api/maintenance-status', '/api/app-ping', '/api/badge-counts', '/api/my-special-alerts', '/api/photo', '/api/stock-count/scan'];
-    let _loadingCount = 0, _loadingTimer = null;
+    /* ປັບປຸງ: - ໂຫລດຂໍ້ມູນ (GET) = ສະແດງແຖບບາງດ້ານເທິງເທົ່ານັ້ນ ບໍ່ບັງໜ້າຈໍ
+               - ບັນທຶກ/ສົ່ງ (POST/PUT/DELETE) = popup ບັງໜ້າຈໍ ແຕ່ລໍຖ້າ 0.8 ວິກ່ອນ (ກັນກະພິບ + ກັນກົດຊ້ຳ)
+               - ກັນຄ້າງ: ປິດອັດຕະໂນມັດພາຍໃນ 15 ວິ, ແຕະທີ່ popup ເພື່ອປິດໄດ້ */
+    let _loadingCount = 0, _loadingTimer = null, _loadingMax = null;
+    let _barCount = 0, _barTimer = null;
+    function loadingForceHide() {
+      _loadingCount = 0;
+      if (_loadingTimer) { clearTimeout(_loadingTimer); _loadingTimer = null; }
+      if (_loadingMax) { clearTimeout(_loadingMax); _loadingMax = null; }
+      const el = document.getElementById('appLoading');
+      if (el) el.classList.remove('show');
+    }
     function loadingBegin() {
       _loadingCount++;
       if (_loadingCount === 1 && !_loadingTimer) {
@@ -7530,14 +7547,29 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           _loadingTimer = null;
           const el = document.getElementById('appLoading');
           if (el && _loadingCount > 0) el.classList.add('show');
-        }, 350);
+        }, 800);
+        _loadingMax = setTimeout(loadingForceHide, 15000);
       }
     }
     function loadingEnd() {
       _loadingCount = Math.max(0, _loadingCount - 1);
-      if (_loadingCount === 0) {
-        if (_loadingTimer) { clearTimeout(_loadingTimer); _loadingTimer = null; }
-        const el = document.getElementById('appLoading');
+      if (_loadingCount === 0) loadingForceHide();
+    }
+    function barBegin() {
+      _barCount++;
+      if (_barCount === 1 && !_barTimer) {
+        _barTimer = setTimeout(() => {
+          _barTimer = null;
+          const el = document.getElementById('appTopBar');
+          if (el && _barCount > 0) el.classList.add('show');
+        }, 300);
+      }
+    }
+    function barEnd() {
+      _barCount = Math.max(0, _barCount - 1);
+      if (_barCount === 0) {
+        if (_barTimer) { clearTimeout(_barTimer); _barTimer = null; }
+        const el = document.getElementById('appTopBar');
         if (el) el.classList.remove('show');
       }
     }
@@ -7553,12 +7585,14 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       }
 
       const trackLoading = !(options && options.silent) && target.startsWith('/api/') && !LOADING_SKIP.some(s => target.startsWith(s));
-      if (trackLoading) loadingBegin();
+      const _method = String((options && options.method) || (typeof input !== 'string' && input && input.method) || 'GET').toUpperCase();
+      const _blocking = _method !== 'GET' && _method !== 'HEAD'; // ບັນທຶກ/ສົ່ງຂໍ້ມູນ = ບັງໜ້າຈໍ, ໂຫລດຂໍ້ມູນ = ແຖບບາງ
+      if (trackLoading) { if (_blocking) loadingBegin(); else barBegin(); }
       let res;
       try {
         res = await _originalFetch(input, options);
       } finally {
-        if (trackLoading) loadingEnd();
+        if (trackLoading) { if (_blocking) loadingEnd(); else barEnd(); }
       }
 
       // ໂໝດປິດລະບົບ: server ຕອບ 503 + code MAINTENANCE -> ສະແດງໜ້າ "ກຳລັງປັບປຸງ" (login ໃຊ້ຂໍ້ຄວາມໃນຟອມຂອງມັນເອງ)
@@ -26854,6 +26888,23 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       return 'badge-pending'; // 'pending' = ລໍຖ້າອະນຸມັດ
     }
 
+    /* ອະນຸມັດ 2 ຂັ້ນ: status ຍັງເປັນ 'pending' ຈົນກວ່າສາງອະນຸມັດ; admin_checked_at ບອກວ່າ Admin ກວດແລ້ວຫຼືຍັງ */
+    function requestStageLabel(r) {
+      if (r.status === 'pending') return r.admin_checked_at ? 'ລໍຖ້າສາງອະນຸມັດ' : 'ລໍຖ້າ Admin ກວດສອບ';
+      return REQUEST_STATUS_LABEL[r.status] || r.status;
+    }
+    function requestStageClass(r) {
+      if (r.status === 'pending' && r.admin_checked_at) return 'badge-info';
+      return requestStatusClass(r.status);
+    }
+    /* ຈຳນວນຄຳຂໍທີ່ລໍຖ້າ role ປັດຈຸບັນດຳເນີນການ (admin = ຍັງບໍ່ກວດ, ສາງ = Admin ກວດແລ້ວ) */
+    function requestsAwaitingMe(list) {
+      const pend = (list || []).filter(r => r.status === 'pending');
+      if (currentUser.role === 'admin') return pend.filter(r => !r.admin_checked_at).length;
+      if (currentUser.role === 'warehouse') return pend.filter(r => !!r.admin_checked_at).length;
+      return pend.length;
+    }
+
     /* ===================== Asset Request ===================== */
     let currentRequestsData = [];
     let requestConditionFilter = ''; // '' / 'new' / 'used'
@@ -26863,7 +26914,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const canManage = currentUser.role === 'admin' || currentUser.role === 'warehouse';
       document.getElementById('btnNewRequest').classList.toggle('hidden', canManage);
       document.getElementById('requestPageDesc').textContent = canManage
-        ? 'ກວດສອບ ແລະ ອະນຸມັດ/ປະຕິເສດຄຳຂໍເບີກ Asset ຈາກທຸກທີມ'
+        ? (currentUser.role === 'warehouse'
+            ? 'ຄຳຂໍທີ່ Admin ກວດສອບແລ້ວ — ສາງອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ (ຂັ້ນ 2)'
+            : 'ກວດຂໍ້ມູນ ແລະ ຮູບຮ້ານຄ້າ ແລ້ວກົດ "ກວດສອບແລ້ວ" ເພື່ອສົ່ງຕໍ່ໃຫ້ສາງອະນຸມັດ (ຂັ້ນ 1)')
         : 'ສົ່ງຄຳຂໍເບີກ Asset ໃໝ່ ແລະ ຕິດຕາມສະຖານະຄຳຂໍຂອງທ່ານ';
 
       // ล้างค่าตัวกรองทุกครั้งที่เปิดหน้านี้ใหม่
@@ -26884,7 +26937,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const pendingOnly = (requests || []).filter(r => r.status === 'pending');
         currentRequestsData = pendingOnly;
         filterAssetRequests();
-        setMenuBadge('assetRequestBadge', pendingOnly.length);
+        setMenuBadge('assetRequestBadge', requestsAwaitingMe(pendingOnly));
       } catch (err) {
         list.innerHTML = `<div class="card-list-error">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</div>`;
       }
@@ -26930,7 +26983,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             </div>
           </div>
           <div class="data-card-side">
-            <span class="badge ${requestStatusClass(r.status)}">${esc(REQUEST_STATUS_LABEL[r.status] || r.status)}</span>
+            <span class="badge ${requestStageClass(r)}">${esc(requestStageLabel(r))}</span>
             <i class="fa-solid fa-chevron-right data-card-chevron"></i>
           </div>
         </div>
@@ -27012,22 +27065,33 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         ['ປະເພດສັນຍາ', LOAN_CONTRACT_TYPE_LABEL[r.contract_type] || '-'],
         ['ເຫດຜົນ', r.reason],
         ...(r.shop_photo ? [['ຮູບຮ້ານຄ້າ', raw(`<img data-ar-photo-id="${esc(String(r.id))}" alt="ກຳລັງໂຫລດຮູບ..." onclick="if(this.src) openPhotoLightbox(this.src)" style="max-width:100%; max-height:140px; border-radius:8px; border:1px solid #cbd5e1; cursor:zoom-in;">`)]] : []),
-        ['ສະຖານະ', raw(`<span class="badge ${requestStatusClass(r.status)}">${esc(REQUEST_STATUS_LABEL[r.status] || r.status)}</span>`)],
+        ['ສະຖານະ', raw(`<span class="badge ${requestStageClass(r)}">${esc(requestStageLabel(r))}</span>`)],
         ['ວັນທີ່ຂໍ', fmtLaoTs(r.requested_at)]
       );
       if (r.qr_code || r.serial_number || r.capex) {
         fields.push(['QR Code', r.qr_code], ['Serial Number', r.serial_number], ['CapEx', r.capex]);
       }
+      if (canManage) {
+        fields.push(['ການກວດສອບຂອງ Admin', r.admin_checked_at
+          ? `ກວດແລ້ວ${r.admin_checked_by ? ' — ' + r.admin_checked_by : ''} · ${fmtLaoTs(r.admin_checked_at) || ''}`
+          : 'ຍັງບໍ່ທັນກວດ']);
+      }
 
+      // ອະນຸມັດ 2 ຂັ້ນ: Admin ກວດ (ຂັ້ນ 1) -> ສາງອະນຸມັດ + ໃສ່ລະຫັດຕູ້ (ຂັ້ນ 2)
       let actions = '';
       if (canManage && r.status === 'pending') {
-        actions = `
-          <button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ອະນຸມັດ</button>
-          <button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'rejected')" class="btn-act btn-reject"><i class="fa-solid fa-xmark mr-1"></i> ປະຕິເສດ</button>
-        `;
+        const checked = !!r.admin_checked_at;
+        const rejectBtn = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'rejected')" class="btn-act btn-reject"><i class="fa-solid fa-xmark mr-1"></i> ປະຕິເສດ</button>`;
         if (currentUser.role === 'admin') {
+          if (!checked) {
+            actions = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'admin_approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ກວດສອບແລ້ວ — ສົ່ງຕໍ່ສາງ</button>`;
+          }
+          actions += rejectBtn;
           actions += `<button onclick="closeDetailModal(); openEditRequestBrand(${r.id})" class="btn-act"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂ Brand</button>`;
+        } else if (currentUser.role === 'warehouse' && checked) {
+          actions = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ອະນຸມັດ + ໃສ່ລະຫັດຕູ້</button>` + rejectBtn;
         }
+        // ສາງທີ່ Admin ຍັງບໍ່ກວດ: ບໍ່ມີປຸ່ມ (ເບິ່ງໄດ້ຢ່າງດຽວ)
       }
 
       openDetailModal(requestOutletLabel(r), fields, actions);
@@ -27439,6 +27503,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         openApproveModal(requestId);
         return;
       }
+      if (status === 'admin_approved' && !await appConfirm('ຢືນຢັນວ່າກວດຂໍ້ມູນ ແລະ ຮູບຮ້ານຄ້າແລ້ວ ແລະ ສົ່ງຕໍ່ໃຫ້ສາງອະນຸມັດ?')) return;
       if (status === 'rejected' && !await appConfirm('ຢືນຢັນການປະຕິເສດຄຳຂໍນີ້?')) return;
 
       const res = await fetch('/api/admin/update-asset-request-status', {
@@ -27630,7 +27695,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             ${loanChip ? `<div class="data-card-loan">${loanChip}${historyLoanActionHtml(r)}</div>` : ''}
           </div>
           <div class="data-card-side">
-            <span class="badge ${requestStatusClass(r.status)}">${esc(REQUEST_STATUS_LABEL[r.status] || r.status)}</span>
+            <span class="badge ${requestStageClass(r)}">${esc(requestStageLabel(r))}</span>
             <i class="fa-solid fa-chevron-right data-card-chevron"></i>
           </div>
         </div>
@@ -27730,7 +27795,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         ['Doc Type', r.doc_type],
         ['ປະເພດສັນຍາ', LOAN_CONTRACT_TYPE_LABEL[r.contract_type] || '-'],
         ['ເຫດຜົນ', r.reason],
-        ['ສະຖານະ', raw(`<span class="badge ${requestStatusClass(r.status)}">${esc(REQUEST_STATUS_LABEL[r.status] || r.status)}</span>`)],
+        ['ສະຖານະ', raw(`<span class="badge ${requestStageClass(r)}">${esc(requestStageLabel(r))}</span>`)],
         ['QR Code', r.qr_code],
         ['Serial Number', r.serial_number],
         ['CapEx', r.capex],
