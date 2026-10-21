@@ -27011,7 +27011,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         ['Doc Type', r.doc_type],
         ['ປະເພດສັນຍາ', LOAN_CONTRACT_TYPE_LABEL[r.contract_type] || '-'],
         ['ເຫດຜົນ', r.reason],
-        ...(r.shop_photo ? [['ຮູບຮ້ານຄ້າ', raw(`<a href="/api/asset-request-photo?id=${encodeURIComponent(r.id)}" target="_blank" rel="noopener"><img src="/api/asset-request-photo?id=${encodeURIComponent(r.id)}" alt="ຮູບຮ້ານຄ້າ" style="max-width:100%; max-height:140px; border-radius:8px; border:1px solid #cbd5e1;"></a>`)]] : []),
+        ...(r.shop_photo ? [['ຮູບຮ້ານຄ້າ', raw(`<img data-ar-photo-id="${esc(String(r.id))}" alt="ກຳລັງໂຫລດຮູບ..." onclick="if(this.src) openPhotoLightbox(this.src)" style="max-width:100%; max-height:140px; border-radius:8px; border:1px solid #cbd5e1; cursor:zoom-in;">`)]] : []),
         ['ສະຖານະ', raw(`<span class="badge ${requestStatusClass(r.status)}">${esc(REQUEST_STATUS_LABEL[r.status] || r.status)}</span>`)],
         ['ວັນທີ່ຂໍ', fmtLaoTs(r.requested_at)]
       );
@@ -27031,6 +27031,14 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }
 
       openDetailModal(requestOutletLabel(r), fields, actions);
+      // /api/asset-request-photo ຕ້ອງມີ token -> <img src> ກົງໆຈະໄດ້ 401; ໂຫລດດ້ວຍ fetch ແລ້ວສະແດງເປັນ blob
+      document.querySelectorAll('img[data-ar-photo-id]').forEach(async (im) => {
+        try {
+          const res = await fetch('/api/asset-request-photo?id=' + encodeURIComponent(im.dataset.arPhotoId));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          im.src = URL.createObjectURL(await res.blob());
+        } catch (e) { im.alt = 'ໂຫລດຮູບບໍ່ສຳເລັດ'; }
+      });
     }
 
     let reqTeamBudgets = [];   // งบประมาณของทีม currentUser (สำหรับตัวเลือก "ໃໝ່")
