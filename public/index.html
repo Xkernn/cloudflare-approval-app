@@ -15683,7 +15683,9 @@ async function ncExportLots(lot) {
           const rr = await fetch('/api/admin/ship-trip-receipts');
           const list = rr.ok ? await rr.json() : [];
           const signed = list.filter(r => Number(r.trip_id) === Number(t.id) && r.status === 'signed');
-          await Promise.all(signed.map(async r => { recvByProv.set(r.province + NC_RK_SEP + (r.warehouse || ''), { ...r, sigSrc: await toDataUrl(r.sig_receiver) }); }));
+          await Promise.all(signed.map(async r => { let pk = []; try { const a = JSON.parse(r.recv_photos || '[]'); if (Array.isArray(a)) pk = a; } catch (e) { /* ignore */ }
+            const photoSrcs = (await Promise.all(pk.map(k => toDataUrl(k)))).filter(Boolean);
+            recvByProv.set(r.province + NC_RK_SEP + (r.warehouse || ''), { ...r, sigSrc: await toDataUrl(r.sig_receiver), photoSrcs }); }));
         } catch (e) { /* ໃບສົ່ງຍັງພິມໄດ້ ແຕ່ບໍ່ມີຂໍ້ມູນຜູ້ຮັບທາງລິ້ງ */ }
       }
 
@@ -15707,7 +15709,7 @@ async function ncExportLots(lot) {
               <td>${esc(n.qr_code || '')}</td><td>${esc(n.serial_number || '')}</td><td>${esc(n.capex || '')}</td><td>${n.kind === 'stock' ? 'ຈາກສາງ' : 'ຕູ້ໃໝ່'}</td><td>${esc(n.ship_note || n.notes || '')}</td><td class="c">${(n.kind === 'stock' ? n.scanned_at : n.trip_scanned_at) ? '&#10003;' : ''}</td></tr>`).join('')}
             </tbody>
           </table>
-          ${recvByProv.has(k) ? (() => { const r = recvByProv.get(k); return `<div class="recv"><b>ຜູ້ຮັບຕູ້ປາຍທາງ (ແຂວງ ${esc(keyLabel(k))})</b>: ${esc(r.receiver_name || '')}${r.receiver_phone ? ' · ' + esc(r.receiver_phone) : ''} · ຮັບ ${esc(String(r.received_count))}/${esc(String(r.expected_count))} ຕູ້ · ເຊັນເມື່ອ ${esc(fmtLaoTs(r.signed_at) || '')} (UTC) · ເຊັນຜ່ານລິ້ງອອນລາຍ${r.note ? `<br>ໝາຍເຫດ: ${esc(r.note)}` : ''}${r.sigSrc ? `<br><img class="rsig" src="${r.sigSrc}" alt="">` : ''}</div>`; })() : `<div class="recv">ຜູ້ຮັບຕູ້ປາຍທາງ (ແຂວງ ${esc(keyLabel(k))}): ຊື່ ........................................ ເຊັນ ........................ ວັນທີ ............... ຮັບຄົບ ........ ຕູ້</div>`}
+          ${recvByProv.has(k) ? (() => { const r = recvByProv.get(k); return `<div class="recv"><b>ຜູ້ຮັບຕູ້ປາຍທາງ (ແຂວງ ${esc(keyLabel(k))})</b>: ${esc(r.receiver_name || '')}${r.receiver_phone ? ' · ' + esc(r.receiver_phone) : ''} · ຮັບ ${esc(String(r.received_count))}/${esc(String(r.expected_count))} ຕູ້ · ເຊັນເມື່ອ ${esc(fmtLaoTs(r.signed_at) || '')} (UTC) · ເຊັນຜ່ານລິ້ງອອນລາຍ${r.note ? `<br>ໝາຍເຫດ: ${esc(r.note)}` : ''}${r.sigSrc ? `<br><img class="rsig" src="${r.sigSrc}" alt="">` : ''}${(r.photoSrcs && r.photoSrcs.length) ? `<div class="rphotos"><b>ຮູບຖ່າຍຕອນຮັບຕູ້</b><br>${r.photoSrcs.map(u => `<img src="${u}" alt="">`).join('')}</div>` : ''}</div>`; })() : `<div class="recv">ຜູ້ຮັບຕູ້ປາຍທາງ (ແຂວງ ${esc(keyLabel(k))}): ຊື່ ........................................ ເຊັນ ........................ ວັນທີ ............... ຮັບຄົບ ........ ຕູ້</div>`}
         </section>`;
       }).join('');
 
@@ -15735,6 +15737,7 @@ td.c { text-align: center; }
 .prov { margin-top: 12px; page-break-inside: avoid; }
 .prov h3 { font-size: 14px; margin: 0 0 4px; } .prov h3 span { font-weight: 400; color: #444; font-size: 12px; }
 .recv { margin-top: 8px; font-size: 12px; }
+.rphotos { margin-top: 8px; page-break-inside: avoid; } .rphotos img { width: 150px; height: 150px; object-fit: cover; border: 1px solid #999; margin: 0 6px 6px 0; }
 .photo { margin-top: 14px; page-break-inside: avoid; } .photo img { max-width: 100%; max-height: 260px; display: block; border: 1px solid #999; }
 .sign { display: flex; gap: 12px; margin-top: 28px; page-break-inside: avoid; }
 .sign div { flex: 1; text-align: center; }
@@ -16362,7 +16365,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             <span><i class="fa-solid fa-calendar-day"></i>ວັນທີອອກລົດ: ${esc(ncFmtDate(t.trip_date))}</span>
             <span><i class="fa-solid fa-user"></i>ຄົນຂັບ: ${esc(t.driver_name || '-')}${t.driver_phone ? ' · ' + esc(t.driver_phone) : ''}</span>
             ${!open && t.departed_at ? `<span><i class="fa-solid fa-clock"></i>ລົດອອກ: ${esc(fmtLaoTs(t.departed_at))}</span>` : ''}
-            ${!open && t.depart_photo ? `<span><i class="fa-solid fa-image"></i><a href="/api/photo?key=${encodeURIComponent(t.depart_photo)}" target="_blank" rel="noopener">ເບິ່ງຮູບຖ່າຍຕອນລົດອອກ</a></span>` : ''}
+            ${!open && t.depart_photo ? `<span><i class="fa-solid fa-image"></i><a href="#" onclick="openPhotoKey(${JSON.stringify(t.depart_photo).replace(/"/g, '&quot;')}); return false;">ເບິ່ງຮູບຖ່າຍຕອນລົດອອກ</a></span>` : ''}
           </div>
           ${t.note ? `<div style="font-size:13px; color:var(--text-muted);"><i class="fa-solid fa-note-sticky mr-1"></i>${esc(t.note)}</div>` : ''}
           ${stPlanCardHtml(t.id, open)}
@@ -16693,8 +16696,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       let keys = []; try { const a = JSON.parse(rec.recv_photos || '[]'); if (Array.isArray(a)) keys = a; } catch (e) { /* ignore */ }
       const pbox = document.getElementById('stRecvPhotos');
       pbox.innerHTML = keys.length
-        ? keys.map(k => { const u = '/api/photo?key=' + encodeURIComponent(k); return `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="" style="width:96px; height:96px; object-fit:cover; border:1px solid #cbd5e1; border-radius:8px;"></a>`; }).join('')
+        ? keys.map((k, i) => `<img data-recv-idx="${i}" alt="" onclick="if(this.src) openPhotoLightbox(this.src)" style="width:96px; height:96px; object-fit:cover; border:1px solid #cbd5e1; border-radius:8px; cursor:zoom-in;">`).join('')
         : '<span style="font-size:12.5px; color:#64748b;">ບໍ່ມີຮູບ (ເຊັນກ່ອນເພີ່ມຟັງຊັນນີ້)</span>';
+      pbox.querySelectorAll('img[data-recv-idx]').forEach(im => setPhotoSrc(im, keys[Number(im.dataset.recvIdx)])); // ຕ້ອງ fetch ພ້ອມ token (img src ກົງໆ = 401)
       document.getElementById('stRecvSigView').classList.remove('hidden');
     }
 
@@ -19897,6 +19901,24 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!value) return '';
       if (value.startsWith('data:')) return value;
       return `/api/photo?key=${encodeURIComponent(value)}`;
+    }
+
+    /* ເປີດຮູບໃນແທັບໃໝ່: <a href="/api/photo"> ບໍ່ມີ token -> 401 UNAUTHENTICATED, ຈຶ່ງ fetch ພ້ອມ token ແລ້ວເປີດ blob URL */
+    async function openPhotoKey(key) {
+      if (!key) return;
+      const w = window.open('', '_blank'); // ເປີດກ່ອນ (ຢູ່ໃນການກົດ) ເພື່ອບໍ່ໃຫ້ browser ບລັອກ popup
+      try {
+        let href = String(key);
+        if (!href.startsWith('data:')) {
+          const res = await fetch(resolvePhotoUrl(key));
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          href = URL.createObjectURL(await res.blob());
+        }
+        if (w) w.location.href = href; else openPhotoLightbox(href);
+      } catch (e) {
+        if (w) w.close();
+        alert('ໂຫລດຮູບບໍ່ສຳເລັດ');
+      }
     }
 
     /* <img src="/api/photo?..."> ບໍ່ສາມາດແນບ header Authorization ໄດ້ (server ຕອບ 401)
