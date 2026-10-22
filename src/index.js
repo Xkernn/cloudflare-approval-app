@@ -8829,6 +8829,7 @@ export default {
 
     // 7b-0b. Admin Back up (Excel): ດຶງຂໍ້ມູນ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດ (ບໍ່ຕິດຕົວກອງ) ໃນຄັ້ງດຽວ
     // ໜ້າເວັບຈະສ້າງໄຟລ໌ .xlsx ດຽວ (ແຍກ sheet) ຈາກຂໍ້ມູນນີ້. ບໍ່ລວມຮູບ (R2) ແລະ ບໍ່ມີ hash ລະຫັດຜ່ານ
+    // ຜູ້ຊ່ວຍ admin (assistant_admin) ໃຊ້ໄດ້ (ບໍ່ຢູ່ໃນ ASSISTANT_ADMIN_DENIED_PATHS) ເພາະເປັນ Export ຂໍ້ມູນທຸລະກິດ; ສ່ວນ /api/admin/backup (JSON ທຸກຕາຕະລາງ + hash ລະຫັດຜ່ານ) ຍັງຫ້າມຢູ່
     if (url.pathname === "/api/admin/backup-excel" && request.method === "GET") {
       try {
         const { results: stock } = await env.DB.prepare(
