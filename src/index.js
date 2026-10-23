@@ -8829,6 +8829,7 @@ export default {
 
     // 7b-0b. Admin Back up (Excel): ດຶງຂໍ້ມູນ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດ (ບໍ່ຕິດຕົວກອງ) ໃນຄັ້ງດຽວ
     // ໜ້າເວັບຈະສ້າງໄຟລ໌ .xlsx ດຽວ (ແຍກ sheet) ຈາກຂໍ້ມູນນີ້. ບໍ່ລວມຮູບ (R2) ແລະ ບໍ່ມີ hash ລະຫັດຜ່ານ
+    // ຜູ້ຊ່ວຍ admin (assistant_admin) ໃຊ້ໄດ້ (ບໍ່ຢູ່ໃນ ASSISTANT_ADMIN_DENIED_PATHS) ເພາະເປັນ Export ຂໍ້ມູນທຸລະກິດ; ສ່ວນ /api/admin/backup (JSON ທຸກຕາຕະລາງ + hash ລະຫັດຜ່ານ) ຍັງຫ້າມຢູ່
     if (url.pathname === "/api/admin/backup-excel" && request.method === "GET") {
       try {
         const { results: stock } = await env.DB.prepare(
@@ -9515,8 +9516,9 @@ export default {
           return Response.json({ message: "ກວດສອບແລ້ວ — ສົ່ງຕໍ່ໃຫ້ສາງອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້" });
         }
         if (status === "approved") {
-          if (!isWhRole) return Response.json({ error: "ສະເພາະ role ສາງ (Warehouse) ເທົ່ານັ້ນທີ່ອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ໄດ້" }, { status: 403 });
-          if (!adminChecked) return Response.json({ error: "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ ສາງຈຶ່ງອະນຸມັດໄດ້" }, { status: 400 });
+          // Admin ກວດສອບ + ອະນຸມັດ + ໃສ່ລະຫັດຕູ້ ໄດ້ໃນຂັ້ນດຽວ (ບໍ່ຕ້ອງລໍຖ້າສາງ); ສາງຍັງອະນຸມັດໄດ້ຄືເກົ່າ ແຕ່ຕ້ອງໃຫ້ Admin ກວດກ່ອນ
+          if (!isWhRole && !isAdminRole) return Response.json({ error: "ສະເພາະ Admin ຫຼື ສາງ (Warehouse) ເທົ່ານັ້ນທີ່ອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ໄດ້" }, { status: 403 });
+          if (isWhRole && !isAdminRole && !adminChecked) return Response.json({ error: "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ ສາງຈຶ່ງອະນຸມັດໄດ້" }, { status: 400 });
         }
         if (status === "rejected" && !isAdminRole && !(isWhRole && adminChecked)) {
           return Response.json({ error: isWhRole ? "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ" : "ບໍ່ມີສິດປະຕິເສດຄຳຂໍນີ້" }, { status: 403 });
@@ -9614,9 +9616,11 @@ export default {
           const geoLng = (outletGeo && outletGeo.longitude) ?? null;
           const results = await env.DB.batch([
             env.DB.prepare(
-              `UPDATE asset_requests SET status = 'approved', qr_code = ?, serial_number = ?, capex = ?, updated_at = CURRENT_TIMESTAMP
-               WHERE id = ? AND status = 'pending' AND admin_checked_at IS NOT NULL`
-            ).bind(qr_code, serial_number, capex, requestId),
+              `UPDATE asset_requests SET status = 'approved', qr_code = ?, serial_number = ?, capex = ?,
+                  admin_checked_by = COALESCE(admin_checked_by, ?), admin_checked_at = COALESCE(admin_checked_at, CURRENT_TIMESTAMP),
+                  updated_at = CURRENT_TIMESTAMP
+               WHERE id = ? AND status = 'pending' AND (admin_checked_at IS NOT NULL OR ? = 1)`
+            ).bind(qr_code, serial_number, capex, (session && session.email) || null, requestId, isAdminRole ? 1 : 0),
             env.DB.prepare(
               `INSERT INTO assets (tracking_no, outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, asset_condition, qr_code, serial_number, capex, status, latitude, longitude)
                SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE changes() > 0`
