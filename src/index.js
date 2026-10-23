@@ -1657,6 +1657,30 @@ function lostLogStmt(env, lostId, action, fromStatus, toStatus, note, actor) {
   ).bind(lostId, action, fromStatus || null, toStatus || null, note || null, actor || null);
 }
 
+// Team ຂອງຕູ້ສູນຫາຍ: ຖ້າບໍ່ໄດ້ປ້ອນ ໃຫ້ດຶງຈາກ MDE Code ເອງ - ໃຊ້ Team ໃນ MDE List ກ່ອນ, ຖ້າບໍ່ພົບໃຫ້ອ່ານຈາກຮູບແບບລະຫັດ (MDE-A1 -> A)
+function lostTeamFromMdeCode(code) {
+  const m = /^MDE[\s_\-]*([A-Za-z]+)/i.exec(String(code == null ? "" : code).trim());
+  return m ? m[1].toUpperCase() : null;
+}
+async function lostTeamMap(env, codes) {
+  const map = new Map();
+  const uniq = [...new Set((codes || []).map((c) => String(c == null ? "" : c).trim().toUpperCase()).filter(Boolean))];
+  for (let i = 0; i < uniq.length; i += 90) {
+    const part = uniq.slice(i, i + 90);
+    try {
+      const r = await env.DB.prepare(
+        `SELECT UPPER(TRIM(mde_code)) AS c, team FROM mde_list WHERE UPPER(TRIM(mde_code)) IN (${part.map(() => "?").join(",")})`
+      ).bind(...part).all();
+      for (const row of (r.results || [])) if (row.team) map.set(row.c, row.team);
+    } catch (_) { /* ຄົ້ນຫາ Team ບໍ່ສຳເລັດ - ໃຊ້ການອ່ານຈາກຮູບແບບລະຫັດແທນ */ }
+  }
+  return map;
+}
+function lostTeamFor(map, code) {
+  if (!code) return null;
+  return map.get(String(code).trim().toUpperCase()) || lostTeamFromMdeCode(code);
+}
+
 // ຄິດສະຖິຕິ Cooler Master ໃໝ່ ແລ້ວເກັບໃນ cache (scan ເທື່ອດຽວ ຕອນ Import ຈົບ/ລຶບ)
 async function cmRefreshStats(env) {
   const [tot, prov] = await env.DB.batch([
@@ -3248,10 +3272,11 @@ export default {
         const note = cmClean(body.note, 500);
         const actor = (session && session.email) || null;
 
-        const finds = await env.DB.batch(codes.map((c) => env.DB.prepare(
+        // ເລືອກຕູ້ດ້ວຍ master_ids (codes ຫວ່າງ) -> D1 batch([]) ຈະ error "No SQL statements detected" ຈຶ່ງຕ້ອງຂ້າມ
+        const finds = codes.length ? await env.DB.batch(codes.map((c) => env.DB.prepare(
           `SELECT m.*, (SELECT l.id FROM lost_coolers l WHERE l.master_id = m.id AND l.status IN ('suspected','verifying','confirmed_lost') LIMIT 1) AS lost_id
              FROM cooler_master m WHERE m.qr_norm = ? OR m.serial_norm = ? OR m.capex_norm = ? ORDER BY m.id LIMIT 3`
-        ).bind(c, c, c)));
+        ).bind(c, c, c))) : [];
 
         const notFound = [], ambiguous = [], duplicates = [];
         const toAdd = [];
@@ -3284,7 +3309,9 @@ export default {
         if (toAdd.length) {
           // ຂໍ້ມູນຕູ້/ຮ້ານ: ໃຊ້ຄ່າຈາກ Master ກ່ອນ, ຖ້າ Master ຫວ່າງ ຈຶ່ງໃຊ້ຄ່າທີ່ຜູ້ໃຊ້ຕື່ມ. ຖັນລາຍງານ (Channel/Grade/Team/...) ມາຈາກທີ່ຕື່ມເທົ່ານັ້ນ
           const pick = (mv, fv, max) => (mv != null && String(mv).trim() !== "" ? mv : cmClean(fv, max));
-          const ins = await env.DB.batch(toAdd.map((m) => {
+          const mdeAdd = toAdd.map((m) => { const ff = (fills[m.id] && typeof fills[m.id] === "object") ? fills[m.id] : {}; return cmClean(ff.mde, 150) || lostMasterExtras(m).mde; });
+          const teamMapAdd = await lostTeamMap(env, mdeAdd);
+          const ins = await env.DB.batch(toAdd.map((m, idx) => {
             const f = (fills[m.id] && typeof fills[m.id] === "object") ? fills[m.id] : {};
             const ex = lostMasterExtras(m);
             return env.DB.prepare(
@@ -3299,7 +3326,7 @@ export default {
               pick(m.province, f.province, 100), pick(m.district, f.district, 100), m.address, m.status, note, actor,
               cmClean(f.channel, 100) || ex.channel, cmClean(f.grade, 50) || ex.grade, cmClean(f.village, 150) || ex.village,
               cmClean(f.lat_position, 40) || ex.lat_position, cmClean(f.long_position, 40) || ex.long_position,
-              cmClean(f.dsm, 150) || ex.dsm, cmClean(f.mde, 150) || ex.mde, cmClean(f.team, 150) || ex.team, cmClean(f.submit_date, 40),
+              cmClean(f.dsm, 150) || ex.dsm, cmClean(f.mde, 150) || ex.mde, cmClean(f.team, 150) || ex.team || lostTeamFor(teamMapAdd, mdeAdd[idx]), cmClean(f.submit_date, 40),
               cmClean(f.fsm, 150) || ex.fsm);
           }));
           await env.DB.batch(ins.map((r) => lostLogStmt(env, r.meta.last_row_id, "add", null, "suspected", note, actor)));
@@ -3308,7 +3335,7 @@ export default {
         return Response.json({ added, duplicates, not_found: notFound, ambiguous });
       } catch (e) {
         console.error("/api/admin/lost-coolers/add", e);
-        return Response.json({ error: "ເພີ່ມບໍ່ສຳເລັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_lost_coolers.sql ໃຫ້ຮັນກ່ອນ)" }, { status: 500 });
+        return Response.json({ error: "ເພີ່ມບໍ່ສຳເລັດ: " + String((e && e.message) || e).slice(0, 300) + " (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_lost_coolers.sql ໃຫ້ຮັນກ່ອນ)" }, { status: 500 });
       }
     }
 
@@ -3369,7 +3396,9 @@ export default {
         if (toAdd.length) {
           const nowTs = new Date().toISOString().replace("T", " ").slice(0, 19);
           const pick = (masterVal, excelVal, max) => (masterVal != null && String(masterVal).trim() !== "" ? masterVal : cmClean(excelVal, max));
-          const ins = await env.DB.batch(toAdd.map(({ p, m, status }) => { const ex = lostMasterExtras(m); return env.DB.prepare(
+          const mdeImp = toAdd.map(({ p, m }) => cmClean(p.r.mde, 150) || lostMasterExtras(m).mde);
+          const teamMapImp = await lostTeamMap(env, mdeImp);
+          const ins = await env.DB.batch(toAdd.map(({ p, m, status }, idx) => { const ex = lostMasterExtras(m); return env.DB.prepare(
             `INSERT INTO lost_coolers
                (master_id, qr_code, serial_number, capex, qr_norm, serial_norm, capex_norm, cooler_brand, cooler_type, cooler_model,
                 outlet_code, outlet_name, province, district, address, master_status, status, reason, reported_by, verified_by, verified_at,
@@ -3384,7 +3413,7 @@ export default {
             status === "confirmed_lost" ? actor : null, status === "confirmed_lost" ? nowTs : null,
             cmClean(p.r.channel, 100) || ex.channel, cmClean(p.r.grade, 50) || ex.grade, cmClean(p.r.village, 150) || ex.village,
             cmClean(p.r.lat_position, 40) || ex.lat_position, cmClean(p.r.long_position, 40) || ex.long_position,
-            cmClean(p.r.dsm, 150) || ex.dsm, cmClean(p.r.mde, 150) || ex.mde, cmClean(p.r.team, 150) || ex.team, cmClean(p.r.submit_date, 40),
+            cmClean(p.r.dsm, 150) || ex.dsm, cmClean(p.r.mde, 150) || ex.mde, cmClean(p.r.team, 150) || ex.team || lostTeamFor(teamMapImp, mdeImp[idx]), cmClean(p.r.submit_date, 40),
             cmClean(p.r.fsm, 150) || ex.fsm
           ); }));
           await env.DB.batch(ins.map((r, i) => lostLogStmt(env, r.meta.last_row_id, "add", null, toAdd[i].status, "ນຳເຂົ້າຈາກ Excel", actor)));
@@ -8829,6 +8858,7 @@ export default {
 
     // 7b-0b. Admin Back up (Excel): ດຶງຂໍ້ມູນ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດ (ບໍ່ຕິດຕົວກອງ) ໃນຄັ້ງດຽວ
     // ໜ້າເວັບຈະສ້າງໄຟລ໌ .xlsx ດຽວ (ແຍກ sheet) ຈາກຂໍ້ມູນນີ້. ບໍ່ລວມຮູບ (R2) ແລະ ບໍ່ມີ hash ລະຫັດຜ່ານ
+    // ຜູ້ຊ່ວຍ admin (assistant_admin) ໃຊ້ໄດ້ (ບໍ່ຢູ່ໃນ ASSISTANT_ADMIN_DENIED_PATHS) ເພາະເປັນ Export ຂໍ້ມູນທຸລະກິດ; ສ່ວນ /api/admin/backup (JSON ທຸກຕາຕະລາງ + hash ລະຫັດຜ່ານ) ຍັງຫ້າມຢູ່
     if (url.pathname === "/api/admin/backup-excel" && request.method === "GET") {
       try {
         const { results: stock } = await env.DB.prepare(
@@ -9515,8 +9545,9 @@ export default {
           return Response.json({ message: "ກວດສອບແລ້ວ — ສົ່ງຕໍ່ໃຫ້ສາງອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້" });
         }
         if (status === "approved") {
-          if (!isWhRole) return Response.json({ error: "ສະເພາະ role ສາງ (Warehouse) ເທົ່ານັ້ນທີ່ອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ໄດ້" }, { status: 403 });
-          if (!adminChecked) return Response.json({ error: "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ ສາງຈຶ່ງອະນຸມັດໄດ້" }, { status: 400 });
+          // Admin ກວດສອບ + ອະນຸມັດ + ໃສ່ລະຫັດຕູ້ ໄດ້ໃນຂັ້ນດຽວ (ບໍ່ຕ້ອງລໍຖ້າສາງ); ສາງຍັງອະນຸມັດໄດ້ຄືເກົ່າ ແຕ່ຕ້ອງໃຫ້ Admin ກວດກ່ອນ
+          if (!isWhRole && !isAdminRole) return Response.json({ error: "ສະເພາະ Admin ຫຼື ສາງ (Warehouse) ເທົ່ານັ້ນທີ່ອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ໄດ້" }, { status: 403 });
+          if (isWhRole && !isAdminRole && !adminChecked) return Response.json({ error: "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ ສາງຈຶ່ງອະນຸມັດໄດ້" }, { status: 400 });
         }
         if (status === "rejected" && !isAdminRole && !(isWhRole && adminChecked)) {
           return Response.json({ error: isWhRole ? "ຕ້ອງໃຫ້ Admin ກວດສອບຄຳຂໍນີ້ກ່ອນ" : "ບໍ່ມີສິດປະຕິເສດຄຳຂໍນີ້" }, { status: 403 });
@@ -9614,9 +9645,11 @@ export default {
           const geoLng = (outletGeo && outletGeo.longitude) ?? null;
           const results = await env.DB.batch([
             env.DB.prepare(
-              `UPDATE asset_requests SET status = 'approved', qr_code = ?, serial_number = ?, capex = ?, updated_at = CURRENT_TIMESTAMP
-               WHERE id = ? AND status = 'pending' AND admin_checked_at IS NOT NULL`
-            ).bind(qr_code, serial_number, capex, requestId),
+              `UPDATE asset_requests SET status = 'approved', qr_code = ?, serial_number = ?, capex = ?,
+                  admin_checked_by = COALESCE(admin_checked_by, ?), admin_checked_at = COALESCE(admin_checked_at, CURRENT_TIMESTAMP),
+                  updated_at = CURRENT_TIMESTAMP
+               WHERE id = ? AND status = 'pending' AND (admin_checked_at IS NOT NULL OR ? = 1)`
+            ).bind(qr_code, serial_number, capex, (session && session.email) || null, requestId, isAdminRole ? 1 : 0),
             env.DB.prepare(
               `INSERT INTO assets (tracking_no, outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, asset_condition, qr_code, serial_number, capex, status, latitude, longitude)
                SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE changes() > 0`
