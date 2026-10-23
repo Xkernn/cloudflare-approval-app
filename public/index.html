@@ -7772,7 +7772,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       if (document.activeElement !== ta) ta.value = d.message && d.message !== 'ລະບົບກຳລັງປັບປຸງ ກະລຸນາກັບມາໃໝ່ພາຍຫຼັງ' ? d.message : '';
     }
     async function loadMaintenanceCard() {
-      if (!currentUser || currentUser.role !== 'admin' || currentUser.isAssistantAdmin) return;
+      if (!currentUser || currentUser.role !== 'admin') return;
+      // ຜູ້ຊ່ວຍ Admin: ເຫັນສະເພາະ card Back up (Excel) - ບໍ່ມີສິດໂໝດປິດລະບົບ (/api/admin/maintenance ຖືກຫ້າມຢູ່ server)
+      if (currentUser.isAssistantAdmin) {
+        const bc = document.getElementById('backupCard'); if (bc) bc.classList.remove('hidden');
+        return;
+      }
       try {
         const res = await fetch('/api/admin/maintenance');
         if (!res.ok) return;
@@ -7784,6 +7789,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
     /* Back up (Excel): ດຶງ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດຈາກ server (ບໍ່ຕິດຕົວກອງໜ້າຈໍ)
        ແລ້ວສ້າງ workbook ດຽວ 3 sheet: Backup Info / Warehouse Stock / Delivery History */
+    /* ຕາມຊື່ໄຟລ໌ Export: ວັນທີ+ເວລາທີ່ກົດ Export (ເວລາເຄື່ອງຜູ້ໃຊ້) ຮູບແບບ YYYY-MM-DD_HH-MM-SS */
+    function exportStamp() {
+      const d = new Date(), pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    }
     async function downloadBackup() {
       const btn = document.getElementById('backupBtn');
       if (!confirm('ສຳຮອງສະຕັອກສາງ + ປະຫວັດການຈັດສົ່ງ Asset ເປັນໄຟລ໌ Excel? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາສັກຄູ່ — ກະລຸນາຢ່າປິດໜ້າຈໍ.')) return;
@@ -7864,9 +7874,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         XLSX.utils.book_append_sheet(wb, makeSheet(stockRows, ['Warehouse Code', 'Warehouse Name', 'Cooler Brand', 'Cooler Type', 'Model', 'Cooler Status', 'QR Code', 'Serial Number', 'CapEx', 'Status', 'Notes', 'Created At', 'Updated At']), 'Warehouse Stock');
         XLSX.utils.book_append_sheet(wb, makeSheet(deliveryRows, ['Tracking No', 'Outlet Code', 'Outlet Name', 'Cooler Brand', 'Cooler Type', 'MDE Code', 'MDE Name', 'Doc Type']), 'Delivery History');
 
-        const pad = n => String(n).padStart(2, '0');
-        const now = new Date();
-        const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+        const stamp = exportStamp();
         XLSX.writeFile(wb, `backup_${stamp}.xlsx`);
       } catch (err) { alert('ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ (ການເຊື່ອມຕໍ່ຂາດ ຫຼື ຂໍ້ມູນໃຫຍ່ເກີນໄປ)'); }
       finally { btn.disabled = false; btn.innerHTML = old; }
@@ -11484,7 +11492,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'MDE List');
-      XLSX.writeFile(workbook, `mde-list-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `mde-list-${exportStamp()}.xlsx`);
     }
 
     async function deleteMde(id) {
@@ -12448,7 +12456,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Outlet List');
-      XLSX.writeFile(workbook, `outlet-list-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `outlet-list-${exportStamp()}.xlsx`);
     }
 
     /* Import Outlet List ຈາກໄຟລ໌ Excel/CSV - Outlet Code ໃໝ່ຈະຖືກເພີ່ມ, Outlet Code ທີ່ມີຢູ່ແລ້ວຈະຖືກອັບເດດຂໍ້ມູນໃຫ້ */
@@ -13211,7 +13219,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse Stock');
-      XLSX.writeFile(workbook, `warehouse-stock-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `warehouse-stock-${exportStamp()}.xlsx`);
     }
 
     /* Import ໄຟລ໌ Excel/CSV ເຂົ້າ warehouse_stock (admin/warehouse) - ຈັບຄູ່ "Warehouse Code" ຫຼື "Warehouse Name" ກັບສາງທີ່ມີຢູ່ແລ້ວ
@@ -15100,7 +15108,7 @@ async function ncExportLots(lot) {
   add(contRows, ['Lot No', 'ຄອນເທນເນີ ທີ', 'ຈຳນວນໜ່ວຍ'], 'Containers');
   add(coolerRows, ['Lot No'], 'Coolers');
   const safe = lot ? String(lot).replace(/[^\w\-]+/g, '_') : 'all';
-  XLSX.writeFile(wb, `lot-history-${safe}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(wb, `lot-history-${safe}-${exportStamp()}.xlsx`);
 }
 
     // ຂັ້ນ 2: ຮັບເຂົ້າສາງ (ສົ່ງເປັນກ້ອນລະ 10 ລາຍການ)
@@ -16404,7 +16412,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       XLSX.utils.book_append_sheet(wb, mk(tripRows, ['Trip No']), 'Trips');
       XLSX.utils.book_append_sheet(wb, mk(itemRows, ['Trip No']), 'Trip Coolers');
       const truck = (document.getElementById('stTruckFilter').value || '').replace(/[^\w\u0E80-\u0EFF-]+/g, '_');
-      XLSX.writeFile(wb, `ship-trips-${truck || 'all-trucks'}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `ship-trips-${truck || 'all-trucks'}-${exportStamp()}.xlsx`);
     }
 
     function stRenderList() {
@@ -17204,7 +17212,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'New Coolers');
-      XLSX.writeFile(wb, 'new-coolers-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+      XLSX.writeFile(wb, 'new-coolers-' + exportStamp() + '.xlsx');
     }
 
     function downloadNewCoolerTemplate() {
@@ -17442,7 +17450,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Asset History');
-      XLSX.writeFile(workbook, `asset-location-history-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `asset-location-history-${exportStamp()}.xlsx`);
     }
 
     /* ===================== ກວດນັບສາງປະຈຳເດືອນ (Stock Count) ===================== */
@@ -18229,7 +18237,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Lost Cooler');
-        XLSX.writeFile(wb, 'lost-cooler-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+        XLSX.writeFile(wb, 'lost-cooler-' + exportStamp() + '.xlsx');
       } catch (e) { alert('Export ບໍ່ສຳເລັດ'); }
     }
 
@@ -18705,7 +18713,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Stock Count');
-      XLSX.writeFile(wb, `stock-count-${count.warehouse_code || count.warehouse_id}-${count.period}.xlsx`);
+      XLSX.writeFile(wb, `stock-count-${count.warehouse_code || count.warehouse_id}-${count.period}-${exportStamp()}.xlsx`);
     }
 
     /* ===================== ສະແກນ QR Code ด้วยกล้อง ===================== */
@@ -19922,7 +19930,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Delivery History');
-      XLSX.writeFile(workbook, `delivery-history-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `delivery-history-${exportStamp()}.xlsx`);
     }
 
     function showDeliveryDetail(id) {
@@ -20542,7 +20550,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Assets');
-      XLSX.writeFile(workbook, `asset-tracking-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `asset-tracking-${exportStamp()}.xlsx`);
     }
 
     /* Import ไฟล์ Excel/CSV เข้าตาราง assets (เฉพาะ Admin) - Tracking No สร้างให้อัตโนมัติทุกแถว ไม่อ่านจากไฟล์ */
@@ -24420,7 +24428,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Cooler Write-off');
-      XLSX.writeFile(wb, `cooler-writeoff-${Date.now()}.xlsx`);
+      XLSX.writeFile(wb, `cooler-writeoff-${exportStamp()}.xlsx`);
     }
 
     let allCoolerEventsData = [];
@@ -26717,7 +26725,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'ງົບຕ່າງແຂວງ');
-      XLSX.writeFile(wb, `province-budget-${Date.now()}.xlsx`);
+      XLSX.writeFile(wb, `province-budget-${exportStamp()}.xlsx`);
     }
 
     function pbHandleImportFile(event) {
@@ -27188,8 +27196,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const checked = !!r.admin_checked_at;
         const rejectBtn = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'rejected')" class="btn-act btn-reject"><i class="fa-solid fa-xmark mr-1"></i> ປະຕິເສດ</button>`;
         if (currentUser.role === 'admin') {
+          // Admin ກວດສອບແລ້ວ ອະນຸມັດ + ໃສ່ລະຫັດຕູ້ ໄດ້ເລີຍ (ບໍ່ຕ້ອງລໍຖ້າສາງ)
+          actions = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ອະນຸມັດ + ໃສ່ລະຫັດຕູ້</button>`;
           if (!checked) {
-            actions = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'admin_approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ກວດສອບແລ້ວ — ສົ່ງຕໍ່ສາງ</button>`;
+            actions += `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'admin_approved')" class="btn-act"><i class="fa-solid fa-share mr-1"></i> ກວດສອບແລ້ວ — ສົ່ງຕໍ່ສາງ</button>`;
           }
           actions += rejectBtn;
           actions += `<button onclick="closeDetailModal(); openEditRequestBrand(${r.id})" class="btn-act"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂ Brand</button>`;
