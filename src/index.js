@@ -3274,7 +3274,11 @@ export default {
 
         // ເລືອກຕູ້ດ້ວຍ master_ids (codes ຫວ່າງ) -> D1 batch([]) ຈະ error "No SQL statements detected" ຈຶ່ງຕ້ອງຂ້າມ
         const finds = codes.length ? await env.DB.batch(codes.map((c) => env.DB.prepare(
+<<<<<<< HEAD
           `SELECT m.*, (SELECT l.id FROM lost_coolers l WHERE l.master_id = m.id AND l.status IN ('suspected','pending_smc','verifying','confirmed_lost') LIMIT 1) AS lost_id
+=======
+          `SELECT m.*, (SELECT l.id FROM lost_coolers l WHERE l.master_id = m.id AND l.status IN ('suspected','verifying','confirmed_lost') LIMIT 1) AS lost_id
+>>>>>>> 84945f389fcea927e1df3267a0424836fd0cd732
              FROM cooler_master m WHERE m.qr_norm = ? OR m.serial_norm = ? OR m.capex_norm = ? ORDER BY m.id LIMIT 3`
         ).bind(c, c, c))) : [];
 
