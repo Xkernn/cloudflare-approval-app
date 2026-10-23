@@ -6008,6 +6008,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <span id="importProgressCount">0 / 0 ແຖວ</span>
         <span id="importProgressError" style="color:#dc2626;"></span>
       </div>
+      <div id="importProgressDetails" class="hidden" style="margin-top:10px; max-height:150px; overflow-y:auto; text-align:left; font-size:12px; line-height:1.5; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:8px 10px; word-break:break-word;"></div>
       <div style="font-size:12px; color: var(--text-muted); margin-top:14px;">ກະລຸນາລໍຖ້າ ຢ່າປິດໜ້ານີ້...</div>
     </div>
   </div>
@@ -7772,7 +7773,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       if (document.activeElement !== ta) ta.value = d.message && d.message !== 'ລະບົບກຳລັງປັບປຸງ ກະລຸນາກັບມາໃໝ່ພາຍຫຼັງ' ? d.message : '';
     }
     async function loadMaintenanceCard() {
-      if (!currentUser || currentUser.role !== 'admin' || currentUser.isAssistantAdmin) return;
+      if (!currentUser || currentUser.role !== 'admin') return;
+      // ຜູ້ຊ່ວຍ Admin: ເຫັນສະເພາະ card Back up (Excel) - ບໍ່ມີສິດໂໝດປິດລະບົບ (/api/admin/maintenance ຖືກຫ້າມຢູ່ server)
+      if (currentUser.isAssistantAdmin) {
+        const bc = document.getElementById('backupCard'); if (bc) bc.classList.remove('hidden');
+        return;
+      }
       try {
         const res = await fetch('/api/admin/maintenance');
         if (!res.ok) return;
@@ -7784,6 +7790,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
     /* Back up (Excel): ດຶງ "ສະຕັອກສາງ" + "ປະຫວັດການຈັດສົ່ງ Asset" ທັງໝົດຈາກ server (ບໍ່ຕິດຕົວກອງໜ້າຈໍ)
        ແລ້ວສ້າງ workbook ດຽວ 3 sheet: Backup Info / Warehouse Stock / Delivery History */
+    /* ຕາມຊື່ໄຟລ໌ Export: ວັນທີ+ເວລາທີ່ກົດ Export (ເວລາເຄື່ອງຜູ້ໃຊ້) ຮູບແບບ YYYY-MM-DD_HH-MM-SS */
+    function exportStamp() {
+      const d = new Date(), pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    }
     async function downloadBackup() {
       const btn = document.getElementById('backupBtn');
       if (!confirm('ສຳຮອງສະຕັອກສາງ + ປະຫວັດການຈັດສົ່ງ Asset ເປັນໄຟລ໌ Excel? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາສັກຄູ່ — ກະລຸນາຢ່າປິດໜ້າຈໍ.')) return;
@@ -7864,9 +7875,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         XLSX.utils.book_append_sheet(wb, makeSheet(stockRows, ['Warehouse Code', 'Warehouse Name', 'Cooler Brand', 'Cooler Type', 'Model', 'Cooler Status', 'QR Code', 'Serial Number', 'CapEx', 'Status', 'Notes', 'Created At', 'Updated At']), 'Warehouse Stock');
         XLSX.utils.book_append_sheet(wb, makeSheet(deliveryRows, ['Tracking No', 'Outlet Code', 'Outlet Name', 'Cooler Brand', 'Cooler Type', 'MDE Code', 'MDE Name', 'Doc Type']), 'Delivery History');
 
-        const pad = n => String(n).padStart(2, '0');
-        const now = new Date();
-        const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+        const stamp = exportStamp();
         XLSX.writeFile(wb, `backup_${stamp}.xlsx`);
       } catch (err) { alert('ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ (ການເຊື່ອມຕໍ່ຂາດ ຫຼື ຂໍ້ມູນໃຫຍ່ເກີນໄປ)'); }
       finally { btn.disabled = false; btn.innerHTML = old; }
@@ -11369,15 +11378,45 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       document.getElementById('importProgressFill').style.width = '0%';
       document.getElementById('importProgressCount').textContent = '0 / 0 ແຖວ';
       document.getElementById('importProgressError').textContent = '';
+      const det = document.getElementById('importProgressDetails');
+      if (det) { det.innerHTML = ''; det.classList.add('hidden'); }
       document.getElementById('importProgressModal').classList.remove('hidden');
     }
 
-    function updateImportProgress(done, total, errorCount) {
+    /* ຂໍ້ຄວາມຂອງລາຍການທີ່ບໍ່ສຳເລັດ: ຮັບທັງ string ແລະ object {row, reason|error, label} */
+    function importErrText(x) {
+      if (x == null) return '';
+      if (typeof x === 'string') return x;
+      const head = x.row != null ? `ແຖວ ${x.row}` : (x.label || x.code || '');
+      const why = x.reason || x.error || '';
+      return [head, why].filter(Boolean).join(': ') || JSON.stringify(x);
+    }
+    /* ສະຫຼຸບລາຍການທີ່ບໍ່ສຳເລັດເປັນບັນທັດ (ໃຊ້ໃນ alert ຫຼັງຈົບ) */
+    function fmtImportErrs(list, max = 30) {
+      const arr = (list || []).map(importErrText).filter(Boolean);
+      return arr.slice(0, max).map(t => '• ' + t).join('\n') + (arr.length > max ? `\n... ແລະອີກ ${arr.length - max} ລາຍການ` : '');
+    }
+
+    function updateImportProgress(done, total, errorCount, details) {
       const pct = total > 0 ? Math.round((done / total) * 100) : 0;
       document.getElementById('importProgressPercent').textContent = `${pct}%`;
       document.getElementById('importProgressFill').style.width = `${pct}%`;
       document.getElementById('importProgressCount').textContent = `${done} / ${total} ແຖວ`;
       document.getElementById('importProgressError').textContent = errorCount > 0 ? `ຜິດພາດ ${errorCount}` : '';
+      // ສະແດງລາຍລະອຽດໂຕທີ່ບໍ່ສຳເລັດ/ຜິດພາດ ໃນ popup ທັນທີ (ເລື່ອນເບິ່ງໄດ້, ສະແດງລ່າສຸດ 100 ລາຍການ)
+      const det = document.getElementById('importProgressDetails');
+      if (det) {
+        const arr = Array.isArray(details) ? details.map(importErrText).filter(Boolean) : [];
+        if (arr.length) {
+          const shown = arr.slice(-100);
+          det.innerHTML = (arr.length > shown.length ? `<div style="color:#7f1d1d;">... ມີທັງໝົດ ${arr.length} ລາຍການ (ສະແດງ ${shown.length} ລາຍການຫຼ້າສຸດ)</div>` : '')
+            + shown.map(t => `<div>• ${esc(t)}</div>`).join('');
+          det.classList.remove('hidden');
+          det.scrollTop = det.scrollHeight;
+        } else {
+          det.innerHTML = ''; det.classList.add('hidden');
+        }
+      }
     }
 
     function hideImportProgress() {
@@ -11422,9 +11461,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             const rowLabel = mde_code || '(ບໍ່ມີ MDE Code)';
 
             if (!team || !mde_code || !mde_name) {
-              errorRows.push(rowLabel);
+              const miss = [!team && 'Team', !mde_code && 'MDE Code', !mde_name && 'MDE Name'].filter(Boolean);
+              errorRows.push(`${rowLabel} (ຂໍ້ມູນບໍ່ຄົບ: ຂາດ ${miss.join(', ')})`);
               doneCount++;
-              updateImportProgress(doneCount, rows.length, errorRows.length);
+              updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
               continue;
             }
 
@@ -11439,11 +11479,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
               const data = await res.json().catch(() => ({}));
               if (data.revokedUser) revokedCount++;
             } else {
-              errorRows.push(rowLabel);
+              const ed = await res.json().catch(() => ({}));
+              errorRows.push(`${rowLabel} (${ed.error || 'ເຊີບເວີປະຕິເສດ ລະຫັດ ' + res.status})`);
             }
 
             doneCount++;
-            updateImportProgress(doneCount, rows.length, errorRows.length);
+            updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
           }
 
           hideImportProgress();
@@ -11453,7 +11494,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             msg += `\nໃນນັ້ນ ${revokedCount} ລາຍການທີ່ຊື່ປ່ຽນ -> ບັນຊີຜູ້ໃຊ້ງານເດີມຖືກລຶບອອກແລ້ວ (ຕ້ອງສະໝັກໃໝ່)`;
           }
           if (errorRows.length) {
-            msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ (ຂໍ້ມູນບໍ່ຄົບ): ${errorRows.join(', ')}`;
+            msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${fmtImportErrs(errorRows)}`;
           }
           alert(msg);
           loadAdminMdeTable();
@@ -11484,7 +11525,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'MDE List');
-      XLSX.writeFile(workbook, `mde-list-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `mde-list-${exportStamp()}.xlsx`);
     }
 
     async function deleteMde(id) {
@@ -12448,7 +12489,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Outlet List');
-      XLSX.writeFile(workbook, `outlet-list-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `outlet-list-${exportStamp()}.xlsx`);
     }
 
     /* Import Outlet List ຈາກໄຟລ໌ Excel/CSV - Outlet Code ໃໝ່ຈະຖືກເພີ່ມ, Outlet Code ທີ່ມີຢູ່ແລ້ວຈະຖືກອັບເດດຂໍ້ມູນໃຫ້ */
@@ -12508,9 +12549,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             const rowLabel = code || '(ບໍ່ມີ Outlet Code)';
 
             if (!code || !name) {
-              errorRows.push(rowLabel);
+              const miss = [!code && 'Outlet Code', !name && 'Outlet Name'].filter(Boolean);
+              errorRows.push(`${rowLabel} (ຂໍ້ມູນບໍ່ຄົບ: ຂາດ ${miss.join(', ')})`);
               doneCount++;
-              updateImportProgress(doneCount, rows.length, errorRows.length);
+              updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
               continue;
             }
 
@@ -12530,18 +12572,19 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             if (res.ok) {
               successCount++;
             } else {
-              errorRows.push(rowLabel);
+              const ed = await res.json().catch(() => ({}));
+              errorRows.push(`${rowLabel} (${ed.error || 'ເຊີບເວີປະຕິເສດ ລະຫັດ ' + res.status})`);
             }
 
             doneCount++;
-            updateImportProgress(doneCount, rows.length, errorRows.length);
+            updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
           }
 
           hideImportProgress();
 
           let msg = `ອັບໂຫລດສຳເລັດ ${successCount} ລາຍການ (ເພີ່ມໃໝ່ / ອັບເດດຂໍ້ມູນເດີມ)`;
           if (errorRows.length) {
-            msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ (ຂໍ້ມູນບໍ່ຄົບ): ${errorRows.join(', ')}`;
+            msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${fmtImportErrs(errorRows)}`;
           }
           alert(msg);
           await searchOutletTable();
@@ -13211,7 +13254,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse Stock');
-      XLSX.writeFile(workbook, `warehouse-stock-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `warehouse-stock-${exportStamp()}.xlsx`);
     }
 
     /* Import ໄຟລ໌ Excel/CSV ເຂົ້າ warehouse_stock (admin/warehouse) - ຈັບຄູ່ "Warehouse Code" ຫຼື "Warehouse Name" ກັບສາງທີ່ມີຢູ່ແລ້ວ
@@ -13253,7 +13296,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             if (!wh) {
               errorRows.push(`${rowLabel} (ບໍ່ພົບສາງ "${whCode || whName}")`);
               doneCount++;
-              updateImportProgress(doneCount, rows.length, errorRows.length);
+              updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
               continue;
             }
 
@@ -13283,7 +13326,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             if (!payload.cooler_brand || !payload.cooler_type) {
               errorRows.push(`${rowLabel} (ຂາດ Cooler Brand ຫຼື Cooler Type)`);
               doneCount++;
-              updateImportProgress(doneCount, rows.length, errorRows.length);
+              updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
               continue;
             }
 
@@ -13304,7 +13347,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             }
 
             doneCount++;
-            updateImportProgress(doneCount, rows.length, errorRows.length);
+            updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
           }
 
           hideImportProgress();
@@ -15100,7 +15143,7 @@ async function ncExportLots(lot) {
   add(contRows, ['Lot No', 'ຄອນເທນເນີ ທີ', 'ຈຳນວນໜ່ວຍ'], 'Containers');
   add(coolerRows, ['Lot No'], 'Coolers');
   const safe = lot ? String(lot).replace(/[^\w\-]+/g, '_') : 'all';
-  XLSX.writeFile(wb, `lot-history-${safe}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(wb, `lot-history-${safe}-${exportStamp()}.xlsx`);
 }
 
     // ຂັ້ນ 2: ຮັບເຂົ້າສາງ (ສົ່ງເປັນກ້ອນລະ 10 ລາຍການ)
@@ -16404,7 +16447,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       XLSX.utils.book_append_sheet(wb, mk(tripRows, ['Trip No']), 'Trips');
       XLSX.utils.book_append_sheet(wb, mk(itemRows, ['Trip No']), 'Trip Coolers');
       const truck = (document.getElementById('stTruckFilter').value || '').replace(/[^\w\u0E80-\u0EFF-]+/g, '_');
-      XLSX.writeFile(wb, `ship-trips-${truck || 'all-trucks'}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `ship-trips-${truck || 'all-trucks'}-${exportStamp()}.xlsx`);
     }
 
     function stRenderList() {
@@ -17204,7 +17247,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'New Coolers');
-      XLSX.writeFile(wb, 'new-coolers-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+      XLSX.writeFile(wb, 'new-coolers-' + exportStamp() + '.xlsx');
     }
 
     function downloadNewCoolerTemplate() {
@@ -17273,7 +17316,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               chunk.forEach(r => errors.push(`${r.qr_code || r.serial_number || r.capex || '(ບໍ່ມີເລກ)'} (ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້)`));
             }
             done += chunk.length;
-            updateImportProgress(done, rows.length, errors.length);
+            updateImportProgress(done, rows.length, errors.length, errors);
           }
           hideImportProgress();
 
@@ -17442,7 +17485,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Asset History');
-      XLSX.writeFile(workbook, `asset-location-history-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `asset-location-history-${exportStamp()}.xlsx`);
     }
 
     /* ===================== ກວດນັບສາງປະຈຳເດືອນ (Stock Count) ===================== */
@@ -17719,10 +17762,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
 
     /* ==================== Manage Lost Cooler Master Data (Admin) ====================
-       ຕູ້ທີ່ຢູ່ໃນ Cooler Master (ຕາມຮ້ານ) ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ: ເພີ່ມເຂົ້າລາຍການ -> ກວດສອບ -> ຢືນຢັນສູນຫາຍ -> ຄັດອອກຈາກ Master (ຫຼື ພົບຕູ້ແລ້ວ) */
+       ຕູ້ທີ່ຢູ່ໃນ Cooler Master (ຕາມຮ້ານ) ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ: ເພີ່ມເຂົ້າລາຍການ -> Pending SMC MDE -> Pending DSM ຢືນຢັນ -> ຢືນຢັນສູນຫາຍ -> ຄັດອອກຈາກ Master (ຫຼື ພົບຕູ້ແລ້ວ) */
     const LOST_STATUS = {
       suspected:      { label: 'ສົງໄສ – ລໍກວດສອບ',        cls: 'badge-pending' },
-      verifying:      { label: 'ກຳລັງກວດສອບ',             cls: 'badge-info' },
+      pending_smc:    { label: 'Pending SMC MDE',         cls: 'badge-pending' },
+      verifying:      { label: 'Pending DSM ຢືນຢັນ',      cls: 'badge-info' },
       confirmed_lost: { label: 'ຢືນຢັນສູນຫາຍ',            cls: 'badge-rejected' },
       found:          { label: 'ພົບຕູ້ແລ້ວ',              cls: 'badge-approved' },
       excluded:       { label: 'ຄັດອອກຈາກ Master ແລ້ວ',   cls: 'badge-default' }
@@ -17773,7 +17817,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const on = lostState.status === key;
         return `<button type="button" onclick="lostSetStatus(${jsq(key)})" style="border:1px solid ${on ? 'var(--primary)' : 'var(--border-color)'}; background:${on ? 'var(--primary)' : '#fff'}; color:${on ? '#fff' : 'var(--text-main)'}; border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">${esc(label)} <b>${Number(n || 0).toLocaleString()}</b></button>`;
       };
-      const active = (counts.suspected || 0) + (counts.verifying || 0) + (counts.confirmed_lost || 0);
+      const active = (counts.suspected || 0) + (counts.pending_smc || 0) + (counts.verifying || 0) + (counts.confirmed_lost || 0);
       document.getElementById('lostStatusChips').innerHTML =
         chip('', 'ທັງໝົດ', total) + chip('active', 'ຍັງບໍ່ປິດ', active) +
         Object.entries(LOST_STATUS).map(([k, v]) => chip(k, v.label, counts[k])).join('');
@@ -17788,7 +17832,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const id = Number(it.id);
       let actions = '';
       if (it.status === 'suspected') {
-        actions = btn('<i class="fa-solid fa-magnifying-glass"></i> ເລີ່ມກວດສອບ', `lostOpenStatus(${id},'verifying')`, 'background:#dbeafe; color:#1d4ed8;')
+        actions = btn('<i class="fa-solid fa-paper-plane"></i> ສົ່ງ Pending SMC MDE', `lostOpenStatus(${id},'pending_smc')`, 'background:#fef3c7; color:#92400e;')
+          + btn('<i class="fa-solid fa-circle-xmark"></i> ຢືນຢັນສູນຫາຍ', `lostOpenStatus(${id},'confirmed_lost')`, 'background:#fee2e2; color:#b91c1c;')
+          + btn('<i class="fa-solid fa-circle-check"></i> ພົບຕູ້ແລ້ວ', `lostOpenStatus(${id},'found')`, 'background:#dcfce7; color:#166534;');
+      } else if (it.status === 'pending_smc') {
+        actions = btn('<i class="fa-solid fa-paper-plane"></i> ສົ່ງ Pending DSM ຢືນຢັນ', `lostOpenStatus(${id},'verifying')`, 'background:#dbeafe; color:#1d4ed8;')
           + btn('<i class="fa-solid fa-circle-xmark"></i> ຢືນຢັນສູນຫາຍ', `lostOpenStatus(${id},'confirmed_lost')`, 'background:#fee2e2; color:#b91c1c;')
           + btn('<i class="fa-solid fa-circle-check"></i> ພົບຕູ້ແລ້ວ', `lostOpenStatus(${id},'found')`, 'background:#dcfce7; color:#166534;');
       } else if (it.status === 'verifying') {
@@ -17797,7 +17845,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       } else if (it.status === 'confirmed_lost') {
         actions = btn('<i class="fa-solid fa-box-archive"></i> ຄັດອອກຈາກ Master', `lostOpenExclude(${id})`, 'background:#b91c1c; color:#fff;')
           + btn('<i class="fa-solid fa-circle-check"></i> ພົບຕູ້ແລ້ວ', `lostOpenStatus(${id},'found')`, 'background:#dcfce7; color:#166534;')
-          + btn('<i class="fa-solid fa-rotate-left"></i> ກັບໄປກວດສອບ', `lostOpenStatus(${id},'verifying')`);
+          + btn('<i class="fa-solid fa-rotate-left"></i> ກັບໄປ Pending DSM ຢືນຢັນ', `lostOpenStatus(${id},'verifying')`);
       } else if (it.status === 'found') {
         actions = btn('<i class="fa-solid fa-rotate-left"></i> ເປີດກວດສອບໃໝ່', `lostOpenStatus(${id},'suspected')`);
       } else if (it.status === 'excluded') {
@@ -18081,7 +18129,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function lostOpenStatus(id, newStatus) {
       const it = lostItems[id]; if (!it) return;
       const titles = {
-        verifying: 'ເລີ່ມກວດສອບ', confirmed_lost: 'ຢືນຢັນວ່າຕູ້ສູນຫາຍ', found: 'ພົບຕູ້ແລ້ວ', suspected: 'ເປີດກວດສອບໃໝ່'
+        pending_smc: 'ສົ່ງ Pending SMC MDE', verifying: 'ສົ່ງ Pending DSM ຢືນຢັນ', confirmed_lost: 'ຢືນຢັນວ່າຕູ້ສູນຫາຍ', found: 'ພົບຕູ້ແລ້ວ', suspected: 'ເປີດກວດສອບໃໝ່'
       };
       const hints = {
         confirmed_lost: 'ຢືນຢັນວ່າໄດ້ກວດສອບແລ້ວ ແລະ ຫາຕູ້ໂຕຈິງບໍ່ພົບ. ຫຼັງຈາກນີ້ຈຶ່ງຄັດອອກຈາກ Cooler Master ໄດ້.',
@@ -18118,7 +18166,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         <h3 style="font-size:18px; font-weight:700; margin-bottom:6px;">ແກ້ໄຂລາຍການ</h3>
         <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">${esc(it.qr_code || it.serial_number || it.capex || '')} · ${esc(it.outlet_name || '')}</div>
         <div class="form-group"><label>ສະຖານະ</label>
-          <select id="lostEditStatus" class="form-control">${['suspected', 'verifying', 'confirmed_lost', 'found'].map(k => `<option value="${k}" ${it.status === k ? 'selected' : ''}>${esc(LOST_STATUS[k].label)}</option>`).join('')}</select></div>
+          <select id="lostEditStatus" class="form-control">${['suspected', 'pending_smc', 'verifying', 'confirmed_lost', 'found'].map(k => `<option value="${k}" ${it.status === k ? 'selected' : ''}>${esc(LOST_STATUS[k].label)}</option>`).join('')}</select></div>
         <div class="form-group"><label>ບ່ອນທີ່ພົບຕູ້ (ຈຳເປັນຖ້າສະຖານະ = ພົບຕູ້ແລ້ວ)</label>
           <input type="text" id="lostFoundLoc" class="form-control" maxlength="300" value="${esc(it.found_location || '')}"></div>
         <div class="form-group"><label>ໝາຍເຫດ</label>
@@ -18168,7 +18216,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     async function lostRestore(id) {
-      if (!await appConfirm('ກູ້ຄືນຕູ້ນີ້ເຂົ້າ Cooler Master ຕາມຂໍ້ມູນເດີມ? (ສະຖານະຈະກັບໄປເປັນ "ກຳລັງກວດສອບ")')) return;
+      if (!await appConfirm('ກູ້ຄືນຕູ້ນີ້ເຂົ້າ Cooler Master ຕາມຂໍ້ມູນເດີມ? (ສະຖານະຈະກັບໄປເປັນ "Pending DSM ຢືນຢັນ")')) return;
       const { ok, data } = await lostPost('restore', { id });
       if (!ok) { alert(data.error || 'ກູ້ຄືນບໍ່ສຳເລັດ'); return; }
       lostLoad();
@@ -18229,7 +18277,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Lost Cooler');
-        XLSX.writeFile(wb, 'lost-cooler-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+        XLSX.writeFile(wb, 'lost-cooler-' + exportStamp() + '.xlsx');
       } catch (e) { alert('Export ບໍ່ສຳເລັດ'); }
     }
 
@@ -18305,7 +18353,13 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               failed += chunk.length; if (errs.length < 5) errs.push(`ແຖວ ${chunk[0].row_no}-${chunk[chunk.length - 1].row_no}: ເຄືອຂ່າຍມີບັນຫາ`);
             }
             done += chunk.length;
-            updateImportProgress(done, rows.length, dup.length + nf.length + amb.length + nc.length + failed);
+            updateImportProgress(done, rows.length, dup.length + nf.length + amb.length + nc.length + failed, [
+              ...nf.map(x => `ແຖວ ${x.row} ${x.code || ''}: ບໍ່ພົບໃນ Cooler Master`),
+              ...amb.map(x => `ແຖວ ${x.row} ${x.code || ''}: ກົງກັບ Master ຫຼາຍແຖວ (ກຳກວມ)`),
+              ...dup.map(x => `ແຖວ ${x.row} ${x.code || ''}: ຢູ່ໃນລາຍການແລ້ວ / ຊ້ຳໃນໄຟລ໌`),
+              ...nc.map(x => `ແຖວ ${x.row}: ບໍ່ມີ QR/Serial/CAPEX`),
+              ...errs
+            ]);
           }
           hideImportProgress();
 
@@ -18392,7 +18446,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               if (sampleErrors.length < 10) sampleErrors.push(`ແຖວ ${i + 2}-${i + chunk.length + 1}: ເຄືອຂ່າຍມີບັນຫາ`);
             }
             done += chunk.length;
-            updateImportProgress(done, rows.length, skipped);
+            updateImportProgress(done, rows.length, skipped, sampleErrors);
           }
           try { await fetch('/api/admin/cooler-master/refresh-stats', { method: 'POST' }); } catch (e) {}
           hideImportProgress();
@@ -18705,7 +18759,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Stock Count');
-      XLSX.writeFile(wb, `stock-count-${count.warehouse_code || count.warehouse_id}-${count.period}.xlsx`);
+      XLSX.writeFile(wb, `stock-count-${count.warehouse_code || count.warehouse_id}-${count.period}-${exportStamp()}.xlsx`);
     }
 
     /* ===================== ສະແກນ QR Code ด้วยกล้อง ===================== */
@@ -19922,7 +19976,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Delivery History');
-      XLSX.writeFile(workbook, `delivery-history-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `delivery-history-${exportStamp()}.xlsx`);
     }
 
     function showDeliveryDetail(id) {
@@ -20542,7 +20596,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const worksheet = XLSX.utils.json_to_sheet(rows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Assets');
-      XLSX.writeFile(workbook, `asset-tracking-${Date.now()}.xlsx`);
+      XLSX.writeFile(workbook, `asset-tracking-${exportStamp()}.xlsx`);
     }
 
     /* Import ไฟล์ Excel/CSV เข้าตาราง assets (เฉพาะ Admin) - Tracking No สร้างให้อัตโนมัติทุกแถว ไม่อ่านจากไฟล์ */
@@ -20592,9 +20646,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             const rowLabel = payload.outlet_code || '(ບໍ່ມີ Outlet Code)';
 
             if (!payload.outlet_code || !payload.outlet_name || !payload.mde_code) {
-              errorRows.push(rowLabel);
+              const miss = [!payload.outlet_code && 'Outlet Code', !payload.outlet_name && 'Outlet Name', !payload.mde_code && 'MDE Code'].filter(Boolean);
+              errorRows.push(`${rowLabel} (ຂໍ້ມູນບໍ່ຄົບ: ຂາດ ${miss.join(', ')})`);
               doneCount++;
-              updateImportProgress(doneCount, rows.length, errorRows.length);
+              updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
               continue;
             }
 
@@ -20607,18 +20662,19 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             if (res.ok) {
               successCount++;
             } else {
-              errorRows.push(rowLabel);
+              const ed = await res.json().catch(() => ({}));
+              errorRows.push(`${rowLabel} (${ed.error || 'ເຊີບເວີປະຕິເສດ ລະຫັດ ' + res.status})`);
             }
 
             doneCount++;
-            updateImportProgress(doneCount, rows.length, errorRows.length);
+            updateImportProgress(doneCount, rows.length, errorRows.length, errorRows);
           }
 
           hideImportProgress();
 
           let msg = `ນຳເຂົ້າສຳເລັດ ${successCount} ລາຍການ (Tracking No ສ້າງໃຫ້ອັດຕະໂນມັດ)`;
           if (errorRows.length) {
-            msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ: ${errorRows.join(', ')}`;
+            msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${fmtImportErrs(errorRows)}`;
           }
           alert(msg);
           loadAssetTracking();
@@ -24420,7 +24476,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Cooler Write-off');
-      XLSX.writeFile(wb, `cooler-writeoff-${Date.now()}.xlsx`);
+      XLSX.writeFile(wb, `cooler-writeoff-${exportStamp()}.xlsx`);
     }
 
     let allCoolerEventsData = [];
@@ -26717,7 +26773,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'ງົບຕ່າງແຂວງ');
-      XLSX.writeFile(wb, `province-budget-${Date.now()}.xlsx`);
+      XLSX.writeFile(wb, `province-budget-${exportStamp()}.xlsx`);
     }
 
     function pbHandleImportFile(event) {
@@ -26757,7 +26813,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               chunk.forEach(r => errors.push({ row: r.row, reason: 'ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້' }));
             }
             done += chunk.length;
-            updateImportProgress(done, rows.length, errors.length);
+            updateImportProgress(done, rows.length, errors.length, errors);
           }
           hideImportProgress();
           let msg = `ນຳເຂົ້າສຳເລັດ: ເພີ່ມໃໝ່ ${inserted} ແຖວ, ອັບເດດ ${updated} ແຖວ`;
@@ -27188,8 +27244,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const checked = !!r.admin_checked_at;
         const rejectBtn = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'rejected')" class="btn-act btn-reject"><i class="fa-solid fa-xmark mr-1"></i> ປະຕິເສດ</button>`;
         if (currentUser.role === 'admin') {
+          // Admin ກວດສອບແລ້ວ ອະນຸມັດ + ໃສ່ລະຫັດຕູ້ ໄດ້ເລີຍ (ບໍ່ຕ້ອງລໍຖ້າສາງ)
+          actions = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ອະນຸມັດ + ໃສ່ລະຫັດຕູ້</button>`;
           if (!checked) {
-            actions = `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'admin_approved')" class="btn-act btn-approve"><i class="fa-solid fa-check mr-1"></i> ກວດສອບແລ້ວ — ສົ່ງຕໍ່ສາງ</button>`;
+            actions += `<button onclick="closeDetailModal(); updateRequestStatus(${r.id}, 'admin_approved')" class="btn-act"><i class="fa-solid fa-share mr-1"></i> ກວດສອບແລ້ວ — ສົ່ງຕໍ່ສາງ</button>`;
           }
           actions += rejectBtn;
           actions += `<button onclick="closeDetailModal(); openEditRequestBrand(${r.id})" class="btn-act"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂ Brand</button>`;
