@@ -3527,6 +3527,47 @@ export default {
             out.added += oldAdd.length;
           }
         }
+        // ຂໍ້ມູນເກົ່າ: ຢືນຢັນສູນຫາຍແລ້ວ ແລະ ບໍ່ມີໃນ Cooler Master -> ບັນທຶກຈາກ Excel (master_id = NULL), ຕັດຊ້ຳກັບລາຍການທີ່ມີແລ້ວ ແລະ ແຖວຊ້ຳໃນໄຟລ໌
+        out.added_no_master = 0;
+        if (oldRows.length) {
+          const dupChecks = await env.DB.batch(oldRows.map(({ p }) => env.DB.prepare(
+            `SELECT id FROM lost_coolers WHERE status IN ('suspected','pending_smc','verifying','confirmed_lost')
+                AND ((? != '' AND qr_norm = ?) OR (? != '' AND serial_norm = ?) OR (? != '' AND capex_norm = ?)) LIMIT 1`
+          ).bind(p.qn, p.qn, p.snn, p.snn, p.cn, p.cn)));
+          const seenKeys = new Set();
+          const oldAdd = [];
+          oldRows.forEach(({ p, label }, i) => {
+            const keys = [p.qn, p.snn, p.cn].filter(Boolean);
+            const exists = dupChecks[i] && dupChecks[i].results && dupChecks[i].results.length;
+            if (exists || keys.some((k) => seenKeys.has(k))) { out.duplicates.push({ row: p.rowNo, code: label }); return; }
+            keys.forEach((k) => seenKeys.add(k));
+            oldAdd.push({ p, label });
+          });
+          if (oldAdd.length) {
+            const nowTs2 = new Date().toISOString().replace("T", " ").slice(0, 19);
+            const mdeOld = oldAdd.map(({ p }) => cmClean(p.r.mde, 150));
+            const teamMapOld = await lostTeamMap(env, mdeOld);
+            const insOld = await env.DB.batch(oldAdd.map(({ p }, idx) => env.DB.prepare(
+              `INSERT INTO lost_coolers
+                 (master_id, qr_code, serial_number, capex, qr_norm, serial_norm, capex_norm, cooler_brand, cooler_type, cooler_model,
+                  outlet_code, outlet_name, province, district, address, master_status, status, reason, reported_by, verified_by, verified_at,
+                  channel, grade, village, lat_position, long_position, dsm, mde, team, submit_date, fsm)
+               VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 'confirmed_lost', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(
+              p.qr, p.sn, p.cx, p.qn || null, p.snn || null, p.cn || null,
+              cmClean(p.r.cooler_brand, 100), cmClean(p.r.cooler_type, 100), cmClean(p.r.cooler_model, 100),
+              cmClean(p.r.outlet_code, 100), cmClean(p.r.outlet_name, 200), cmClean(p.r.province, 100), cmClean(p.r.district, 100),
+              "ບໍ່ມີໃນ Cooler Master (ຂໍ້ມູນເກົ່າ)", "ນຳເຂົ້າຈາກ Excel (ຂໍ້ມູນເກົ່າ ຢືນຢັນສູນຫາຍແລ້ວ)", actor, actor, nowTs2,
+              cmClean(p.r.channel, 100), cmClean(p.r.grade, 50), cmClean(p.r.village, 150),
+              cmClean(p.r.lat_position, 40), cmClean(p.r.long_position, 40),
+              cmClean(p.r.dsm, 150), mdeOld[idx], cmClean(p.r.team, 150) || lostTeamFor(teamMapOld, mdeOld[idx]), cmClean(p.r.submit_date, 40),
+              cmClean(p.r.fsm, 150)
+            )));
+            await env.DB.batch(insOld.map((r) => lostLogStmt(env, r.meta.last_row_id, "add", null, "confirmed_lost", "ນຳເຂົ້າຈາກ Excel (ຂໍ້ມູນເກົ່າ ບໍ່ມີໃນ Cooler Master)", actor)));
+            out.added_no_master = oldAdd.length;
+            out.added += oldAdd.length;
+          }
+        }
         return Response.json(out);
       } catch (e) {
         console.error("/api/admin/lost-coolers/import", e);
