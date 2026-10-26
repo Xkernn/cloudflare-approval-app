@@ -28690,7 +28690,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function reqVoicePickLao() {
       try {
         const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
-        return vs.find(v => /^lo([-_]|$)/i.test(v.lang)) || null;
+        return vs.find(v => /^th([-_]|$)/i.test(v.lang)) || null; // ສຽງພາສາໄທ (ມີໃນ Chrome/Edge/Windows/Android/iOS ສ່ວນໃຫຍ່)
       } catch (e) { return null; }
     }
 
@@ -28729,10 +28729,12 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         ids.forEach(id => reqVoiceSeen.add(id));
         reqVoiceLastCount = n;
         fresh.slice(0, 3).forEach(r => {
-          const name = mdeNameFor(r.mde_code) || r.mde_code || r.requester_email || '';
-          reqVoiceSpeak(`ມີຄຳຂໍເບີກຕູ້ແຊ່ໃໝ່ ຈາກ MDE ${name}`.trim());
+          let name = mdeNameFor(r.mde_code) || '';
+          if (/[\u0E80-\u0EFF]/.test(name)) name = ''; // ຊື່ອັກສອນລາວ ສຽງໄທອ່ານບໍ່ໄດ້ -> ອ່ານລະຫັດ MDE ແທນ
+          name = name || r.mde_code || '';
+          reqVoiceSpeak(`มีคำขอเบิกตู้แช่ใหม่ จาก MDE ${name}`.trim());
         });
-        if (fresh.length > 3) reqVoiceSpeak(`ແລະອີກ ${fresh.length - 3} ລາຍການ`);
+        if (fresh.length > 3) reqVoiceSpeak(`และอีก ${fresh.length - 3} รายการ`);
       } catch (e) { /* ລອງໃໝ່ຮອບຖັດໄປ */ }
       finally { reqVoiceBusy = false; }
     }
