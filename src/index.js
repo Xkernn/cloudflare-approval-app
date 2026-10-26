@@ -92,7 +92,12 @@ const DELIVERED_STATUS = "ສຳເລັດ";
 // ເຕືອນ MDE (user) ທີ່ຍັງບໍ່ເຊັນໃບສັນຍາຢືມ / ຍັງບໍ່ທັນອອກໃບສັນຍາ ຫຼັງຈາກຜ່ານໄປຈັກມື້ (ຮັນທຸກເຊົ້າຈົນກວ່າຈະເຊັນຄົບ)
 const LOAN_USER_REMINDER_DAYS = 1;
 // ສະຖານະ Asset ທີ່ຖ້າຖືກຕັ້ງ (ປ່ຽນເປັນສະຖານະນີ້) ໃຫ້ແຈ້ງເຕືອນ warehouse/delivery ວ່າມີລາຍການຈັດສົ່ງໃໝ່
+// ລຳດັບຂັ້ນຕອນ Asset: ຍັງບໍ່ທັນສົ່ງເອກະສານ -> ຍັງບໍ່ຊັບມິດ PowerApp -> ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ (Admin ຕັ້ງຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
+//   -> [ສະແກນຕູ້ອອກສາງ ຂຶ້ນລົດ] ຢູ່ລະຫວ່າງຈັດສົ່ງ (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ) -> [ລາຍງານການຈັດສົ່ງ] ສຳເລັດ
+const WAITING_DISPATCH_STATUS = "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ";
 const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ລະຫວ່າງຈັດສົ່ງ"];
+// ປ່ຽນເປັນສະຖານະເຫຼົ່ານີ້ -> push ແຈ້ງ warehouse/delivery (ລວມ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ທີ່ເປັນຈຸດເລີ່ມຂອງວຽກຂອງສາງ)
+const DISPATCH_NOTIFY_STATUSES = [WAITING_DISPATCH_STATUS, ...SHIPPING_NOTIFY_STATUSES];
 // ຈຳນວນ MDE ສູງສຸດທີ່ Admin ເລືອກສົ່ງແຈ້ງເຕືອນໃນການກົດຄັ້ງດຽວ (ກັນ Worker ເກີນຂີດຈຳກັດ subrequest ຕໍ່ 1 ຄຳຂໍ)
 const MAX_BULK_MDE_NOTIFY = 150;
 // ຈຳນວນອີເມວສູງສຸດທີ່ສົ່ງໃນການກົດຄັ້ງດຽວ (ກັນເກີນຂີດຈຳກັດ subrequest ຂອງ Worker ແລະ ໂຄຕ້າສົ່ງ Gmail ຕໍ່ມື້)
@@ -8257,7 +8262,7 @@ export default {
         await env.DB.prepare("UPDATE assets SET status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ?").bind(status, id).run();
 
         // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
-        if (existingAsset && existingAsset.status !== status && SHIPPING_NOTIFY_STATUSES.includes(status)) {
+        if (existingAsset && existingAsset.status !== status && DISPATCH_NOTIFY_STATUSES.includes(status)) {
           try {
             const mdeName = await getMdeName(env, existingAsset.mde_code);
             const detailLine = formatMdeOutletLine(existingAsset.mde_code, mdeName, existingAsset.outlet_name);
@@ -8741,7 +8746,7 @@ export default {
             old_outlet_code || null, old_outlet_name || null, oldLat, oldLng, status, id).run();
 
           // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
-          if (existingAsset && existingAsset.status !== status && SHIPPING_NOTIFY_STATUSES.includes(status)) {
+          if (existingAsset && existingAsset.status !== status && DISPATCH_NOTIFY_STATUSES.includes(status)) {
             try {
               const mdeName = await getMdeName(env, mde_code);
               const detailLine = formatMdeOutletLine(mde_code, mdeName, outlet_name);
@@ -8773,7 +8778,7 @@ export default {
           await env.DB.prepare("UPDATE assets SET tracking_no = ? WHERE id = ?").bind(trackingNo, newId).run();
 
           // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສ້າງ Asset ໃໝ່ ພ້ອມຕັ້ງສະຖານະເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ລະຫວ່າງຈັດສົ່ງ" ທັນທີ
-          if (SHIPPING_NOTIFY_STATUSES.includes(status)) {
+          if (DISPATCH_NOTIFY_STATUSES.includes(status)) {
             try {
               const mdeName = await getMdeName(env, mde_code);
               const detailLine = formatMdeOutletLine(mde_code, mdeName, outlet_name);
@@ -9245,13 +9250,14 @@ export default {
       });
     }
 
-    // 7d-2. ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ — ກວດວ່າໄປຖືກຮ້ານ (ປ້ອນ Outlet Code ປາຍທາງ ຕ້ອງກົງກັບ Asset) ແລ້ວ Asset = "ຢູ່ລະຫວ່າງຈັດສົ່ງ", ສະຕັອກ = "ຢູ່ເທິງລົດ"
+    // 7d-2. ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ — ຜູ້ສະແກນກວດຮ້ານ/ຕູ້/ເອກະສານຈາກໜ້າຈໍແລ້ວກົດຢືນຢັນ:
+    //   Asset "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" -> "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ), ສະຕັອກສາງ = "ຢູ່ເທິງລົດ"
+    //   outlet_code (ບໍ່ບັງຄັບ): ຖ້າສົ່ງມາ ຕ້ອງກົງກັບຮ້ານຂອງ Asset (ເກັບໄວ້ເພື່ອຄວາມເຂົ້າກັນໄດ້ກັບໜ້າຈໍເກົ່າ)
     if (url.pathname === "/api/asset-delivery/dispatch" && request.method === "POST") {
       try {
         const { userId, id, outlet_code } = await request.json();
         if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
         const checkCode = String(outlet_code || "").trim();
-        if (!checkCode) return Response.json({ error: "ກະລຸນາປ້ອນ Outlet Code ຂອງຮ້ານປາຍທາງ ເພື່ອກວດວ່າໄປຖືກຮ້ານ" }, { status: 400 });
 
         const requester = await env.DB.prepare("SELECT role, email FROM users WHERE id = ?").bind(userId).first();
         if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
@@ -9261,6 +9267,7 @@ export default {
 
         const DELIVERED_STATUS = "ສຳເລັດ";
         const ON_TRUCK_STATUS = "ຢູ່ລະຫວ່າງຈັດສົ່ງ";
+        const MOVE_STATUS = "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ";
         if (assetRow.status === DELIVERED_STATUS) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
         if (assetRow.doc_type === RETURN_TO_WAREHOUSE_DOC_TYPE) {
           return Response.json({ error: "ເອກະສານ \"ເກັບຄືນສາງ\" ບໍ່ຕ້ອງສະແກນອອກສາງ (ຕູ້ມາຈາກຮ້ານ)" }, { status: 400 });
@@ -9268,7 +9275,16 @@ export default {
         if (assetRow.status === ON_TRUCK_STATUS && assetRow.dispatched_at) {
           return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນອອກສາງເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
         }
-        if (String(assetRow.outlet_code || "").trim().toLowerCase() !== checkCode.toLowerCase()) {
+        // ອອກສາງໄດ້ສະເພາະຕູ້ທີ່ Admin ຕັ້ງ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ແລ້ວ (ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
+        // ຍັງຍອມ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນອອກສາງ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
+        const DISPATCHABLE = [WAITING_DISPATCH_STATUS, ON_TRUCK_STATUS, MOVE_STATUS];
+        if (!DISPATCHABLE.includes(assetRow.status)) {
+          return Response.json({
+            code: "NOT_WAITING_DISPATCH",
+            error: `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະປັດຈຸບັນ "${assetRow.status || "-"}" (ຕ້ອງເປັນ "${WAITING_DISPATCH_STATUS}" ກ່ອນ ຫຼັງຈາກ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`,
+          }, { status: 400 });
+        }
+        if (checkCode && String(assetRow.outlet_code || "").trim().toLowerCase() !== checkCode.toLowerCase()) {
           return Response.json({
             code: "WRONG_OUTLET",
             error: `ຜິດຮ້ານ! ຕູ້ນີ້ຕ້ອງສົ່ງໄປ ${assetRow.outlet_code || "-"} - ${assetRow.outlet_name || "-"} (ບໍ່ແມ່ນ ${checkCode})`,
@@ -9278,9 +9294,9 @@ export default {
         const actor = requester.email || String(userId);
         const upd = await env.DB.prepare(
           `UPDATE assets SET status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, last_update = CURRENT_TIMESTAMP
-           WHERE id = ? AND IFNULL(status, '') != ?`
-        ).bind(ON_TRUCK_STATUS, actor, id, DELIVERED_STATUS).run();
-        if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
+           WHERE id = ? AND status IN (?, ?, ?)`
+        ).bind(ON_TRUCK_STATUS, actor, id, ...DISPATCHABLE).run();
+        if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະ Asset ນີ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາສະແກນໃໝ່" }, { status: 409 });
 
         await markWarehouseStockOnTruck(
           env, { qr_code: assetRow.qr_code, serial_number: assetRow.serial_number }, actor,

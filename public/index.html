@@ -1787,12 +1787,12 @@
     .ad .profile-info-item span:last-child { font-weight: 600; font-size: 13.5px; text-align: left; word-break: break-word; }
     .ad-flow { --i: 0; --st: var(--primary); margin: 4px 0 20px; padding: 18px 12px 14px; border: 1px solid var(--border-color); border-radius: 16px; background: #fff; }
     .ad-flow.done { --st: var(--success); }
-    .ad-rail { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); }
-    .ad-track, .ad-fill { position: absolute; top: 19px; left: 12.5%; height: 4px; border-radius: 2px; }
-    .ad-track { width: 75%; background: #DDE8EA; }
-    .ad-fill { width: calc(var(--i) / 3 * 75%); background: var(--primary); transition: width .9s cubic-bezier(.65,0,.25,1); }
+    .ad-rail { position: relative; display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); }
+    .ad-track, .ad-fill { position: absolute; top: 19px; left: calc(50% / var(--n, 4)); height: 4px; border-radius: 2px; }
+    .ad-track { width: calc(100% - 100% / var(--n, 4)); background: #DDE8EA; }
+    .ad-fill { width: calc(var(--i) / (var(--n, 4) - 1) * (100% - 100% / var(--n, 4))); background: var(--primary); transition: width .9s cubic-bezier(.65,0,.25,1); }
     .ad-flow.done .ad-fill { background: var(--success); }
-    .ad-ring { position: absolute; top: 0; left: calc((var(--i) + .5) * 25%); width: 42px; height: 42px; margin-left: -21px; border-radius: 50%; border: 3px solid var(--st); background: #fff; box-shadow: 0 0 0 5px color-mix(in srgb, var(--st) 18%, transparent), 0 6px 14px -6px rgba(10,31,43,.4); transition: left .9s cubic-bezier(.65,0,.25,1), border-color .4s; z-index: 2; pointer-events: none; }
+    .ad-ring { position: absolute; top: 0; left: calc((var(--i) + .5) * 100% / var(--n, 4)); width: 42px; height: 42px; margin-left: -21px; border-radius: 50%; border: 3px solid var(--st); background: #fff; box-shadow: 0 0 0 5px color-mix(in srgb, var(--st) 18%, transparent), 0 6px 14px -6px rgba(10,31,43,.4); transition: left .9s cubic-bezier(.65,0,.25,1), border-color .4s; z-index: 2; pointer-events: none; }
     .ad-flow.done .ad-ring { background: var(--success); }
     .ad-flow.done .ad-ring::after { content: '\f00c'; font: 900 15px 'Font Awesome 6 Free'; color: #fff; position: absolute; inset: 0; display: grid; place-items: center; animation: adPop .4s var(--ease-spring, ease-out) .8s backwards; }
     .ad-flow:not(.done) .ad-ring::before { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: var(--st); animation: adPulse 1.8s ease-in-out infinite; }
@@ -3099,7 +3099,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div class="loan-type-list">
           <button type="button" id="deliveryHubCardDispatch" class="loan-type-card" onclick="openDeliverySub('dispatchOut')">
             <div class="loan-type-card-title"><i class="fa-solid fa-truck-ramp-box"></i> ສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ)</div>
-            <div class="loan-type-card-sub">ກວດວ່າໄປຖືກຮ້ານ → ຕູ້ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ</div>
+            <div class="loan-type-card-sub">ສະແກນຕູ້ → ກວດຮ້ານ/ເອກະສານ → ຕູ້ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ</div>
           </button>
           <button type="button" id="deliveryHubCardConfirm" class="loan-type-card" onclick="openDeliverySub('deliverConfirm')">
             <div class="loan-type-card-title"><i class="fa-solid fa-qrcode"></i> ລາຍງານການຈັດສົ່ງ</div>
@@ -3223,41 +3223,45 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div class="page-header">
           <div>
             <h1>ສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ)</h1>
-            <p>ສະແກນຕູ້ → ກວດຮ້ານປາຍທາງ → ຢືນຢັນຂຶ້ນລົດ. ເມື່ອຮອດຮ້ານ ໃຫ້ໃຊ້ "ລາຍງານການຈັດສົ່ງ" (ສະແກນ, ຖ່າຍຮູບ, ລູກຄ້າເຊັນຮັບ)</p>
+            <p>ສະແກນຕູ້ → ກວດຮ້ານ/ຕູ້/ເອກະສານ → ຢືນຢັນຂຶ້ນລົດ. ສະເພາະຕູ້ທີ່ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ". ເມື່ອຮອດຮ້ານ ໃຫ້ໃຊ້ "ລາຍງານການຈັດສົ່ງ"</p>
           </div>
         </div>
 
         <div class="content-card" style="max-width: 560px;">
-          <div class="form-group">
-            <label>QR Code ຕູ້ແຊ່</label>
-            <div class="input-wrapper"><i class="fa-solid fa-qrcode"></i>
-              <input type="text" id="dispatchQrInput" class="form-control" placeholder="ສະແກນ ຫຼືປ້ອນ QR Code ແລ້ວກົດ Enter"
-                onkeydown="if(event.key==='Enter'){event.preventDefault(); dispatchLookup();}">
-            </div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-              <button type="button" onclick="dispatchLookup()" class="btn-add" style="flex:1; margin-left:0;"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
-              <button type="button" onclick="openQrScanner('dispatchQrInput')" class="btn-add" style="flex:1; margin-left:0; background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);"><i class="fa-solid fa-qrcode mr-1"></i> ສະແກນ QR</button>
-            </div>
-          </div>
-          <p id="dispatchMsg" class="hidden" style="font-size: 13px; margin: 10px 0;"></p>
-
-          <div id="dispatchInfo" class="hidden" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 16px; margin-top: 8px;">
-            <input type="hidden" id="dispatchAssetId">
-            <table style="width:100%; font-size: 13px; margin-bottom: 10px;">
-              <tr><td style="color: var(--text-muted); padding: 4px 0;">Tracking No</td><td id="dispatchInfoTracking" style="font-weight:600;"></td></tr>
-              <tr><td style="color: var(--text-muted); padding: 4px 0;">ຮ້ານປາຍທາງ</td><td id="dispatchInfoOutlet" style="font-weight:700; font-size:15px;"></td></tr>
-              <tr><td style="color: var(--text-muted); padding: 4px 0;">ຕູ້ແຊ່</td><td id="dispatchInfoCooler"></td></tr>
-              <tr><td style="color: var(--text-muted); padding: 4px 0;">MDE Code</td><td id="dispatchInfoMde"></td></tr>
-            </table>
-            <div class="form-group">
-              <label>ກວດຮ້ານ: ປ້ອນ Outlet Code ຕາມໃບສົ່ງ ໃຫ້ກົງກັບຮ້ານປາຍທາງ</label>
-              <div class="input-wrapper"><i class="fa-solid fa-store"></i>
-                <input type="text" id="dispatchOutletInput" class="form-control" placeholder="Outlet Code ຂອງຮ້ານທີ່ຈະໄປສົ່ງ" autocomplete="off"
-                  onkeydown="if(event.key==='Enter'){event.preventDefault(); dispatchConfirm();}">
+          <button type="button" id="dispatchScanBtn" class="btn-submit" style="margin-top:0; padding:18px 14px; font-size:17px;" onclick="dispatchOpenScanner()">
+            <i class="fa-solid fa-camera mr-1"></i> ເປີດກ້ອງສະແກນ QR ຕູ້
+          </button>
+          <details style="margin-top:12px;">
+            <summary style="cursor:pointer; font-size:13px; color:var(--text-muted);">ປ້ອນ QR Code ດ້ວຍມື</summary>
+            <div class="form-group" style="margin-top:8px;">
+              <div class="input-wrapper"><i class="fa-solid fa-qrcode"></i>
+                <input type="text" id="dispatchQrInput" class="form-control" placeholder="ປ້ອນ QR Code ແລ້ວກົດ Enter" autocomplete="off"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault(); dispatchLookup();}">
               </div>
+              <button type="button" onclick="dispatchLookup()" class="btn-add" style="width:100%; margin:10px 0 0 0;"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
             </div>
-            <button type="button" id="dispatchConfirmBtn" class="btn-submit" onclick="dispatchConfirm()">
-              <i class="fa-solid fa-truck-ramp-box mr-1"></i> ຢືນຢັນຂຶ້ນລົດ — ກຳລັງໄປຮ້ານ
+          </details>
+          <p id="dispatchMsg" class="hidden" style="font-size: 14px; margin: 12px 0 0; font-weight:600;"></p>
+
+          <div id="dispatchInfo" class="hidden" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 16px; margin-top: 14px;">
+            <input type="hidden" id="dispatchAssetId">
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">ຮ້ານຄ້າ</div>
+            <div id="dispatchInfoOutlet" style="font-weight:800; font-size:18px; line-height:1.3; margin-bottom:12px;"></div>
+            <table style="width:100%; font-size: 13px; margin-bottom: 12px;">
+              <tr><td style="color: var(--text-muted); padding: 4px 0; width:38%;">ຕູ້ແຊ່</td><td id="dispatchInfoCooler" style="font-weight:600;"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">QR / Serial</td><td id="dispatchInfoCodes"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">CapEx</td><td id="dispatchInfoCapex"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">Tracking No</td><td id="dispatchInfoTracking"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">MDE Code</td><td id="dispatchInfoMde"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">ປະເພດເອກະສານ</td><td id="dispatchInfoDocType"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">ສະຖານະ</td><td id="dispatchInfoStatus"></td></tr>
+            </table>
+            <button type="button" id="dispatchDocBtn" class="btn-add" style="width:100%; margin:0 0 12px 0; background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="dispatchViewDoc()">
+              <i class="fa-solid fa-file-pdf mr-1"></i> <span id="dispatchDocBtnText">ເບິ່ງເອກະສານ</span>
+            </button>
+            <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px;">ກວດຮ້ານ, ຕູ້ ແລະ ເອກະສານໃຫ້ຖືກຕ້ອງ ແລ້ວກົດຢືນຢັນ</p>
+            <button type="button" id="dispatchConfirmBtn" class="btn-submit" style="margin-top:0;" onclick="dispatchConfirm()">
+              <i class="fa-solid fa-truck-ramp-box mr-1"></i> ກວດສອບແລ້ວ — ຢືນຢັນຂຶ້ນລົດ
             </button>
           </div>
         </div>
@@ -5900,6 +5904,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             </ul>
             <p>ຄວາມໝາຍຂອງ Status:</p>
             <div class="guide-status-list">
+              <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</span><span>MDE ຊັບມິດ PowerApp ຜ່ານແລ້ວ — ລໍຖ້າສາງສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ) · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</span><span>Asset ກຳລັງຖືກເຄື່ອນຍ້າຍ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ລະຫວ່າງຈັດສົ່ງ</span><span>Asset ກຳລັງຖືກຈັດສົ່ງໄປຫາຮ້ານ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ທັນສົ່ງເອກະສານ</span><span>ຍັງຄ້າງການສົ່ງເອກະສານ</span></div>
@@ -7300,6 +7305,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
             <option value="ຍັງບໍ່ທັນສົ່ງເອກະສານ">ຍັງບໍ່ທັນສົ່ງເອກະສານ</option>
             <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
+           <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
+            <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
             <option value="ສຳເລັດ">ສຳເລັດ</option>
             <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>
           </select>
@@ -7342,6 +7349,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
             <option value="ຍັງບໍ່ທັນສົ່ງເອກະສານ">ຍັງບໍ່ທັນສົ່ງເອກະສານ</option>
             <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
+            <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
             <option value="ສຳເລັດ">ສຳເລັດ</option>
             <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>
           </select>
@@ -9073,6 +9081,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         document.getElementById('view-dispatch-out').classList.remove('hidden');
         dispatchReset();
         dispatchLoadList();
+        // ມືຖື: ເຂົ້າໜ້ານີ້ແລ້ວເປີດກ້ອງສະແກນທັນທີ (ຖ້າຍົກເລີກ ກໍມີປຸ່ມ "ເປີດກ້ອງ" ໃຫ້ກົດໃໝ່)
+        if (mmIsMobile()) setTimeout(() => { if (!document.getElementById('view-dispatch-out').classList.contains('hidden')) dispatchOpenScanner(); }, 250);
       } else if (viewName === 'deliverConfirm') {
         document.getElementById('nav-delivery-hub').classList.add('active');
         document.getElementById('view-delivery-confirm').classList.remove('hidden');
@@ -19367,6 +19377,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     /* ໄຮໄລ້ສີ badge ຂອງ Status ໃນໜ້າ Asset Tracking ໃຫ້ແຍກສີຕາມຄວາມສຳຄັນ/ຄວາມຄືບໜ້າ */
     const ASSET_STATUS_BADGE = {
       'ສຳເລັດ': 'badge-approved',                 // ສຳເລັດແລ້ວ - ສີຂຽວ
+      'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 'badge-purple',    // ລໍຖ້າສາງຂົນສົ່ງ (Admin ຈັດການ) - ສີມ່ວງ
       'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 'badge-info',           // ກຳລັງດຳເນີນການ - ສີຟ້າ
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 'badge-purple',      // ກຳລັງດຳເນີນການ (ຍ້າຍຮ້ານ) - ສີມ່ວງ
       'ຍັງບໍ່ທັນສົ່ງເອກະສານ': 'badge-rejected',    // ຄ້າງ/ຕ້ອງຮີບແກ້ໄຂ - ສີແດງ
@@ -19427,7 +19438,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       document.getElementById('assetPageDesc').textContent = isAdmin
         ? 'ຈັດການລາຍການຊັບສິນທັງໝົດໃນລະບົບ'
         : isWarehouse
-        ? 'ລາຍການ Asset ທີ່ຢູ່ລະຫວ່າງຈັດສົ່ງ / ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ຫຼື ຖືກຕິດທຸງ (ດ່ວນ)'
+        ? 'ລາຍການ Asset ທີ່ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ຢູ່ລະຫວ່າງຈັດສົ່ງ / ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ຫຼື ຖືກຕິດທຸງ (ດ່ວນ)'
         : `ລາຍການຊັບສິນຂອງ MDE: ${currentUser.mde_code}`;
 
       const list = document.getElementById('assetCardList');
@@ -19443,6 +19454,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       // (ສະຖານະອື່ນ ເຊັ່ນ "ສຳເລັດ"/"ຍັງບໍ່ທັນສົ່ງເອກະສານ" ຈະບໍ່ຖືກໂຫລດເຂົ້າມາໃນໜ້ານີ້ອີກແລ້ວ ຍົກເວັ້ນລາຍການທີ່ຖືກຕິດທຸງ "ດ່ວນ")
       document.getElementById('assetStatusFilter').innerHTML = isWarehouse
         ? `<option value="">-- ທຸກ Status --</option>
+           <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
            <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
            <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>`
         : `<option value="">-- ທຸກ Status --</option>
@@ -19457,7 +19469,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const assets = await res.json();
         // role warehouse: ໃຫ້ເຫັນສະເພາະ Asset ທີ່ "ຢູ່ລະຫວ່າງຈັດສົ່ງ" / "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື ຖືກຕິດທຸງໄວ້ (ດ່ວນ) ເທົ່ານັ້ນ
         currentAssetsData = isWarehouse
-          ? assets.filter(a => a.status === 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ' || a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' || a.flagged)
+          ? assets.filter(a => a.status === 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ' || a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' || a.status === 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ' || a.flagged)
           : assets;
         filterAssetTracking();
         refreshMenuBadges();
@@ -19626,6 +19638,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     /* ສີຂອງ Status (ໃຊ້ທັງ Filter Pills ແລະ ແຖບສີຊ້າຍຂອງ card) - ສອດຄ່ອງກັບສີ badge ເກົ່າ */
     const ASSET_STATUS_COLOR = {
       'ສຳເລັດ': '#15803d',
+      'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': '#0891B2',
       'ຢູ່ລະຫວ່າງຈັດສົ່ງ': '#2563EB',
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': '#7C3AED',
       'ຍັງບໍ່ທັນສົ່ງເອກະສານ': '#C0311A',
@@ -19759,26 +19772,26 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     /* ===== Workflow stepper ຂອງ Asset Detail ===== */
-    const AD_STEPS = ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ຢູ່ລະຫວ່າງຈັດສົ່ງ / ເຄື່ອນຍ້າຍ', 'ຈັດສົ່ງສຳເລັດ'];
-    const AD_STEP_OF = { 'ຍັງບໍ່ທັນສົ່ງເອກະສານ': 0, 'ຍັງບໍ່ຊັບມິດ PowerApp': 1, 'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 2, 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 2, 'ສຳເລັດ': 3 };
+    const AD_STEPS = ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', 'ຈັດສົ່ງສຳເລັດ'];
+    const AD_STEP_OF = { 'ຍັງບໍ່ທັນສົ່ງເອກະສານ': 0, 'ຍັງບໍ່ຊັບມິດ PowerApp': 1, 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 2, 'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 3, 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 3, 'ສຳເລັດ': 4 };
 
     function renderAssetStepper(a) {
       const cur = AD_STEP_OF[a.status];
       if (cur === undefined) return; // ສະຖານະທີ່ບໍ່ຢູ່ໃນຂັ້ນຕອນ — ບໍ່ສະແດງ stepper
       const box = document.getElementById('detailModalStepper');
-      const finished = cur === 3;
+      const finished = cur === AD_STEPS.length - 1;
       document.querySelector('#detailModal .modal-card').classList.add('ad');
       box.innerHTML = `
-        <div class="ad-flow ${finished ? 'done' : ''}" style="--st:${finished ? 'var(--success)' : assetStatusColor(a.status)}" role="group" aria-label="ຂັ້ນຕອນ Asset">
+        <div class="ad-flow ${finished ? 'done' : ''}" style="--n:${AD_STEPS.length}; --st:${finished ? 'var(--success)' : assetStatusColor(a.status)}" role="group" aria-label="ຂັ້ນຕອນ Asset">
           <ol class="ad-rail" style="list-style:none;margin:0;padding:0;">
             <span class="ad-track"></span><span class="ad-fill"></span><span class="ad-ring"></span>
-            ${AD_STEPS.map((t, k) => `<li class="ad-step ${k < cur || (finished && k === 3) ? 'done' : ''} ${k === cur ? 'cur' : ''}" ${k === cur ? 'aria-current="step"' : ''} style="transition-delay:${(k * 0.3).toFixed(2)}s">
-              <div class="ad-dot" style="transition-delay:${(k * 0.3).toFixed(2)}s">${k < cur || finished && k === 3 ? '<i class="fa-solid fa-check"></i>' : k + 1}</div>
+            ${AD_STEPS.map((t, k) => `<li class="ad-step ${k < cur || (finished && k === AD_STEPS.length - 1) ? 'done' : ''} ${k === cur ? 'cur' : ''}" ${k === cur ? 'aria-current="step"' : ''} style="transition-delay:${(k * 0.3).toFixed(2)}s">
+              <div class="ad-dot" style="transition-delay:${(k * 0.3).toFixed(2)}s">${k < cur || finished && k === AD_STEPS.length - 1 ? '<i class="fa-solid fa-check"></i>' : k + 1}</div>
               <div class="ad-lbl">${esc(t)}</div></li>`).join('')}
           </ol>
           <div class="ad-meta">
             <span class="badge ${assetStatusBadgeClass(a.status)}">${esc(a.status)}</span>
-            <span>ຂັ້ນຕອນ ${cur + 1} / 4</span>${a.last_update ? `<span><i class="fa-regular fa-clock"></i> ${esc(fmtLaoTs(a.last_update))}</span>` : ''}
+            <span>ຂັ້ນຕອນ ${cur + 1} / ${AD_STEPS.length}</span>${a.last_update ? `<span><i class="fa-regular fa-clock"></i> ${esc(fmtLaoTs(a.last_update))}</span>` : ''}
           </div>
         </div>`;
       // ເລີ່ມຈາກຂັ້ນ 1 ແລ້ວເລື່ອນວົງກົມໄປຂັ້ນປັດຈຸບັນ
@@ -20931,12 +20944,22 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       el.classList.toggle('hidden', !text);
     }
 
+    let dispatchLoan = null; // ໃບສັນຍາຢືມຂອງຕູ້ທີ່ສະແກນຢູ່ (ຖ້າມີ) — ໃຊ້ກັບປຸ່ມ "ເບິ່ງເອກະສານ"
+    const DISPATCH_WAITING_STATUS = 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ';
+    const DISPATCH_LEGACY_OK = ['ຢູ່ລະຫວ່າງຈັດສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ']; // ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນລໍຖ້າສາງ (ຍັງບໍ່ເຄີຍສະແກນອອກສາງ)
+
+    /* ເປີດກ້ອງສະແກນທັນທີ — ໃຊ້ຕອນເຂົ້າໜ້າ (ມືຖື) ແລະ ປຸ່ມ "ເປີດກ້ອງ" */
+    function dispatchOpenScanner() {
+      dispatchSetMsg('');
+      openQrScanner('dispatchQrInput');
+    }
+
     function dispatchReset() {
       document.getElementById('dispatchQrInput').value = '';
-      document.getElementById('dispatchOutletInput').value = '';
       document.getElementById('dispatchAssetId').value = '';
       document.getElementById('dispatchInfo').classList.add('hidden');
       document.getElementById('dispatchConfirmBtn').disabled = false;
+      dispatchLoan = null;
       dispatchSetMsg('');
     }
 
@@ -20944,6 +20967,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const qr = document.getElementById('dispatchQrInput').value.trim();
       document.getElementById('dispatchInfo').classList.add('hidden');
       if (!qr) { dispatchSetMsg('ກະລຸນາປ້ອນ QR Code ກ່ອນຄົ້ນຫາ', '#d97706'); return; }
+      dispatchSetMsg('ກຳລັງຄົ້ນຫາ...', 'var(--text-muted)');
       try {
         const res = await fetch(`/api/asset-tracking/lookup-by-qr?userId=${currentUser.id}&qr_code=${encodeURIComponent(qr)}`);
         const data = await res.json();
@@ -20952,44 +20976,62 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const a = data.item;
         if (a.doc_type === 'ເກັບຄືນສາງ') { dispatchSetMsg('ເອກະສານ "ເກັບຄືນສາງ" ບໍ່ຕ້ອງສະແກນອອກສາງ', '#dc2626'); return; }
         if (a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນອອກສາງເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
-        dispatchSetMsg('');
+        dispatchLoan = data.loan_contract || null;
+        const canDispatch = a.status === DISPATCH_WAITING_STATUS || DISPATCH_LEGACY_OK.includes(a.status);
         document.getElementById('dispatchAssetId').value = a.id;
+        document.getElementById('dispatchInfoOutlet').textContent = `${a.outlet_name || '-'} (${a.outlet_code || '-'})`;
+        document.getElementById('dispatchInfoCooler').textContent = [a.cooler_brand, a.cooler_type].filter(Boolean).join(' / ') || '-';
+        document.getElementById('dispatchInfoCodes').textContent = `${a.qr_code || '-'} / ${a.serial_number || '-'}`;
+        document.getElementById('dispatchInfoCapex').textContent = a.capex || '-';
         document.getElementById('dispatchInfoTracking').textContent = a.tracking_no || '-';
-        document.getElementById('dispatchInfoOutlet').textContent = `${a.outlet_code || '-'} - ${a.outlet_name || '-'}`;
-        document.getElementById('dispatchInfoCooler').textContent = `${a.cooler_brand || '-'} / ${a.cooler_type || '-'}`;
         document.getElementById('dispatchInfoMde').textContent = a.mde_code || '-';
-        document.getElementById('dispatchOutletInput').value = '';
-        document.getElementById('dispatchConfirmBtn').disabled = false;
+        document.getElementById('dispatchInfoDocType').textContent = a.doc_type || '-';
+        document.getElementById('dispatchInfoStatus').innerHTML = `<span class="badge ${assetStatusBadgeClass(a.status)}">${esc(a.status || '-')}</span>`;
+        const docBtn = document.getElementById('dispatchDocBtn');
+        if (dispatchLoan) {
+          const st = dispatchLoan.status;
+          document.getElementById('dispatchDocBtnText').textContent = `ເບິ່ງເອກະສານ — ໃບສັນຍາຢືມ ${dispatchLoan.doc_no || ''}` + (st === 'completed' ? '' : st === 'awaiting_dsm' ? ' (ລໍຖ້າ DSM ເຊັນ)' : ' (ຍັງບໍ່ເຊັນ)');
+          docBtn.disabled = false;
+        } else {
+          document.getElementById('dispatchDocBtnText').textContent = 'ບໍ່ມີໃບສັນຍາຢືມໃຫ້ເບິ່ງ';
+          docBtn.disabled = true;
+        }
+        document.getElementById('dispatchConfirmBtn').disabled = !canDispatch;
+        dispatchSetMsg(canDispatch ? '' : `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະ "${a.status || '-'}" (ຕ້ອງເປັນ "${DISPATCH_WAITING_STATUS}" ກ່ອນ ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`, '#dc2626');
         document.getElementById('dispatchInfo').classList.remove('hidden');
-        document.getElementById('dispatchOutletInput').focus();
+        window.scrollTo(0, 0);
       } catch (err) {
         dispatchSetMsg('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset', '#dc2626');
       }
     }
 
+    function dispatchViewDoc() {
+      if (dispatchLoan && dispatchLoan.id) openLoanContractPdf(dispatchLoan.id);
+    }
+
     async function dispatchConfirm() {
       const id = document.getElementById('dispatchAssetId').value;
-      const code = document.getElementById('dispatchOutletInput').value.trim();
       if (!id) return;
-      if (!code) { alert('ກະລຸນາປ້ອນ Outlet Code ຂອງຮ້ານປາຍທາງ ເພື່ອກວດວ່າໄປຖືກຮ້ານ'); return; }
       const btn = document.getElementById('dispatchConfirmBtn');
       btn.disabled = true;
       try {
         const res = await fetch('/api/asset-delivery/dispatch', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id, id, outlet_code: code })
+          body: JSON.stringify({ userId: currentUser.id, id })
         });
         const data = await res.json();
         if (res.ok) {
-          alert(data.message || 'ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ');
           dispatchReset();
+          dispatchSetMsg('✔ ' + (data.message || 'ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ') + ' — ສະແກນຕູ້ຕໍ່ໄປໄດ້ເລີຍ', '#16a34a');
           dispatchLoadList();
+          // ມືຖື: ເປີດກ້ອງຕໍ່ເພື່ອສະແກນຕູ້ຖັດໄປ
+          if (mmIsMobile()) setTimeout(() => { if (!document.getElementById('view-dispatch-out').classList.contains('hidden')) openQrScanner('dispatchQrInput'); }, 700);
         } else {
-          alert(data.error || 'ບໍ່ສາມາດບັນທຶກໄດ້');
+          dispatchSetMsg(data.error || 'ບໍ່ສາມາດບັນທຶກໄດ້', '#dc2626');
           btn.disabled = false;
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ');
+        dispatchSetMsg('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ', '#dc2626');
         btn.disabled = false;
       }
     }
