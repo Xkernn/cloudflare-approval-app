@@ -5907,7 +5907,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
               <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</span><span>MDE ຊັບມິດ PowerApp ຜ່ານແລ້ວ — ລໍຖ້າສາງສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ) · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</span><span>Asset ກຳລັງຖືກເຄື່ອນຍ້າຍ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ລະຫວ່າງຈັດສົ່ງ</span><span>Asset ກຳລັງຖືກຈັດສົ່ງໄປຫາຮ້ານ</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ທັນສົ່ງເອກະສານ</span><span>ຍັງຄ້າງການສົ່ງເອກະສານ</span></div>
+              <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ທັນເຊັນເອກະສານ</span><span>ຍັງຄ້າງການສົ່ງເອກະສານ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ຊັບມິດ PowerApp</span><span>ຍັງຄ້າງການຊັບມິດໃນ PowerApp</span></div>
               <div class="guide-status-row"><span class="badge badge-approved">ສຳເລັດ</span><span>ຈັດສົ່ງສຳເລັດແລ້ວ - ລາຍການຈະຍ້າຍໄປເບິ່ງທີ່ <b>ປະຫວັດການຈັດສົ່ງ Asset</b></span></div>
             </div>
@@ -6145,7 +6145,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
   </div>
 
   <!-- ==================== MODAL (ແກ້ໄຂ / ເພີ່ມ DSM) ==================== -->
-  <!-- ເຕືອນ MDE ທີ່ຄ້າງ "ຍັງບໍ່ທັນສົ່ງເອກະສານ" / "ຍັງບໍ່ຊັບມິດ PowerApp" - Admin ເລືອກສະຖານະ + MDE ກ່ອນສົ່ງ -->
+  <!-- ເຕືອນ MDE ທີ່ຄ້າງ "ຍັງບໍ່ທັນເຊັນເອກະສານ" / "ຍັງບໍ່ຊັບມິດ PowerApp" - Admin ເລືອກສະຖານະ + MDE ກ່ອນສົ່ງ -->
   <div id="mdeReminderModal" class="modal-overlay hidden">
     <div class="modal-card" style="max-width: 560px;">
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">ເຕືອນ MDE ທີ່ມີ Asset ຄ້າງ</h3>
@@ -6153,7 +6153,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
       <div style="display:flex; flex-wrap:wrap; gap:16px; margin-bottom: 12px; font-size: 14px;">
         <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-          <input type="checkbox" id="mdeRemStatusDoc" checked onchange="renderMdeReminderList()"> ຍັງບໍ່ທັນສົ່ງເອກະສານ
+          <input type="checkbox" id="mdeRemStatusDoc" checked onchange="renderMdeReminderList()"> ຍັງບໍ່ທັນເຊັນເອກະສານ
         </label>
         <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
           <input type="checkbox" id="mdeRemStatusPowerApp" checked onchange="renderMdeReminderList()"> ຍັງບໍ່ຊັບມິດ PowerApp
@@ -7303,7 +7303,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           <select id="editAssetStatus" class="form-control">
             <option value="">-- ເລືອກ Status --</option>
             <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
-            <option value="ຍັງບໍ່ທັນສົ່ງເອກະສານ">ຍັງບໍ່ທັນສົ່ງເອກະສານ</option>
+            <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
             <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
            <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
             <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
@@ -7347,7 +7347,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           <select id="editStatusOnly" class="form-control">
             <option value="">-- ເລືອກ Status --</option>
             <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
-            <option value="ຍັງບໍ່ທັນສົ່ງເອກະສານ">ຍັງບໍ່ທັນສົ່ງເອກະສານ</option>
+            <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
             <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
             <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
             <option value="ສຳເລັດ">ສຳເລັດ</option>
@@ -19380,7 +19380,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 'badge-purple',    // ລໍຖ້າສາງຂົນສົ່ງ (Admin ຈັດການ) - ສີມ່ວງ
       'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 'badge-info',           // ກຳລັງດຳເນີນການ - ສີຟ້າ
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 'badge-purple',      // ກຳລັງດຳເນີນການ (ຍ້າຍຮ້ານ) - ສີມ່ວງ
-      'ຍັງບໍ່ທັນສົ່ງເອກະສານ': 'badge-rejected',    // ຄ້າງ/ຕ້ອງຮີບແກ້ໄຂ - ສີແດງ
+      'ຍັງບໍ່ທັນເຊັນເອກະສານ': 'badge-rejected',    // ຄ້າງ/ຕ້ອງຮີບແກ້ໄຂ - ສີແດງ
       'ຍັງບໍ່ຊັບມິດ PowerApp': 'badge-pending'     // ຄ້າງ - ສີເຫຼືອງ
     };
     function assetStatusBadgeClass(status) {
@@ -19451,7 +19451,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       resetMdeFilter('assetMdeFilter');
       fillAssetDocTypeFilter();
       // role warehouse: ໜ້ານີ້ໃຊ້ຕິດຕາມວຽກທີ່ຍັງຄ້າງເທົ່ານັ້ນ -> dropdown filter ຈຳກັດໃຫ້ເລືອກໄດ້ສະເພາະ 2 ສະຖານະທີ່ກ່ຽວຂ້ອງ
-      // (ສະຖານະອື່ນ ເຊັ່ນ "ສຳເລັດ"/"ຍັງບໍ່ທັນສົ່ງເອກະສານ" ຈະບໍ່ຖືກໂຫລດເຂົ້າມາໃນໜ້ານີ້ອີກແລ້ວ ຍົກເວັ້ນລາຍການທີ່ຖືກຕິດທຸງ "ດ່ວນ")
+      // (ສະຖານະອື່ນ ເຊັ່ນ "ສຳເລັດ"/"ຍັງບໍ່ທັນເຊັນເອກະສານ" ຈະບໍ່ຖືກໂຫລດເຂົ້າມາໃນໜ້ານີ້ອີກແລ້ວ ຍົກເວັ້ນລາຍການທີ່ຖືກຕິດທຸງ "ດ່ວນ")
       document.getElementById('assetStatusFilter').innerHTML = isWarehouse
         ? `<option value="">-- ທຸກ Status --</option>
            <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
@@ -19459,7 +19459,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
            <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>`
         : `<option value="">-- ທຸກ Status --</option>
            <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
-           <option value="ຍັງບໍ່ທັນສົ່ງເອກະສານ">ຍັງບໍ່ທັນສົ່ງເອກະສານ</option>
+           <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
            <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
            <option value="ສຳເລັດ">ສຳເລັດ</option>
            <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>`;
@@ -19479,7 +19479,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     // ສະຖານະ Asset Tracking ທີ່ Admin ກົດ "ແຈ້ງເຕືອນ MDE" ໄດ້ (ຕ້ອງກົງກັບ NOTIFY_PENDING_STATUSES ໃນ src/index.js)
-    const NOTIFY_PENDING_STATUSES = ["ຍັງບໍ່ທັນສົ່ງເອກະສານ", "ຍັງບໍ່ຊັບມິດ PowerApp"];
+    const NOTIFY_PENDING_STATUSES = ["ຍັງບໍ່ທັນເຊັນເອກະສານ", "ຍັງບໍ່ຊັບມິດ PowerApp"];
 
     async function notifyMdePending(id, btn) {
       if (btn) btn.disabled = true;
@@ -19641,7 +19641,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': '#0891B2',
       'ຢູ່ລະຫວ່າງຈັດສົ່ງ': '#2563EB',
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': '#7C3AED',
-      'ຍັງບໍ່ທັນສົ່ງເອກະສານ': '#C0311A',
+      'ຍັງບໍ່ທັນເຊັນເອກະສານ': '#C0311A',
       'ຍັງບໍ່ຊັບມິດ PowerApp': '#C4780F'
     };
     function assetStatusColor(status) { return ASSET_STATUS_COLOR[status] || '#B9CBCE'; }
@@ -19773,7 +19773,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     /* ===== Workflow stepper ຂອງ Asset Detail ===== */
     const AD_STEPS = ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', 'ຈັດສົ່ງສຳເລັດ'];
-    const AD_STEP_OF = { 'ຍັງບໍ່ທັນສົ່ງເອກະສານ': 0, 'ຍັງບໍ່ຊັບມິດ PowerApp': 1, 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 2, 'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 3, 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 3, 'ສຳເລັດ': 4 };
+    const AD_STEP_OF = { 'ຍັງບໍ່ທັນເຊັນເອກະສານ': 0, 'ຍັງບໍ່ຊັບມິດ PowerApp': 1, 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 2, 'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 3, 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 3, 'ສຳເລັດ': 4 };
 
     function renderAssetStepper(a) {
       const cur = AD_STEP_OF[a.status];

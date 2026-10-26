@@ -92,7 +92,7 @@ const DELIVERED_STATUS = "ສຳເລັດ";
 // ເຕືອນ MDE (user) ທີ່ຍັງບໍ່ເຊັນໃບສັນຍາຢືມ / ຍັງບໍ່ທັນອອກໃບສັນຍາ ຫຼັງຈາກຜ່ານໄປຈັກມື້ (ຮັນທຸກເຊົ້າຈົນກວ່າຈະເຊັນຄົບ)
 const LOAN_USER_REMINDER_DAYS = 1;
 // ສະຖານະ Asset ທີ່ຖ້າຖືກຕັ້ງ (ປ່ຽນເປັນສະຖານະນີ້) ໃຫ້ແຈ້ງເຕືອນ warehouse/delivery ວ່າມີລາຍການຈັດສົ່ງໃໝ່
-// ລຳດັບຂັ້ນຕອນ Asset: ຍັງບໍ່ທັນສົ່ງເອກະສານ -> ຍັງບໍ່ຊັບມິດ PowerApp -> ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ (Admin ຕັ້ງຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
+// ລຳດັບຂັ້ນຕອນ Asset: ຍັງບໍ່ທັນເຊັນເອກະສານ -> ຍັງບໍ່ຊັບມິດ PowerApp -> ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ (Admin ຕັ້ງຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
 //   -> [ສະແກນຕູ້ອອກສາງ ຂຶ້ນລົດ] ຢູ່ລະຫວ່າງຈັດສົ່ງ (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ) -> [ລາຍງານການຈັດສົ່ງ] ສຳເລັດ
 const WAITING_DISPATCH_STATUS = "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ";
 const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ລະຫວ່າງຈັດສົ່ງ"];
@@ -104,7 +104,7 @@ const MAX_BULK_MDE_NOTIFY = 150;
 const MAX_BULK_MDE_EMAIL = 100;
 const escMailHtml = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;");
 // ສະຖານະ Asset Tracking ທີ່ Admin ສາມາດກົດ "ແຈ້ງເຕືອນ MDE" ດ້ວຍຕົນເອງໄດ້ (ຄ້າງເອກະສານ / ຄ້າງ PowerApp)
-const NOTIFY_PENDING_STATUSES = ["ຍັງບໍ່ທັນສົ່ງເອກະສານ", "ຍັງບໍ່ຊັບມິດ PowerApp"];
+const NOTIFY_PENDING_STATUSES = ["ຍັງບໍ່ທັນເຊັນເອກະສານ", "ຍັງບໍ່ຊັບມິດ PowerApp"];
 
 // ສ້າງອີເມວແຈ້ງເຕືອນ MDE ທີ່ມີ Asset ຄ້າງ (ເອກະສານ / PowerApp)
 function buildPendingMdeEmail({ mdeCode, mdeName, lines, trackingList, appUrl }) {
@@ -311,7 +311,7 @@ async function createLoanContractDraftForAsset(env, assetId, createdByEmail, opt
 // -> ສ້າງແຖວ Asset Tracking (doc_type "ຕູ້ເຄື່ອນຍ້າຍ", ສະຖານະ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ") ໃຫ້ອັດຕະໂນມັດ ແລ້ວຜູກໃບສັນຍານີ້ເຂົ້າກັບ Asset ທີ່ສ້າງ
 // ບໍ່ throw error ອອກໄປ: ຖ້າສ້າງ Asset ບໍ່ໄດ້ (ເຊັ່ນ QR/Serial/CapEx ຊໍ້າ) ໃບສັນຍາທີ່ບັນທຶກແລ້ວຍັງຢູ່ຄືເກົ່າ ແລະ ສົ່ງ warning ກັບໄປແທນ
 const RELOCATION_ASSET_DOC_TYPE = "ຕູ້ເຄື່ອນຍ້າຍ";
-const RELOCATION_ASSET_STATUS = "ຍັງບໍ່ທັນສົ່ງເອກະສານ";
+const RELOCATION_ASSET_STATUS = "ຍັງບໍ່ທັນເຊັນເອກະສານ";
 async function createRelocationAssetForContract(env, contract) {
   try {
     const dupError = await findQrSerialCapexDuplicate(env, "assets", {
@@ -348,7 +348,7 @@ async function createRelocationAssetForContract(env, contract) {
       env.DB.prepare("UPDATE loan_contracts SET asset_id = ?, tracking_no = ? WHERE id = ?").bind(assetId, trackingNo, contract.id),
     ]);
 
-    // ແຈ້ງເຕືອນ MDE ເຈົ້າຂອງລາຍການ (ສະຖານະ "ຍັງບໍ່ທັນສົ່ງເອກະສານ" ບໍ່ແມ່ນສະຖານະຈັດສົ່ງ ຈຶ່ງບໍ່ແຈ້ງ warehouse/delivery)
+    // ແຈ້ງເຕືອນ MDE ເຈົ້າຂອງລາຍການ (ສະຖານະ "ຍັງບໍ່ທັນເຊັນເອກະສານ" ບໍ່ແມ່ນສະຖານະຈັດສົ່ງ ຈຶ່ງບໍ່ແຈ້ງ warehouse/delivery)
     try {
       await notifyMdeUserOfStatusChange(env, contract.mde_code, trackingNo, contract.outlet_name, RELOCATION_ASSET_STATUS);
     } catch (pushErr) { /* ປ່ອຍໃຫ້ສຳເລັດຕາມປົກກະຕິ */ }
@@ -465,7 +465,7 @@ async function recordSelfMovedAsset(env, contract, table, docType, actorEmail, c
   }
 }
 
-// ໃບ T- (ຮັບຕູ້ເຂົ້າສາງ) -> ສ້າງແຖວ Asset Tracking (doc_type "ເກັບຄືນສາງ", ສະຖານະ "ຍັງບໍ່ທັນສົ່ງເອກະສານ") ໃຫ້ອັດຕະໂນມັດ
+// ໃບ T- (ຮັບຕູ້ເຂົ້າສາງ) -> ສ້າງແຖວ Asset Tracking (doc_type "ເກັບຄືນສາງ", ສະຖານະ "ຍັງບໍ່ທັນເຊັນເອກະສານ") ໃຫ້ອັດຕະໂນມັດ
 // ຄືກັນກັບ createRelocationAssetForContract. ຖ້າມີ Asset "ເກັບຄືນສາງ" ທີ່ຍັງບໍ່ສຳເລັດ ຂອງ MDE+ຮ້ານ+QR/Serial ນີ້ຢູ່ແລ້ວ ໃຫ້ຜູກກັບແຖວນັ້ນ (ບໍ່ສ້າງຊໍ້າ)
 // ບໍ່ throw error: ຖ້າສ້າງບໍ່ໄດ້ ໃບ T- ທີ່ບັນທຶກແລ້ວຍັງຢູ່ຄືເກົ່າ ແລະ ສົ່ງ warning ກັບໄປແທນ
 async function createReturnAssetForCancelContract(env, contract) {
@@ -2139,6 +2139,7 @@ async function applyLoanContractSignatures(env, id, row, body) {
     const next = updated.sig_dsm ? "completed" : "awaiting_dsm";
     await env.DB.prepare("UPDATE loan_contracts SET status = ? WHERE id = ?").bind(next, id).run();
     updated.status = next;
+    if (next === "completed") await advanceAssetAfterLoanSigned(env, updated);
     // ແຈ້ງເຕືອນ admin (ບໍ່ throw error ອອກໄປ)
     try {
       await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
@@ -2149,6 +2150,31 @@ async function applyLoanContractSignatures(env, id, row, body) {
     } catch (e) { /* ບໍ່ຕ້ອງເຮັດຫຍັງ */ }
   }
   return updated;
+}
+
+// ໃບສັນຍາຢືມເຊັນຄົບ (MDE + DSM = completed) -> Asset ທີ່ຜູກກັບໃບນີ້ ຈາກ "ຍັງບໍ່ທັນເຊັນເອກະສານ" ເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp"
+// ປ່ຽນສະເພາະ Asset ທີ່ຍັງຢູ່ຂັ້ນ "ຍັງບໍ່ທັນເຊັນເອກະສານ" (ບໍ່ຖອຍສະຖານະທີ່ໄປໄກກວ່ານີ້ແລ້ວ). ບໍ່ throw error ບໍ່ໃຫ້ກະທົບການເຊັນ
+async function advanceAssetAfterLoanSigned(env, contract) {
+  try {
+    if (!contract) return;
+    const tracking = String(contract.tracking_no || "").trim();
+    if (!contract.asset_id && !tracking) return;
+    const FROM = "ຍັງບໍ່ທັນເຊັນເອກະສານ";
+    const TO = "ຍັງບໍ່ຊັບມິດ PowerApp";
+    const asset = await env.DB.prepare(
+      `SELECT id, tracking_no, outlet_name, mde_code FROM assets
+       WHERE status = ? AND (id = ? OR (? != '' AND tracking_no = ?)) AND IFNULL(doc_type, '') != ? LIMIT 1`
+    ).bind(FROM, contract.asset_id || -1, tracking, tracking, RETURN_TO_WAREHOUSE_DOC_TYPE).first();
+    if (!asset) return;
+    const upd = await env.DB.prepare(
+      "UPDATE assets SET status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status = ?"
+    ).bind(TO, asset.id, FROM).run();
+    if (upd.meta && upd.meta.changes > 0) {
+      await notifyMdeUserOfStatusChange(env, asset.mde_code, asset.tracking_no, asset.outlet_name, TO);
+    }
+  } catch (e) {
+    console.error("advanceAssetAfterLoanSigned", e);
+  }
 }
 
 // ຫາໃບສັນຍາຢືມ (loan_contracts) ທີ່ຜູກກັບ Asset ນີ້ — ໃຊ້ຕອນຈັດສົ່ງ: ມີໃບສັນຍາ -> ລາຍເຊັນລູກຄ້າໄປຢູ່ໃນໃບສັນຍາ, ບໍ່ມີ -> ເກັບໃນ assets
@@ -6043,6 +6069,7 @@ export default {
           await deleteR2Photos(env, [sigKey]);
           return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ ຫຼືມີຄົນເຊັນໄປກ່ອນແລ້ວ" }, { status: 409 });
         }
+        if (cfg.table === "loan_contracts") await advanceAssetAfterLoanSigned(env, doc);
         try {
           await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
             title: `DSM ເຊັນ${cfg.title}ແລ້ວ`,
@@ -6139,6 +6166,7 @@ export default {
           return Response.json({ error: "ລິ້ງນີ້ຖືກໃຊ້ເຊັນແລ້ວ ຫຼື ໝົດອາຍຸ" }, { status: 409, headers: RECEIPT_NO_CACHE });
         }
         if (doc.sig_dsm) await deleteR2Photos(env, [doc.sig_dsm]); // ລາຍເຊັນເກົ່າ (ຖ້າມີ) ຖືກແທນທີ່ແລ້ວ
+        if (cfg.table === "loan_contracts" && doc.sig_mde) await advanceAssetAfterLoanSigned(env, doc);
         try {
           await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
             title: doc.sig_mde ? `DSM ເຊັນ${cfg.title}ແລ້ວ — ເອກະສານສຳເລັດ` : `DSM ເຊັນ${cfg.title}ແລ້ວ`,
@@ -8335,7 +8363,7 @@ export default {
       }
     }
 
-    // 6e3. Admin: ລາຍຊື່ MDE ທີ່ມີ Asset ຄ້າງ "ຍັງບໍ່ທັນສົ່ງເອກະສານ" / "ຍັງບໍ່ຊັບມິດ PowerApp" (ໃຫ້ Admin ຕິກເລືອກກ່ອນກົດສົ່ງແຈ້ງເຕືອນ)
+    // 6e3. Admin: ລາຍຊື່ MDE ທີ່ມີ Asset ຄ້າງ "ຍັງບໍ່ທັນເຊັນເອກະສານ" / "ຍັງບໍ່ຊັບມິດ PowerApp" (ໃຫ້ Admin ຕິກເລືອກກ່ອນກົດສົ່ງແຈ້ງເຕືອນ)
     if (url.pathname === "/api/admin/pending-mde-reminders" && request.method === "GET") {
       try {
         const userId = url.searchParams.get("userId");
@@ -9923,7 +9951,7 @@ export default {
         // - ถ้าขั้นตอนใดล้ม ทั้งชุดถูกยกเลิก (คำขอจะไม่ค้างเป็น approved โดยไม่มี Asset)
         if (status === 'approved') {
           const placeholder = `TMP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const initialStatus = "ຍັງບໍ່ທັນສົ່ງເອກະສານ";
+          const initialStatus = "ຍັງບໍ່ທັນເຊັນເອກະສານ";
           // ຂໍ້ມູນ Brand/Type ໃຊ້ຈາກ warehouse_stock (master) ເປັນຫຼັກ ແທນຂໍ້ມູນທີ່ຜູ້ຂໍປ້ອນຕອນສົ່ງຄຳຂໍ ເພື່ອກັນຄວາມບໍ່ກົງກັນ
           const masterBrand = stockMaster.cooler_brand || reqRow.cooler_brand;
           const masterType = stockMaster.cooler_type || reqRow.cooler_type;
