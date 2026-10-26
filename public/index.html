@@ -3219,7 +3219,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         <div class="page-header">
           <div>
             <h1>ລາຍງານການຈັດສົ່ງ</h1>
-            <p>ເຮັດ 4 ຂັ້ນຕອນ ແລ້ວກົດຢືນຢັນ — ສະຖານະຈະເປັນ "ສຳເລັດ" ອັດຕະໂນມັດ</p>
+            <p>ເຮັດ 5 ຂັ້ນຕອນ ແລ້ວກົດຢືນຢັນ — ສະຖານະຈະເປັນ "ສຳເລັດ" ອັດຕະໂນມັດ</p>
           </div>
         </div>
 
@@ -3233,6 +3233,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             <div class="loan-step" data-step="3"><div class="loan-step-dot">3</div><span class="loan-step-label">CapEx / ຕູ້</span></div>
             <div class="loan-step-line"></div>
             <div class="loan-step" data-step="4"><div class="loan-step-dot">4</div><span class="loan-step-label">ເອກະສານ</span></div>
+            <div class="loan-step-line"></div>
+            <div class="loan-step" data-step="5"><div class="loan-step-dot">5</div><span class="loan-step-label">ລູກຄ້າເຊັນ</span></div>
           </div>
 
           <!-- STEP 1: ຄົ້ນຫາ Asset ດ້ວຍ QR Code -->
@@ -3328,6 +3330,28 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
                 <input type="file" id="deliverPhotoDocumentInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'document')">
               </div>
               <img id="deliverPhotoDocumentPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 16px;">
+            </div>
+
+            <div class="loan-nav-btns">
+              <button type="button" class="btn-back" onclick="deliverPrevStep()"><i class="fa-solid fa-arrow-left mr-1"></i> ຍ້ອນກັບ</button>
+              <button type="button" class="btn-add" onclick="deliverNextStep()">ຕໍ່ໄປ <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+          </div>
+
+          <!-- STEP 5: ລູກຄ້າເຊັນຮັບ — ມີໃບສັນຍາຢືມ: ລາຍເຊັນໄປຢູ່ໃນໃບສັນຍາ / ບໍ່ມີ: ເກັບໄວ້ໃນຖານຂໍ້ມູນ -->
+          <div id="deliverStep5" class="loan-step-panel hidden">
+            <div class="form-group">
+              <label>ລູກຄ້າເຊັນຮັບຕູ້ແຊ່</label>
+              <p id="deliverSigOutletInfo" style="font-size:13px; font-weight:600; margin:2px 0 4px;"></p>
+              <p id="deliverSigTargetHint" style="font-size:12px; color: var(--text-muted); margin:0 0 10px;"></p>
+              <div class="input-wrapper"><i class="fa-solid fa-user"></i>
+                <input type="text" id="deliverSigName" class="form-control" placeholder="ຊື່ລູກຄ້າ / ເຈົ້າຂອງຮ້ານ ທີ່ເຊັນຮັບ" maxlength="100">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>ລາຍເຊັນລູກຄ້າ</label>
+              <div class="sig-pad-wrap"><canvas id="deliverSigCanvas" class="sig-pad-canvas"></canvas></div>
+              <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('deliverSigCanvas')">ລຶບ / ເຊັນໃໝ່</button>
             </div>
 
             <div class="loan-nav-btns">
@@ -6865,6 +6889,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">ເອກະສານ</p>
           <img id="deliveryPhotoModalDocument" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
+        <div id="deliveryPhotoModalSigWrap" class="hidden" style="grid-column: 1 / -1;">
+          <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">ລາຍເຊັນລູກຄ້າ <span id="deliveryPhotoModalSigName"></span></p>
+          <img id="deliveryPhotoModalSig" style="width:100%; max-height:160px; object-fit:contain; border-radius: 10px; background:#fff; border:1px solid #e2e8f0;">
+        </div>
       </div>
       <div style="display: flex; gap: 10px; margin-top: 16px;">
         <button onclick="closeDeliveryPhotoModal()" class="btn-submit" style="background: #e2e8f0; color: #475569; margin-top:0;">ປິດ</button>
@@ -9664,6 +9692,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         navMap.classList.add('hidden');
         navRequest.classList.add('hidden');
         navHistory.classList.remove('hidden'); // ທີມຈັດສົ່ງ: ເມນູ "ປະຫວັດ Asset" ເປີດປະຫວັດການຈັດສົ່ງໂດຍກົງ
+        document.getElementById('nav-loan-contract').classList.add('hidden'); // ທີມຈັດສົ່ງ: ບໍ່ອອກໃບສັນຍາຢືມ — ລູກຄ້າເຊັນຮັບໃນຂັ້ນຕອນລາຍງານການຈັດສົ່ງແທນ
         navDeliveryHub.classList.remove('hidden');
         navWarehouseStock.classList.add('hidden');
         navStockCount.classList.add('hidden');
@@ -20137,12 +20166,16 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       // รูปเอกสารมีเฉพาะรายการที่ยืนยันหลังเพิ่มฟีเจอร์นี้ -> รายการเก่าซ่อนช่องนี้
       document.getElementById('deliveryPhotoModalDocumentWrap').classList.toggle('hidden', !item.delivery_photo_document);
       setPhotoSrc(document.getElementById('deliveryPhotoModalDocument'), item.delivery_photo_document);
+      // ລາຍເຊັນລູກຄ້າ: ສະແດງສະເພາະລາຍການທີ່ເກັບໃນຖານຂໍ້ມູນ (ບໍ່ມີໃບສັນຍາຢືມ) — ຖ້າມີໃບສັນຍາ ລາຍເຊັນຢູ່ໃນ PDF ໃບສັນຍາ
+      document.getElementById('deliveryPhotoModalSigWrap').classList.toggle('hidden', !item.delivery_sig_outlet);
+      document.getElementById('deliveryPhotoModalSigName').textContent = item.delivery_sig_name ? `(${item.delivery_sig_name})` : '';
+      setPhotoSrc(document.getElementById('deliveryPhotoModalSig'), item.delivery_sig_outlet);
       document.getElementById('deliveryPhotoModal').classList.remove('hidden');
     }
 
     function closeDeliveryPhotoModal() {
       document.getElementById('deliveryPhotoModal').classList.add('hidden');
-      ['Qr', 'Serial', 'Capex', 'Asset', 'Document'].forEach(key => {
+      ['Qr', 'Serial', 'Capex', 'Asset', 'Document', 'Sig'].forEach(key => {
         setPhotoSrc(document.getElementById(`deliveryPhotoModal${key}`), '');
       });
     }
@@ -20819,7 +20852,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     /* ຂັ້ນຕອນ: 1.ຄົ້ນຫາ Asset 2.QR/Serial 3.CapEx/ຕູ້ 4.ເອກະສານ+ຢືນຢັນ */
     let deliverCurrentStep = 1;
-    const DELIVER_TOTAL_STEPS = 4;
+    const DELIVER_TOTAL_STEPS = 5;
+    let deliverLoanContract = null; // ໃບສັນຍາຢືມທີ່ຜູກກັບ Asset ທີ່ກຳລັງຈັດສົ່ງ (ຖ້າມີ) — ໃຊ້ບອກວ່າລາຍເຊັນລູກຄ້າຈະໄປຢູ່ໃສ
 
     function deliverShowStep(step) {
       deliverCurrentStep = step;
@@ -20834,6 +20868,16 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       });
       const card = document.querySelector('#view-delivery-confirm .content-card');
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (step === 5) deliverPrepareSignStep();
+    }
+
+    function deliverPrepareSignStep() {
+      document.getElementById('deliverSigOutletInfo').textContent = document.getElementById('deliverInfoOutlet').textContent || '';
+      const hint = document.getElementById('deliverSigTargetHint');
+      hint.textContent = deliverLoanContract
+        ? `ລາຍເຊັນຈະຖືກໃສ່ໃນໃບສັນຍາຢືມ ${deliverLoanContract.doc_no || ''}`.trim()
+        : 'Asset ນີ້ບໍ່ມີໃບສັນຍາຢືມ — ລາຍເຊັນຈະຖືກເກັບໄວ້ໃນຖານຂໍ້ມູນ';
+      requestAnimationFrame(() => setupSignaturePad('deliverSigCanvas')); // canvas ຕ້ອງເບິ່ງເຫັນແລ້ວຈຶ່ງວັດຂະໜາດໄດ້
     }
 
     function deliverValidateStep(step) {
@@ -20847,6 +20891,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }
       if (step === 3 && (!deliverPhotos.capex || !deliverPhotos.asset)) {
         alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບ CapEx ແລະ Asset ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        return false;
+      }
+      if (step === 4 && !deliverPhotos.document) {
+        alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບເອກະສານກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       return true;
@@ -20877,6 +20925,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         document.getElementById(`deliverPhoto${key}Preview`).src = '';
       });
       deliverPhotos = { qr: null, serial: null, capex: null, asset: null, document: null };
+      deliverLoanContract = null;
+      document.getElementById('deliverSigName').value = '';
+      clearSignaturePad('deliverSigCanvas');
       document.getElementById('deliverConfirmBtn').disabled = true;
       deliverShowStep(1);
     }
@@ -20913,6 +20964,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         msgEl.classList.add('hidden');
         const a = data.item;
         document.getElementById('deliverAssetId').value = a.id;
+        deliverLoanContract = data.loan_contract || null;
         document.getElementById('deliverInfoTracking').textContent = a.tracking_no || '-';
         document.getElementById('deliverInfoOutlet').textContent = `${a.outlet_code || '-'} - ${a.outlet_name || '-'}`;
         document.getElementById('deliverInfoCooler').textContent = `${a.cooler_brand || '-'} / ${a.cooler_type || '-'}`;
@@ -23548,6 +23600,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)');
         return;
       }
+      const sigName = document.getElementById('deliverSigName').value.trim();
+      const sigData = getSignatureDataUrl('deliverSigCanvas');
+      if (!sigName) { alert('ກະລຸນາປ້ອນຊື່ລູກຄ້າທີ່ເຊັນຮັບ'); return; }
+      if (!sigData) { alert('ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນ'); return; }
       if (!await appConfirm('ຢືນຢັນການຈັດສົ່ງ Asset ນີ້ສຳເລັດ?')) return;
 
       const btn = document.getElementById('deliverConfirmBtn');
@@ -23561,7 +23617,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             userId: currentUser.id, id,
             photo_qr: deliverPhotos.qr, photo_serial: deliverPhotos.serial,
             photo_capex: deliverPhotos.capex, photo_asset: deliverPhotos.asset,
-            photo_document: deliverPhotos.document
+            photo_document: deliverPhotos.document,
+            sig_outlet: sigData, sig_outlet_name: sigName
           })
         });
         const data = await res.json();
@@ -23986,6 +24043,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       setPhotoSrc(document.getElementById('deliveryPhotoModalAsset'), item.photo_asset);
       // ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ ບໍ່ມີຮູບເອກະສານ -> ຊ່ອນຊ່ອງນີ້
       document.getElementById('deliveryPhotoModalDocumentWrap').classList.add('hidden');
+      document.getElementById('deliveryPhotoModalSigWrap').classList.add('hidden');
       document.getElementById('deliveryPhotoModal').classList.remove('hidden');
     }
 

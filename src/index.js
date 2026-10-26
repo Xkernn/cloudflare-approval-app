@@ -2112,6 +2112,16 @@ async function applyLoanContractSignatures(env, id, row, body) {
   return updated;
 }
 
+// ຫາໃບສັນຍາຢືມ (loan_contracts) ທີ່ຜູກກັບ Asset ນີ້ — ໃຊ້ຕອນຈັດສົ່ງ: ມີໃບສັນຍາ -> ລາຍເຊັນລູກຄ້າໄປຢູ່ໃນໃບສັນຍາ, ບໍ່ມີ -> ເກັບໃນ assets
+async function findLoanContractForAsset(env, asset) {
+  if (!asset) return null;
+  return await env.DB.prepare(
+    `SELECT id, doc_no, status, sig_outlet FROM loan_contracts
+     WHERE asset_id = ? OR (IFNULL(tracking_no, '') != '' AND tracking_no = ?)
+     ORDER BY (status = 'completed') DESC, (status = 'awaiting_dsm') DESC, id DESC LIMIT 1`
+  ).bind(asset.id, asset.tracking_no || "").first();
+}
+
 // ເຊື່ອມຕໍ່ "ສະຕ໋ອກສາງ" (warehouse_stock) ກັບການລາຍງານ "ເກັບຄືນສາງ" (ກົງກັນຂ້າມກັບ markWarehouseStockDeliveredToOutlet ຂ້າງເທິງ)
 // ເວລາລາຍງານການຈັດສົ່ງທີ່ມີ doc_type = "ເກັບຄືນສາງ" ຖືກບັນທຶກ (ຜ່ານ /api/asset-delivery/confirm ຫຼື /api/no-doc-delivery)
 // - ຖ້າ QR/Serial ກົງກັບລາຍການທີ່ມີຢູ່ແລ້ວໃນ warehouse_stock -> ປ່ຽນ status ກັບເປັນ 'in_warehouse'
@@ -8770,7 +8780,7 @@ export default {
         // ດຶງ key ຮູບໃນ R2 ໄວ້ກ່ອນລົບແຖວໃນ D1 (delivery_photo ຕົວເກົ່າເປັນ base64 ຝັງໃນ D1 ໂດຍກົງ ບໍ່ແມ່ນ R2 key -> ບໍ່ຕ້ອງລົບຢູ່ R2)
         // ດຶງ qr_code/serial_number ໄວ້ນຳ ເພື່ອໃຊ້ sync ສະຕັອກສາງກັບຄືນ "ຢູ່ໃນສາງ" ຫຼັງລຶບ (ຖ້າມີ)
         const assetRow = await env.DB.prepare(
-          "SELECT qr_code, serial_number, delivery_photo_qr, delivery_photo_serial, delivery_photo_capex, delivery_photo_asset, delivery_photo_document FROM assets WHERE id = ?"
+          "SELECT qr_code, serial_number, delivery_photo_qr, delivery_photo_serial, delivery_photo_capex, delivery_photo_asset, delivery_photo_document, delivery_sig_outlet FROM assets WHERE id = ?"
         ).bind(id).first();
 
         // ຖ້າ Asset ນີ້ເຄີຍອອກ "ໃບສັນຍາຢືມ" (loan_contracts.asset_id REFERENCES assets(id)) ໄວ້ແລ້ວ
@@ -8788,6 +8798,7 @@ export default {
             assetRow.delivery_photo_capex,
             assetRow.delivery_photo_asset,
             assetRow.delivery_photo_document,
+            assetRow.delivery_sig_outlet,
           ]);
           // Asset ນີ້ຖືກລຶບອອກຈາກລະບົບແລ້ວ -> ຖ້າ QR/Serial ດຽວກັນນີ້ຍັງຄ້າງສະຖານະ "ອອກໄປຮ້ານແລ້ວ" ຢູ່ໃນສະຕັອກສາງ
           // (ຖືກ mark ຕອນອະນຸມັດຄຳຂໍ) ໃຫ້ປ່ຽນກັບຄືນເປັນ "ຢູ່ໃນສາງ" ອັດຕະໂນມັດ ບໍ່ໃຫ້ຄ້າງເປັນ used ຢູ່ຕະຫຼອດໄປ
@@ -9193,14 +9204,19 @@ export default {
       if (assetRow.status === DELIVERED_STATUS) {
         return Response.json({ found: true, already_delivered: true, item: assetRow, error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" });
       }
-      return Response.json({ found: true, already_delivered: false, item: assetRow });
+      const loanForAsset = await findLoanContractForAsset(env, assetRow);
+      return Response.json({
+        found: true, already_delivered: false, item: assetRow,
+        loan_contract: loanForAsset ? { id: loanForAsset.id, doc_no: loanForAsset.doc_no, status: loanForAsset.status } : null,
+      });
     }
 
     // 7e. Delivery Confirmation - ยืนยันจัดส่ง (ถ่ายรูป 4 อย่าง: QR/Serial/CapEx/Asset -> อัปโหลดขึ้น R2 -> Status เปลี่ยนเป็น ສຳເລັດ)
     if (url.pathname === "/api/asset-delivery/confirm" && request.method === "POST") {
       try {
-        const { userId, id, photo_qr, photo_serial, photo_capex, photo_asset, photo_document } = await request.json();
+        const { userId, id, photo_qr, photo_serial, photo_capex, photo_asset, photo_document, sig_outlet, sig_outlet_name } = await request.json();
         if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        if (!sig_outlet) return Response.json({ error: "ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນການຈັດສົ່ງ" }, { status: 400 });
         if (!photo_qr || !photo_serial || !photo_capex || !photo_asset || !photo_document) {
           return Response.json({ error: "ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)" }, { status: 400 });
         }
@@ -9222,24 +9238,47 @@ export default {
 
         // ກວດ + ອັບໂຫລດຮູບຂຶ້ນ R2 bucket (PHOTOS) ເກັບແຕ່ "key" ໄວ້ໃນ D1 (ຖ້າຮູບໃດຜິດ ຈະບໍ່ອັບໂຫລດຮູບໃດເລີຍ)
         const stamp = Date.now();
-        const [qrKey, serialKey, capexKey, assetKey, documentKey] = await savePhotosToR2(env, [
+        // ລາຍເຊັນລູກຄ້າ: ມີໃບສັນຍາຢືມ -> ເກັບໃນຊ່ອງ sig_outlet ຂອງໃບສັນຍາ (ອອກໃນ PDF ໜ້າ 2), ບໍ່ມີໃບສັນຍາ -> ເກັບໃນ assets (delivery_sig_*)
+        const loanForSig = await findLoanContractForAsset(env, assetRow);
+        const sigName = String(sig_outlet_name || "").trim().slice(0, 100) || null;
+        const sigKey = loanForSig
+          ? `loan-contract/${loanForSig.id}/outlet-${stamp}.png`
+          : `delivery/${id}/customer-sig-${stamp}.png`;
+        const [qrKey, serialKey, capexKey, assetKey, documentKey, sigSavedKey] = await savePhotosToR2(env, [
           [photo_qr, `delivery/${id}/qr-${stamp}.jpg`],
           [photo_serial, `delivery/${id}/serial-${stamp}.jpg`],
           [photo_capex, `delivery/${id}/capex-${stamp}.jpg`],
           [photo_asset, `delivery/${id}/asset-${stamp}.jpg`],
           [photo_document, `delivery/${id}/document-${stamp}.jpg`],
+          [sig_outlet, sigKey],
         ]);
 
         // ເງື່ອນໄຂ status != ສຳເລັດ ຢູ່ໃນ UPDATE ເອງ ກັນກົດຢືນຢັນຊ້ອນກັນສອງຄົນພ້ອມກັນ (ຄົນທີສອງຈະບໍ່ມີແຖວຖືກແກ້)
+        const sigSetSql = loanForSig ? "" : ", delivery_sig_outlet = ?, delivery_sig_name = ?, delivery_sig_at = CURRENT_TIMESTAMP";
+        const sigBinds = loanForSig ? [] : [sigSavedKey, sigName];
         const updateResult = await env.DB.prepare(
           `UPDATE assets SET status = ?, delivery_photo_qr = ?, delivery_photo_serial = ?, delivery_photo_capex = ?, delivery_photo_asset = ?, delivery_photo_document = ?,
-                              delivered_at = CURRENT_TIMESTAMP, delivered_by = ?, last_update = CURRENT_TIMESTAMP
+                              delivered_at = CURRENT_TIMESTAMP, delivered_by = ?${sigSetSql}, last_update = CURRENT_TIMESTAMP
            WHERE id = ? AND IFNULL(status, '') != ?`
-        ).bind(DELIVERED_STATUS, qrKey, serialKey, capexKey, assetKey, documentKey, requester.email || String(userId), id, DELIVERED_STATUS).run();
+        ).bind(DELIVERED_STATUS, qrKey, serialKey, capexKey, assetKey, documentKey, requester.email || String(userId), ...sigBinds, id, DELIVERED_STATUS).run();
 
         if (!updateResult.meta || updateResult.meta.changes === 0) {
-          await deleteR2Photos(env, [qrKey, serialKey, capexKey, assetKey, documentKey]);
+          await deleteR2Photos(env, [qrKey, serialKey, capexKey, assetKey, documentKey, sigSavedKey]);
           return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
+        }
+
+        // ມີໃບສັນຍາຢືມ -> ໃສ່ລາຍເຊັນລູກຄ້າລົງໃບສັນຍາ (ບໍ່ປ່ຽນ status ຂອງໃບ — MDE/DSM ເຊັນແຍກຕາມຂັ້ນຕອນເດີມ)
+        let sigWarning = null;
+        if (loanForSig) {
+          try {
+            await env.DB.prepare(
+              "UPDATE loan_contracts SET sig_outlet = ?, sig_outlet_name = ?, sig_outlet_at = CURRENT_TIMESTAMP WHERE id = ?"
+            ).bind(sigSavedKey, sigName, loanForSig.id).run();
+            if (loanForSig.sig_outlet) await deleteR2Photos(env, [loanForSig.sig_outlet]);
+          } catch (sigErr) {
+            console.error("/api/asset-delivery/confirm sig->contract", sigErr);
+            sigWarning = "ຈັດສົ່ງສຳເລັດ ແຕ່ບັນທຶກລາຍເຊັນລູກຄ້າລົງໃບສັນຍາບໍ່ສຳເລັດ";
+          }
         }
 
         // ເຊື່ອມກັບສະຕ໋ອກສາງ: doc_type = "ເກັບຄືນສາງ" -> ເອົາເຂົ້າສະຕ໋ອກຄືນ (in_warehouse), doc_type ອື່ນ -> ຖືວ່າອອກໄປຮ້ານແລ້ວ (outlet)
@@ -9274,7 +9313,7 @@ export default {
           })());
         }
 
-        return Response.json({ message: "ຢືນຢັນການຈັດສົ່ງຮຽບຮ້ອຍແລ້ວ" });
+        return Response.json({ message: sigWarning || "ຢືນຢັນການຈັດສົ່ງຮຽບຮ້ອຍແລ້ວ" });
       } catch (e) {
         console.error("/api/asset-delivery/confirm", e);
         return photoErrorResponse(e) || Response.json({ error: "ບໍ່ສາມາດຢືນຢັນການຈັດສົ່ງໄດ້" }, { status: 500 });
