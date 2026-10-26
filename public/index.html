@@ -28658,6 +28658,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       currentUser = null;
       specialAlerts = []; currentViewName = null; hideSpecialAlertOverlay();
       stopNotificationPolling();
+      reqVoiceSeen = null; reqVoiceLastCount = null;
       clearMenuBadges();
       clearSession();
       document.getElementById('appContainer').classList.add('hidden');
@@ -28677,6 +28678,65 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       }, 60000);
     }
 
+    /* ===================== ສຽງເຕືອນຄຳຂໍເບີກຕູ້ແຊ່ໃໝ່ (admin, ຕອນເປີດແອັບຢູ່) — ໃຊ້ສຽງອ່ານຂອງເຄື່ອງ (Web Speech API, ຟຣີ) =====================
+       ກວດຕອນ poll badge (ທຸກ 60 ວິ): ຖ້າຈຳນວນຄຳຂໍທີ່ລໍ Admin ກວດປ່ຽນ -> ດຶງລາຍການ ແລ້ວອ່ານສະເພາະຄຳຂໍທີ່ຍັງບໍ່ເຄີຍອ່ານ
+       ຖ້າເຄື່ອງບໍ່ມີສຽງພາສາລາວ -> ເຫຼີ້ນສຽງ "ປິງ" ແທນ (ບໍ່ອ່ານຜິດພາສາ) */
+    let reqVoiceSeen = null;   // Set ຂອງ id ຄຳຂໍທີ່ຮູ້ແລ້ວ (null = ຍັງບໍ່ເຄີຍກວດ -> ຄັ້ງທຳອິດບັນທຶກເງຽບໆ ບໍ່ອ່ານ)
+    let reqVoiceLastCount = null;
+    let reqVoiceBusy = false;
+
+    function reqVoiceEnabled() { return !!currentUser && currentUser.role === 'admin'; }
+
+    function reqVoicePickLao() {
+      try {
+        const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+        return vs.find(v => /^lo([-_]|$)/i.test(v.lang)) || null;
+      } catch (e) { return null; }
+    }
+
+    function reqVoiceChime() {
+      try { const ctx = saCtx(); if (ctx) { const go = () => saBeepSequence(ctx); if (ctx.state === 'running') go(); else ctx.resume().then(go).catch(() => {}); } } catch (e) { /* ignore */ }
+    }
+
+    function reqVoiceSpeak(text) {
+      const voice = reqVoicePickLao();
+      if (!('speechSynthesis' in window) || !voice) { reqVoiceChime(); return; }
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.voice = voice; u.lang = voice.lang; u.rate = 0.95; u.volume = 1;
+        speechSynthesis.speak(u);
+      } catch (e) { reqVoiceChime(); }
+    }
+
+    // ບຣາວເຊີບັງຄັບໃຫ້ແຕະໜ້າຈໍ 1 ຄັ້ງກ່ອນ ຈຶ່ງອ່ານສຽງອັດຕະໂນມັດໄດ້ — ແຕະຄັ້ງທຳອິດເພື່ອປົດລັອກ
+    document.addEventListener('pointerdown', function unlockReqVoice() {
+      document.removeEventListener('pointerdown', unlockReqVoice);
+      try { if ('speechSynthesis' in window) { speechSynthesis.getVoices(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) { /* ignore */ }
+    }, { passive: true });
+
+    async function requestVoiceCheck(count) {
+      if (!reqVoiceEnabled() || reqVoiceBusy) return;
+      const n = Number(count) || 0;
+      if (reqVoiceLastCount !== null && n === reqVoiceLastCount) return;
+      reqVoiceBusy = true;
+      try {
+        const res = await fetch(`/api/asset-requests?userId=${currentUser.id}`);
+        if (!res.ok) return;
+        const rows = (await res.json() || []).filter(r => r.status === 'pending' && !r.admin_checked_at);
+        const ids = new Set(rows.map(r => r.id));
+        if (reqVoiceSeen === null) { reqVoiceSeen = ids; reqVoiceLastCount = n; return; } // ຄັ້ງທຳອິດ: ບໍ່ອ່ານຂອງເກົ່າ
+        const fresh = rows.filter(r => !reqVoiceSeen.has(r.id)).reverse(); // ເກົ່າ -> ໃໝ່
+        ids.forEach(id => reqVoiceSeen.add(id));
+        reqVoiceLastCount = n;
+        fresh.slice(0, 3).forEach(r => {
+          const name = mdeNameFor(r.mde_code) || r.mde_code || r.requester_email || '';
+          reqVoiceSpeak(`ມີຄຳຂໍເບີກຕູ້ແຊ່ໃໝ່ ຈາກ MDE ${name}`.trim());
+        });
+        if (fresh.length > 3) reqVoiceSpeak(`ແລະອີກ ${fresh.length - 3} ລາຍການ`);
+      } catch (e) { /* ລອງໃໝ່ຮອບຖັດໄປ */ }
+      finally { reqVoiceBusy = false; }
+    }
+
     // ດຶງ badge ຈຳນວນທັງໝົດຄັ້ງດຽວຈາກ /api/badge-counts (COUNT(*) ຝັ່ງ server)
     // ແທນທີ່ຈະເອີ້ນ /api/assets, /api/asset-requests, /api/cooler-event, /api/notifications, /api/announcements
     // ແຍກກັນທຸກຄັ້ງ (ອັນເກົ່າດຶງທຸກແຖວ/ທຸກ column ມາພຽງແຕ່ນັບຈຳນວນ - ນີ້ຄືສາເຫດຫຼັກທີ່ Cloudflare D1 Rows Read ສູງຜິດປົກກະຕິ)
@@ -28691,6 +28751,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         setMenuBadge('mapTrackingBadge', c.mapTracking || 0);
         setMenuBadge('assetRequestBadge', c.assetRequest || 0);
         setMenuBadge('coolerEventBadge', c.coolerEvent || 0);
+        requestVoiceCheck(c.assetRequest || 0); // ສຽງເຕືອນຄຳຂໍເບີກຕູ້ໃໝ່ (admin)
         setMenuBadge('loanContractDraftBadge', c.loanContractDraft || 0);
         setMenuBadge('historyLoanBadge', c.historyLoanPending || 0); setMenuBadge('historyLoanCardBadge', c.historyLoanPending || 0);
 
