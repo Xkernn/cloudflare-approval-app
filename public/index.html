@@ -3245,6 +3245,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
           <div id="dispatchInfo" class="hidden" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 16px; margin-top: 14px;">
             <input type="hidden" id="dispatchAssetId">
+            <div id="dispatchUrgentBanner" class="hidden" style="margin-bottom:10px; padding:8px 12px; border-radius:10px; font-size:13px; font-weight:700;"></div>
             <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">ຮ້ານຄ້າ</div>
             <div id="dispatchInfoOutlet" style="font-weight:800; font-size:18px; line-height:1.3; margin-bottom:12px;"></div>
             <table style="width:100%; font-size: 13px; margin-bottom: 12px;">
@@ -20944,6 +20945,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       el.classList.toggle('hidden', !text);
     }
 
+    let dispatchStockId = null; // ຕູ້ດ່ວນບໍ່ມີເອກະສານ (ບໍ່ຜູກ Asset): id ຂອງແຖວໃນສະຕັອກສາງ
     let dispatchLoan = null; // ໃບສັນຍາຢືມຂອງຕູ້ທີ່ສະແກນຢູ່ (ຖ້າມີ) — ໃຊ້ກັບປຸ່ມ "ເບິ່ງເອກະສານ"
     const DISPATCH_WAITING_STATUS = 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ';
     const DISPATCH_LEGACY_OK = ['ຢູ່ລະຫວ່າງຈັດສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ']; // ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນລໍຖ້າສາງ (ຍັງບໍ່ເຄີຍສະແກນອອກສາງ)
@@ -20960,6 +20962,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       document.getElementById('dispatchInfo').classList.add('hidden');
       document.getElementById('dispatchConfirmBtn').disabled = false;
       dispatchLoan = null;
+      dispatchStockId = null;
+      document.getElementById('dispatchUrgentBanner').classList.add('hidden');
       dispatchSetMsg('');
     }
 
@@ -20971,13 +20975,23 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       try {
         const res = await fetch(`/api/asset-tracking/lookup-by-qr?userId=${currentUser.id}&qr_code=${encodeURIComponent(qr)}`);
         const data = await res.json();
-        if (!data.found) { dispatchSetMsg(data.error || 'ບໍ່ພົບ Asset ທີ່ມີ QR Code ນີ້', '#dc2626'); return; }
+        if (!data.found) {
+          // ບໍ່ພົບໃນ Asset Tracking -> ລອງຫາໃນສະຕັອກສາງ (ຕູ້ດ່ວນບໍ່ມີເອກະສານ ທີ່ບໍ່ຜູກ Asset)
+          if (!data.ambiguous) { await dispatchLookupStock(qr, data.error); return; }
+          dispatchSetMsg(data.error || 'ບໍ່ພົບ Asset ທີ່ມີ QR Code ນີ້', '#dc2626'); return;
+        }
         if (data.already_delivered) { dispatchSetMsg(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ', '#dc2626'); return; }
         const a = data.item;
         if (a.doc_type === 'ເກັບຄືນສາງ') { dispatchSetMsg('ເອກະສານ "ເກັບຄືນສາງ" ບໍ່ຕ້ອງສະແກນອອກສາງ', '#dc2626'); return; }
         if (a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນອອກສາງເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
         dispatchLoan = data.loan_contract || null;
-        const canDispatch = a.status === DISPATCH_WAITING_STATUS || DISPATCH_LEGACY_OK.includes(a.status);
+        const urgent = !!a.flagged;
+        const loanBlock = !urgent && dispatchLoan && dispatchLoan.status !== 'completed';
+        const canDispatch = urgent || (!loanBlock && (a.status === DISPATCH_WAITING_STATUS || DISPATCH_LEGACY_OK.includes(a.status)));
+        dispatchStockId = null;
+        const bn = document.getElementById('dispatchUrgentBanner');
+        bn.classList.toggle('hidden', !urgent);
+        if (urgent) { bn.textContent = '🚩 ຕູ້ດ່ວນ (ຕິດທຸງ) — ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າເອກະສານຈະຄົບຫຼືບໍ່'; bn.style.background = '#fef2f2'; bn.style.color = '#b91c1c'; }
         document.getElementById('dispatchAssetId').value = a.id;
         document.getElementById('dispatchInfoOutlet').textContent = `${a.outlet_name || '-'} (${a.outlet_code || '-'})`;
         document.getElementById('dispatchInfoCooler').textContent = [a.cooler_brand, a.cooler_type].filter(Boolean).join(' / ') || '-';
@@ -20997,11 +21011,47 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           docBtn.disabled = true;
         }
         document.getElementById('dispatchConfirmBtn').disabled = !canDispatch;
-        dispatchSetMsg(canDispatch ? '' : `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະ "${a.status || '-'}" (ຕ້ອງເປັນ "${DISPATCH_WAITING_STATUS}" ກ່ອນ ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`, '#dc2626');
+        dispatchSetMsg(canDispatch ? '' : (loanBlock
+          ? `ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ໃບສັນຍາຢືມ ${dispatchLoan.doc_no || ''} ${dispatchLoan.status === 'awaiting_dsm' ? 'ລໍຖ້າ DSM ເຊັນ' : 'ເຊັນບໍ່ຄົບ'} (ເວັ້ນແຕ່ຕິດທຸງດ່ວນ)`
+          : `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະ "${a.status || '-'}" (ຕ້ອງເປັນ "${DISPATCH_WAITING_STATUS}" ກ່ອນ ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`), '#dc2626');
         document.getElementById('dispatchInfo').classList.remove('hidden');
         window.scrollTo(0, 0);
       } catch (err) {
         dispatchSetMsg('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset', '#dc2626');
+      }
+    }
+
+    /* ຕູ້ດ່ວນບໍ່ມີເອກະສານ: ບໍ່ພົບ Asset -> ຫາໃນສະຕັອກສາງ, ຂຶ້ນລົດໄດ້ໂດຍບໍ່ຕ້ອງຜູກ Asset Tracking */
+    async function dispatchLookupStock(qr, notFoundMsg) {
+      try {
+        const res = await fetch(`/api/asset-delivery/dispatch-stock-lookup?qr=${encodeURIComponent(qr)}`);
+        const data = await res.json();
+        if (!data.found) { dispatchSetMsg(data.error || notFoundMsg || 'ບໍ່ພົບຕູ້ນີ້ໃນລະບົບ', '#dc2626'); return; }
+        const st = data.item;
+        dispatchLoan = null;
+        dispatchStockId = st.id;
+        document.getElementById('dispatchAssetId').value = '';
+        const bn = document.getElementById('dispatchUrgentBanner');
+        bn.textContent = '⚡ ຕູ້ດ່ວນບໍ່ມີເອກະສານ — ບໍ່ຜູກ Asset Tracking (ຂຶ້ນລົດຈາກສະຕັອກສາງໂດຍກົງ)';
+        bn.style.background = '#fffbeb'; bn.style.color = '#b45309';
+        bn.classList.remove('hidden');
+        document.getElementById('dispatchInfoOutlet').textContent = 'ບໍ່ລະບຸຮ້ານ (ບໍ່ມີ Asset Tracking)';
+        document.getElementById('dispatchInfoCooler').textContent = [st.cooler_brand, st.cooler_type, st.cooler_model].filter(Boolean).join(' / ') || '-';
+        document.getElementById('dispatchInfoCodes').textContent = `${st.qr_code || '-'} / ${st.serial_number || '-'}`;
+        document.getElementById('dispatchInfoCapex').textContent = st.capex || '-';
+        document.getElementById('dispatchInfoTracking').textContent = '-';
+        document.getElementById('dispatchInfoMde').textContent = '-';
+        document.getElementById('dispatchInfoDocType').textContent = 'ບໍ່ມີເອກະສານ';
+        document.getElementById('dispatchInfoStatus').textContent = `ສະຕັອກ: ${(typeof STOCK_STATUS_LABEL !== 'undefined' && STOCK_STATUS_LABEL[st.status]) || st.status}${st.warehouse_name ? ' · ' + st.warehouse_name : ''}`;
+        document.getElementById('dispatchDocBtnText').textContent = 'ບໍ່ມີເອກະສານໃຫ້ເບິ່ງ';
+        document.getElementById('dispatchDocBtn').disabled = true;
+        const ok = (st.status === 'in_warehouse' || st.status === 'reserved') && !data.has_asset;
+        document.getElementById('dispatchConfirmBtn').disabled = !ok;
+        dispatchSetMsg(ok ? '' : (data.has_asset ? 'ຕູ້ນີ້ມີໃນ Asset Tracking ແລ້ວ — ກະລຸນາສະແກນໃໝ່' : 'ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ສະຖານະສະຕັອກບໍ່ແມ່ນ "ຢູ່ໃນສາງ"'), '#dc2626');
+        document.getElementById('dispatchInfo').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      } catch (e) {
+        dispatchSetMsg('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ', '#dc2626');
       }
     }
 
@@ -21011,13 +21061,14 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     async function dispatchConfirm() {
       const id = document.getElementById('dispatchAssetId').value;
-      if (!id) return;
+      if (!id && !dispatchStockId) return;
+      if (dispatchStockId && !confirm('ຕູ້ນີ້ບໍ່ມີເອກະສານ / ບໍ່ຜູກ Asset Tracking — ຢືນຢັນຂຶ້ນລົດແບບດ່ວນ?')) return;
       const btn = document.getElementById('dispatchConfirmBtn');
       btn.disabled = true;
       try {
         const res = await fetch('/api/asset-delivery/dispatch', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUser.id, id })
+          body: JSON.stringify(dispatchStockId ? { userId: currentUser.id, stock_id: dispatchStockId } : { userId: currentUser.id, id })
         });
         const data = await res.json();
         if (res.ok) {
@@ -21042,9 +21093,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const res = await fetch('/api/asset-delivery/on-truck');
         const data = await res.json();
         const items = data.items || [];
-        document.getElementById('dispatchListCount').textContent = items.length ? `(${items.length})` : '';
-        box.innerHTML = items.length
-          ? items.map(i => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color,#e2e8f0);"><b>${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b><br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span></div>`).join('')
+        const stockItems = data.stock_items || [];
+        document.getElementById('dispatchListCount').textContent = (items.length + stockItems.length) ? `(${items.length + stockItems.length})` : '';
+        const stockHtml = stockItems.map(i => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color,#e2e8f0);"><b>⚡ ຕູ້ດ່ວນບໍ່ມີເອກະສານ</b><br><span style="color:var(--text-muted);">${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span></div>`).join('');
+        box.innerHTML = (items.length || stockItems.length)
+          ? stockHtml + items.map(i => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color,#e2e8f0);"><b>${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b><br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span></div>`).join('')
           : '<span style="color:var(--text-muted);">ບໍ່ມີຕູ້ຢູ່ເທິງລົດ</span>';
       } catch (e) {
         box.textContent = 'ໂຫລດລາຍການບໍ່ສຳເລັດ';

@@ -1431,6 +1431,7 @@ const ROUTE_ROLES = {
   "/api/no-doc-delivery": ROLE_STAFF,
   "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ອອກສາງຂຶ້ນລົດ — warehouse / delivery / admin
   "/api/asset-delivery/on-truck": ROLE_STAFF,
+  "/api/asset-delivery/dispatch-stock-lookup": ROLE_STAFF, // ຄົ້ນຫາຕູ້ໃນສະຕັອກ (ຕູ້ດ່ວນທີ່ບໍ່ມີ Asset Tracking)
   "/api/cooler-event": ROLE_STAFF,
   "/api/cooler-event/return": ROLE_STAFF,
   "/api/cooler-writeoff": ROLE_WH, // ລາຍງານຕູ້ແຊ່ສະສາງ - admin + warehouse ເທົ່ານັ້ນ (ລຶບ = admin ຜ່ານ /api/admin/delete-cooler-writeoff)
@@ -9283,12 +9284,39 @@ export default {
     //   outlet_code (ບໍ່ບັງຄັບ): ຖ້າສົ່ງມາ ຕ້ອງກົງກັບຮ້ານຂອງ Asset (ເກັບໄວ້ເພື່ອຄວາມເຂົ້າກັນໄດ້ກັບໜ້າຈໍເກົ່າ)
     if (url.pathname === "/api/asset-delivery/dispatch" && request.method === "POST") {
       try {
-        const { userId, id, outlet_code } = await request.json();
-        if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        const { userId, id, outlet_code, stock_id } = await request.json();
+        if (!userId || (!id && !stock_id)) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
         const checkCode = String(outlet_code || "").trim();
 
         const requester = await env.DB.prepare("SELECT role, email FROM users WHERE id = ?").bind(userId).first();
         if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
+
+        // ຕູ້ດ່ວນບໍ່ມີເອກະສານ (ບໍ່ຜູກ Asset Tracking): ຂຶ້ນລົດຈາກສະຕັອກສາງໂດຍກົງ -> ສະຕັອກ = "ຢູ່ເທິງລົດ"
+        if (!id && stock_id) {
+          const stock = await env.DB.prepare("SELECT * FROM warehouse_stock WHERE id = ?").bind(stock_id).first();
+          if (!stock) return Response.json({ error: "ບໍ່ພົບຕູ້ນີ້ໃນສະຕັອກສາງ" }, { status: 404 });
+          if (stock.status !== "in_warehouse" && stock.status !== "reserved") {
+            return Response.json({ error: `ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ສະຖານະສະຕັອກ "${stock.status}" (ຕ້ອງຢູ່ໃນສາງ ຫຼື ຈອງແລ້ວ)` }, { status: 400 });
+          }
+          const linked = await env.DB.prepare(
+            `SELECT id FROM assets WHERE (qr_code = ?1 AND ?1 != '') OR (serial_number = ?2 AND ?2 != '') OR (capex = ?3 AND ?3 != '') LIMIT 1`
+          ).bind(stock.qr_code || "", stock.serial_number || "", stock.capex || "").first();
+          if (linked) return Response.json({ error: "ຕູ້ນີ້ມີໃນ Asset Tracking ແລ້ວ — ກະລຸນາສະແກນຜ່ານ Asset (ຕ້ອງເຊັນເອກະສານຄົບ ຫຼື ຕິດທຸງດ່ວນ)" }, { status: 400 });
+          const actor = requester.email || String(userId);
+          const upd = await env.DB.prepare(
+            "UPDATE warehouse_stock SET status = 'on_truck', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status IN ('in_warehouse', 'reserved')"
+          ).bind(stock.id).run();
+          if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະຕູ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາສະແກນໃໝ່" }, { status: 409 });
+          try {
+            await env.DB.prepare(
+              `INSERT INTO warehouse_stock_history
+                 (stock_id, warehouse_id, old_warehouse_id, action, cooler_brand, cooler_type, cooler_model, qr_code, serial_number, capex, old_status, new_status, changed_by, notes)
+               VALUES (?, ?, NULL, 'update', ?, ?, ?, ?, ?, ?, ?, 'on_truck', ?, ?)`
+            ).bind(stock.id, stock.warehouse_id, stock.cooler_brand, stock.cooler_type, stock.cooler_model,
+              stock.qr_code, stock.serial_number, stock.capex, stock.status, actor, "ສະແກນອອກສາງຂຶ້ນລົດ — ຕູ້ດ່ວນບໍ່ມີເອກະສານ (ບໍ່ຜູກ Asset Tracking)").run();
+          } catch (e) { console.error("dispatch stock history", e); }
+          return Response.json({ message: "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ (ຕູ້ດ່ວນບໍ່ມີເອກະສານ) — ຕູ້ກຳລັງເດີນທາງໄປຮ້ານ" });
+        }
 
         const assetRow = await env.DB.prepare("SELECT * FROM assets WHERE id = ?").bind(id).first();
         if (!assetRow) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
@@ -9306,7 +9334,20 @@ export default {
         // ອອກສາງໄດ້ສະເພາະຕູ້ທີ່ Admin ຕັ້ງ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ແລ້ວ (ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
         // ຍັງຍອມ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນອອກສາງ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
         const DISPATCHABLE = [WAITING_DISPATCH_STATUS, ON_TRUCK_STATUS, MOVE_STATUS];
-        if (!DISPATCHABLE.includes(assetRow.status)) {
+        // ຕູ້ຕິດທຸງ "ດ່ວນ" ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າສະຖານະ/ເອກະສານຈະຄົບຫຼືບໍ່; ຕູ້ປົກກະຕິຕ້ອງເຊັນເອກະສານຄົບກ່ອນ
+        const isUrgent = !!assetRow.flagged;
+        if (!isUrgent) {
+          const loan = await findLoanContractForAsset(env, assetRow);
+          if (loan && loan.status !== "completed") {
+            return Response.json({
+              code: "DOC_NOT_SIGNED",
+              error: loan.status === "awaiting_dsm"
+                ? `ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ໃບສັນຍາຢືມ ${loan.doc_no || ""} ລໍຖ້າ DSM ເຊັນ`
+                : `ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ໃບສັນຍາຢືມ ${loan.doc_no || ""} ຍັງເຊັນບໍ່ຄົບ`,
+            }, { status: 400 });
+          }
+        }
+        if (!isUrgent && !DISPATCHABLE.includes(assetRow.status)) {
           return Response.json({
             code: "NOT_WAITING_DISPATCH",
             error: `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະປັດຈຸບັນ "${assetRow.status || "-"}" (ຕ້ອງເປັນ "${WAITING_DISPATCH_STATUS}" ກ່ອນ ຫຼັງຈາກ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`,
@@ -9322,8 +9363,8 @@ export default {
         const actor = requester.email || String(userId);
         const upd = await env.DB.prepare(
           `UPDATE assets SET status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, last_update = CURRENT_TIMESTAMP
-           WHERE id = ? AND status IN (?, ?, ?)`
-        ).bind(ON_TRUCK_STATUS, actor, id, ...DISPATCHABLE).run();
+           WHERE id = ? AND status != ?`
+        ).bind(ON_TRUCK_STATUS, actor, id, DELIVERED_STATUS).run();
         if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະ Asset ນີ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາສະແກນໃໝ່" }, { status: 409 });
 
         await markWarehouseStockOnTruck(
@@ -9339,13 +9380,38 @@ export default {
       }
     }
 
+    // ຄົ້ນຫາຕູ້ໃນສະຕັອກສາງ ສຳລັບ "ຕູ້ດ່ວນບໍ່ມີເອກະສານ" (ບໍ່ມີ Asset Tracking) — ຈັບຄູ່ QR / Serial / CapEx ຕົງເປ໊ະ
+    if (url.pathname === "/api/asset-delivery/dispatch-stock-lookup" && request.method === "GET") {
+      const q = String(url.searchParams.get("qr") || "").trim();
+      if (!q) return Response.json({ found: false, error: "ກະລຸນາປ້ອນ QR Code" }, { status: 400 });
+      const { results } = await env.DB.prepare(
+        `SELECT s.id, s.cooler_brand, s.cooler_type, s.cooler_model, s.qr_code, s.serial_number, s.capex, s.status, w.name AS warehouse_name
+         FROM warehouse_stock s LEFT JOIN wh_warehouses w ON w.id = s.warehouse_id
+         WHERE s.qr_code = ?1 OR s.serial_number = ?1 OR s.capex = ?1 LIMIT 6`
+      ).bind(q).all();
+      const rows = results || [];
+      if (!rows.length) return Response.json({ found: false, error: "ບໍ່ພົບຕູ້ນີ້ທັງໃນ Asset Tracking ແລະ ສະຕັອກສາງ" });
+      if (rows.length > 1) return Response.json({ found: false, error: `ພົບຫຼາຍກວ່າ 1 ລາຍການທີ່ກົງກັບ "${q}" ກະລຸນາສະແກນ QR Code ໃຫ້ຖືກຕ້ອງ` });
+      const linked = await env.DB.prepare(
+        `SELECT id FROM assets WHERE (qr_code = ?1 AND ?1 != '') OR (serial_number = ?2 AND ?2 != '') OR (capex = ?3 AND ?3 != '') LIMIT 1`
+      ).bind(rows[0].qr_code || "", rows[0].serial_number || "", rows[0].capex || "").first();
+      return Response.json({ found: true, item: rows[0], has_asset: !!linked });
+    }
+
     // ລາຍການຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ (ສະແກນອອກສາງແລ້ວ ຍັງບໍ່ທັນຈັດສົ່ງສຳເລັດ)
     if (url.pathname === "/api/asset-delivery/on-truck" && request.method === "GET") {
       const { results } = await env.DB.prepare(
         `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by
          FROM assets WHERE status = ? AND dispatched_at IS NOT NULL ORDER BY dispatched_at DESC LIMIT 200`
       ).bind("ຢູ່ລະຫວ່າງຈັດສົ່ງ").all();
-      return Response.json({ items: results || [] }, { headers: { "Cache-Control": "no-store" } });
+      // ຕູ້ດ່ວນບໍ່ມີເອກະສານທີ່ຂຶ້ນລົດຈາກສະຕັອກໂດຍກົງ (ບໍ່ຜູກ Asset Tracking)
+      const { results: stockOnTruck } = await env.DB.prepare(
+        `SELECT s.id, s.cooler_brand, s.cooler_type, s.qr_code, s.updated_at AS dispatched_at
+         FROM warehouse_stock s WHERE s.status = 'on_truck'
+           AND NOT EXISTS (SELECT 1 FROM assets a WHERE (a.qr_code = s.qr_code AND IFNULL(s.qr_code,'') != '') OR (a.serial_number = s.serial_number AND IFNULL(s.serial_number,'') != ''))
+         ORDER BY s.updated_at DESC LIMIT 100`
+      ).all();
+      return Response.json({ items: results || [], stock_items: stockOnTruck || [] }, { headers: { "Cache-Control": "no-store" } });
     }
 
     // 7e. Delivery Confirmation - ยืนยันจัดส่ง (ถ่ายรูป 4 อย่าง: QR/Serial/CapEx/Asset -> อัปโหลดขึ้น R2 -> Status เปลี่ยนเป็น ສຳເລັດ)
