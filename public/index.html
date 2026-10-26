@@ -2386,6 +2386,18 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 .maint-card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
 .maint-card.on { border-color: #fca5a5; background: #fef2f2; }
 </style>
+<style id="dlvPopupCss">
+/* ລາຍງານການຈັດສົ່ງແບບ popup (ມືຖື): wizard ເດີມ ແຕ່ເດັ້ງທັບໜ້າເມນູ ບໍ່ຕ້ອງເຂົ້າໄປໃນເມນູ */
+#view-delivery-confirm.dlv-popup, #view-no-doc-delivery.dlv-popup {
+  position: fixed; inset: 0; z-index: 300; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: var(--bg-body, #EFF5F6);
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 14px calc(28px + env(safe-area-inset-bottom, 0px));
+  animation: dlvPopIn .22s ease-out;
+}
+#view-delivery-confirm.dlv-popup .content-card, #view-no-doc-delivery.dlv-popup .content-card { margin-left: auto; margin-right: auto; }
+body.dlv-popup-open { overflow: hidden; }
+@keyframes dlvPopIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+</style>
 </head>
 <body>
 
@@ -6908,6 +6920,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         </div>
 
   <!-- ==================== MODAL (ສະແກນ QR Code ด้วยกล้อง) ==================== -->
+  <input type="hidden" id="dlvScanInput">
   <div id="qrScannerModal" class="modal-overlay hidden" style="z-index: 1200; backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(8, 22, 30, 0.8);">
     <div class="modal-card" style="max-width: 420px;">
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 12px;">ສະແກນ QR Code</h3>
@@ -8813,6 +8826,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
 
     function deliverySubBack() {
+      if (typeof dlvPopupActive !== 'undefined' && dlvPopupActive) { dlvPopupClose(); return; } // ເປີດເປັນ popup ຈາກໜ້າເມນູ -> ປິດ popup ຢູ່ໜ້າເມນູຄືເກົ່າ
       if (deliverySubHistoryPushed) { history.back(); return; }
       switchView('deliveryHub');
     }
@@ -9831,6 +9845,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       { key: 'request',   nav: 'nav-request',        view: 'request',        icon: 'fa-solid fa-file-medical',    label: 'ຂໍລະຫັດຕູ້ແຊ່',       badge: 'assetRequestBadge',     tone: 'orange' },
       { key: 'history',   nav: 'nav-history',        view: 'historyHub',     icon: 'fa-solid fa-clock-rotate-left', label: 'ປະຫວັດ Asset',        badge: 'historyLoanBadge',      tone: 'blue' },
       { key: 'delivery',  nav: 'nav-delivery-hub',   view: 'deliveryHub',    icon: 'fa-solid fa-clock-rotate-left',            label: 'ລາຍງານການຈັດສົ່ງ',       badge: null,                    tone: 'purple' },
+      { key: 'dlvscan',   nav: 'nav-delivery-hub',   action: 'dlvscan',      icon: 'fa-solid fa-camera',          label: 'ສະແກນລາຍງານຈັດສົ່ງ',      badge: null,                    tone: 'orange', roles: ['admin', 'warehouse', 'delivery'] },
       { key: 'loan',      nav: 'nav-loan-contract',  view: 'loanContract',   icon: 'fa-solid fa-file-circle-plus',    label: 'ສ້າງເອກະສານ',         badge: 'loanContractDraftBadge', tone: 'green' },
       { key: 'stock',     nav: 'nav-warehouse-stock', view: 'warehouseStock', icon: 'fa-warehouse',        label: 'ສະຕັອກສາງ',          badge: null,                    tone: 'amber' },
       { key: 'count',     nav: 'nav-stock-count',    view: 'stockCount',     icon: 'fa-solid fa-boxes-stacked',   label: 'ກວດນັບສາງ',          badge: null,                    tone: 'pink' },
@@ -10023,6 +10038,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       if (!it) return;
       if (it.go) { it.go(); return; } // ເມນູຍ່ອຍ: switchView() ພາຍໃນ ປິດໜ້າເມນູໃຫ້ເອງ
       if (it.action === 'tour') { closeMenuPage(); startOnboardingTour(true); return; }
+      if (it.action === 'dlvscan') { dlvScanStart(); return; } // ເປີດກ້ອງທັນທີ ແລ້ວເດັ້ງ popup ທັບໜ້າເມນູ (ບໍ່ປ່ຽນໜ້າ)
       switchView(it.view); // switchView() ປິດໜ້າເມນູໃຫ້ເອງ (closeSidebar)
     }
 
@@ -19272,6 +19288,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           // ສະແກນຈາກໜ້າເມນູ: ບໍ່ປ່ຽນໜ້າ — pop up ເດັ້ງທັບໜ້າເມນູ ກົດປິດແລ້ວຢູ່ໜ້າເມນູຄືເກົ່າ
           stockScanLookup(text);
         }
+        if (targetId === 'dlvScanInput') {
+          dlvScanLookup(text); // ລາຍງານຈັດສົ່ງຈາກໜ້າເມນູ: ເດັ້ງ popup wizard ທັບໜ້າເມນູ
+        }
         if (targetId === 'ncScanInput') {
           ncConfirm();
         }
@@ -23959,6 +23978,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         if (res.ok) {
           alert(data.message);
           resetDeliveryConfirmForm();
+          if (dlvPopupActive) dlvPopupClose();
         } else {
           alert(data.error || 'ບໍ່ສາມາດຢືນຢັນການຈັດສົ່ງໄດ້');
           btn.disabled = false;
@@ -23966,6 +23986,96 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       } catch (err) {
         alert('ເກີດຂໍ້ຜິດພາດໃນການຢືນຢັນການຈັດສົ່ງ');
         btn.disabled = false;
+      }
+    }
+
+    /* ===================== ລາຍງານການຈັດສົ່ງແບບ popup ຈາກໜ້າເມນູ (ມືຖື) =====================
+       ກົດໄອຄອນ "ສະແກນລາຍງານຈັດສົ່ງ" -> ເປີດກ້ອງ -> ສະແກນຕູ້:
+         · ພົບໃນ Asset Tracking  -> popup wizard "ລາຍງານການຈັດສົ່ງ" (ຕື່ມ QR ໃຫ້ແລ້ວ)
+         · ບໍ່ພົບ / ບໍ່ມີ Asset Tracking -> popup wizard "ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ" (ຕື່ມ QR/Serial/CapEx ຈາກສະຕັອກຖ້າມີ)
+       ປິດ popup ແລ້ວຢູ່ໜ້າເມນູຄືເກົ່າ */
+    let dlvPopupActive = null; // 'confirm' | 'nodoc' | null
+    let dlvPopupPushed = false;
+    const DLV_POPUP_VIEWS = { confirm: 'view-delivery-confirm', nodoc: 'view-no-doc-delivery' };
+
+    function dlvScanStart() {
+      qrFromMenu = true;
+      openQrScanner('dlvScanInput');
+    }
+
+    function dlvPopupOpen(kind) {
+      if (dlvPopupActive && dlvPopupActive !== kind) dlvPopupClose(true);
+      const el = document.getElementById(DLV_POPUP_VIEWS[kind]);
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('dlv-popup');
+      const back = el.querySelector('.btn-back');
+      if (back && !back.dataset.orig) { back.dataset.orig = back.innerHTML; back.innerHTML = '<i class="fa-solid fa-xmark mr-1"></i> ປິດ'; }
+      document.body.classList.add('dlv-popup-open');
+      if (!dlvPopupActive) {
+        try { history.pushState({ dlvPopup: true }, ''); dlvPopupPushed = true; } catch (e) { dlvPopupPushed = false; }
+      }
+      dlvPopupActive = kind;
+      el.scrollTop = 0;
+    }
+
+    function dlvPopupClose(fromPop) {
+      const kind = dlvPopupActive;
+      if (!kind) return;
+      const el = document.getElementById(DLV_POPUP_VIEWS[kind]);
+      if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('dlv-popup');
+        const back = el.querySelector('.btn-back');
+        if (back && back.dataset.orig) { back.innerHTML = back.dataset.orig; delete back.dataset.orig; }
+      }
+      dlvPopupActive = null;
+      document.body.classList.remove('dlv-popup-open');
+      const pushed = dlvPopupPushed;
+      dlvPopupPushed = false;
+      if (pushed && fromPop !== true) { try { history.back(); } catch (e) { /* ignore */ } }
+    }
+
+    // ປຸ່ມ Back ຂອງມືຖື -> ປິດ popup (ຢູ່ໜ້າເມນູຄືເກົ່າ)
+    window.addEventListener('popstate', () => {
+      if (dlvPopupActive) { dlvPopupPushed = false; dlvPopupClose(true); }
+    });
+
+    async function dlvScanLookup(qrRaw) {
+      const qr = String(qrRaw || '').trim();
+      if (!qr) return;
+      try {
+        const res = await fetch(`/api/asset-tracking/lookup-by-qr?userId=${currentUser.id}&qr_code=${encodeURIComponent(qr)}`);
+        const data = await res.json();
+        if (data.found && data.already_delivered) { alert(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ'); return; }
+        if (data.found) {
+          // ມີ Asset Tracking -> wizard ລາຍງານການຈັດສົ່ງ
+          dlvPopupOpen('confirm');
+          resetDeliveryConfirmForm();
+          document.getElementById('deliverQrCodeInput').value = qr;
+          await lookupAssetForDelivery();
+          return;
+        }
+        if (data.ambiguous) { alert(data.error || 'ພົບຫຼາຍກວ່າ 1 ລາຍການ — ກະລຸນາສະແກນ QR ເຕັມ'); return; }
+
+        // ບໍ່ມີ Asset Tracking -> wizard ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ (ດຶງຂໍ້ມູນຕູ້ຈາກສະຕັອກຖ້າມີ)
+        let st = null;
+        try {
+          const r2 = await fetch(`/api/asset-delivery/dispatch-stock-lookup?qr=${encodeURIComponent(qr)}`);
+          const d2 = await r2.json();
+          if (d2 && d2.found) st = d2.item;
+        } catch (e) { /* ບໍ່ພົບໃນສະຕັອກ ກໍກອກເອງໄດ້ */ }
+        dlvPopupOpen('nodoc');
+        resetNoDocDeliveryForm();
+        document.getElementById('noDocQrCode').value = (st && st.qr_code) || qr;
+        if (st) {
+          document.getElementById('noDocSerialNumber').value = st.serial_number || '';
+          document.getElementById('noDocCapex').value = st.capex || '';
+          fillBrandTypeSelects('noDocBrand', 'noDocType', st.cooler_brand || '', st.cooler_type || '', true);
+        }
+        noDocShowStep(1);
+      } catch (err) {
+        alert('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset');
       }
     }
 
@@ -24287,6 +24397,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           alertBox.textContent = data.message;
           alertBox.className = 'alert alert-success';
           alertBox.classList.remove('hidden');
+          if (dlvPopupActive) { alert(data.message); dlvPopupClose(); }
         } else {
           alertBox.textContent = data.error || 'ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້';
           alertBox.className = 'alert alert-error';
