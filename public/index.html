@@ -2395,6 +2395,15 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
   animation: dlvPopIn .22s ease-out;
 }
 #view-delivery-confirm.dlv-popup .content-card, #view-no-doc-delivery.dlv-popup .content-card { margin-left: auto; margin-right: auto; }
+/* ແຖບປຸ່ມປິດ: ບໍ່ໃຫ້ຍືດຍາວ/ຂາວໃຫຍ່ — ຕິດຂອບເທິງຂອງ popup ແລະກະທັດຮັດ */
+#view-delivery-confirm.dlv-popup > .loan-subbar, #view-no-doc-delivery.dlv-popup > .loan-subbar {
+  position: sticky; top: 0; z-index: 5; margin: 0 0 8px; padding: 0 0 6px; background: var(--bg-body, #EFF5F6); min-height: 0;
+}
+#view-delivery-confirm.dlv-popup .loan-subbar .btn-back, #view-no-doc-delivery.dlv-popup .loan-subbar .btn-back {
+  min-height: 34px; padding: 6px 14px; font-size: 13px; border-radius: 999px;
+}
+#view-delivery-confirm.dlv-popup .page-header, #view-no-doc-delivery.dlv-popup .page-header { padding: 10px 14px; margin-bottom: 10px; }
+#view-delivery-confirm.dlv-popup .page-header p, #view-no-doc-delivery.dlv-popup .page-header p { display: none; }
 body.dlv-popup-open { overflow: hidden; }
 @keyframes dlvPopIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 </style>
