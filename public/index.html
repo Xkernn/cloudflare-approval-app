@@ -1060,6 +1060,11 @@
       100% { transform: scale(2.6); opacity: 0; }
     }
     /* Marker ດ່ວນ (ຕິດທຸງ) - pulse ໄວ ແລະ ໃຫຍ່ກວ່າປົກກະຕິ ໃຫ້ເຫັນຊັດ */
+    .truck-marker { width: 34px; height: 34px; border-radius: 50%; background: #1d4ed8; border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(29,78,216,.35), 0 4px 10px rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; animation: truckMarkerBob 1.4s ease-in-out infinite; }
+    .truck-marker-urgent { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.4), 0 4px 10px rgba(0,0,0,.35); }
+    .marker-outlet-label-truck { background: #1d4ed8 !important; color: #fff !important; font-weight: 700; }
+    @keyframes truckMarkerBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @media (prefers-reduced-motion: reduce) { .truck-marker { animation: none; } }
     .pulse-marker-ring-urgent { animation: pulseMarkerRingUrgent 1s ease-out infinite !important; }
     @keyframes pulseMarkerRingUrgent {
       0%   { transform: scale(1);   opacity: 0.9; }
@@ -3269,6 +3274,9 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
         <div class="content-card" style="max-width: 560px; margin-top: 16px;">
           <h3 style="font-size:15px; font-weight:700; margin-bottom:8px;"><i class="fa-solid fa-truck-fast mr-1"></i> ຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ <span id="dispatchListCount" style="color:var(--text-muted); font-weight:500;"></span></h3>
+          <button type="button" id="dispatchCloseBtn" class="btn-submit" style="margin:0 0 10px; background:#0f172a;" onclick="dispatchCloseTruck()" disabled>
+            <i class="fa-solid fa-lock mr-1"></i> ປິດລົດ (ຈົບການຂຶ້ນຕູ້) <span id="dispatchCloseCount"></span>
+          </button>
           <div id="dispatchList" style="font-size:13px;"></div>
         </div>
       </div>
@@ -20290,7 +20298,20 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       mapDoctypeColorCache[key] = color;
       return color;
     }
-    function pulseMarkerIcon(color, outletCode, urgent) {
+    function pulseMarkerIcon(color, outletCode, urgent, onTruck) {
+      if (onTruck) {
+        // ຕູ້ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ: ໝຸດໃຫຍ່ສີນ້ຳເງິນເຂັ້ມ + ໄອຄອນລົດ ເບິ່ງແຍກຈາກຕູ້ອື່ນງ່າຍ
+        return L.divIcon({
+          className: '',
+          html: `<div class="marker-label-wrap">
+                   <div class="truck-marker${urgent ? ' truck-marker-urgent' : ''}">🚚</div>
+                   <span class="marker-outlet-label marker-outlet-label-truck">${urgent ? '🚩 ' : ''}${esc(outletCode || '')}</span>
+                 </div>`,
+          iconSize: [220, 34],
+          iconAnchor: [17, 17],
+          popupAnchor: [0, -17],
+        });
+      }
       const label = outletCode ? `<span class="marker-outlet-label${urgent ? ' marker-outlet-label-urgent' : ''}">${urgent ? '🚩 ດ່ວນ: ' : ''}${esc(outletCode)}</span>` : '';
       return L.divIcon({
         className: '',
@@ -20360,7 +20381,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           const mdeInfo = dbMdeList.find(m => m.mde_code === a.mde_code);
           const color = colorForDocType(a.doc_type);
           docTypesSeen.add(a.doc_type || 'ບໍ່ລະບຸ');
-          const marker = L.marker([lat, lng], { icon: pulseMarkerIcon(color, a.outlet_name, !!a.flagged) }).addTo(assetMapMarkersLayer);
+          const isOnTruck = a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && !!a.dispatched_at;
+          const marker = L.marker([lat, lng], { icon: pulseMarkerIcon(color, a.outlet_name, !!a.flagged, isOnTruck), zIndexOffset: isOnTruck ? 1000 : 0 }).addTo(assetMapMarkersLayer);
           const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
           const isRelocation = a.doc_type === RELOCATION_DOC_TYPE;
           const oldMaster = isRelocation ? findOutletByCode(a.old_outlet_code) : null;
@@ -20371,6 +20393,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           const oldNavUrl = hasOldLatLng ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(Number(oldLat))},${encodeURIComponent(Number(oldLng))}` : '';
           const lbl = (text) => `<span style="color:#0f172a; font-weight:700;">${esc(text)}:</span>`;
           marker.bindPopup(`
+            ${isOnTruck ? `<span class="badge badge-info" style="margin-bottom:6px; display:inline-block;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</span><br>` : ''}
             ${a.flagged ? `<span class="badge badge-rejected" style="margin-bottom:6px; display:inline-block;">🚩 ດ່ວນ - ຕິດທຸງໄວ້</span><br>` : ''}
             <b>${esc(a.tracking_no || '-')}</b><br>
             <span class="badge badge-default">${esc(a.status || '-')}</span><br>
@@ -20408,6 +20431,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         legend.id = 'mapDoctypeLegend';
         legend.className = 'map-doctype-legend';
         legend.innerHTML =
+          (points.some(a => a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && a.dispatched_at) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#1d4ed8;"></span><b style="color:#1d4ed8;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</b></div>` : '') +
           (points.some(a => a.flagged) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#ef4444;"></span><b style="color:#ef4444;">🚩 ດ່ວນ (ຕິດທຸງ)</b></div>` : '') +
           [...docTypesSeen].sort().map(dt =>
           `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:${colorForDocType(dt === 'ບໍ່ລະບຸ' ? '' : dt)};"></span>${esc(dt)}</div>`
@@ -21094,14 +21118,55 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const data = await res.json();
         const items = data.items || [];
         const stockItems = data.stock_items || [];
-        document.getElementById('dispatchListCount').textContent = (items.length + stockItems.length) ? `(${items.length + stockItems.length})` : '';
-        const stockHtml = stockItems.map(i => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color,#e2e8f0);"><b>⚡ ຕູ້ດ່ວນບໍ່ມີເອກະສານ</b><br><span style="color:var(--text-muted);">${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span></div>`).join('');
-        box.innerHTML = (items.length || stockItems.length)
-          ? stockHtml + items.map(i => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color,#e2e8f0);"><b>${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b><br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span></div>`).join('')
-          : '<span style="color:var(--text-muted);">ບໍ່ມີຕູ້ຢູ່ເທິງລົດ</span>';
+        const total = items.length + stockItems.length;
+        const isAdminRole = currentUser && currentUser.role === 'admin';
+        const openCount = items.filter(i => !i.truck_closed_at).length + stockItems.filter(i => !i.truck_closed_at).length;
+        document.getElementById('dispatchListCount').textContent = total ? `(${total})` : '';
+        const closeBtn = document.getElementById('dispatchCloseBtn');
+        closeBtn.disabled = openCount === 0;
+        document.getElementById('dispatchCloseCount').textContent = openCount ? `(${openCount} ຕູ້)` : '';
+        const row = (inner, closed, cancelArgs) => `<div style="padding:10px 0; border-bottom:1px solid var(--border-color,#e2e8f0); display:flex; gap:10px; align-items:center; justify-content:space-between;">
+          <div style="min-width:0;">${inner}</div>
+          ${closed && !isAdminRole
+            ? '<span class="badge badge-approved" style="white-space:nowrap;"><i class="fa-solid fa-lock"></i> ປິດລົດແລ້ວ</span>'
+            : `<button type="button" class="btn-act btn-delete" style="white-space:nowrap;" onclick="dispatchCancel(${cancelArgs})"><i class="fa-solid fa-rotate-left mr-1"></i> ຍົກເລີກ</button>`}
+        </div>`;
+        const stockHtml = stockItems.map(i => row(`<b>⚡ ຕູ້ດ່ວນບໍ່ມີເອກະສານ</b>${i.truck_closed_at ? ' 🔒' : ''}<br><span style="color:var(--text-muted);">${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span>`, !!i.truck_closed_at, `null, ${Number(i.id)}`)).join('');
+        const assetHtml = items.map(i => row(`<b>${i.flagged ? '🚩 ' : ''}${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b>${i.truck_closed_at ? ' 🔒' : ''}<br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span>`, !!i.truck_closed_at, `${Number(i.id)}, null`)).join('');
+        box.innerHTML = total ? stockHtml + assetHtml : '<span style="color:var(--text-muted);">ບໍ່ມີຕູ້ຢູ່ເທິງລົດ</span>';
       } catch (e) {
         box.textContent = 'ໂຫລດລາຍການບໍ່ສຳເລັດ';
       }
+    }
+
+    async function dispatchCancel(id, stockId) {
+      if (!confirm('ຍົກເລີກການຂຶ້ນລົດຂອງຕູ້ນີ້? (ຕູ້ຈະກັບຄືນສະຖານະກ່ອນຂຶ້ນລົດ)')) return;
+      try {
+        const res = await fetch('/api/asset-delivery/dispatch-cancel', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(stockId ? { userId: currentUser.id, stock_id: stockId } : { userId: currentUser.id, id })
+        });
+        const data = await res.json();
+        if (res.ok) { dispatchSetMsg('↩ ' + (data.message || 'ຍົກເລີກແລ້ວ'), '#d97706'); }
+        else alert(data.error || 'ບໍ່ສາມາດຍົກເລີກໄດ້');
+        dispatchLoadList();
+      } catch (e) { alert('ເກີດຂໍ້ຜິດພາດໃນການຍົກເລີກ'); }
+    }
+
+    async function dispatchCloseTruck() {
+      if (!confirm('ປິດລົດ? ຕູ້ທັງໝົດທີ່ຢູ່ເທິງລົດຈະຖືກລັອກ ແລະ ຍົກເລີກບໍ່ໄດ້ອີກ (ຍົກເວັ້ນ Admin)')) return;
+      const btn = document.getElementById('dispatchCloseBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/asset-delivery/close-truck', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id })
+        });
+        const data = await res.json();
+        if (res.ok) dispatchSetMsg('🔒 ' + (data.message || 'ປິດລົດແລ້ວ'), '#16a34a');
+        else alert(data.error || 'ບໍ່ສາມາດປິດລົດໄດ້');
+      } catch (e) { alert('ເກີດຂໍ້ຜິດພາດໃນການປິດລົດ'); }
+      dispatchLoadList();
     }
 
     let deliverCurrentStep = 1;

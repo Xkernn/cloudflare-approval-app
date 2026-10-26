@@ -1431,6 +1431,8 @@ const ROUTE_ROLES = {
   "/api/no-doc-delivery": ROLE_STAFF,
   "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ອອກສາງຂຶ້ນລົດ — warehouse / delivery / admin
   "/api/asset-delivery/on-truck": ROLE_STAFF,
+  "/api/asset-delivery/dispatch-cancel": ROLE_STAFF, // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ)
+  "/api/asset-delivery/close-truck": ROLE_STAFF, // ປິດລົດ (ຈົບການຂຶ້ນຕູ້)
   "/api/asset-delivery/dispatch-stock-lookup": ROLE_STAFF, // ຄົ້ນຫາຕູ້ໃນສະຕັອກ (ຕູ້ດ່ວນທີ່ບໍ່ມີ Asset Tracking)
   "/api/cooler-event": ROLE_STAFF,
   "/api/cooler-event/return": ROLE_STAFF,
@@ -1947,6 +1949,28 @@ async function markWarehouseStockDeliveredToOutlet(env, { qr_code, serial_number
   }
 }
 
+// ຍົກເລີກການຂຶ້ນລົດ: ສະຕັອກ 'on_truck' -> 'in_warehouse' (ບັນທຶກປະຫວັດ) — ບໍ່ throw error
+async function restoreWarehouseStockFromTruck(env, { id, qr_code, serial_number }, actorEmail, note) {
+  try {
+    let stock = null;
+    if (id) stock = await env.DB.prepare("SELECT * FROM warehouse_stock WHERE id = ?").bind(id).first();
+    if (!stock && qr_code) stock = await env.DB.prepare("SELECT * FROM warehouse_stock WHERE qr_code = ? AND qr_code != '' AND status = 'on_truck' ORDER BY updated_at DESC LIMIT 1").bind(qr_code).first();
+    if (!stock && serial_number) stock = await env.DB.prepare("SELECT * FROM warehouse_stock WHERE serial_number = ? AND serial_number != '' AND status = 'on_truck' ORDER BY updated_at DESC LIMIT 1").bind(serial_number).first();
+    if (!stock || stock.status !== "on_truck") return false;
+    await env.DB.prepare("UPDATE warehouse_stock SET status = 'in_warehouse', truck_closed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(stock.id).run();
+    await env.DB.prepare(
+      `INSERT INTO warehouse_stock_history
+         (stock_id, warehouse_id, old_warehouse_id, action, cooler_brand, cooler_type, cooler_model, qr_code, serial_number, capex, old_status, new_status, changed_by, notes)
+       VALUES (?, ?, NULL, 'update', ?, ?, ?, ?, ?, ?, 'on_truck', 'in_warehouse', ?, ?)`
+    ).bind(stock.id, stock.warehouse_id, stock.cooler_brand, stock.cooler_type, stock.cooler_model,
+      stock.qr_code, stock.serial_number, stock.capex, actorEmail || null, note || null).run();
+    return true;
+  } catch (e) {
+    console.error("restoreWarehouseStockFromTruck", e);
+    return false;
+  }
+}
+
 // ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ: 'in_warehouse' / 'reserved' -> 'on_truck' (ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ)
 // ສາງເດີມຄືເກົ່າ (ຍັງບໍ່ຍ້າຍໄປສາງ "ຮ້ານຄ້າ" ຈົນກວ່າຈະຈັດສົ່ງສຳເລັດ) — ບໍ່ throw error ບໍ່ໃຫ້ກະທົບຂັ້ນຕອນຫຼັກ
 async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorEmail, note) {
@@ -1964,7 +1988,7 @@ async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorE
     }
     if (!stock || (stock.status !== "in_warehouse" && stock.status !== "reserved")) return;
     await env.DB.prepare(
-      "UPDATE warehouse_stock SET status = 'on_truck', updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      "UPDATE warehouse_stock SET status = 'on_truck', truck_closed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     ).bind(stock.id).run();
     await env.DB.prepare(
       `INSERT INTO warehouse_stock_history
@@ -9304,7 +9328,7 @@ export default {
           if (linked) return Response.json({ error: "ຕູ້ນີ້ມີໃນ Asset Tracking ແລ້ວ — ກະລຸນາສະແກນຜ່ານ Asset (ຕ້ອງເຊັນເອກະສານຄົບ ຫຼື ຕິດທຸງດ່ວນ)" }, { status: 400 });
           const actor = requester.email || String(userId);
           const upd = await env.DB.prepare(
-            "UPDATE warehouse_stock SET status = 'on_truck', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status IN ('in_warehouse', 'reserved')"
+            "UPDATE warehouse_stock SET status = 'on_truck', truck_closed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status IN ('in_warehouse', 'reserved')"
           ).bind(stock.id).run();
           if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະຕູ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາສະແກນໃໝ່" }, { status: 409 });
           try {
@@ -9362,7 +9386,7 @@ export default {
 
         const actor = requester.email || String(userId);
         const upd = await env.DB.prepare(
-          `UPDATE assets SET status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, last_update = CURRENT_TIMESTAMP
+          `UPDATE assets SET dispatch_prev_status = status, status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, truck_closed_at = NULL, last_update = CURRENT_TIMESTAMP
            WHERE id = ? AND status != ?`
         ).bind(ON_TRUCK_STATUS, actor, id, DELIVERED_STATUS).run();
         if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະ Asset ນີ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາສະແກນໃໝ່" }, { status: 409 });
@@ -9398,15 +9422,74 @@ export default {
       return Response.json({ found: true, item: rows[0], has_asset: !!linked });
     }
 
+    // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ): ຕູ້ກັບຄືນສະຖານະກ່ອນຂຶ້ນລົດ + ສະຕັອກກັບເປັນ "ຢູ່ໃນສາງ" — ຫຼັງ "ປິດລົດ" ແລ້ວ ສະເພາະ Admin ຍົກເລີກໄດ້
+    if (url.pathname === "/api/asset-delivery/dispatch-cancel" && request.method === "POST") {
+      try {
+        const { userId, id, stock_id } = await request.json();
+        if (!userId || (!id && !stock_id)) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        const requester = await env.DB.prepare("SELECT role, email FROM users WHERE id = ?").bind(userId).first();
+        if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
+        const actor = requester.email || String(userId);
+        const isAdminRole = requester.role === "admin";
+        const ON_TRUCK_STATUS = "ຢູ່ລະຫວ່າງຈັດສົ່ງ";
+
+        if (!id && stock_id) {
+          const stock = await env.DB.prepare("SELECT status, truck_closed_at FROM warehouse_stock WHERE id = ?").bind(stock_id).first();
+          if (!stock || stock.status !== "on_truck") return Response.json({ error: "ຕູ້ນີ້ບໍ່ໄດ້ຢູ່ເທິງລົດ" }, { status: 400 });
+          if (stock.truck_closed_at && !isAdminRole) return Response.json({ error: "ປິດລົດແລ້ວ — ຍົກເລີກບໍ່ໄດ້ (ໃຫ້ Admin ຍົກເລີກ)" }, { status: 400 });
+          await restoreWarehouseStockFromTruck(env, { id: stock_id }, actor, "ຍົກເລີກການຂຶ້ນລົດ (ຕູ້ດ່ວນບໍ່ມີເອກະສານ)");
+          return Response.json({ message: "ຍົກເລີກການຂຶ້ນລົດແລ້ວ — ຕູ້ກັບຄືນສະຕັອກສາງ" });
+        }
+
+        const a = await env.DB.prepare("SELECT * FROM assets WHERE id = ?").bind(id).first();
+        if (!a) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
+        if (a.status !== ON_TRUCK_STATUS || !a.dispatched_at) return Response.json({ error: "ຕູ້ນີ້ບໍ່ໄດ້ຢູ່ເທິງລົດ (ອາດຍົກເລີກ ຫຼື ຈັດສົ່ງໄປແລ້ວ)" }, { status: 400 });
+        if (a.truck_closed_at && !isAdminRole) return Response.json({ error: "ປິດລົດແລ້ວ — ຍົກເລີກບໍ່ໄດ້ (ໃຫ້ Admin ຍົກເລີກ)" }, { status: 400 });
+        const prev = (a.dispatch_prev_status && a.dispatch_prev_status !== ON_TRUCK_STATUS) ? a.dispatch_prev_status : WAITING_DISPATCH_STATUS;
+        const upd = await env.DB.prepare(
+          `UPDATE assets SET status = ?, dispatched_at = NULL, dispatched_by = NULL, truck_closed_at = NULL, dispatch_prev_status = NULL, last_update = CURRENT_TIMESTAMP
+           WHERE id = ? AND status = ? AND dispatched_at IS NOT NULL`
+        ).bind(prev, id, ON_TRUCK_STATUS).run();
+        if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະຕູ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາໂຫລດໃໝ່" }, { status: 409 });
+        await restoreWarehouseStockFromTruck(env, { qr_code: a.qr_code, serial_number: a.serial_number }, actor, `ຍົກເລີກການຂຶ້ນລົດ - Tracking No ${a.tracking_no}`);
+        runInBackground(ctx, notifyMdeUserOfStatusChange(env, a.mde_code, a.tracking_no, a.outlet_name, prev));
+        return Response.json({ message: `ຍົກເລີກການຂຶ້ນລົດແລ້ວ — ສະຖານະກັບເປັນ "${prev}"` });
+      } catch (e) {
+        console.error("/api/asset-delivery/dispatch-cancel", e);
+        return Response.json({ error: "ບໍ່ສາມາດຍົກເລີກໄດ້" }, { status: 500 });
+      }
+    }
+
+    // ປິດລົດ: ຈົບການຂຶ້ນຕູ້ — ຕູ້ທີ່ຢູ່ເທິງລົດທັງໝົດຖືກລັອກ (ຍົກເລີກບໍ່ໄດ້ ຍົກເວັ້ນ Admin)
+    if (url.pathname === "/api/asset-delivery/close-truck" && request.method === "POST") {
+      try {
+        const { userId } = await request.json();
+        const requester = userId ? await env.DB.prepare("SELECT role FROM users WHERE id = ?").bind(userId).first() : null;
+        if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
+        const r1 = await env.DB.prepare(
+          "UPDATE assets SET truck_closed_at = CURRENT_TIMESTAMP WHERE status = ? AND dispatched_at IS NOT NULL AND truck_closed_at IS NULL"
+        ).bind("ຢູ່ລະຫວ່າງຈັດສົ່ງ").run();
+        const r2 = await env.DB.prepare(
+          "UPDATE warehouse_stock SET truck_closed_at = CURRENT_TIMESTAMP WHERE status = 'on_truck' AND truck_closed_at IS NULL"
+        ).run();
+        const n = ((r1.meta && r1.meta.changes) || 0) + ((r2.meta && r2.meta.changes) || 0);
+        if (n === 0) return Response.json({ error: "ບໍ່ມີຕູ້ໃໝ່ຢູ່ເທິງລົດໃຫ້ປິດລົດ" }, { status: 400 });
+        return Response.json({ message: `ປິດລົດແລ້ວ — ${n} ຕູ້ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ`, count: n });
+      } catch (e) {
+        console.error("/api/asset-delivery/close-truck", e);
+        return Response.json({ error: "ບໍ່ສາມາດປິດລົດໄດ້" }, { status: 500 });
+      }
+    }
+
     // ລາຍການຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ (ສະແກນອອກສາງແລ້ວ ຍັງບໍ່ທັນຈັດສົ່ງສຳເລັດ)
     if (url.pathname === "/api/asset-delivery/on-truck" && request.method === "GET") {
       const { results } = await env.DB.prepare(
-        `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by
+        `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by, truck_closed_at, flagged
          FROM assets WHERE status = ? AND dispatched_at IS NOT NULL ORDER BY dispatched_at DESC LIMIT 200`
       ).bind("ຢູ່ລະຫວ່າງຈັດສົ່ງ").all();
       // ຕູ້ດ່ວນບໍ່ມີເອກະສານທີ່ຂຶ້ນລົດຈາກສະຕັອກໂດຍກົງ (ບໍ່ຜູກ Asset Tracking)
       const { results: stockOnTruck } = await env.DB.prepare(
-        `SELECT s.id, s.cooler_brand, s.cooler_type, s.qr_code, s.updated_at AS dispatched_at
+        `SELECT s.id, s.cooler_brand, s.cooler_type, s.qr_code, s.updated_at AS dispatched_at, s.truck_closed_at
          FROM warehouse_stock s WHERE s.status = 'on_truck'
            AND NOT EXISTS (SELECT 1 FROM assets a WHERE (a.qr_code = s.qr_code AND IFNULL(s.qr_code,'') != '') OR (a.serial_number = s.serial_number AND IFNULL(s.serial_number,'') != ''))
          ORDER BY s.updated_at DESC LIMIT 100`
