@@ -1424,6 +1424,8 @@ const ROUTE_ROLES = {
   "/api/admin/update-asset-request-status": ROLE_STAFF, // warehouse/delivery ອະນຸມັດຄຳຂໍໄດ້
   "/api/asset-status/update": ROLE_ADMIN,
   "/api/no-doc-delivery": ROLE_STAFF,
+  "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ອອກສາງຂຶ້ນລົດ — warehouse / delivery / admin
+  "/api/asset-delivery/on-truck": ROLE_STAFF,
   "/api/cooler-event": ROLE_STAFF,
   "/api/cooler-event/return": ROLE_STAFF,
   "/api/cooler-writeoff": ROLE_WH, // ລາຍງານຕູ້ແຊ່ສະສາງ - admin + warehouse ເທົ່ານັ້ນ (ລຶບ = admin ຜ່ານ /api/admin/delete-cooler-writeoff)
@@ -1939,6 +1941,38 @@ async function markWarehouseStockDeliveredToOutlet(env, { qr_code, serial_number
   }
 }
 
+// ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ: 'in_warehouse' / 'reserved' -> 'on_truck' (ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ)
+// ສາງເດີມຄືເກົ່າ (ຍັງບໍ່ຍ້າຍໄປສາງ "ຮ້ານຄ້າ" ຈົນກວ່າຈະຈັດສົ່ງສຳເລັດ) — ບໍ່ throw error ບໍ່ໃຫ້ກະທົບຂັ້ນຕອນຫຼັກ
+async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorEmail, note) {
+  try {
+    let stock = null;
+    if (qr_code) {
+      stock = await env.DB.prepare(
+        "SELECT * FROM warehouse_stock WHERE qr_code = ? AND qr_code != '' ORDER BY updated_at DESC LIMIT 1"
+      ).bind(qr_code).first();
+    }
+    if (!stock && serial_number) {
+      stock = await env.DB.prepare(
+        "SELECT * FROM warehouse_stock WHERE serial_number = ? AND serial_number != '' ORDER BY updated_at DESC LIMIT 1"
+      ).bind(serial_number).first();
+    }
+    if (!stock || (stock.status !== "in_warehouse" && stock.status !== "reserved")) return;
+    await env.DB.prepare(
+      "UPDATE warehouse_stock SET status = 'on_truck', updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+    ).bind(stock.id).run();
+    await env.DB.prepare(
+      `INSERT INTO warehouse_stock_history
+         (stock_id, warehouse_id, old_warehouse_id, action, cooler_brand, cooler_type, cooler_model, qr_code, serial_number, capex, old_status, new_status, changed_by, notes)
+       VALUES (?, ?, NULL, 'update', ?, ?, ?, ?, ?, ?, ?, 'on_truck', ?, ?)`
+    ).bind(
+      stock.id, stock.warehouse_id, stock.cooler_brand, stock.cooler_type, stock.cooler_model,
+      stock.qr_code, stock.serial_number, stock.capex, stock.status, actorEmail || null, note || null
+    ).run();
+  } catch (e) {
+    console.error("markWarehouseStockOnTruck", e);
+  }
+}
+
 // ຄູ່ກັນກັບ markWarehouseStockDeliveredToOutlet() ຂ້າງເທິງ — ໃຊ້ຕອນ "ລຶບ" Asset Tracking ອອກ
 // (admin ລຶບລາຍການທີ່ອະນຸມັດ/ອອກໄປຮ້ານແລ້ວຜິດ) ໃຫ້ QR/Serial ດຽວກັນນັ້ນກັບຄືນເປັນ "ຢູ່ໃນສາງ" ອັດຕະໂນມັດ
 // ບໍ່ແຕະຕ້ອງສະຕັອກທີ່ບໍ່ແມ່ນສະຖານະ 'outlet' ແລ້ວ (ເຊັ່ນ ຖືກສະສາງ/ໄປໃຊ້ Event ໄປແລ້ວ) ແລະ ບໍ່ throw error
@@ -1955,7 +1989,7 @@ async function restoreWarehouseStockToWarehouse(env, { qr_code, serial_number },
         "SELECT * FROM warehouse_stock WHERE serial_number = ? AND serial_number != '' ORDER BY updated_at DESC LIMIT 1"
       ).bind(serial_number).first();
     }
-    if (!stock || (stock.status !== "outlet" && stock.status !== "reserved")) return; // ບໍ່ພົບ ຫຼື ບໍ່ແມ່ນ "ຈອງແລ້ວ/ອອກໄປຮ້ານແລ້ວ" - ບໍ່ຕ້ອງເຮັດຫຍັງຕໍ່
+    if (!stock || (stock.status !== "outlet" && stock.status !== "reserved" && stock.status !== "on_truck")) return; // ບໍ່ພົບ ຫຼື ບໍ່ແມ່ນ "ຈອງແລ້ວ/ຢູ່ເທິງລົດ/ອອກໄປຮ້ານແລ້ວ" - ບໍ່ຕ້ອງເຮັດຫຍັງຕໍ່
 
     const backWhId = await resolveReturnWarehouseId(env, stock);
     const fromWhId = backWhId !== stock.warehouse_id ? stock.warehouse_id : null;
@@ -3753,7 +3787,7 @@ export default {
         if (!wh) return Response.json({ error: "ບໍ່ພົບສາງທີ່ເລືອກ" }, { status: 400 });
 
         const coolerStatusVal = ["new", "second_hand", "broken"].includes(cooler_status) ? cooler_status : "new";
-        let statusVal = ["in_warehouse", "reserved", "outlet", "event", "shipped_out", "pending_write_off", "write_off"].includes(status) ? status : "in_warehouse";
+        let statusVal = ["in_warehouse", "reserved", "on_truck", "outlet", "event", "shipped_out", "pending_write_off", "write_off"].includes(status) ? status : "in_warehouse";
         const actorEmail = (session && session.email) || null;
 
         // ຖ້າ QR/Serial ນີ້ ຕົງກັບ Asset ທີ່ຈັດສົ່ງໄປຮ້ານແລ້ວ (status ສຳເລັດ ແລະ ບໍ່ແມ່ນ doc_type "ເກັບຄືນສາງ")
@@ -9211,18 +9245,81 @@ export default {
       });
     }
 
+    // 7d-2. ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ — ກວດວ່າໄປຖືກຮ້ານ (ປ້ອນ Outlet Code ປາຍທາງ ຕ້ອງກົງກັບ Asset) ແລ້ວ Asset = "ຢູ່ລະຫວ່າງຈັດສົ່ງ", ສະຕັອກ = "ຢູ່ເທິງລົດ"
+    if (url.pathname === "/api/asset-delivery/dispatch" && request.method === "POST") {
+      try {
+        const { userId, id, outlet_code } = await request.json();
+        if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        const checkCode = String(outlet_code || "").trim();
+        if (!checkCode) return Response.json({ error: "ກະລຸນາປ້ອນ Outlet Code ຂອງຮ້ານປາຍທາງ ເພື່ອກວດວ່າໄປຖືກຮ້ານ" }, { status: 400 });
+
+        const requester = await env.DB.prepare("SELECT role, email FROM users WHERE id = ?").bind(userId).first();
+        if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
+
+        const assetRow = await env.DB.prepare("SELECT * FROM assets WHERE id = ?").bind(id).first();
+        if (!assetRow) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
+
+        const DELIVERED_STATUS = "ສຳເລັດ";
+        const ON_TRUCK_STATUS = "ຢູ່ລະຫວ່າງຈັດສົ່ງ";
+        if (assetRow.status === DELIVERED_STATUS) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
+        if (assetRow.doc_type === RETURN_TO_WAREHOUSE_DOC_TYPE) {
+          return Response.json({ error: "ເອກະສານ \"ເກັບຄືນສາງ\" ບໍ່ຕ້ອງສະແກນອອກສາງ (ຕູ້ມາຈາກຮ້ານ)" }, { status: 400 });
+        }
+        if (assetRow.status === ON_TRUCK_STATUS && assetRow.dispatched_at) {
+          return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນອອກສາງເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
+        }
+        if (String(assetRow.outlet_code || "").trim().toLowerCase() !== checkCode.toLowerCase()) {
+          return Response.json({
+            code: "WRONG_OUTLET",
+            error: `ຜິດຮ້ານ! ຕູ້ນີ້ຕ້ອງສົ່ງໄປ ${assetRow.outlet_code || "-"} - ${assetRow.outlet_name || "-"} (ບໍ່ແມ່ນ ${checkCode})`,
+          }, { status: 400 });
+        }
+
+        const actor = requester.email || String(userId);
+        const upd = await env.DB.prepare(
+          `UPDATE assets SET status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, last_update = CURRENT_TIMESTAMP
+           WHERE id = ? AND IFNULL(status, '') != ?`
+        ).bind(ON_TRUCK_STATUS, actor, id, DELIVERED_STATUS).run();
+        if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
+
+        await markWarehouseStockOnTruck(
+          env, { qr_code: assetRow.qr_code, serial_number: assetRow.serial_number }, actor,
+          `ສະແກນອອກສາງຂຶ້ນລົດ - Tracking No ${assetRow.tracking_no} (Outlet: ${assetRow.outlet_name || "-"})`
+        );
+        runInBackground(ctx, notifyMdeUserOfStatusChange(env, assetRow.mde_code, assetRow.tracking_no, assetRow.outlet_name, ON_TRUCK_STATUS));
+
+        return Response.json({ message: "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ — ຕູ້ກຳລັງເດີນທາງໄປຮ້ານ" });
+      } catch (e) {
+        console.error("/api/asset-delivery/dispatch", e);
+        return Response.json({ error: "ບໍ່ສາມາດບັນທຶກການສະແກນອອກສາງໄດ້" }, { status: 500 });
+      }
+    }
+
+    // ລາຍການຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ (ສະແກນອອກສາງແລ້ວ ຍັງບໍ່ທັນຈັດສົ່ງສຳເລັດ)
+    if (url.pathname === "/api/asset-delivery/on-truck" && request.method === "GET") {
+      const { results } = await env.DB.prepare(
+        `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by
+         FROM assets WHERE status = ? AND dispatched_at IS NOT NULL ORDER BY dispatched_at DESC LIMIT 200`
+      ).bind("ຢູ່ລະຫວ່າງຈັດສົ່ງ").all();
+      return Response.json({ items: results || [] }, { headers: { "Cache-Control": "no-store" } });
+    }
+
     // 7e. Delivery Confirmation - ยืนยันจัดส่ง (ถ่ายรูป 4 อย่าง: QR/Serial/CapEx/Asset -> อัปโหลดขึ้น R2 -> Status เปลี่ยนเป็น ສຳເລັດ)
     if (url.pathname === "/api/asset-delivery/confirm" && request.method === "POST") {
       try {
         const { userId, id, photo_qr, photo_serial, photo_capex, photo_asset, photo_document, sig_outlet, sig_outlet_name } = await request.json();
         if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
-        if (!sig_outlet) return Response.json({ error: "ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນການຈັດສົ່ງ" }, { status: 400 });
         if (!photo_qr || !photo_serial || !photo_capex || !photo_asset || !photo_document) {
           return Response.json({ error: "ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)" }, { status: 400 });
         }
 
         const requester = await env.DB.prepare("SELECT role, mde_code, email FROM users WHERE id = ?").bind(userId).first();
         if (!requester) return Response.json({ error: "ບໍ່ພົບຜູ້ໃຊ້ງານນີ້ໃນລະບົບ" }, { status: 404 });
+
+        // ລາຍເຊັນລູກຄ້າ: ບັງຄັບສະເພາະ role delivery (tablet ທີມຈັດສົ່ງ) — role ອື່ນບໍ່ຕ້ອງເຊັນ (ຖ້າສົ່ງມາກໍບໍ່ນຳໃຊ້)
+        const isDeliveryRole = requester.role === "delivery";
+        const sigData = isDeliveryRole ? sig_outlet : null;
+        if (isDeliveryRole && !sigData) return Response.json({ error: "ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນການຈັດສົ່ງ" }, { status: 400 });
 
         const assetRow = await env.DB.prepare("SELECT * FROM assets WHERE id = ?").bind(id).first();
         if (!assetRow) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
@@ -9239,7 +9336,7 @@ export default {
         // ກວດ + ອັບໂຫລດຮູບຂຶ້ນ R2 bucket (PHOTOS) ເກັບແຕ່ "key" ໄວ້ໃນ D1 (ຖ້າຮູບໃດຜິດ ຈະບໍ່ອັບໂຫລດຮູບໃດເລີຍ)
         const stamp = Date.now();
         // ລາຍເຊັນລູກຄ້າ: ມີໃບສັນຍາຢືມ -> ເກັບໃນຊ່ອງ sig_outlet ຂອງໃບສັນຍາ (ອອກໃນ PDF ໜ້າ 2), ບໍ່ມີໃບສັນຍາ -> ເກັບໃນ assets (delivery_sig_*)
-        const loanForSig = await findLoanContractForAsset(env, assetRow);
+        const loanForSig = sigData ? await findLoanContractForAsset(env, assetRow) : null;
         const sigName = String(sig_outlet_name || "").trim().slice(0, 100) || null;
         const sigKey = loanForSig
           ? `loan-contract/${loanForSig.id}/outlet-${stamp}.png`
@@ -9250,12 +9347,12 @@ export default {
           [photo_capex, `delivery/${id}/capex-${stamp}.jpg`],
           [photo_asset, `delivery/${id}/asset-${stamp}.jpg`],
           [photo_document, `delivery/${id}/document-${stamp}.jpg`],
-          [sig_outlet, sigKey],
+          [sigData, sigKey],
         ]);
 
         // ເງື່ອນໄຂ status != ສຳເລັດ ຢູ່ໃນ UPDATE ເອງ ກັນກົດຢືນຢັນຊ້ອນກັນສອງຄົນພ້ອມກັນ (ຄົນທີສອງຈະບໍ່ມີແຖວຖືກແກ້)
-        const sigSetSql = loanForSig ? "" : ", delivery_sig_outlet = ?, delivery_sig_name = ?, delivery_sig_at = CURRENT_TIMESTAMP";
-        const sigBinds = loanForSig ? [] : [sigSavedKey, sigName];
+        const sigSetSql = (loanForSig || !sigData) ? "" : ", delivery_sig_outlet = ?, delivery_sig_name = ?, delivery_sig_at = CURRENT_TIMESTAMP";
+        const sigBinds = (loanForSig || !sigData) ? [] : [sigSavedKey, sigName];
         const updateResult = await env.DB.prepare(
           `UPDATE assets SET status = ?, delivery_photo_qr = ?, delivery_photo_serial = ?, delivery_photo_capex = ?, delivery_photo_asset = ?, delivery_photo_document = ?,
                               delivered_at = CURRENT_TIMESTAMP, delivered_by = ?${sigSetSql}, last_update = CURRENT_TIMESTAMP

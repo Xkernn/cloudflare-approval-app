@@ -3097,6 +3097,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
           </div>
         </div>
         <div class="loan-type-list">
+          <button type="button" id="deliveryHubCardDispatch" class="loan-type-card" onclick="openDeliverySub('dispatchOut')">
+            <div class="loan-type-card-title"><i class="fa-solid fa-truck-ramp-box"></i> ສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ)</div>
+            <div class="loan-type-card-sub">ກວດວ່າໄປຖືກຮ້ານ → ຕູ້ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ</div>
+          </button>
           <button type="button" id="deliveryHubCardConfirm" class="loan-type-card" onclick="openDeliverySub('deliverConfirm')">
             <div class="loan-type-card-title"><i class="fa-solid fa-qrcode"></i> ລາຍງານການຈັດສົ່ງ</div>
             <div class="loan-type-card-sub">ສະແກນ QR ແລະ ຖ່າຍຮູບຢືນຢັນ → ສຳເລັດ</div>
@@ -3211,6 +3215,59 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         </div>
       </div>
 
+      <!-- VIEW: ສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ) — ກວດວ່າໄປຖືກຮ້ານ ແລ້ວຕູ້ = ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ -->
+      <div id="view-dispatch-out" class="hidden">
+        <div class="loan-subbar" style="margin-bottom: 12px;">
+          <button type="button" class="btn-back" onclick="deliverySubBack()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
+        </div>
+        <div class="page-header">
+          <div>
+            <h1>ສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ)</h1>
+            <p>ສະແກນຕູ້ → ກວດຮ້ານປາຍທາງ → ຢືນຢັນຂຶ້ນລົດ. ເມື່ອຮອດຮ້ານ ໃຫ້ໃຊ້ "ລາຍງານການຈັດສົ່ງ" (ສະແກນ, ຖ່າຍຮູບ, ລູກຄ້າເຊັນຮັບ)</p>
+          </div>
+        </div>
+
+        <div class="content-card" style="max-width: 560px;">
+          <div class="form-group">
+            <label>QR Code ຕູ້ແຊ່</label>
+            <div class="input-wrapper"><i class="fa-solid fa-qrcode"></i>
+              <input type="text" id="dispatchQrInput" class="form-control" placeholder="ສະແກນ ຫຼືປ້ອນ QR Code ແລ້ວກົດ Enter"
+                onkeydown="if(event.key==='Enter'){event.preventDefault(); dispatchLookup();}">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button type="button" onclick="dispatchLookup()" class="btn-add" style="flex:1; margin-left:0;"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+              <button type="button" onclick="openQrScanner('dispatchQrInput')" class="btn-add" style="flex:1; margin-left:0; background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);"><i class="fa-solid fa-qrcode mr-1"></i> ສະແກນ QR</button>
+            </div>
+          </div>
+          <p id="dispatchMsg" class="hidden" style="font-size: 13px; margin: 10px 0;"></p>
+
+          <div id="dispatchInfo" class="hidden" style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 16px; margin-top: 8px;">
+            <input type="hidden" id="dispatchAssetId">
+            <table style="width:100%; font-size: 13px; margin-bottom: 10px;">
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">Tracking No</td><td id="dispatchInfoTracking" style="font-weight:600;"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">ຮ້ານປາຍທາງ</td><td id="dispatchInfoOutlet" style="font-weight:700; font-size:15px;"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">ຕູ້ແຊ່</td><td id="dispatchInfoCooler"></td></tr>
+              <tr><td style="color: var(--text-muted); padding: 4px 0;">MDE Code</td><td id="dispatchInfoMde"></td></tr>
+            </table>
+            <div class="form-group">
+              <label>ກວດຮ້ານ: ປ້ອນ Outlet Code ຕາມໃບສົ່ງ ໃຫ້ກົງກັບຮ້ານປາຍທາງ</label>
+              <div class="input-wrapper"><i class="fa-solid fa-store"></i>
+                <input type="text" id="dispatchOutletInput" class="form-control" placeholder="Outlet Code ຂອງຮ້ານທີ່ຈະໄປສົ່ງ" autocomplete="off"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault(); dispatchConfirm();}">
+              </div>
+            </div>
+            <button type="button" id="dispatchConfirmBtn" class="btn-submit" onclick="dispatchConfirm()">
+              <i class="fa-solid fa-truck-ramp-box mr-1"></i> ຢືນຢັນຂຶ້ນລົດ — ກຳລັງໄປຮ້ານ
+            </button>
+          </div>
+        </div>
+
+        <div class="content-card" style="max-width: 560px; margin-top: 16px;">
+          <h3 style="font-size:15px; font-weight:700; margin-bottom:8px;"><i class="fa-solid fa-truck-fast mr-1"></i> ຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ <span id="dispatchListCount" style="color:var(--text-muted); font-weight:500;"></span></h3>
+          <div id="dispatchList" style="font-size:13px;"></div>
+        </div>
+      </div>
+
       <!-- VIEW 2b-2: ລາຍງານການຈັດສົ່ງ (สแกน QR + ถ่ายຮູບຢືນຢັນ -> Status = ສຳເລັດ) - ຮູບແບບຂັ້ນຕອນ (step wizard) -->
       <div id="view-delivery-confirm" class="hidden">
         <div class="loan-subbar" style="margin-bottom: 12px;">
@@ -3233,8 +3290,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             <div class="loan-step" data-step="3"><div class="loan-step-dot">3</div><span class="loan-step-label">CapEx / ຕູ້</span></div>
             <div class="loan-step-line"></div>
             <div class="loan-step" data-step="4"><div class="loan-step-dot">4</div><span class="loan-step-label">ເອກະສານ</span></div>
-            <div class="loan-step-line"></div>
-            <div class="loan-step" data-step="5"><div class="loan-step-dot">5</div><span class="loan-step-label">ລູກຄ້າເຊັນ</span></div>
+            <div class="loan-step-line" id="deliverStep5Line"></div>
+            <div class="loan-step" data-step="5" id="deliverStep5Dot"><div class="loan-step-dot">5</div><span class="loan-step-label">ລູກຄ້າເຊັນ</span></div>
           </div>
 
           <!-- STEP 1: ຄົ້ນຫາ Asset ດ້ວຍ QR Code -->
@@ -3334,7 +3391,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
             <div class="loan-nav-btns">
               <button type="button" class="btn-back" onclick="deliverPrevStep()"><i class="fa-solid fa-arrow-left mr-1"></i> ຍ້ອນກັບ</button>
-              <button type="button" class="btn-add" onclick="deliverNextStep()">ຕໍ່ໄປ <i class="fa-solid fa-arrow-right ml-1"></i></button>
+              <button type="button" id="deliverNextBtn4" class="btn-add" onclick="deliverNextStep()">ຕໍ່ໄປ <i class="fa-solid fa-arrow-right ml-1"></i></button>
+              <button type="button" id="deliverConfirmBtn4" onclick="confirmAssetDelivery()" class="btn-submit hidden" disabled>
+                <i class="fa-solid fa-check mr-1"></i> ຢືນຢັນຈັດສົ່ງສຳເລັດ
+              </button>
             </div>
           </div>
 
@@ -4697,6 +4757,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
             <select id="editStockStatus" class="form-control">
               <option value="in_warehouse">ຢູ່ໃນສາງ</option>
               <option value="reserved">ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ</option>
+              <option value="on_truck">ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</option>
               <option value="outlet">ອອກໄປຮ້ານແລ້ວ</option>
               <option value="event">ກຳລັງໃຊ້ງານ Event</option>
               <option value="shipped_out">ສົ່ງຕ່າງແຂວງແລ້ວ</option>
@@ -7938,7 +7999,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
        ຫຼືເປີດແອັບດ້ວຍ /?view=<ຊື່> ຕອນແອັບຍັງບໍ່ເປີດ. ຖ້າຍັງບໍ່ login ຈະຈື່ໄວ້ ແລ້ວພາໄປຫຼັງ login ສຳເລັດ */
     const DEEP_LINK_NAV = {
       dashboard: 'nav-dashboard', asset: 'nav-asset', map: 'nav-map', request: 'nav-request',
-      history: 'nav-history', historyHub: 'nav-history', deliveryHub: 'nav-delivery-hub', delivery: 'nav-history', deliverConfirm: 'nav-delivery-hub',
+      history: 'nav-history', historyHub: 'nav-history', deliveryHub: 'nav-delivery-hub', delivery: 'nav-history', deliverConfirm: 'nav-delivery-hub', dispatchOut: 'nav-delivery-hub',
       noDocDelivery: 'nav-delivery-hub', coolerEvent: 'nav-delivery-hub', coolerWriteOff: 'nav-delivery-hub', coolerWriteOffList: 'nav-delivery-hub', noDocDeliveryList: 'nav-delivery-hub', coolerEventList: 'nav-delivery-hub', profile: 'nav-profile',
       announcements: 'nav-announcements', warehouseStock: 'nav-warehouse-stock', stockCount: 'nav-stock-count', coolerMaster: 'nav-cooler-master', lostCooler: 'nav-lost-cooler', newCooler: 'nav-new-cooler', newCoolerHub: 'nav-new-cooler', shipTrip: 'nav-new-cooler', provBudget: 'nav-prov-budget', vteBudget: 'nav-vte-budget', teamBudget: 'nav-team-budget', shipPlan: 'nav-new-cooler', ncFill: 'nav-new-cooler',
       loanContract: 'nav-loan-contract', notifications: 'nav-notifications', playbook: 'nav-playbook'
@@ -7960,7 +8021,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const nav = navId ? document.getElementById(navId) : null;
       if (!nav || nav.classList.contains('hidden')) return false;
       // ຜູ້ໃຊ້ທົ່ວໄປ (role user) ບໍ່ມີສິດເຂົ້າລາຍງານໃນເມນູລວມ "ລາຍງານການຈັດສົ່ງ"
-      if (['deliverConfirm', 'noDocDelivery', 'noDocDeliveryList', 'coolerEvent', 'coolerEventList'].includes(view) && currentUser && currentUser.role === 'user') return false;
+      if (['dispatchOut', 'deliverConfirm', 'noDocDelivery', 'noDocDeliveryList', 'coolerEvent', 'coolerEventList'].includes(view) && currentUser && currentUser.role === 'user') return false;
       // ທີມຈັດສົ່ງ (delivery) ເຫັນສະເພາະປະຫວັດການຈັດສົ່ງ ບໍ່ເຫັນປະຫວັດການຂໍ Asset
       if (view === 'history' && currentUser && currentUser.role === 'delivery') return false;
       // ລາຍງານຕູ້ແຊ່ສະສາງ: admin + warehouse ເທົ່ານັ້ນ
@@ -8711,13 +8772,14 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
     /* ==================== ເມນູລວມ "ລາຍງານການຈັດສົ່ງ" (3 ຢ່າງ: ລາຍງານການຈັດສົ່ງ / ບໍ່ມີເອກະສານ / ຕູ້ແຊ່ Event) ====================
        ໜ້າ card -> ກົດ card ເປີດໜ້າຍ່ອຍ (view ເດີມ) ມີປຸ່ມ "ກັບຄືນ"; ປຸ່ມ Back ຂອງມືຖື/ບຣາວເຊີກັບມາໜ້າ card ດ້ວຍ */
-    const DELIVERY_SUB_VIEWS = { deliverConfirm: 'view-delivery-confirm', noDocDelivery: 'view-no-doc-delivery', coolerEvent: 'view-cooler-event', coolerWriteOff: 'view-cooler-writeoff', coolerWriteOffList: 'view-cooler-writeoff-list', noDocDeliveryList: 'view-no-doc-delivery-list', coolerEventList: 'view-cooler-event-list' };
+    const DELIVERY_SUB_VIEWS = { dispatchOut: 'view-dispatch-out', deliverConfirm: 'view-delivery-confirm', noDocDelivery: 'view-no-doc-delivery', coolerEvent: 'view-cooler-event', coolerWriteOff: 'view-cooler-writeoff', coolerWriteOffList: 'view-cooler-writeoff-list', noDocDeliveryList: 'view-no-doc-delivery-list', coolerEventList: 'view-cooler-event-list' };
     let deliverySubHistoryPushed = false;
 
     function renderDeliveryHub() {
       // role user ບໍ່ມີສິດອອກລາຍງານ (ເຫັນປະຫວັດການຈັດສົ່ງຜ່ານ Sidebar ເທົ່ານັ້ນ)
       const isPlainUser = !!currentUser && currentUser.role === 'user';
       document.getElementById('deliveryHubCardConfirm').classList.toggle('hidden', isPlainUser);
+      document.getElementById('deliveryHubCardDispatch').classList.toggle('hidden', isPlainUser);
       document.getElementById('deliveryHubCardNoDoc').classList.toggle('hidden', isPlainUser);
       document.getElementById('deliveryHubCardEvent').classList.toggle('hidden', isPlainUser);
       // ລາຍງານຕູ້ແຊ່ສະສາງ: ສະເພາະ admin + warehouse
@@ -8903,6 +8965,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       document.getElementById('view-asset-delivery-history').classList.add('hidden');
       document.getElementById('view-history-hub').classList.add('hidden');
       document.getElementById('view-delivery-confirm').classList.add('hidden');
+      document.getElementById('view-dispatch-out').classList.add('hidden');
       document.getElementById('view-loan-contract').classList.add('hidden');
       document.getElementById('view-no-doc-delivery').classList.add('hidden');
       document.getElementById('view-cooler-event').classList.add('hidden');
@@ -9005,6 +9068,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         // ທີມຈັດສົ່ງມີແຕ່ປະຫວັດການຈັດສົ່ງ -> ບໍ່ມີໜ້າ card ໃຫ້ກັບຄືນ
         document.getElementById('deliveryHistoryBackBar').classList.toggle('hidden', currentUser.role === 'delivery');
         loadAssetDeliveryHistory();
+      } else if (viewName === 'dispatchOut') {
+        document.getElementById('nav-delivery-hub').classList.add('active');
+        document.getElementById('view-dispatch-out').classList.remove('hidden');
+        dispatchReset();
+        dispatchLoadList();
       } else if (viewName === 'deliverConfirm') {
         document.getElementById('nav-delivery-hub').classList.add('active');
         document.getElementById('view-delivery-confirm').classList.remove('hidden');
@@ -9773,6 +9841,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       { key: 'loan:docs',       sub: true, nav: 'nav-loan-contract',   icon: 'fa-clipboard-check',    label: 'ເອກະສານສຳເລັດແລ້ວ',   tone: 'green',  go: () => { switchView('loanContract'); loanSwitchTab('docs'); } },
       { key: 'hist:request',    sub: true, nav: 'nav-history',         icon: 'fa-clock-rotate-left',  label: 'ປະຫວັດການຂໍລະຫັດຕູ້',   tone: 'blue',   notRoles: ['delivery'], go: () => switchView('history') },
       { key: 'hist:delivery',   sub: true, nav: 'nav-history',         icon: 'fa-truck-ramp-box',     label: 'ປະຫວັດການຈັດສົ່ງ',    tone: 'blue',   go: () => switchView('delivery') },
+      { key: 'dlv:dispatch',    sub: true, nav: 'nav-delivery-hub',    icon: 'fa-solid fa-truck-ramp-box', label: 'ສະແກນຕູ້ອອກສາງ',    tone: 'purple', go: () => switchView('dispatchOut') },
       { key: 'dlv:confirm',     sub: true, nav: 'nav-delivery-hub',    icon: 'fa-solid fa-truck-arrow-right',             label: 'ລາຍງານການຈັດສົ່ງ',    tone: 'purple', go: () => switchView('deliverConfirm') },
       { key: 'dlv:nodoc',       sub: true, nav: 'nav-delivery-hub',    icon: 'fa-solid fa-truck-fast', label: 'ຈັດສົ່ງຕູ້ບໍ່ມີເອກະສານ', tone: 'purple', go: () => switchView('noDocDelivery') },
       { key: 'dlv:event',       sub: true, nav: 'nav-delivery-hub',    icon: 'fa-solid fa-truck-medical',      label: 'ຕູ້ແຊ່ Event',        tone: 'purple', go: () => switchView('coolerEvent') },
@@ -12708,7 +12777,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     let dbStockList = [];
     let dbStockWarehouses = []; // ລາຍການສາງ active (ໃຊ້ຕື່ມ dropdown filter/modal)
 
-    const STOCK_STATUS_LABEL = { in_warehouse: 'ຢູ່ໃນສາງ', reserved: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ', outlet: 'ອອກໄປຮ້ານແລ້ວ', event: 'ກຳລັງໃຊ້ງານ Event', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', pending_write_off: 'ລໍຖ້າສະສາງ', write_off: 'ສະສາງ' };
+    const STOCK_STATUS_LABEL = { in_warehouse: 'ຢູ່ໃນສາງ', reserved: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ', on_truck: 'ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ', outlet: 'ອອກໄປຮ້ານແລ້ວ', event: 'ກຳລັງໃຊ້ງານ Event', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', pending_write_off: 'ລໍຖ້າສະສາງ', write_off: 'ສະສາງ' };
     const STOCK_COOLER_STATUS_LABEL = { new: 'ໃໝ່', second_hand: 'ມືສອງ', broken: 'ຊຳລຸດ' };
     // ໄຮໄລ້ສີ: ສະພາບຕູ້ (ໃໝ່ = ຂຽວ, ມືສອງ = ເຫຼືອງ, ຊຳລຸດ = ແດງ) ແລະ ສາງ (ແຕ່ລະສາງໄດ້ສີຄົງທີ່ຕາມ id ບໍ່ໃຊ້ສີຂຽວ/ແດງ ເພື່ອບໍ່ໃຫ້ສັບສົນກັບສະພາບຕູ້)
     const STOCK_COOLER_STATUS_COLOR = { new: ['#dcfce7', '#15803d'], second_hand: ['#fef3c7', '#b45309'], broken: ['#fee2e2', '#b91c1c'] };
@@ -12727,10 +12796,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       const label = STOCK_COOLER_STATUS_LABEL[status] || status || '-';
       return colorPill(esc(label), STOCK_COOLER_STATUS_COLOR[status] || ['#eaf0f0', '#4b6469']);
     }
-    const STOCK_STATUS_BADGE = { in_warehouse: 'badge-approved', reserved: 'badge-pending', outlet: 'badge-default', event: 'badge-pending', shipped_out: 'badge-purple', pending_write_off: 'badge-pending', write_off: 'badge-rejected' };
+    const STOCK_STATUS_BADGE = { in_warehouse: 'badge-approved', reserved: 'badge-pending', on_truck: 'badge-info', outlet: 'badge-default', event: 'badge-pending', shipped_out: 'badge-purple', pending_write_off: 'badge-pending', write_off: 'badge-rejected' };
 
     const STOCK_STATUS_FILTER_OPTIONS = [
-      { value: 'in_warehouse', label: 'ຢູ່ໃນສາງ' }, { value: 'reserved', label: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ' },
+      { value: 'in_warehouse', label: 'ຢູ່ໃນສາງ' }, { value: 'reserved', label: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ' }, { value: 'on_truck', label: 'ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ' },
       { value: 'outlet', label: 'ອອກໄປຮ້ານແລ້ວ' }, { value: 'event', label: 'ກຳລັງໃຊ້ງານ Event' }, { value: 'shipped_out', label: 'ສົ່ງຕ່າງແຂວງແລ້ວ' }, { value: 'pending_write_off', label: 'ລໍຖ້າສະສາງ' }, { value: 'write_off', label: 'ສະສາງ' }
     ];
     function setupStockFilters() {
@@ -12929,10 +12998,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
     /* ===================== Dashboard ພາບລວມສະຕັອກສາງ ===================== */
     const STOCK_STATUS_COLOR_HEX = {
-      in_warehouse: '#16a34a', reserved: '#f59e0b', outlet: '#0C8CA6',
+      in_warehouse: '#16a34a', reserved: '#f59e0b', on_truck: '#2563EB', outlet: '#0C8CA6',
       event: '#8b5cf6', shipped_out: '#6d28d9', pending_write_off: '#f97316', write_off: '#dc2626'
     };
-    const STOCK_STATUS_ORDER = ['in_warehouse', 'reserved', 'outlet', 'event', 'shipped_out', 'pending_write_off', 'write_off'];
+    const STOCK_STATUS_ORDER = ['in_warehouse', 'reserved', 'on_truck', 'outlet', 'event', 'shipped_out', 'pending_write_off', 'write_off'];
 
     async function refreshStockDashboard() {
       await loadWarehouseStockList();
@@ -13057,7 +13126,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 
       // ---- KPI (ກົດເພື່ອກອງສະຖານະ) ----
       const stCnt = sdCount(sdFilter(all, 'status'), 'status');
-      const icons = { in_warehouse: 'fa-warehouse', reserved: 'fa-bookmark', outlet: 'fa-store', event: 'fa-champagne-glasses', shipped_out: 'fa-truck-fast', pending_write_off: 'fa-hourglass-half', write_off: 'fa-ban' };
+      const icons = { in_warehouse: 'fa-warehouse', reserved: 'fa-bookmark', on_truck: 'fa-truck-ramp-box', outlet: 'fa-store', event: 'fa-champagne-glasses', shipped_out: 'fa-truck-fast', pending_write_off: 'fa-hourglass-half', write_off: 'fa-ban' };
       kpiEl.innerHTML = `<div class="sd-kpi static" style="--c:#334155;"><small><i class="fa-solid fa-boxes-stacked"></i>ທັງໝົດ (ຕາມຕົວກອງ)</small><b>${total.toLocaleString()}</b></div>` +
         STOCK_STATUS_ORDER.map(st => `<button type="button" class="sd-kpi${sdSl.status.has(st) ? ' sel' : ''}${sdSl.status.size && !sdSl.status.has(st) ? ' dim' : ''}" style="--c:${STOCK_STATUS_COLOR_HEX[st]};" ${sdAttr('status', st)}><small><i class="fa-solid ${icons[st]}"></i>${esc(STOCK_STATUS_LABEL[st])}</small><b>${(stCnt.get(st) || 0).toLocaleString()}</b></button>`).join('');
 
@@ -15146,7 +15215,7 @@ async function ncExportLots(lot) {
   const receipts = data.receipts || [], coolers = data.coolers || [];
   if (!receipts.length && !coolers.length) { alert('ຍັງບໍ່ມີຂໍ້ມູນລ໋ອດໃຫ້ Export'); return; }
   const statusLabel = { received: 'ຮັບເຂົ້າສາງແລ້ວ', confirmed: 'ຢືນຢັນແລ້ວ (ລໍຖ້າຮັບເຂົ້າສາງ)', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', pending: 'ຍັງບໍ່ໄດ້ສະແກນ' };
-  const stockLabel = { in_warehouse: 'ຢູ່ໃນສາງ', reserved: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ', outlet: 'ອອກໄປຮ້ານແລ້ວ', event: 'ກຳລັງໃຊ້ງານ Event', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', write_off: 'ສະສາງ' };
+  const stockLabel = { in_warehouse: 'ຢູ່ໃນສາງ', reserved: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ', on_truck: 'ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ', outlet: 'ອອກໄປຮ້ານແລ້ວ', event: 'ກຳລັງໃຊ້ງານ Event', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', write_off: 'ສະສາງ' };
   const lotRows = [], contRows = [];
   receipts.forEach(r => {
     let units = [];
@@ -19170,6 +19239,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         if (targetId === 'deliverQrCodeInput') {
           lookupAssetForDelivery();
         }
+        if (targetId === 'dispatchQrInput') {
+          dispatchLookup();
+        }
         if (targetId === 'scScanInput') {
           scScan();
         }
@@ -20851,11 +20923,108 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     let deliverPhotos = { qr: null, serial: null, capex: null, asset: null, document: null };
 
     /* ຂັ້ນຕອນ: 1.ຄົ້ນຫາ Asset 2.QR/Serial 3.CapEx/ຕູ້ 4.ເອກະສານ+ຢືນຢັນ */
+    /* ===================== ສະແກນຕູ້ອອກສາງ (ຂຶ້ນລົດ) ===================== */
+    function dispatchSetMsg(text, color) {
+      const el = document.getElementById('dispatchMsg');
+      el.textContent = text || '';
+      el.style.color = color || 'var(--text-muted)';
+      el.classList.toggle('hidden', !text);
+    }
+
+    function dispatchReset() {
+      document.getElementById('dispatchQrInput').value = '';
+      document.getElementById('dispatchOutletInput').value = '';
+      document.getElementById('dispatchAssetId').value = '';
+      document.getElementById('dispatchInfo').classList.add('hidden');
+      document.getElementById('dispatchConfirmBtn').disabled = false;
+      dispatchSetMsg('');
+    }
+
+    async function dispatchLookup() {
+      const qr = document.getElementById('dispatchQrInput').value.trim();
+      document.getElementById('dispatchInfo').classList.add('hidden');
+      if (!qr) { dispatchSetMsg('ກະລຸນາປ້ອນ QR Code ກ່ອນຄົ້ນຫາ', '#d97706'); return; }
+      try {
+        const res = await fetch(`/api/asset-tracking/lookup-by-qr?userId=${currentUser.id}&qr_code=${encodeURIComponent(qr)}`);
+        const data = await res.json();
+        if (!data.found) { dispatchSetMsg(data.error || 'ບໍ່ພົບ Asset ທີ່ມີ QR Code ນີ້', '#dc2626'); return; }
+        if (data.already_delivered) { dispatchSetMsg(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ', '#dc2626'); return; }
+        const a = data.item;
+        if (a.doc_type === 'ເກັບຄືນສາງ') { dispatchSetMsg('ເອກະສານ "ເກັບຄືນສາງ" ບໍ່ຕ້ອງສະແກນອອກສາງ', '#dc2626'); return; }
+        if (a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນອອກສາງເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
+        dispatchSetMsg('');
+        document.getElementById('dispatchAssetId').value = a.id;
+        document.getElementById('dispatchInfoTracking').textContent = a.tracking_no || '-';
+        document.getElementById('dispatchInfoOutlet').textContent = `${a.outlet_code || '-'} - ${a.outlet_name || '-'}`;
+        document.getElementById('dispatchInfoCooler').textContent = `${a.cooler_brand || '-'} / ${a.cooler_type || '-'}`;
+        document.getElementById('dispatchInfoMde').textContent = a.mde_code || '-';
+        document.getElementById('dispatchOutletInput').value = '';
+        document.getElementById('dispatchConfirmBtn').disabled = false;
+        document.getElementById('dispatchInfo').classList.remove('hidden');
+        document.getElementById('dispatchOutletInput').focus();
+      } catch (err) {
+        dispatchSetMsg('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset', '#dc2626');
+      }
+    }
+
+    async function dispatchConfirm() {
+      const id = document.getElementById('dispatchAssetId').value;
+      const code = document.getElementById('dispatchOutletInput').value.trim();
+      if (!id) return;
+      if (!code) { alert('ກະລຸນາປ້ອນ Outlet Code ຂອງຮ້ານປາຍທາງ ເພື່ອກວດວ່າໄປຖືກຮ້ານ'); return; }
+      const btn = document.getElementById('dispatchConfirmBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/asset-delivery/dispatch', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, id, outlet_code: code })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert(data.message || 'ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ');
+          dispatchReset();
+          dispatchLoadList();
+        } else {
+          alert(data.error || 'ບໍ່ສາມາດບັນທຶກໄດ້');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert('ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ');
+        btn.disabled = false;
+      }
+    }
+
+    async function dispatchLoadList() {
+      const box = document.getElementById('dispatchList');
+      try {
+        const res = await fetch('/api/asset-delivery/on-truck');
+        const data = await res.json();
+        const items = data.items || [];
+        document.getElementById('dispatchListCount').textContent = items.length ? `(${items.length})` : '';
+        box.innerHTML = items.length
+          ? items.map(i => `<div style="padding:8px 0; border-bottom:1px solid var(--border-color,#e2e8f0);"><b>${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b><br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span></div>`).join('')
+          : '<span style="color:var(--text-muted);">ບໍ່ມີຕູ້ຢູ່ເທິງລົດ</span>';
+      } catch (e) {
+        box.textContent = 'ໂຫລດລາຍການບໍ່ສຳເລັດ';
+      }
+    }
+
     let deliverCurrentStep = 1;
     const DELIVER_TOTAL_STEPS = 5;
     let deliverLoanContract = null; // ໃບສັນຍາຢືມທີ່ຜູກກັບ Asset ທີ່ກຳລັງຈັດສົ່ງ (ຖ້າມີ) — ໃຊ້ບອກວ່າລາຍເຊັນລູກຄ້າຈະໄປຢູ່ໃສ
 
+    /* ຂັ້ນຕອນທີ 5 (ລູກຄ້າເຊັນຮັບ) ສະເພາະ role delivery (tablet ຂອງທີມຈັດສົ່ງ) — role ອື່ນຢືນຢັນທີ່ຂັ້ນຕອນ 4 ຄືເກົ່າ */
+    function deliverNeedsSignature() { return !!currentUser && currentUser.role === 'delivery'; }
+    function deliverTotalSteps() { return deliverNeedsSignature() ? 5 : 4; }
+    function deliverApplyRoleSteps() {
+      const sig = deliverNeedsSignature();
+      ['deliverStep5Line', 'deliverStep5Dot', 'deliverNextBtn4'].forEach((id) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', !sig); });
+      const c4 = document.getElementById('deliverConfirmBtn4');
+      if (c4) c4.classList.toggle('hidden', sig);
+    }
+
     function deliverShowStep(step) {
+      deliverApplyRoleSteps();
       deliverCurrentStep = step;
       for (let i = 1; i <= DELIVER_TOTAL_STEPS; i++) {
         const panel = document.getElementById('deliverStep' + i);
@@ -20902,7 +21071,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     function deliverNextStep() {
       if (!deliverValidateStep(deliverCurrentStep)) return;
-      if (deliverCurrentStep < DELIVER_TOTAL_STEPS) deliverShowStep(deliverCurrentStep + 1);
+      if (deliverCurrentStep < deliverTotalSteps()) deliverShowStep(deliverCurrentStep + 1);
     }
 
     function deliverPrevStep() {
@@ -20912,6 +21081,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function updateDeliverConfirmBtnState() {
       const allDone = deliverPhotos.qr && deliverPhotos.serial && deliverPhotos.capex && deliverPhotos.asset && deliverPhotos.document;
       document.getElementById('deliverConfirmBtn').disabled = !allDone;
+      document.getElementById('deliverConfirmBtn4').disabled = !allDone;
     }
 
     function resetDeliveryConfirmForm() {
@@ -20929,6 +21099,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       document.getElementById('deliverSigName').value = '';
       clearSignaturePad('deliverSigCanvas');
       document.getElementById('deliverConfirmBtn').disabled = true;
+      document.getElementById('deliverConfirmBtn4').disabled = true;
       deliverShowStep(1);
     }
 
@@ -20961,8 +21132,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           return;
         }
 
-        msgEl.classList.add('hidden');
         const a = data.item;
+        // ຕູ້ທີ່ສະແກນອອກສາງຂຶ້ນລົດແລ້ວ = ກຳລັງສົ່ງ; ຖ້າຍັງບໍ່ສະແກນ ກໍຍັງຈັດສົ່ງໄດ້ (ເຕືອນເທົ່ານັ້ນ)
+        if (a.dispatched_at && a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ') { msgEl.textContent = 'ຕູ້ຢູ່ເທິງລົດ ກຳລັງສົ່ງ — ຮອດຮ້ານແລ້ວ ກະລຸນາຖ່າຍຮູບ ແລະ ໃຫ້ລູກຄ້າເຊັນຮັບ'; msgEl.style.color = '#16a34a'; msgEl.classList.remove('hidden'); }
+        else { msgEl.textContent = 'ໝາຍເຫດ: ຕູ້ນີ້ຍັງບໍ່ໄດ້ສະແກນອອກຈາກສາງ (ສະແກນຕູ້ອອກສາງ)'; msgEl.style.color = '#d97706'; msgEl.classList.remove('hidden'); }
         document.getElementById('deliverAssetId').value = a.id;
         deliverLoanContract = data.loan_contract || null;
         document.getElementById('deliverInfoTracking').textContent = a.tracking_no || '-';
@@ -23600,10 +23773,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)');
         return;
       }
-      const sigName = document.getElementById('deliverSigName').value.trim();
-      const sigData = getSignatureDataUrl('deliverSigCanvas');
-      if (!sigName) { alert('ກະລຸນາປ້ອນຊື່ລູກຄ້າທີ່ເຊັນຮັບ'); return; }
-      if (!sigData) { alert('ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນ'); return; }
+      const needSig = deliverNeedsSignature();
+      const sigName = needSig ? document.getElementById('deliverSigName').value.trim() : '';
+      const sigData = needSig ? getSignatureDataUrl('deliverSigCanvas') : null;
+      if (needSig && !sigName) { alert('ກະລຸນາປ້ອນຊື່ລູກຄ້າທີ່ເຊັນຮັບ'); return; }
+      if (needSig && !sigData) { alert('ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນ'); return; }
       if (!await appConfirm('ຢືນຢັນການຈັດສົ່ງ Asset ນີ້ສຳເລັດ?')) return;
 
       const btn = document.getElementById('deliverConfirmBtn');
