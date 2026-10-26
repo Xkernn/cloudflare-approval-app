@@ -7443,12 +7443,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       </div>
 
       <div class="form-group">
-        <label>ເຫດຜົນ / ໝາຍເຫດ</label>
-        <textarea id="reqReason" class="form-control" style="padding-left: 14px; min-height: 80px; resize: vertical;" placeholder="ລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset ນີ້"></textarea>
+        <label>ເຫດຜົນ / ໝາຍເຫດ <span style="color:#dc2626;">*</span> <span style="font-weight:400; color:#64748b;">(ບັງຄັບ)</span></label>
+        <textarea id="reqReason" class="form-control" style="padding-left: 14px; min-height: 80px; resize: vertical;" placeholder="ລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset ນີ້ (ບັງຄັບ)" required></textarea>
       </div>
 
       <div class="form-group">
-        <label>ຮູບຮ້ານຄ້າ <span style="font-weight:400; color:#64748b;">(ບໍ່ບັງຄັບ)</span></label>
+        <label>ຮູບຮ້ານຄ້າ <span style="color:#dc2626;">*</span> <span style="font-weight:400; color:#64748b;">(ບັງຄັບ - ຖ່າຍໃຫ້ເຫັນໜ້າຮ້ານ)</span></label>
         <input type="file" id="reqShopPhotoInput" accept="image/*" class="hidden" onchange="onReqShopPhotoChosen(event)">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <button type="button" class="btn-act" onclick="document.getElementById('reqShopPhotoInput').click()"><i class="fa-solid fa-camera mr-1"></i> ຖ່າຍຮູບ / ເລືອກຮູບ</button>
@@ -27383,7 +27383,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     let isSubmittingAssetRequest = false;
 
-    // ຮູບຮ້ານຄ້າທີ່ແນບກັບຄຳຂໍ (ບໍ່ບັງຄັບ)
+    // ຮູບຮ້ານຄ້າທີ່ແນບກັບຄຳຂໍ (ບັງຄັບ)
     let reqShopPhoto = null;
     function onReqShopPhotoChosen(event) {
       handlePhotoInput(event, 'reqShopPhotoPreview', (dataUrl) => {
@@ -27411,7 +27411,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const cooler_type = document.getElementById('reqCoolerType').value;
       const doc_type = document.getElementById('reqDocType').value;
       const contract_type = document.getElementById('reqContractType').value;
-      const reason = document.getElementById('reqReason').value;
+      const reason = document.getElementById('reqReason').value.trim();
 
       if (noOutletCode) {
         if (!outlet_name) {
@@ -27451,6 +27451,15 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         alert('ກະລຸນາເລືອກປະເພດສັນຍາ');
         return;
       }
+      if (!reason.trim()) {
+        alert('ກະລຸນາລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset');
+        document.getElementById('reqReason').focus();
+        return;
+      }
+      if (!reqShopPhoto) {
+        alert('ກະລຸນາຖ່າຍຮູບ / ເລືອກຮູບຮ້ານຄ້າ');
+        return;
+      }
 
       const submitBtn = document.getElementById('btnSubmitAssetRequest');
       isSubmittingAssetRequest = true;
@@ -27467,7 +27476,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: currentUser.id, outlet_code, outlet_name, cooler_brand, cooler_type, doc_type, contract_type, asset_condition, reason,
-            ...(reqShopPhoto ? { shop_photo: reqShopPhoto } : {}),
+            shop_photo: reqShopPhoto,
             ...(noOutletCode ? {
               outlet_owner: document.getElementById('reqOutletOwner').value.trim(),
               outlet_type: document.getElementById('reqOutletType').value.trim(),

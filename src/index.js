@@ -9437,6 +9437,13 @@ export default {
         if (!cooler_brand || !cooler_type) {
           return Response.json({ error: "ກະລຸນາເລືອກ Cooler Brand ແລະ Cooler Type ໃຫ້ຄົບ" }, { status: 400 });
         }
+        // ເຫດຜົນ ແລະ ຮູບຮ້ານຄ້າ ເປັນຂໍ້ມູນບັງຄັບ (ກວດຝັ່ງ server ດ້ວຍ ເພື່ອກັນການຂ້າມ UI)
+        if (!String(reason || "").trim()) {
+          return Response.json({ error: "ກະລຸນາລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset" }, { status: 400 });
+        }
+        if (!reqBody.shop_photo) {
+          return Response.json({ error: "ກະລຸນາແນບຮູບຮ້ານຄ້າ" }, { status: 400 });
+        }
 
         const requester = await env.DB.prepare("SELECT team, mde_code FROM users WHERE id = ?").bind(userId).first();
         if (!requester) return Response.json({ error: "ບໍ່ພົບຜູ້ໃຊ້ງານນີ້ໃນລະບົບ" }, { status: 404 });
@@ -9476,9 +9483,9 @@ export default {
           }
         }
 
-        // ຮູບຮ້ານຄ້າ (ບໍ່ບັງຄັບ): ກວດ + ອັບຂຶ້ນ R2 ກ່ອນ INSERT (ຮູບຜິດ -> ຈົບທີ່ນີ້ ບໍ່ສ້າງຄຳຂໍຄ້າງ)
+        // ຮູບຮ້ານຄ້າ (ບັງຄັບ): ກວດ + ອັບຂຶ້ນ R2 ກ່ອນ INSERT (ຮູບຜິດ -> ຈົບທີ່ນີ້ ບໍ່ສ້າງຄຳຂໍຄ້າງ)
         let shopPhotoKey = null;
-        if (reqBody.shop_photo) {
+        {
           try {
             [shopPhotoKey] = await savePhotosToR2(env, [[reqBody.shop_photo, `request/${userId}/shop-${Date.now()}.jpg`]]);
           } catch (photoErr) {
