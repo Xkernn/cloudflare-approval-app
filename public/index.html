@@ -5647,6 +5647,7 @@ body.dlv-popup-open { overflow: hidden; }
             <p id="nfHeroSub">ຕິດຕາມຜົນອະນຸມັດ ແລະ ອັບເດດສຳຄັນຂອງທ່ານຢູ່ບ່ອນດຽວ</p>
           </div>
           <div class="nf-hero-actions">
+            <button type="button" id="nfBtnVoiceTest" class="nf-btn nf-btn-light hidden" onclick="reqVoiceTest()"><i class="fa-solid fa-volume-high"></i> <span>ທົດສອບສຽງ</span></button>
             <button type="button" id="nfBtnReadAll" class="nf-btn nf-btn-light" onclick="markAllNotificationsRead()"><i class="fa-solid fa-check-double"></i> <span>ໝາຍວ່າອ່ານໝົດ</span></button>
             <button type="button" id="nfBtnClear" class="nf-btn nf-btn-ghost" onclick="clearAllNotifications()" title="ລຶບທັງໝົດ"><i class="fa-solid fa-trash-can"></i> <span>ລຶບທັງໝົດ</span></button>
           </div>
@@ -28686,6 +28687,20 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     let reqVoiceBusy = false;
 
     function reqVoiceEnabled() { return !!currentUser && currentUser.role === 'admin'; }
+    window.speechSynthesis && speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', () => { try { speechSynthesis.getVoices(); } catch (e) {} });
+
+    // ປຸ່ມ "ທົດສອບສຽງ" (ໜ້າແຈ້ງເຕືອນ, admin): ບອກວ່າເຄື່ອງມີສຽງໄທບໍ ແລ້ວອ່ານຕົວຢ່າງ
+    function reqVoiceTest() {
+      const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+      const th = reqVoicePickLao();
+      if (!('speechSynthesis' in window)) { alert('ບຣາວເຊີນີ້ບໍ່ຮອງຮັບການອ່ານສຽງ (speechSynthesis)'); reqVoiceChime(); return; }
+      if (!th) {
+        alert(`ເຄື່ອງນີ້ບໍ່ພົບສຽງພາສາໄທ (ພົບສຽງທັງໝົດ ${vs.length} ສຽງ). ຈະເຫຼີ້ນສຽງ \"ປິງ\" ແທນ — ຕິດຕັ້ງສຽງໄທໃນ Settings > Text-to-speech ຂອງເຄື່ອງ ຫຼືລອງ Chrome/Edge`);
+        reqVoiceChime();
+        return;
+      }
+      reqVoiceSpeak('มีคำขอเบิกตู้แช่ใหม่ จาก MDE ทดสอบ');
+    }
 
     function reqVoicePickLao() {
       try {
@@ -28711,8 +28726,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     // ບຣາວເຊີບັງຄັບໃຫ້ແຕະໜ້າຈໍ 1 ຄັ້ງກ່ອນ ຈຶ່ງອ່ານສຽງອັດຕະໂນມັດໄດ້ — ແຕະຄັ້ງທຳອິດເພື່ອປົດລັອກ
     document.addEventListener('pointerdown', function unlockReqVoice() {
       document.removeEventListener('pointerdown', unlockReqVoice);
+      try { const c = (typeof saCtx === 'function') ? saCtx() : null; if (c && c.state === 'suspended') c.resume().catch(() => {}); } catch (e) { /* ignore */ }
       try { if ('speechSynthesis' in window) { speechSynthesis.getVoices(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) { /* ignore */ }
     }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && reqVoiceEnabled()) refreshAllBadgeCounts(); });
 
     async function requestVoiceCheck(count) {
       if (!reqVoiceEnabled() || reqVoiceBusy) return;
@@ -28958,6 +28976,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const bRead = document.getElementById('nfBtnReadAll'), bClr = document.getElementById('nfBtnClear');
       if (bRead) bRead.disabled = unread === 0;
       if (bClr) bClr.disabled = items.length === 0;
+      const bVt = document.getElementById('nfBtnVoiceTest'); if (bVt) bVt.classList.toggle('hidden', !(currentUser && currentUser.role === 'admin'));
 
       // Pills: ທັງໝົດ / ຍັງບໍ່ອ່ານ / ຕາມປະເພດທີ່ມີ
       const kinds = new Map();
