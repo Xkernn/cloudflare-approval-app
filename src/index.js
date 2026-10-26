@@ -1629,7 +1629,7 @@ function cmLikeEscape(v) {
 }
 
 // ===== Manage Lost Cooler Master Data (Admin) =====
-// ຕູ້ທີ່ຢູ່ໃນ Cooler Master (ຕາມຮ້ານ) ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ -> suspected -> pending_smc (Pending SMC MDE) -> verifying (Pending DSM ຢືນຢັນ) -> confirmed_lost (ຂັ້ນສຸດທ້າຍ; ໃນ Master ຕູ້ຈະຢູ່ສາງ "Lost cooler warehouse") | found  (excluded ເປັນສະຖານະເກົ່າ ບໍ່ໃຊ້ແລ້ວ)
+// ຕູ້ທີ່ຢູ່ໃນ Cooler Master (ຕາມຮ້ານ) ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ -> pending_smc (Pending SMC MDE; ເຄີຍມີ "suspected" ແຍກ ແຕ່ລວມເຂົ້າເປັນອັນດຽວກັນແລ້ວ - 'suspected' ຍັງຢູ່ໃນລາຍການລຸ່ມນີ້ເພື່ອຮອງຮັບແຖວເກົ່າກ່ອນຮັນ migration) -> verifying (Pending DSM ຢືນຢັນ) -> confirmed_lost (ຂັ້ນສຸດທ້າຍ; ໃນ Master ຕູ້ຈະຢູ່ສາງ "Lost cooler warehouse") | found  (excluded ເປັນສະຖານະເກົ່າ ບໍ່ໃຊ້ແລ້ວ)
 const LOST_ACTIVE = ["suspected", "pending_smc", "verifying", "confirmed_lost"];
 const LOST_EDITABLE = ["suspected", "pending_smc", "verifying", "confirmed_lost", "found"]; // excluded ຕັ້ງໄດ້ສະເພາະຜ່ານ /exclude
 // ຂໍ້ມູນລາຍງານຈາກແຖວ Cooler Master: Village = ຖັນ address; Channel/Grade/Lat/Long/Team/MDE/DSM/FSM = ຖັນຂອງ Master
@@ -3047,6 +3047,8 @@ export default {
         const q = cmNorm(qRaw);
         const province = (url.searchParams.get("province") || "").trim();
         const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "50", 10) || 50, 1), 100);
+        // outlet=1: ຄົ້ນຫາດ້ວຍ Outlet Code ໄດ້ນຳ (ໃຊ້ໃນ Manage Lost Cooler ຕອນເພີ່ມຕູ້) - ໜ້າອື່ນບໍ່ສົ່ງ param ນີ້ ຈຶ່ງບໍ່ກະທົບ
+        const byOutlet = url.searchParams.get("outlet") === "1";
         if (!q && !province) return Response.json({ matches: [], exact: false, locations: {}, system_only: null });
 
         let matches = [];
@@ -3058,7 +3060,23 @@ export default {
           ).bind(q, q, q, ...(province ? [province] : [])).all();
           matches = ex.results || [];
           exact = matches.length > 0;
-          if (!exact && q.length >= 3) {
+          if (!exact && byOutlet && qRaw) {
+            // ບໍ່ກົງ QR/Serial/CapEx -> ລອງ Outlet Code (ກົງເປ໊ະກ່ອນ, ບໍ່ພົບຄ່ອຍຂຶ້ນຕົ້ນດ້ວຍ) - ໃຊ້ index idx_cooler_master_outlet
+            const oc = qRaw.trim();
+            const ocUp = oc.toUpperCase();
+            const orr = await env.DB.prepare(
+              `SELECT * FROM cooler_master WHERE (outlet_code = ? OR outlet_code = ?)${provCond} ORDER BY id LIMIT ?`
+            ).bind(oc, ocUp, ...(province ? [province] : []), limit).all();
+            matches = orr.results || [];
+            if (!matches.length && oc.length >= 3) {
+              const ohi = ocUp + "\uffff";
+              const opr = await env.DB.prepare(
+                `SELECT * FROM cooler_master WHERE (outlet_code >= ? AND outlet_code < ?)${provCond} ORDER BY outlet_code, id LIMIT ?`
+              ).bind(ocUp, ohi, ...(province ? [province] : []), limit).all();
+              matches = opr.results || [];
+            }
+          }
+          if (!exact && !matches.length && q.length >= 3) {
             // ບໍ່ພົບກົງເປ໊ະ -> ຄົ້ນແບບ "ຂຶ້ນຕົ້ນດ້ວຍ" ສະເພາະ QR/Serial/CapEx (ໃຊ້ range ເທິງ index ແທນ LIKE '%..%' ທີ່ scan ທັງຕາຕະລາງ)
             const hi = q + "\uffff";
             const pr = await env.DB.prepare(
@@ -3363,7 +3381,7 @@ export default {
                  (master_id, qr_code, serial_number, capex, qr_norm, serial_norm, capex_norm, cooler_brand, cooler_type, cooler_model,
                   outlet_code, outlet_name, province, district, address, master_status, status, reason, reported_by,
                   channel, grade, village, lat_position, long_position, dsm, mde, team, submit_date, fsm)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'suspected', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_smc', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(m.id, m.qr_code, m.serial_number, m.capex, m.qr_norm, m.serial_norm, m.capex_norm,
               pick(m.cooler_brand, f.cooler_brand, 100), pick(m.cooler_type, f.cooler_type, 100), m.cooler_model,
               pick(m.outlet_code, f.outlet_code, 100), pick(m.outlet_name, f.outlet_name, 200),
@@ -3373,7 +3391,7 @@ export default {
               cmClean(f.dsm, 150) || ex.dsm, cmClean(f.mde, 150) || ex.mde, cmClean(f.team, 150) || ex.team || lostTeamFor(teamMapAdd, mdeAdd[idx]), cmClean(f.submit_date, 40),
               cmClean(f.fsm, 150) || ex.fsm);
           }));
-          await env.DB.batch(ins.map((r) => lostLogStmt(env, r.meta.last_row_id, "add", null, "suspected", note, actor)));
+          await env.DB.batch(ins.map((r) => lostLogStmt(env, r.meta.last_row_id, "add", null, "pending_smc", note, actor)));
           added = toAdd.length;
         }
         return Response.json({ added, duplicates, not_found: notFound, ambiguous });
@@ -3397,12 +3415,12 @@ export default {
         const actor = (session && session.email) || null;
         const mapStatus = (v) => {
           const t = String(v == null ? "" : v).trim().toLowerCase().replace(/[\s_\-–]+/g, "");
-          if (!t) return { status: "suspected", adjusted: false };
-          if (["suspected", "pending", "new", "ສົງໄສ", "ສົງໄສລໍກວດສອບ"].includes(t)) return { status: "suspected", adjusted: false };
-          if (["pendingsmcmde", "pendingsmc", "smcmde", "smc"].includes(t)) return { status: "pending_smc", adjusted: false };
+          // "ສົງໄສ – ລໍກວດສອບ" ກັບ "Pending SMC MDE" ເປັນສະຖານະດຽວກັນ -> ທັງໝົດເປັນ pending_smc
+          if (!t) return { status: "pending_smc", adjusted: false };
+          if (["suspected", "pending", "new", "ສົງໄສ", "ສົງໄສລໍກວດສອບ", "pendingsmcmde", "pendingsmc", "smcmde", "smc"].includes(t)) return { status: "pending_smc", adjusted: false };
           if (["verifying", "checking", "ກຳລັງກວດສອບ", "pendingdsm", "pendingdsmຢືນຢັນ", "dsm"].includes(t)) return { status: "verifying", adjusted: false };
           if (["confirmedlost", "lost", "confirmed", "ຢືນຢັນສູນຫາຍ", "ສູນຫາຍ"].includes(t)) return { status: "confirmed_lost", adjusted: false };
-          return { status: "suspected", adjusted: true };
+          return { status: "pending_smc", adjusted: true };
         };
 
         const prepared = rows.map((r, i) => {
@@ -3527,47 +3545,6 @@ export default {
             out.added += oldAdd.length;
           }
         }
-        // ຂໍ້ມູນເກົ່າ: ຢືນຢັນສູນຫາຍແລ້ວ ແລະ ບໍ່ມີໃນ Cooler Master -> ບັນທຶກຈາກ Excel (master_id = NULL), ຕັດຊ້ຳກັບລາຍການທີ່ມີແລ້ວ ແລະ ແຖວຊ້ຳໃນໄຟລ໌
-        out.added_no_master = 0;
-        if (oldRows.length) {
-          const dupChecks = await env.DB.batch(oldRows.map(({ p }) => env.DB.prepare(
-            `SELECT id FROM lost_coolers WHERE status IN ('suspected','pending_smc','verifying','confirmed_lost')
-                AND ((? != '' AND qr_norm = ?) OR (? != '' AND serial_norm = ?) OR (? != '' AND capex_norm = ?)) LIMIT 1`
-          ).bind(p.qn, p.qn, p.snn, p.snn, p.cn, p.cn)));
-          const seenKeys = new Set();
-          const oldAdd = [];
-          oldRows.forEach(({ p, label }, i) => {
-            const keys = [p.qn, p.snn, p.cn].filter(Boolean);
-            const exists = dupChecks[i] && dupChecks[i].results && dupChecks[i].results.length;
-            if (exists || keys.some((k) => seenKeys.has(k))) { out.duplicates.push({ row: p.rowNo, code: label }); return; }
-            keys.forEach((k) => seenKeys.add(k));
-            oldAdd.push({ p, label });
-          });
-          if (oldAdd.length) {
-            const nowTs2 = new Date().toISOString().replace("T", " ").slice(0, 19);
-            const mdeOld = oldAdd.map(({ p }) => cmClean(p.r.mde, 150));
-            const teamMapOld = await lostTeamMap(env, mdeOld);
-            const insOld = await env.DB.batch(oldAdd.map(({ p }, idx) => env.DB.prepare(
-              `INSERT INTO lost_coolers
-                 (master_id, qr_code, serial_number, capex, qr_norm, serial_norm, capex_norm, cooler_brand, cooler_type, cooler_model,
-                  outlet_code, outlet_name, province, district, address, master_status, status, reason, reported_by, verified_by, verified_at,
-                  channel, grade, village, lat_position, long_position, dsm, mde, team, submit_date, fsm)
-               VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 'confirmed_lost', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-            ).bind(
-              p.qr, p.sn, p.cx, p.qn || null, p.snn || null, p.cn || null,
-              cmClean(p.r.cooler_brand, 100), cmClean(p.r.cooler_type, 100), cmClean(p.r.cooler_model, 100),
-              cmClean(p.r.outlet_code, 100), cmClean(p.r.outlet_name, 200), cmClean(p.r.province, 100), cmClean(p.r.district, 100),
-              "ບໍ່ມີໃນ Cooler Master (ຂໍ້ມູນເກົ່າ)", "ນຳເຂົ້າຈາກ Excel (ຂໍ້ມູນເກົ່າ ຢືນຢັນສູນຫາຍແລ້ວ)", actor, actor, nowTs2,
-              cmClean(p.r.channel, 100), cmClean(p.r.grade, 50), cmClean(p.r.village, 150),
-              cmClean(p.r.lat_position, 40), cmClean(p.r.long_position, 40),
-              cmClean(p.r.dsm, 150), mdeOld[idx], cmClean(p.r.team, 150) || lostTeamFor(teamMapOld, mdeOld[idx]), cmClean(p.r.submit_date, 40),
-              cmClean(p.r.fsm, 150)
-            )));
-            await env.DB.batch(insOld.map((r) => lostLogStmt(env, r.meta.last_row_id, "add", null, "confirmed_lost", "ນຳເຂົ້າຈາກ Excel (ຂໍ້ມູນເກົ່າ ບໍ່ມີໃນ Cooler Master)", actor)));
-            out.added_no_master = oldAdd.length;
-            out.added += oldAdd.length;
-          }
-        }
         return Response.json(out);
       } catch (e) {
         console.error("/api/admin/lost-coolers/import", e);
@@ -3586,7 +3563,8 @@ export default {
         if (row.status === "excluded") return Response.json({ error: "ຕູ້ນີ້ຖືກຄັດອອກຈາກ Master ແລ້ວ ກະລຸນາກູ້ຄືນກ່ອນ ຈຶ່ງແກ້ໄຂໄດ້" }, { status: 400 });
         const actor = (session && session.email) || null;
 
-        const newStatus = body.status ? String(body.status) : row.status;
+        let newStatus = body.status ? String(body.status) : row.status;
+        if (newStatus === "suspected") newStatus = "pending_smc"; // ລວມ "ສົງໄສ" ເຂົ້າ Pending SMC MDE
         if (!LOST_EDITABLE.includes(newStatus)) return Response.json({ error: "ສະຖານະບໍ່ຖືກຕ້ອງ" }, { status: 400 });
         const note = cmClean(body.note, 500);
         const foundLocation = body.found_location !== undefined ? cmClean(body.found_location, 300) : row.found_location;
@@ -9437,6 +9415,13 @@ export default {
         if (!cooler_brand || !cooler_type) {
           return Response.json({ error: "ກະລຸນາເລືອກ Cooler Brand ແລະ Cooler Type ໃຫ້ຄົບ" }, { status: 400 });
         }
+        // ເຫດຜົນ ແລະ ຮູບຮ້ານຄ້າ ເປັນຂໍ້ມູນບັງຄັບ (ກວດຝັ່ງ server ດ້ວຍ ເພື່ອກັນການຂ້າມ UI)
+        if (!String(reason || "").trim()) {
+          return Response.json({ error: "ກະລຸນາລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset" }, { status: 400 });
+        }
+        if (!reqBody.shop_photo) {
+          return Response.json({ error: "ກະລຸນາແນບຮູບຮ້ານຄ້າ" }, { status: 400 });
+        }
 
         const requester = await env.DB.prepare("SELECT team, mde_code FROM users WHERE id = ?").bind(userId).first();
         if (!requester) return Response.json({ error: "ບໍ່ພົບຜູ້ໃຊ້ງານນີ້ໃນລະບົບ" }, { status: 404 });
@@ -9476,9 +9461,9 @@ export default {
           }
         }
 
-        // ຮູບຮ້ານຄ້າ (ບໍ່ບັງຄັບ): ກວດ + ອັບຂຶ້ນ R2 ກ່ອນ INSERT (ຮູບຜິດ -> ຈົບທີ່ນີ້ ບໍ່ສ້າງຄຳຂໍຄ້າງ)
+        // ຮູບຮ້ານຄ້າ (ບັງຄັບ): ກວດ + ອັບຂຶ້ນ R2 ກ່ອນ INSERT (ຮູບຜິດ -> ຈົບທີ່ນີ້ ບໍ່ສ້າງຄຳຂໍຄ້າງ)
         let shopPhotoKey = null;
-        if (reqBody.shop_photo) {
+        {
           try {
             [shopPhotoKey] = await savePhotosToR2(env, [[reqBody.shop_photo, `request/${userId}/shop-${Date.now()}.jpg`]]);
           } catch (photoErr) {

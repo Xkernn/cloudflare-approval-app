@@ -7443,12 +7443,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       </div>
 
       <div class="form-group">
-        <label>ເຫດຜົນ / ໝາຍເຫດ</label>
-        <textarea id="reqReason" class="form-control" style="padding-left: 14px; min-height: 80px; resize: vertical;" placeholder="ລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset ນີ້"></textarea>
+        <label>ເຫດຜົນ / ໝາຍເຫດ <span style="color:#dc2626;">*</span> <span style="font-weight:400; color:#64748b;">(ບັງຄັບ)</span></label>
+        <textarea id="reqReason" class="form-control" style="padding-left: 14px; min-height: 80px; resize: vertical;" placeholder="ລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset ນີ້ (ບັງຄັບ)" required></textarea>
       </div>
 
       <div class="form-group">
-        <label>ຮູບຮ້ານຄ້າ <span style="font-weight:400; color:#64748b;">(ບໍ່ບັງຄັບ)</span></label>
+        <label>ຮູບຮ້ານຄ້າ <span style="color:#dc2626;">*</span> <span style="font-weight:400; color:#64748b;">(ບັງຄັບ - ຖ່າຍໃຫ້ເຫັນໜ້າຮ້ານ)</span></label>
         <input type="file" id="reqShopPhotoInput" accept="image/*" class="hidden" onchange="onReqShopPhotoChosen(event)">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <button type="button" class="btn-act" onclick="document.getElementById('reqShopPhotoInput').click()"><i class="fa-solid fa-camera mr-1"></i> ຖ່າຍຮູບ / ເລືອກຮູບ</button>
@@ -17764,7 +17764,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     /* ==================== Manage Lost Cooler Master Data (Admin) ====================
        ຕູ້ທີ່ຢູ່ໃນ Cooler Master (ຕາມຮ້ານ) ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ: ເພີ່ມເຂົ້າລາຍການ -> Pending SMC MDE -> Pending DSM ຢືນຢັນ -> ຢືນຢັນສູນຫາຍ (ຂັ້ນສຸດທ້າຍ) ຫຼື ພົບຕູ້ແລ້ວ */
     const LOST_STATUS = {
-      suspected:      { label: 'ສົງໄສ – ລໍກວດສອບ',        cls: 'badge-pending' },
+      suspected:      { label: 'Pending SMC MDE',         cls: 'badge-pending' }, // ເກົ່າ: ລວມເຂົ້າ pending_smc ແລ້ວ (ເກັບໄວ້ຮອງຮັບແຖວເກົ່າ, ບໍ່ສະແດງເປັນ chip)
       pending_smc:    { label: 'Pending SMC MDE',         cls: 'badge-pending' },
       verifying:      { label: 'Pending DSM ຢືນຢັນ',      cls: 'badge-info' },
       confirmed_lost: { label: 'ຢືນຢັນສູນຫາຍ',            cls: 'badge-rejected' },
@@ -17819,7 +17819,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       };
       document.getElementById('lostStatusChips').innerHTML =
         chip('', 'ທັງໝົດ', total) +
-        Object.entries(LOST_STATUS).filter(([k]) => k !== 'excluded' || Number(counts.excluded || 0) > 0).map(([k, v]) => chip(k, v.label, counts[k])).join('');
+        Object.entries(LOST_STATUS).filter(([k]) => k !== 'suspected' && (k !== 'excluded' || Number(counts.excluded || 0) > 0)).map(([k, v]) => chip(k, v.label, counts[k])).join('');
     }
 
     function lostRenderCard(it) {
@@ -17830,11 +17830,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const btn = (label, fn, style) => `<button class="btn-act" style="${style || 'background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);'}" onclick="${fn}">${label}</button>`;
       const id = Number(it.id);
       let actions = '';
-      if (it.status === 'suspected') {
-        actions = btn('<i class="fa-solid fa-paper-plane"></i> ສົ່ງ Pending SMC MDE', `lostOpenStatus(${id},'pending_smc')`, 'background:#fef3c7; color:#92400e;')
-          + btn('<i class="fa-solid fa-circle-xmark"></i> ຢືນຢັນສູນຫາຍ', `lostOpenStatus(${id},'confirmed_lost')`, 'background:#fee2e2; color:#b91c1c;')
-          + btn('<i class="fa-solid fa-circle-check"></i> ພົບຕູ້ແລ້ວ', `lostOpenStatus(${id},'found')`, 'background:#dcfce7; color:#166534;');
-      } else if (it.status === 'pending_smc') {
+      if (it.status === 'pending_smc' || it.status === 'suspected') {
         actions = btn('<i class="fa-solid fa-paper-plane"></i> ສົ່ງ Pending DSM ຢືນຢັນ', `lostOpenStatus(${id},'verifying')`, 'background:#dbeafe; color:#1d4ed8;')
           + btn('<i class="fa-solid fa-circle-xmark"></i> ຢືນຢັນສູນຫາຍ', `lostOpenStatus(${id},'confirmed_lost')`, 'background:#fee2e2; color:#b91c1c;')
           + btn('<i class="fa-solid fa-circle-check"></i> ພົບຕູ້ແລ້ວ', `lostOpenStatus(${id},'found')`, 'background:#dcfce7; color:#166534;');
@@ -17845,7 +17841,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         actions = btn('<i class="fa-solid fa-circle-check"></i> ພົບຕູ້ແລ້ວ', `lostOpenStatus(${id},'found')`, 'background:#dcfce7; color:#166534;')
           + btn('<i class="fa-solid fa-rotate-left"></i> ກັບໄປ Pending DSM ຢືນຢັນ', `lostOpenStatus(${id},'verifying')`);
       } else if (it.status === 'found') {
-        actions = btn('<i class="fa-solid fa-rotate-left"></i> ເປີດກວດສອບໃໝ່', `lostOpenStatus(${id},'suspected')`);
+        actions = btn('<i class="fa-solid fa-rotate-left"></i> ເປີດກວດສອບໃໝ່', `lostOpenStatus(${id},'pending_smc')`);
       } else if (it.status === 'excluded') {
         actions = it.has_snapshot ? btn('<i class="fa-solid fa-box-open"></i> ກູ້ຄືນເຂົ້າ Master', `lostRestore(${id})`, 'background:#dbeafe; color:#1d4ed8;') : '';
       }
@@ -17894,9 +17890,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       lostPicked = []; lostSearchRes = {};
       lostOpenModal(`
         <h3 style="font-size:18px; font-weight:700; margin-bottom:6px;">ເພີ່ມຕູ້ສູນຫາຍ</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px; line-height:1.6;">ຄົ້ນຫາ <b>QR / Serial / CapEx</b> ໃນ Cooler Master ແລ້ວກົດ "ເລືອກ" — ລະບົບດຶງຂໍ້ມູນຕູ້ ແລະ ຮ້ານຈາກ Master ມາໃຫ້ເອງ.</p>
+        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px; line-height:1.6;">ຄົ້ນຫາ <b>QR / Serial / CapEx / Outlet Code</b> ໃນ Cooler Master ແລ້ວກົດ "ເລືອກ" — ລະບົບດຶງຂໍ້ມູນຕູ້ ແລະ ຮ້ານຈາກ Master ມາໃຫ້ເອງ.</p>
         <div style="display:flex; gap:8px; margin-bottom:8px;">
-          <input type="text" id="lostPickQ" class="form-control" style="flex:1;" placeholder="QR / Serial / CapEx (ກົດ Enter)" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();lostPickSearch();}">
+          <input type="text" id="lostPickQ" class="form-control" style="flex:1;" placeholder="QR / Serial / CapEx / Outlet Code (ກົດ Enter)" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();lostPickSearch();}">
           <button class="btn-act" style="background:var(--primary); color:#fff; padding:9px 16px;" onclick="lostPickSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
         </div>
         <div id="lostPickResults" style="max-height:220px; overflow:auto; margin-bottom:10px;"></div>
@@ -17927,7 +17923,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!q) return;
       box.innerHTML = '<div class="card-list-loading">ກຳລັງຄົ້ນຫາ...</div>';
       try {
-        const res = await fetch('/api/cooler-master/search?limit=20&q=' + encodeURIComponent(q));
+        const res = await fetch('/api/cooler-master/search?outlet=1&limit=50&q=' + encodeURIComponent(q));
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { box.innerHTML = `<div class="card-list-error">${esc(data.error || 'ຄົ້ນຫາບໍ່ສຳເລັດ')}</div>`; return; }
         const ms = data.matches || [];
@@ -18127,7 +18123,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function lostOpenStatus(id, newStatus) {
       const it = lostItems[id]; if (!it) return;
       const titles = {
-        pending_smc: 'ສົ່ງ Pending SMC MDE', verifying: 'ສົ່ງ Pending DSM ຢືນຢັນ', confirmed_lost: 'ຢືນຢັນວ່າຕູ້ສູນຫາຍ', found: 'ພົບຕູ້ແລ້ວ', suspected: 'ເປີດກວດສອບໃໝ່'
+        pending_smc: 'ສົ່ງ Pending SMC MDE', verifying: 'ສົ່ງ Pending DSM ຢືນຢັນ', confirmed_lost: 'ຢືນຢັນວ່າຕູ້ສູນຫາຍ', found: 'ພົບຕູ້ແລ້ວ'
       };
       const hints = {
         confirmed_lost: 'ຢືນຢັນວ່າໄດ້ກວດສອບແລ້ວ ແລະ ຫາຕູ້ໂຕຈິງບໍ່ພົບ. ນີ້ແມ່ນຂັ້ນຕອນສຸດທ້າຍ — ລະບົບຈະຍ້າຍຕູ້ໃນ Cooler Master ໄປ outlet/ສາງ \"Lost cooler warehouse\" ໃຫ້ອັດຕະໂນມັດ (ຖ້າຕໍ່ມາ Master ອັບເດດວ່າຕູ້ຢູ່ outlet ຈິງ ຈະປ່ຽນເປັນ ພົບຕູ້ແລ້ວ ເອງ).',
@@ -18164,7 +18160,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         <h3 style="font-size:18px; font-weight:700; margin-bottom:6px;">ແກ້ໄຂລາຍການ</h3>
         <div style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">${esc(it.qr_code || it.serial_number || it.capex || '')} · ${esc(it.outlet_name || '')}</div>
         <div class="form-group"><label>ສະຖານະ</label>
-          <select id="lostEditStatus" class="form-control">${['suspected', 'pending_smc', 'verifying', 'confirmed_lost', 'found'].map(k => `<option value="${k}" ${it.status === k ? 'selected' : ''}>${esc(LOST_STATUS[k].label)}</option>`).join('')}</select></div>
+          <select id="lostEditStatus" class="form-control">${['pending_smc', 'verifying', 'confirmed_lost', 'found'].map(k => `<option value="${k}" ${it.status === k ? 'selected' : ''}>${esc(LOST_STATUS[k].label)}</option>`).join('')}</select></div>
         <div class="form-group"><label>ບ່ອນທີ່ພົບຕູ້ (ຈຳເປັນຖ້າສະຖານະ = ພົບຕູ້ແລ້ວ)</label>
           <input type="text" id="lostFoundLoc" class="form-control" maxlength="300" value="${esc(it.found_location || '')}"></div>
         <div class="form-group"><label>ໝາຍເຫດ</label>
@@ -18342,7 +18338,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           if (addedOld) msg += `\n(ໃນນັ້ນ ${addedOld.toLocaleString()} ໂຕ ບໍ່ມີໃນ Cooler Master - ຂໍ້ມູນເກົ່າທີ່ຢືນຢັນສູນຫາຍແລ້ວ)`;
           msg += fmt('ຢູ່ໃນລາຍການແລ້ວ / ຊ້ຳໃນໄຟລ໌', dup, true) + fmt('ບໍ່ພົບໃນ Cooler Master', nf, true)
             + fmt('ກົງກັບ Master ຫຼາຍແຖວ (ກຳກວມ)', amb, true) + fmt('ບໍ່ມີ QR/Serial/CAPEX', nc, false)
-            + (adj.length ? `\nສະຖານະບໍ່ຮູ້ຈັກ/found ຕັ້ງເປັນ "ສົງໄສ" (${adj.length}): ` + adj.slice(0, 8).map(x => `ແຖວ ${x.row}${x.value ? ' [' + x.value + ']' : ''}`).join(', ') + (adj.length > 8 ? ' ...' : '') : '');
+            + (adj.length ? `\nສະຖານະບໍ່ຮູ້ຈັກ/found ຕັ້ງເປັນ "Pending SMC MDE" (${adj.length}): ` + adj.slice(0, 8).map(x => `ແຖວ ${x.row}${x.value ? ' [' + x.value + ']' : ''}`).join(', ') + (adj.length > 8 ? ' ...' : '') : '');
           if (failed) msg += `\nບໍ່ສຳເລັດ ${failed} ແຖວ:\n${errs.join('\n')}`;
           const skippedAll = [
             ...nf.map(x => ({ row: x.row, why: 'ບໍ່ພົບໃນ Cooler Master (QR/Serial/CAPEX ບໍ່ກົງກັບ Master)' })),
@@ -27383,7 +27379,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
     let isSubmittingAssetRequest = false;
 
-    // ຮູບຮ້ານຄ້າທີ່ແນບກັບຄຳຂໍ (ບໍ່ບັງຄັບ)
+    // ຮູບຮ້ານຄ້າທີ່ແນບກັບຄຳຂໍ (ບັງຄັບ)
     let reqShopPhoto = null;
     function onReqShopPhotoChosen(event) {
       handlePhotoInput(event, 'reqShopPhotoPreview', (dataUrl) => {
@@ -27411,7 +27407,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const cooler_type = document.getElementById('reqCoolerType').value;
       const doc_type = document.getElementById('reqDocType').value;
       const contract_type = document.getElementById('reqContractType').value;
-      const reason = document.getElementById('reqReason').value;
+      const reason = document.getElementById('reqReason').value.trim();
 
       if (noOutletCode) {
         if (!outlet_name) {
@@ -27451,6 +27447,15 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         alert('ກະລຸນາເລືອກປະເພດສັນຍາ');
         return;
       }
+      if (!reason.trim()) {
+        alert('ກະລຸນາລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset');
+        document.getElementById('reqReason').focus();
+        return;
+      }
+      if (!reqShopPhoto) {
+        alert('ກະລຸນາຖ່າຍຮູບ / ເລືອກຮູບຮ້ານຄ້າ');
+        return;
+      }
 
       const submitBtn = document.getElementById('btnSubmitAssetRequest');
       isSubmittingAssetRequest = true;
@@ -27467,7 +27472,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: currentUser.id, outlet_code, outlet_name, cooler_brand, cooler_type, doc_type, contract_type, asset_condition, reason,
-            ...(reqShopPhoto ? { shop_photo: reqShopPhoto } : {}),
+            shop_photo: reqShopPhoto,
             ...(noOutletCode ? {
               outlet_owner: document.getElementById('reqOutletOwner').value.trim(),
               outlet_type: document.getElementById('reqOutletType').value.trim(),
