@@ -29043,6 +29043,7 @@ function assetStatusBadgeClass(status) {
       pending_dsm:      '/voices/pending_dsm.mp3',      // ມີເອກະສານຄ້າງເຊັນ ດີເອັສເອັມ (DSM)
       dsm_signed:       '/voices/dsm_signed.mp3'        // ດີເອັສເອັມ (DSM) ເຊັນເອກະສານແລ້ວ ເບິ່ງລະຫັດຕູ້ ແລະ ໂຫຼດເອກະສານໄດ້
     };
+    const VOICE_SPEED = 1.5;
     let voiceQueue = [], voicePlaying = false, voiceUnlockWait = false, voiceEntryPending = true, voiceHiddenAt = 0, voiceLastNotifId = null, voiceLastUnread = null, voiceNotifBusy = false;
 
     function voicePlay(key, onMissing) {
@@ -29062,6 +29063,8 @@ function assetStatusBadgeClass(status) {
       };
       try {
         const a = new Audio(VOICE_FILES[item.key]);
+        a.playbackRate = VOICE_SPEED; a.defaultPlaybackRate = VOICE_SPEED; // ເລັ່ງຄວາມໄວ x1.5
+        a.preservesPitch = true; // ບໍ່ໃຫ້ສຽງແຫຼມຂຶ້ນເມື່ອເລັ່ງ
         a.onended = () => finish(false);
         a.onerror = () => finish(true);      // ບໍ່ມີໄຟລ໌ / ຫຼີ້ນບໍ່ໄດ້
         const pr = a.play();
