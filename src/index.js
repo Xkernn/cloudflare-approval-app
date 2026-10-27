@@ -2674,7 +2674,7 @@ async function tokenCanBypassMaintenance(env, request) {
 //  (ປຸ່ມ: ໃຊ້ origin ຂອງຄຳຂໍ; Cron: ໃຊ້ env.APP_URL — ຕ້ອງຕັ້ງໃນ wrangler.toml [vars])
 // ==========================================================================
 const SIGN_REMINDER_MIN_AGE_DAYS = 7;
-const SIGN_REMINDER_CRON = "0 23 * * 0"; // ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ (UTC+7)
+const SIGN_REMINDER_CRON = "0 23 * * SUN"; // ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ (UTC+7)
 async function runSignReminderEmails(env, { appUrl = "", minAgeDays = SIGN_REMINDER_MIN_AGE_DAYS, actor = "auto-weekly" } = {}) {
   const age = Math.max(0, Math.min(365, Number(minAgeDays) || 0));
   const ageBind = `-${age} days`;
