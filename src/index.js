@@ -2788,20 +2788,41 @@ export default {
     // API ຈັດການ "ສາງ" - ເພີ່ມ/ແກ້ໄຂ
     if (url.pathname === "/api/admin/save-warehouse" && request.method === "POST") {
       try {
-        const { id, code, name, province, is_main, active } = await request.json();
+        const { id, code, name, province, is_main, active, latitude, longitude } = await request.json();
         if (!code || !name) return Response.json({ error: "ກະລຸນາປ້ອນລະຫັດ ແລະ ຊື່ສາງ" }, { status: 400 });
         const isMain = is_main ? 1 : 0;
         const isActive = active === false ? 0 : 1;
+        // ພິກັດສາງ (ບໍ່ບັງຄັບ) — ຕ້ອງເປັນຕົວເລກໃນຂອບເຂດທີ່ຖືກຕ້ອງ ຖ້າໃສ່ມາ
+        const hasNum = (v) => v !== null && v !== undefined && String(v).trim() !== "" && !isNaN(Number(v));
+        let lat = null, lng = null;
+        if (hasNum(latitude) || hasNum(longitude)) {
+          if (!hasNum(latitude) || !hasNum(longitude) || Math.abs(Number(latitude)) > 90 || Math.abs(Number(longitude)) > 180) {
+            return Response.json({ error: "ພິກັດສາງບໍ່ຖືກຕ້ອງ (Latitude -90..90, Longitude -180..180)" }, { status: 400 });
+          }
+          lat = Number(latitude); lng = Number(longitude);
+        }
 
         if (id) {
-          await env.DB.prepare(
-            "UPDATE wh_warehouses SET code = ?, name = ?, province = ?, is_main = ?, active = ? WHERE id = ?"
-          ).bind(code, name, province || null, isMain, isActive, id).run();
+          try {
+            await env.DB.prepare(
+              "UPDATE wh_warehouses SET code = ?, name = ?, province = ?, is_main = ?, active = ?, latitude = ?, longitude = ? WHERE id = ?"
+            ).bind(code, name, province || null, isMain, isActive, lat, lng, id).run();
+          } catch (e1) { // ຍັງບໍ່ໄດ້ຮັນ migration_add_warehouse_latlng.sql
+            await env.DB.prepare(
+              "UPDATE wh_warehouses SET code = ?, name = ?, province = ?, is_main = ?, active = ? WHERE id = ?"
+            ).bind(code, name, province || null, isMain, isActive, id).run();
+          }
           return Response.json({ message: "ແກ້ໄຂຂໍ້ມູນສາງຮຽບຮ້ອຍແລ້ວ" });
         } else {
-          await env.DB.prepare(
-            "INSERT INTO wh_warehouses (code, name, province, is_main, active) VALUES (?, ?, ?, ?, ?)"
-          ).bind(code, name, province || null, isMain, isActive).run();
+          try {
+            await env.DB.prepare(
+              "INSERT INTO wh_warehouses (code, name, province, is_main, active, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            ).bind(code, name, province || null, isMain, isActive, lat, lng).run();
+          } catch (e1) {
+            await env.DB.prepare(
+              "INSERT INTO wh_warehouses (code, name, province, is_main, active) VALUES (?, ?, ?, ?, ?)"
+            ).bind(code, name, province || null, isMain, isActive).run();
+          }
           return Response.json({ message: "ເພີ່ມສາງໃໝ່ຮຽບຮ້ອຍແລ້ວ" });
         }
       } catch (e) {
@@ -8151,6 +8172,44 @@ export default {
         ).bind(requester.mde_code, DELIVERED_STATUS).all());
       }
       return Response.json(await attachDocStates(env, results || []));
+    }
+
+    // 6c. ຂໍ້ມູນສາງຕົ້ນທາງ ສຳລັບ mini map ໃນ popup Asset Tracking (ລົດອອກຈາກສາງ -> ຮ້ານ)
+    // ສາງ = ສາງຂອງສະຕັອກທີ່ QR/Serial ກົງກັບ Asset; ຖ້າສາງນັ້ນບໍ່ມີພິກັດ (ເຊັ່ນ ສາງ "ຮ້ານຄ້າ") ໃຫ້ໃຊ້ສາງຫຼັກທີ່ມີພິກັດ
+    if (url.pathname === "/api/asset-route-info" && request.method === "GET") {
+      try {
+        const userId = url.searchParams.get("userId");
+        const id = url.searchParams.get("id");
+        if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        const requester = await env.DB.prepare("SELECT role, mde_code, team FROM users WHERE id = ?").bind(userId).first();
+        if (!requester) return Response.json({ error: "ບໍ່ພົບຜູ້ໃຊ້ງານນີ້ໃນລະບົບ" }, { status: 404 });
+        const asset = await env.DB.prepare("SELECT id, mde_code, qr_code, serial_number FROM assets WHERE id = ?").bind(id).first();
+        if (!asset) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
+        let allowed = canViewAll(requester.role) || (!!requester.mde_code && asset.mde_code === requester.mde_code);
+        if (!allowed && requester.role === "dsm") {
+          const t = await env.DB.prepare(`SELECT id FROM assets WHERE id = ? AND ${TEAM_MDE_SQL}`).bind(id, requester.team || "").first();
+          allowed = !!t;
+        }
+        if (!allowed) return Response.json({ error: "ບໍ່ມີສິດເບິ່ງ Asset ນີ້" }, { status: 403 });
+
+        let warehouse = null;
+        try {
+          let stock = null;
+          if (asset.qr_code) stock = await env.DB.prepare("SELECT warehouse_id FROM warehouse_stock WHERE qr_code = ? AND qr_code != '' ORDER BY updated_at DESC LIMIT 1").bind(asset.qr_code).first();
+          if (!stock && asset.serial_number) stock = await env.DB.prepare("SELECT warehouse_id FROM warehouse_stock WHERE serial_number = ? AND serial_number != '' ORDER BY updated_at DESC LIMIT 1").bind(asset.serial_number).first();
+          const cols = "id, name, latitude, longitude";
+          if (stock && stock.warehouse_id) {
+            warehouse = await env.DB.prepare(`SELECT ${cols} FROM wh_warehouses WHERE id = ? AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(stock.warehouse_id).first();
+          }
+          if (!warehouse) {
+            warehouse = await env.DB.prepare(`SELECT ${cols} FROM wh_warehouses WHERE active = 1 AND latitude IS NOT NULL AND longitude IS NOT NULL ORDER BY is_main DESC, id ASC LIMIT 1`).first();
+          }
+        } catch (e) { warehouse = null; } // ຍັງບໍ່ໄດ້ຮັນ migration_add_warehouse_latlng.sql
+        return Response.json({ warehouse: warehouse || null }, { headers: { "Cache-Control": "no-store" } });
+      } catch (e) {
+        console.error("/api/asset-route-info", e);
+        return Response.json({ error: "ບໍ່ສາມາດໂຫລດຂໍ້ມູນເສັ້ນທາງໄດ້" }, { status: 500 });
+      }
     }
 
     // 6d. Asset Delivery History API (Asset ที่ Status = ສຳເລັດ เท่านั้น - ย้ายออกมาจาก Asset Tracking)

@@ -1074,6 +1074,22 @@
     .marker-outlet-label-urgent {
       background: #ef4444 !important; color: #ffffff !important; border-color: #b91c1c !important;
     }
+    /* ===== Mini map ໃນ popup Asset Tracking (ລົດບັນທຸກ) ===== */
+    .am-wrap { margin: 4px 0 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; overflow: hidden; background: #f8fafc; }
+    .am-map { height: 210px; width: 100%; }
+    .am-cap { padding: 8px 12px; font-size: 13px; color: #334155; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .am-note { padding: 14px 12px; font-size: 13px; color: #92400e; background: #fffbeb; }
+    .am-pin { width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 2px solid var(--pc, #0891B2); display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+    .am-truck-wrap { width: 40px; height: 40px; }
+    .am-truck { width: 40px; height: 40px; border-radius: 50%; background: #2563EB; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 3px solid #fff; box-shadow: 0 3px 10px rgba(37,99,235,.55); }
+    .am-truck.flip i { transform: scaleX(-1); }
+    .am-truck.idle { animation: amBob 1.8s ease-in-out infinite; }
+    .am-truck.idle::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid #2563EB; animation: amPulse 1.8s ease-out infinite; }
+    .am-truck { position: relative; }
+    @keyframes amBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @keyframes amPulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.7); opacity: 0; } }
+    .am-tip { font-size: 11px; font-weight: 700; padding: 2px 6px; }
+    @media (prefers-reduced-motion: reduce) { .am-truck.idle, .am-truck.idle::after { animation: none; } }
     .map-doctype-legend {
       position: absolute; bottom: 10px; left: 10px; z-index: 500;
       background: #ffffff; border-radius: 10px; padding: 8px 12px;
@@ -6371,6 +6387,14 @@ body.dlv-popup-open { overflow: hidden; }
         </div>
       </div>
 
+      <div class="form-group">
+        <label>ພິກັດສາງ Lat, Long (ບໍ່ບັງຄັບ — ໃຊ້ສະແດງ mini map ລົດອອກຈາກສາງ)</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="editWarehouseLat" class="form-control" placeholder="Latitude ເຊັ່ນ 17.9757" inputmode="decimal">
+          <input type="text" id="editWarehouseLng" class="form-control" placeholder="Longitude ເຊັ່ນ 102.6331" inputmode="decimal">
+        </div>
+      </div>
+
       <div class="form-group" style="display:flex; gap:20px;">
         <label style="display:flex; align-items:center; gap:6px; font-weight:400;">
           <input type="checkbox" id="editWarehouseIsMain" style="width:auto;"> ສາງຫຼັກ
@@ -6752,6 +6776,7 @@ body.dlv-popup-open { overflow: hidden; }
         <button onclick="closeDetailModal()" class="detail-modal-close" title="ປິດ"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div id="detailModalStepper"></div>
+      <div id="detailModalMap" class="am-wrap hidden"></div>
       <div id="detailModalBody" class="profile-info-list"></div>
       <div id="detailModalActions" class="detail-modal-actions"></div>
     </div>
@@ -12318,6 +12343,8 @@ body.dlv-popup-open { overflow: hidden; }
       document.getElementById('editWarehouseCode').value = '';
       document.getElementById('editWarehouseName').value = '';
       document.getElementById('editWarehouseProvince').value = '';
+      document.getElementById('editWarehouseLat').value = '';
+      document.getElementById('editWarehouseLng').value = '';
       document.getElementById('editWarehouseIsMain').checked = false;
       document.getElementById('editWarehouseActive').checked = true;
       document.getElementById('warehouseModal').classList.remove('hidden');
@@ -12331,6 +12358,8 @@ body.dlv-popup-open { overflow: hidden; }
       document.getElementById('editWarehouseCode').value = item.code;
       document.getElementById('editWarehouseName').value = item.name;
       document.getElementById('editWarehouseProvince').value = item.province || '';
+      document.getElementById('editWarehouseLat').value = (item.latitude ?? '');
+      document.getElementById('editWarehouseLng').value = (item.longitude ?? '');
       document.getElementById('editWarehouseIsMain').checked = !!item.is_main;
       document.getElementById('editWarehouseActive').checked = !!item.active;
       document.getElementById('warehouseModal').classList.remove('hidden');
@@ -12345,6 +12374,8 @@ body.dlv-popup-open { overflow: hidden; }
       const code = document.getElementById('editWarehouseCode').value.trim();
       const name = document.getElementById('editWarehouseName').value.trim();
       const province = document.getElementById('editWarehouseProvince').value.trim();
+      const latitude = document.getElementById('editWarehouseLat').value.trim();
+      const longitude = document.getElementById('editWarehouseLng').value.trim();
       const is_main = document.getElementById('editWarehouseIsMain').checked;
       const active = document.getElementById('editWarehouseActive').checked;
       if (!code || !name) {
@@ -12355,7 +12386,7 @@ body.dlv-popup-open { overflow: hidden; }
       const res = await fetch('/api/admin/save-warehouse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, code, name, province, is_main, active })
+        body: JSON.stringify({ id, code, name, province, is_main, active, latitude, longitude })
       });
       const data = await res.json();
 
@@ -19390,6 +19421,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     function openDetailModal(title, fields, actionsHtml) {
+      amTeardown();
       document.getElementById('detailModalTitle').textContent = title || '-';
       document.getElementById('detailModalStepper').innerHTML = '';
       document.querySelector('#detailModal .modal-card').classList.remove('ad');
@@ -19401,6 +19433,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     function closeDetailModal() {
+      amTeardown();
       document.getElementById('detailModal').classList.add('hidden');
     }
 
@@ -19768,6 +19801,155 @@ function assetStatusBadgeClass(status) {
       renderAssetCardList(filtered);
     }
 
+    /* ===================== Mini map ລົດບັນທຸກ (popup Asset Tracking) =====================
+       · ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ: ລົດຢູ່ສາງ ເຕັ້ນເບົາໆ + ເສັ້ນປະໄປຈຸດຕໍ່ໄປ
+       · ຢູ່ເທິງລົດ: ລົດແລ່ນຕາມເສັ້ນທາງຖະໜົນ (OSRM; ຖ້າຂໍບໍ່ໄດ້ໃຊ້ເສັ້ນຊື່) ໄປຫາປາຍທາງ ແລ້ວວົນຮອບໃໝ່
+       · ເກັບຄືນສາງ: ຮ້ານ -> ສາງ · ຕູ້ເຄື່ອນຍ້າຍ: ຮ້ານເກົ່າ -> ຮ້ານໃໝ່ · ອື່ນໆ: ສາງ -> ຮ້ານ
+       (ບໍ່ແມ່ນຕຳແໜ່ງ GPS ຈິງ — ເປັນພາບສະແດງຂັ້ນຕອນ) */
+    const AM_STATUSES = ['ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ'];
+    let amMap = null, amRaf = 0, amTimer = 0, amToken = 0;
+    const amRouteCache = new Map();
+
+    function amTeardown() {
+      amToken++;
+      cancelAnimationFrame(amRaf); clearTimeout(amTimer); amRaf = 0; amTimer = 0;
+      if (amMap) { try { amMap.remove(); } catch (e) {} amMap = null; }
+      const box = document.getElementById('detailModalMap');
+      if (box) { box.innerHTML = ''; box.classList.add('hidden'); }
+    }
+
+    function amOutletPoint(code, fbLat, fbLng) {
+      const num = (v) => v !== null && v !== undefined && v !== '' && !isNaN(Number(v));
+      const m = findOutletByCode(code);
+      if (m && num(m.latitude) && num(m.longitude)) return [Number(m.latitude), Number(m.longitude)];
+      if (num(fbLat) && num(fbLng)) return [Number(fbLat), Number(fbLng)];
+      return null;
+    }
+
+    async function amFetchRoute(from, to) {
+      const key = from.join(',') + '|' + to.join(',');
+      if (amRouteCache.has(key)) return amRouteCache.get(key);
+      let pts = [from, to];
+      try {
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 6000);
+        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`, { signal: ctl.signal });
+        clearTimeout(t);
+        const j = await r.json();
+        const c = j && j.routes && j.routes[0] && j.routes[0].geometry && j.routes[0].geometry.coordinates;
+        if (c && c.length > 1) pts = c.map(([lng, lat]) => [lat, lng]);
+      } catch (e) { /* ໃຊ້ເສັ້ນຊື່ */ }
+      amRouteCache.set(key, pts);
+      return pts;
+    }
+
+    async function renderAssetMiniMap(a) {
+      amTeardown();
+      if (!a || !AM_STATUSES.includes(a.status) || typeof L === 'undefined') return;
+      const box = document.getElementById('detailModalMap');
+      const my = amToken;
+      const onTruck = a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ';
+      const isReturn = a.doc_type === 'ເກັບຄືນສາງ';
+      const isMove = a.doc_type === 'ຕູ້ເຄື່ອນຍ້າຍ';
+      const outletPt = amOutletPoint(a.outlet_code, a.latitude, a.longitude);
+      const oldPt = amOutletPoint(a.old_outlet_code, a.old_latitude, a.old_longitude);
+      let wh = null;
+      try {
+        const r = await fetch(`/api/asset-route-info?userId=${currentUser.id}&id=${a.id}`);
+        if (r.ok) wh = (await r.json()).warehouse || null;
+      } catch (e) {}
+      if (my !== amToken) return; // ປິດ/ເປີດ popup ໃໝ່ໄປແລ້ວ
+      const whPt = wh ? [Number(wh.latitude), Number(wh.longitude)] : null;
+
+      // ກຳນົດ ສາງ / ຈຸດເກັບ / ປາຍທາງ ຕາມ Doc Type
+      const nm = (n, c) => n || c || '-';
+      let pickup, dest, destLabel, pickupLabel;
+      if (isReturn)      { pickup = outletPt; pickupLabel = nm(a.outlet_name, a.outlet_code); dest = whPt; destLabel = wh ? wh.name : 'ສາງ'; }
+      else if (isMove)   { pickup = oldPt; pickupLabel = nm(a.old_outlet_name, a.old_outlet_code); dest = outletPt; destLabel = nm(a.outlet_name, a.outlet_code); }
+      else               { pickup = whPt; pickupLabel = wh ? wh.name : 'ສາງ'; dest = outletPt; destLabel = nm(a.outlet_name, a.outlet_code); }
+      // ລໍຖ້າ: ລົດຢູ່ສາງ ແລ້ວຈະໄປຈຸດທຳອິດ (ຈຸດເກັບ ຫຼື ຮ້ານ); ຢູ່ເທິງລົດ: ແລ່ນ pickup -> dest
+      const waitTarget = (isReturn || isMove) ? pickup : dest;
+      const waitTargetLabel = (isReturn || isMove) ? pickupLabel : destLabel;
+
+      const need = onTruck ? [pickup, dest] : [whPt, waitTarget];
+      if (need.some(p => !p)) {
+        const isAdmin = currentUser.role === 'admin';
+        const usesWh = !onTruck || !isMove; // ຕູ້ເຄື່ອນຍ້າຍທີ່ຢູ່ເທິງລົດ ແລ່ນຮ້ານເກົ່າ -> ຮ້ານໃໝ່ ບໍ່ໃຊ້ພິກັດສາງ
+        const miss = (usesWh && !whPt) ? 'ຍັງບໍ່ໄດ້ຕັ້ງພິກັດສາງ' + (isAdmin ? ' (ຕັ້ງໄດ້ທີ່ ຈັດການສາງ → ແກ້ໄຂ)' : '') : 'ຍັງບໍ່ມີພິກັດຂອງຮ້ານ';
+        box.innerHTML = `<div class="am-note"><i class="fa-solid fa-triangle-exclamation"></i> ສະແດງແຜນທີ່ບໍ່ໄດ້ — ${esc(miss)}</div>`;
+        box.classList.remove('hidden');
+        return;
+      }
+
+      box.innerHTML = '<div id="amMapEl" class="am-map"></div><div class="am-cap" id="amCap"></div>';
+      box.classList.remove('hidden');
+      amMap = L.map('amMapEl', { zoomControl: false, scrollWheelZoom: false, attributionControl: true });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OSM' }).addTo(amMap);
+      const pin = (pt, emoji, color, label) => L.marker(pt, { icon: L.divIcon({ className: '', html: `<div class="am-pin" style="--pc:${color}">${emoji}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }) })
+        .bindTooltip(esc(label), { permanent: true, direction: 'top', offset: [0, -14], className: 'am-tip' }).addTo(amMap);
+      const truckIcon = (idle) => L.divIcon({ className: '', html: `<div class="am-truck ${idle ? 'idle' : ''}"><i class="fa-solid fa-truck-fast"></i></div>`, iconSize: [40, 40], iconAnchor: [20, 20] });
+      const cap = document.getElementById('amCap');
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!onTruck) {
+        // ລົດລໍຖ້າຢູ່ສາງ ເຕັ້ນເບົາໆ + ເສັ້ນປະໄປຈຸດຕໍ່ໄປ
+        L.polyline([whPt, waitTarget], { color: '#0891B2', weight: 3, opacity: .6, dashArray: '6 8' }).addTo(amMap);
+        pin(waitTarget, isReturn || isMove ? '📍' : '🏪', '#0891B2', waitTargetLabel);
+        L.marker(whPt, { icon: truckIcon(true), zIndexOffset: 1000 }).addTo(amMap);
+        pin(whPt, '🏭', '#64748b', wh.name);
+        cap.innerHTML = `<span>🚚 ລົດລໍຖ້າຢູ່ສາງ ${esc(wh.name)}</span><span style="color:var(--text-muted);">→ ${esc(waitTargetLabel)}</span>`;
+        amMap.fitBounds([whPt, waitTarget], { padding: [38, 38], maxZoom: 16 });
+        setTimeout(() => { if (my === amToken && amMap) amMap.invalidateSize(); }, 60);
+        return;
+      }
+
+      // ຢູ່ເທິງລົດ: ແລ່ນຕາມເສັ້ນທາງ
+      pin(pickup, isReturn || isMove ? '📍' : '🏭', '#64748b', pickupLabel);
+      pin(dest, isReturn ? '🏭' : '🏪', '#2563EB', destLabel);
+      amMap.fitBounds([pickup, dest], { padding: [38, 38], maxZoom: 16 });
+      setTimeout(() => { if (my === amToken && amMap) amMap.invalidateSize(); }, 60);
+      cap.innerHTML = `<span>🚚 ${esc(assetStatusText(a))}</span><span style="color:var(--text-muted);">${esc(pickupLabel)} → ${esc(destLabel)}</span>`;
+      const route = await amFetchRoute(pickup, dest);
+      if (my !== amToken || !amMap) return;
+      L.polyline(route, { color: '#2563EB', weight: 4, opacity: .75 }).addTo(amMap);
+
+      // ຄວາມຍາວສະສົມຂອງເສັ້ນທາງ (ປະມານ ຫົວໜ່ວຍເມັດ lat/lng ແກ້ cos(lat))
+      const k = Math.cos(pickup[0] * Math.PI / 180);
+      const cum = [0];
+      for (let i = 1; i < route.length; i++) {
+        const dy = route[i][0] - route[i - 1][0], dx = (route[i][1] - route[i - 1][1]) * k;
+        cum.push(cum[i - 1] + Math.hypot(dx, dy));
+      }
+      const total = cum[cum.length - 1] || 1;
+      const at = (f) => {
+        const d = f * total; let i = 1;
+        while (i < cum.length - 1 && cum[i] < d) i++;
+        const seg = (cum[i] - cum[i - 1]) || 1, t = Math.min(1, Math.max(0, (d - cum[i - 1]) / seg));
+        return [route[i - 1][0] + (route[i][0] - route[i - 1][0]) * t, route[i - 1][1] + (route[i][1] - route[i - 1][1]) * t, route[i][1] - route[i - 1][1]];
+      };
+      const truck = L.marker(route[0], { icon: truckIcon(false), zIndexOffset: 1000 }).addTo(amMap);
+      const setPos = (f) => {
+        const [la, ln, dlng] = at(f);
+        truck.setLatLng([la, ln]);
+        const el = truck.getElement() && truck.getElement().firstChild;
+        if (el) el.classList.toggle('flip', dlng < 0);
+      };
+      if (reduce) { setPos(0.5); return; }
+      const DUR = 7000, PAUSE = 1400;
+      const run = () => {
+        const t0 = performance.now();
+        const step = (now) => {
+          if (my !== amToken || !amMap) return;
+          const p = Math.min(1, (now - t0) / DUR);
+          setPos(p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2); // ເລີ່ມ/ຈອດນຸ່ມນວນ
+          if (p < 1) amRaf = requestAnimationFrame(step);
+          else amTimer = setTimeout(() => { if (my === amToken && amMap) { setPos(0); run(); } }, PAUSE);
+        };
+        amRaf = requestAnimationFrame(step);
+      };
+      run();
+    }
+
     function showAssetDetail(id) {
       const a = (currentAssetsData || []).find(x => x.id === id);
       if (!a) return;
@@ -19820,6 +20002,7 @@ function assetStatusBadgeClass(status) {
 
       openDetailModal(assetOutletLabel(a) || a.tracking_no || 'Asset', fields, actions);
       renderAssetStepper(a);
+      renderAssetMiniMap(a);
     }
 
     /* ===== Workflow stepper ຂອງ Asset Detail ===== */
