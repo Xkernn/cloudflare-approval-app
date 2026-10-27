@@ -322,6 +322,18 @@ async function createLoanContractDraftForAsset(env, assetId, createdByEmail, opt
 // ອອກໃບສັນຍາຢືມແບບປ້ອນເອງ (ບໍ່ມີ Asset ອ້າງອີງ) ປະເພດ "ຕູ້ເຄື່ອນຍ້າຍ" (handover_type = 'move')
 // -> ສ້າງແຖວ Asset Tracking (doc_type "ຕູ້ເຄື່ອນຍ້າຍ", ສະຖານະ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ") ໃຫ້ອັດຕະໂນມັດ ແລ້ວຜູກໃບສັນຍານີ້ເຂົ້າກັບ Asset ທີ່ສ້າງ
 // ບໍ່ throw error ອອກໄປ: ຖ້າສ້າງ Asset ບໍ່ໄດ້ (ເຊັ່ນ QR/Serial/CapEx ຊໍ້າ) ໃບສັນຍາທີ່ບັນທຶກແລ້ວຍັງຢູ່ຄືເກົ່າ ແລະ ສົ່ງ warning ກັບໄປແທນ
+// ດຶງພິກັດ (Latitude/Longitude) ຂອງຮ້ານຈາກ Outlet Master ຕາມ Outlet Code — ໃຊ້ຕອນສ້າງ/ບັນທຶກ Asset Tracking ເພື່ອເຕີມພິກັດໃຫ້ອັດຕະໂນມັດ
+// ຄືນ { lat, lng } (ຖ້າຮ້ານບໍ່ມີ Code ຫຼື ບໍ່ມີພິກັດ = null ທັງຄູ່)
+async function lookupOutletLatLng(env, outletCode) {
+  const code = String(outletCode || "").trim();
+  if (!code) return { lat: null, lng: null };
+  try {
+    const o = await env.DB.prepare("SELECT latitude, longitude FROM outlets WHERE code = ? ORDER BY active DESC LIMIT 1").bind(code).first();
+    const ok = (v) => v !== null && v !== undefined && v !== "" && !isNaN(Number(v));
+    if (o && ok(o.latitude) && ok(o.longitude)) return { lat: Number(o.latitude), lng: Number(o.longitude) };
+  } catch (e) { /* ບໍ່ມີພິກັດ -> ປ່ອຍວ່າງ */ }
+  return { lat: null, lng: null };
+}
 const RELOCATION_ASSET_DOC_TYPE = "ຕູ້ເຄື່ອນຍ້າຍ";
 const RELOCATION_ASSET_STATUS = "ຍັງບໍ່ທັນເຊັນເອກະສານ";
 async function createRelocationAssetForContract(env, contract) {
@@ -8912,8 +8924,12 @@ export default {
           }
         }
 
-        const lat = (latitude === '' || latitude === undefined) ? null : Number(latitude);
-        const lng = (longitude === '' || longitude === undefined) ? null : Number(longitude);
+        let lat = (latitude === '' || latitude === undefined || latitude === null) ? null : Number(latitude);
+        let lng = (longitude === '' || longitude === undefined || longitude === null) ? null : Number(longitude);
+        if ((lat === null || lng === null) && outlet_code) { // ບໍ່ໄດ້ປ້ອນພິກັດ -> ໃຊ້ພິກັດຂອງຮ້ານຈາກ Outlet Code
+          const g = await lookupOutletLatLng(env, outlet_code);
+          if (g.lat !== null) { lat = g.lat; lng = g.lng; }
+        }
         const oldLat = (old_latitude === '' || old_latitude === undefined || old_latitude === null) ? null : Number(old_latitude);
         const oldLng = (old_longitude === '' || old_longitude === undefined || old_longitude === null) ? null : Number(old_longitude);
 
@@ -10243,11 +10259,9 @@ export default {
           const masterBrand = stockMaster.cooler_brand || reqRow.cooler_brand;
           const masterType = stockMaster.cooler_type || reqRow.cooler_type;
           // ພິກັດຮ້ານ (Latitude/Longitude) ດຶງຈາກ Outlet Master ຕາມ Outlet Code ໃສ່ Asset Tracking ອັດຕະໂນມັດ (ຮ້ານທີ່ບໍ່ມີ Code ບໍ່ມີພິກັດ -> ປ່ອຍວ່າງ)
-          const outletGeo = reqRow.outlet_code
-            ? await env.DB.prepare("SELECT latitude, longitude FROM outlets WHERE code = ?").bind(reqRow.outlet_code).first()
-            : null;
-          const geoLat = (outletGeo && outletGeo.latitude) ?? null;
-          const geoLng = (outletGeo && outletGeo.longitude) ?? null;
+          const outletGeo = await lookupOutletLatLng(env, reqRow.outlet_code);
+          const geoLat = outletGeo.lat;
+          const geoLng = outletGeo.lng;
           const results = await env.DB.batch([
             env.DB.prepare(
               `UPDATE asset_requests SET status = 'approved', qr_code = ?, serial_number = ?, capex = ?,
@@ -10531,12 +10545,13 @@ export default {
         const placeholder = `TMP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const deliveredAt = delivered_date ? `${delivered_date} 00:00:00` : null; // null = ใช้ CURRENT_TIMESTAMP
         const isRelocation = doc_type === RELOCATION_DOC_TYPE;
+        const newGeo = await lookupOutletLatLng(env, outlet_code); // ພິກັດຮ້ານ (ປາຍທາງ) ຈາກ Outlet Code
         const insertResult = await env.DB.prepare(
-          `INSERT INTO assets (tracking_no, outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, qr_code, serial_number, capex, status, delivered_at, delivered_by, old_outlet_code, old_outlet_name, old_latitude, old_longitude)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, ?, ?, ?, ?)`
+          `INSERT INTO assets (tracking_no, outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, qr_code, serial_number, capex, status, delivered_at, delivered_by, old_outlet_code, old_outlet_name, old_latitude, old_longitude, latitude, longitude)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
           placeholder, outlet_code, outlet_name, cooler_brand || null, cooler_type || null, mde_code, doc_type || null, qr_code || null, serial_number || null, capex || null, DELIVERED_STATUS, deliveredAt, requester.email,
-          isRelocation ? old_outlet_code : null, isRelocation ? old_outlet_name : null, oldLatVal, oldLngVal
+          isRelocation ? old_outlet_code : null, isRelocation ? old_outlet_name : null, oldLatVal, oldLngVal, newGeo.lat, newGeo.lng
         ).run();
 
         const newAssetId = insertResult.meta.last_row_id;
