@@ -6797,7 +6797,7 @@ body.dlv-popup-open { overflow: hidden; }
   <div id="stRecvModal" class="modal-overlay hidden" style="z-index: 1100;" onclick="if(event.target===this) stCloseRecv()">
     <div class="modal-card" style="max-width: 560px; width: 100%;">
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-link mr-2"></i> ລິ້ງໃຫ້ຜູ້ຮັບເຊັນ <span id="stRecvTripLabel" style="font-weight:600; color:var(--text-muted);"></span></h3>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">ແຕ່ລະແຂວງມີລິ້ງຂອງຕົນເອງ — ຜູ້ຮັບເປີດລິ້ງ ກວດຕູ້ ແລ້ວເຊັນໃນມືຖື (ບໍ່ຕ້ອງ login). ລິ້ງໃຊ້ໄດ້ຄັ້ງດຽວ ແລະ ໝົດອາຍຸໃນ 7 ວັນ. ເສຍລິ້ງ = ກົດ "ສ້າງລິ້ງໃໝ່" (ລິ້ງເກົ່າໃຊ້ບໍ່ໄດ້).</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">ແຕ່ລະແຂວງມີລິ້ງຂອງຕົນເອງ — ຜູ້ຮັບເປີດລິ້ງ ກວດຕູ້ ແລ້ວເຊັນໃນມືຖື (ບໍ່ຕ້ອງ login). ລິ້ງໃຊ້ໄດ້ຄັ້ງດຽວ ແລະ ບໍ່ມີວັນໝົດອາຍຸຈົນກວ່າຈະເຊັນ. ເສຍລິ້ງ = ກົດ "ສ້າງລິ້ງໃໝ່" (ລິ້ງເກົ່າໃຊ້ບໍ່ໄດ້).</div>
       <div id="stRecvLinkBox" class="hidden" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px; margin-bottom:10px;">
         <div id="stRecvLinkTitle" style="font-size:13px; font-weight:700; margin-bottom:6px;"></div>
         <input id="stRecvLinkInput" type="text" readonly style="width:100%; font-size:12px; padding:8px; border:1px solid #cbd5e1; border-radius:8px;" onclick="this.select()">
@@ -7058,7 +7058,7 @@ body.dlv-popup-open { overflow: hidden; }
     </div>
   </div>
 
-  <!-- MODAL: ສົ່ງລິ້ງໃຫ້ DSM ເຊັນເອກະສານ (ໃບສັນຍາຢືມ DOC- / ໃບເກັບຕູ້ເຂົ້າສາງ T-) — ລິ້ງໃຊ້ໄດ້ຄັ້ງດຽວ, ໝົດອາຍຸ 7 ວັນ -->
+  <!-- MODAL: ສົ່ງລິ້ງໃຫ້ DSM ເຊັນເອກະສານ (ໃບສັນຍາຢືມ DOC- / ໃບເກັບຕູ້ເຂົ້າສາງ T-) — ລິ້ງໃຊ້ໄດ້ຄັ້ງດຽວ, ບໍ່ມີວັນໝົດອາຍຸຖ້າຍັງບໍ່ເຊັນ -->
   <div id="dsmLinkModal" class="modal-overlay hidden" onclick="if(event.target===this) closeDsmLinkModal()">
     <div class="modal-card" style="max-width: 440px;">
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-user-tie mr-1"></i> ສົ່ງລິ້ງໃຫ້ DSM ເຊັນ</h3>
@@ -9598,7 +9598,7 @@ body.dlv-popup-open { overflow: hidden; }
       document.getElementById('signRemTitle').textContent = kind === 'mde' ? 'MDE ຄ້າງເຊັນເອກະສານ' : 'DSM ຄ້າງເຊັນເອກະສານ';
       document.getElementById('signRemDesc').textContent = kind === 'mde'
         ? 'MDE ທີ່ມີໃບສັນຍາຢືມ / ໃບເກັບຕູ້ (T-) ທີ່ຍັງບໍ່ໄດ້ເຊັນ — ເລືອກແລ້ວກົດສົ່ງ (Push + ອີເມວຖ້າຕິກ)'
-        : 'DSM (ແຍກຕາມ Team) ທີ່ມີເອກະສານ MDE ເຊັນແລ້ວ ແຕ່ DSM ຍັງບໍ່ໄດ້ເຊັນ — ລະບົບສົ່ງອີເມວພ້ອມລິ້ງເຊັນຂອງແຕ່ລະໃບ (ໃຊ້ລິ້ງເດີມຖ້າຍັງບໍ່ໝົດອາຍຸ, ບໍ່ມີ/ໝົດອາຍຸ ຈຶ່ງອອກລິ້ງໃໝ່ 7 ວັນ)';
+        : 'DSM (ແຍກຕາມ Team) ທີ່ມີເອກະສານ MDE ເຊັນແລ້ວ ແຕ່ DSM ຍັງບໍ່ໄດ້ເຊັນ — ລະບົບສົ່ງອີເມວພ້ອມລິ້ງເຊັນຂອງແຕ່ລະໃບ (ໃຊ້ລິ້ງເດີມຖ້າຍັງບໍ່ເຊັນ, ບໍ່ມີວັນໝົດອາຍຸ)';
       document.getElementById('signRemEmailWrap').style.display = kind === 'mde' ? 'flex' : 'none';
       document.getElementById('signRemResult').classList.add('hidden');
       list.innerHTML = '<div style="padding:16px; text-align:center; color:#64748b;">ກຳລັງໂຫລດ...</div>';
@@ -16993,7 +16993,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           status = '<span class="badge badge-rejected">ລິ້ງໝົດອາຍຸ</span>';
           actions = btn('btn-approve', `stRecvCreate(${i})`, 'fa-link', 'ສ້າງລິ້ງໃໝ່') + btn('btn-delete', `stRecvReset(${rec.id})`, 'fa-xmark', 'ລ້າງ');
         } else if (rec) {
-          status = `<span class="badge badge-pending">ລໍຖ້າເຊັນ</span> <span style="font-size:12px; color:var(--text-muted);">ໝົດອາຍຸ ${esc(fmtLaoTs(rec.expires_at) || '')} (GMT+7)</span>`;
+          status = `<span class="badge badge-pending">ລໍຖ້າເຊັນ</span> ${String(rec.expires_at || '').startsWith('9999') ? '' : `<span style="font-size:12px; color:var(--text-muted);">ໝົດອາຍຸ ${esc(fmtLaoTs(rec.expires_at) || '')} (GMT+7)</span>`}`;
           actions = btn('btn-approve', `stRecvCreate(${i})`, 'fa-link', 'ເບິ່ງ / ສົ່ງລິ້ງເດີມ') + btn('btn-edit', `stRecvCreate(${i}, true)`, 'fa-rotate', 'ສ້າງລິ້ງໃໝ່') + btn('btn-delete', `stRecvReset(${rec.id})`, 'fa-xmark', 'ຍົກເລີກລິ້ງ');
         } else {
           status = '<span style="font-size:12px; color:var(--text-muted);">ຍັງບໍ່ໄດ້ສ້າງລິ້ງ</span>';
@@ -23464,7 +23464,7 @@ function assetStatusBadgeClass(status) {
         };
         document.getElementById('dsmLinkTitle').textContent = `ລິ້ງເຊັນ DSM${data.dsm_name ? ' — ' + data.dsm_name : ''} · ${data.doc_no || ''}`;
         document.getElementById('dsmLinkInput').value = data.url;
-        document.getElementById('dsmLinkExpire').textContent = (data.expires_at ? `ໝົດອາຍຸ: ${fmtLaoTs(data.expires_at)} (GMT+7)` : '') + (data.reused ? ' · ລິ້ງເດີມ (ເຄີຍສ້າງໄວ້ແລ້ວ)' : ' · ລິ້ງໃໝ່');
+        document.getElementById('dsmLinkExpire').textContent = (data.expires_at && !String(data.expires_at).startsWith('9999') ? `ໝົດອາຍຸ: ${fmtLaoTs(data.expires_at)} (GMT+7)` : '') + (data.reused ? ' · ລິ້ງເດີມ (ເຄີຍສ້າງໄວ້ແລ້ວ)' : ' · ລິ້ງໃໝ່');
         document.getElementById('dsmLinkBox').classList.remove('hidden');
         // ມີເບີ DSM (ຈາກ DSM List) -> ສະແດງປຸ່ມສົ່ງ WhatsApp/SMS ຫາ DSM ໂດຍກົງ (ເປີດແອັບພ້ອມຂໍ້ຄວາມ — ຜູ້ໃຊ້ກົດສົ່ງເອງ)
         document.getElementById('dsmLinkDirect').classList.toggle('hidden', !dsmLinkLast.phone);
@@ -23680,7 +23680,7 @@ function assetStatusBadgeClass(status) {
         };
         document.getElementById('dsmWaitLinkTitle').textContent = `ລິ້ງເຊັນ DSM${data.dsm_name ? ' — ' + data.dsm_name : ''} · ${data.doc_no || ''}`;
         document.getElementById('dsmWaitLinkInput').value = data.url;
-        document.getElementById('dsmWaitExpire').textContent = (data.expires_at ? `ໝົດອາຍຸ: ${fmtLaoTs(data.expires_at)} (GMT+7)` : '') + (data.reused ? ' · ລິ້ງເດີມ (ເຄີຍສ້າງໄວ້ແລ້ວ)' : ' · ລິ້ງໃໝ່');
+        document.getElementById('dsmWaitExpire').textContent = (data.expires_at && !String(data.expires_at).startsWith('9999') ? `ໝົດອາຍຸ: ${fmtLaoTs(data.expires_at)} (GMT+7)` : '') + (data.reused ? ' · ລິ້ງເດີມ (ເຄີຍສ້າງໄວ້ແລ້ວ)' : ' · ລິ້ງໃໝ່');
         document.getElementById('dsmWaitDirect').classList.toggle('hidden', !dsmLinkLast.phone);
         document.getElementById('dsmWaitBox').classList.remove('hidden');
       } catch (err) {

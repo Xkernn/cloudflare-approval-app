@@ -930,7 +930,7 @@ async function notifyBudgetFreedIfWasFull(env, team, brand, type) {
 
 
 // ==========================================================================
-// ລິ້ງເຊັນຮັບຕູ້ປາຍທາງ (ship_trip_receipts) — token ສຸ່ມ 256-bit, ເກັບສະເພາະ SHA-256 hash, ໃຊ້ໄດ້ຄັ້ງດຽວ, ໝົດອາຍຸ 7 ວັນ
+// ລິ້ງເຊັນຮັບຕູ້ປາຍທາງ (ship_trip_receipts) — token ສຸ່ມ 256-bit, ເກັບສະເພາະ SHA-256 hash, ໃຊ້ໄດ້ຄັ້ງດຽວ, ບໍ່ມີວັນໝົດອາຍຸຖ້າຍັງບໍ່ເຊັນ (expires_at = 9999-12-31)
 // ==========================================================================
 function newReceiptToken() {
   const bytes = new Uint8Array(32);
@@ -958,6 +958,7 @@ async function linkHmacToken(env, scope, nonce) {
 function newLinkNonce() { return newReceiptToken().slice(0, 24); }
 // ເວລາໝົດອາຍຸ (UTC 'YYYY-MM-DD HH:MM:SS') -> ເວລາລາວ dd/mm/yyyy HH:MM
 function fmtLaoExpiry(utc) {
+  if (String(utc || "").startsWith("9999")) return ""; // ລິ້ງບໍ່ມີວັນໝົດອາຍຸ
   const d = new Date(String(utc || "").replace(" ", "T") + "Z");
   if (isNaN(d.getTime())) return "";
   const l = new Date(d.getTime() + 7 * 3600 * 1000);
@@ -980,7 +981,7 @@ async function ensureDsmSignLink(env, kind, docId, actor, forceNew) {
   const hash = await sha256Hex(token);
   await env.DB.prepare(
     `INSERT INTO dsm_sign_links (kind, doc_id, token_hash, status, expires_at, created_by, nonce)
-     VALUES (?1, ?2, ?3, 'pending', datetime('now','+7 day'), ?4, ?5)
+     VALUES (?1, ?2, ?3, 'pending', '9999-12-31 23:59:59', ?4, ?5)
      ON CONFLICT(kind, doc_id) DO UPDATE SET token_hash = excluded.token_hash, status = 'pending',
        expires_at = excluded.expires_at, created_by = excluded.created_by, created_at = CURRENT_TIMESTAMP,
        signer_name = NULL, signed_at = NULL, nonce = excluded.nonce`
@@ -991,7 +992,7 @@ async function ensureDsmSignLink(env, kind, docId, actor, forceNew) {
 
 // ==========================================================================
 // ລິ້ງເຊັນ DSM (dsm_sign_links) — ສົ່ງໃຫ້ DSM ເຊັນໃບສັນຍາຢືມ (DOC-) / ໃບເກັບຕູ້ເຂົ້າສາງ (T-) ໂດຍບໍ່ຕ້ອງ login
-// token ສຸ່ມ 256-bit (ເກັບສະເພາະ hash), ໃຊ້ໄດ້ຄັ້ງດຽວ, ໝົດອາຍຸ 7 ວັນ — ໃຊ້ຕົວຊ່ວຍດຽວກັນກັບລິ້ງຮັບຕູ້ປາຍທາງ
+// token ສຸ່ມ 256-bit (ເກັບສະເພາະ hash), ໃຊ້ໄດ້ຄັ້ງດຽວ, ບໍ່ມີວັນໝົດອາຍຸຖ້າຍັງບໍ່ເຊັນ (expires_at = 9999-12-31) — ໃຊ້ຕົວຊ່ວຍດຽວກັນກັບລິ້ງຮັບຕູ້ປາຍທາງ
 // ==========================================================================
 const DSM_DOC_KINDS = {
   loan:   { table: "loan_contracts",   prefix: "loan-contract",   title: "ໃບສັນຍາຢືມ",         build: (env, row, opts) => buildLoanPdf(env, row, opts) },
@@ -1419,7 +1420,7 @@ const PUBLIC_API_ROUTES = new Set([
   "/api/public/receipt",
   "/api/public/receipt/sign",
   "/api/public/receipt/pdf",
-  // ລິ້ງເຊັນ DSM (DSM ບໍ່ຕ້ອງມີບັນຊີ) — ຄວາມປອດໄພອີງ token ສຸ່ມ 256-bit ທີ່ໃຊ້ໄດ້ຄັ້ງດຽວ + ໝົດອາຍຸ 7 ວັນ
+  // ລິ້ງເຊັນ DSM (DSM ບໍ່ຕ້ອງມີບັນຊີ) — ຄວາມປອດໄພອີງ token ສຸ່ມ 256-bit ທີ່ໃຊ້ໄດ້ຄັ້ງດຽວ + ບໍ່ມີວັນໝົດອາຍຸຖ້າຍັງບໍ່ເຊັນ
   "/api/public/dsm-sign",
   "/api/public/dsm-sign/sign",
   "/api/public/dsm-sign/pdf",
@@ -6040,11 +6041,11 @@ export default {
           const hash = await sha256Hex(token);
           if (existing) {
             await env.DB.prepare(
-              "UPDATE ship_trip_receipts SET token_hash = ?, nonce = ?, expected_count = ?, expires_at = datetime('now','+7 day'), created_by = ?, created_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'"
+              "UPDATE ship_trip_receipts SET token_hash = ?, nonce = ?, expected_count = ?, expires_at = '9999-12-31 23:59:59', created_by = ?, created_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'"
             ).bind(hash, nonce, items.length, actor, existing.id).run();
           } else {
             await env.DB.prepare(
-              "INSERT INTO ship_trip_receipts (trip_id, province, warehouse, token_hash, nonce, expected_count, expires_at, created_by) VALUES (?, ?, ?, ?, ?, ?, datetime('now','+7 day'), ?)"
+              "INSERT INTO ship_trip_receipts (trip_id, province, warehouse, token_hash, nonce, expected_count, expires_at, created_by) VALUES (?, ?, ?, ?, ?, ?, '9999-12-31 23:59:59', ?)"
             ).bind(trip.id, province, warehouse, hash, nonce, items.length, actor).run();
           }
         }
@@ -8890,7 +8891,7 @@ export default {
 
     // 6e6. Admin: ສົ່ງແຈ້ງເຕືອນເອກະສານຄ້າງເຊັນ
     //   kind = 'mde': ສົ່ງ Push ຫາ MDE (+ ອີເມວຖ້າຕິກ) ຕາມ mde_code ທີ່ເລືອກ
-    //   kind = 'dsm': ໃຊ້ລິ້ງເຊັນເດີມຂອງແຕ່ລະໃບ (ຖ້າຍັງບໍ່ໝົດອາຍຸ; ບໍ່ມີ/ໝົດອາຍຸ ຈຶ່ງອອກລິ້ງໃໝ່ 7 ວັນ) ແລ້ວສົ່ງອີເມວຫາ DSM ຂອງ Team ທີ່ເລືອກ (ຕ້ອງມີອີເມວໃນໜ້າຈັດການ DSM)
+    //   kind = 'dsm': ໃຊ້ລິ້ງເຊັນເດີມຂອງແຕ່ລະໃບ (ຖ້າຍັງບໍ່ເຊັນ; ບໍ່ມີວັນໝົດອາຍຸ) ແລ້ວສົ່ງອີເມວຫາ DSM ຂອງ Team ທີ່ເລືອກ (ຕ້ອງມີອີເມວໃນໜ້າຈັດການ DSM)
     if (url.pathname === "/api/admin/pending-sign-reminders/send" && request.method === "POST") {
       try {
         const body = await request.json();
