@@ -19423,6 +19423,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       'ຍັງບໍ່ຊັບມິດ PowerApp': 'badge-pending'     // ຄ້າງ - ສີເຫຼືອງ
     };
     /* ປ້າຍສະຖານະ "ສຳເລັດ" ຕາມ Doc Type (ຄ່າໃນ DB ຍັງເປັນ "ສຳເລັດ" ເພື່ອບໍ່ໃຫ້ກະທົບລາຍງານ/ຕົວກອງ/ກວດຊ້ຳ) */
+/* ຄີສຳລັບ Pill/ຕົວກອງ: "ສຳເລັດ" ແຍກຕາມ Doc Type (ຕູ້ເຄື່ອນຍ້າຍ / ເກັບຄືນສາງ) — ຄ່າໃນ DB ບໍ່ປ່ຽນ */
+function assetStatusKey(a) {
+  return (a && a.status === 'ສຳເລັດ') ? assetStatusText(a) : (a && a.status);
+}
 function assetStatusText(a) {
   const st = (a && a.status) || '-';
   if (st === 'ສຳເລັດ') {
@@ -19511,6 +19515,8 @@ function assetStatusBadgeClass(status) {
            <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
            <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
            <option value="ສຳເລັດ">ສຳເລັດ</option>
+           <option value="ຈັດສົ່ງສຳເລັດ">ຈັດສົ່ງສຳເລັດ</option>
+           <option value="ເກັບກັບສາງສຳເລັດ">ເກັບກັບສາງສຳເລັດ</option>
            <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>`;
       renderAssetStatusPills({}, 0);
       try {
@@ -19687,6 +19693,8 @@ function assetStatusBadgeClass(status) {
     /* ສີຂອງ Status (ໃຊ້ທັງ Filter Pills ແລະ ແຖບສີຊ້າຍຂອງ card) - ສອດຄ່ອງກັບສີ badge ເກົ່າ */
     const ASSET_STATUS_COLOR = {
       'ສຳເລັດ': '#15803d',
+      'ຈັດສົ່ງສຳເລັດ': '#15803d',
+      'ເກັບກັບສາງສຳເລັດ': '#15803d',
       'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': '#0891B2',
       'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ': '#0891B2',
       'ຢູ່ລະຫວ່າງຈັດສົ່ງ': '#2563EB',
@@ -19759,10 +19767,10 @@ function assetStatusBadgeClass(status) {
       });
 
       const counts = {};
-      base.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1; });
+      base.forEach(a => { const k = assetStatusKey(a); counts[k] = (counts[k] || 0) + 1; });
       renderAssetStatusPills(counts, base.length);
 
-      const filtered = statusFilter ? base.filter(a => a.status === statusFilter) : base;
+      const filtered = statusFilter ? base.filter(a => assetStatusKey(a) === statusFilter) : base;
       document.getElementById('assetResultCount').innerHTML = `ສະແດງ <b>${filtered.length}</b> / ${all.length} ລາຍການ`;
       renderAssetCardList(filtered);
     }
@@ -19956,7 +19964,7 @@ function assetStatusBadgeClass(status) {
             ${a.admin_verified
               ? `<span class="badge badge-approved"><i class="fa-solid fa-check"></i></span>`
               : `<span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i></span>`}
-            <span class="badge badge-default">${esc(a.status || '-')}</span>
+            <span class="badge badge-default">${esc(assetStatusText(a))}</span>
             <i class="fa-solid fa-chevron-right data-card-chevron"></i>
           </div>
         </div>
@@ -20166,7 +20174,7 @@ function assetStatusBadgeClass(status) {
         ['ວັນທີ່ຈັດສົ່ງ', fmtLaoTs(a.delivered_at)],
         ['ຜູ້ຢືນຢັນ', a.delivered_by],
         ['ອັບເດດລ່າສຸດ', fmtLaoTs(a.last_update)],
-        ['ສະຖານະ', raw(`<span class="badge badge-default">${esc(a.status || '-')}</span>`)],
+        ['ສະຖານະ', raw(`<span class="badge badge-default">${esc(assetStatusText(a))}</span>`)],
         ...(a.self_moved ? [['ການຈັດສົ່ງ', raw(selfMovedBadgeHtml())]] : []),
         ['ເອກະສານສັນຍາຢືມ', raw(loanDocBadgeHtml(a))],
         ['ເອກະສານຈັດສົ່ງ', raw(deliveryDocBadgeHtml(a) || '-')],
@@ -20449,7 +20457,7 @@ function assetStatusBadgeClass(status) {
             ${isOnTruck ? `<span class="badge badge-info" style="margin-bottom:6px; display:inline-block;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</span><br>` : ''}
             ${a.flagged ? `<span class="badge badge-rejected" style="margin-bottom:6px; display:inline-block;">🚩 ດ່ວນ - ຕິດທຸງໄວ້</span><br>` : ''}
             <b>${esc(a.tracking_no || '-')}</b><br>
-            <span class="badge badge-default">${esc(a.status || '-')}</span><br>
+            <span class="badge badge-default">${esc(assetStatusText(a))}</span><br>
             ${lbl('Outlet Name')} ${esc(a.outlet_name || '-')}<br>
             ${lbl('Outlet Code')} ${esc(a.outlet_code || '-')}<br>
             ${lbl('ເບີໂທຮ້ານ')} ${esc(outletInfo && outletInfo.phone ? outletInfo.phone : '-')}<br>
