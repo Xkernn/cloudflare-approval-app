@@ -84,7 +84,7 @@ async function computeStockBudgetAlerts(env) {
 // Admin Dashboard (POST /api/admin/run-notification-check)
 // ກວດ 2 ຢ່າງ ແລ້ວແຍກສົ່ງຫາຄົນລະ role ຕາມທີ່ກ່ຽວຂ້ອງ:
 //   1) ຄຳຂໍເບີກ Asset ທີ່ຄ້າງອະນຸມັດເກີນ 24 ຊົ່ວໂມງ -> ສົ່ງຫາ admin, warehouse
-//   2) Asset Tracking ທີ່ສະຖານະເປັນ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ແຕ່ຄ້າງບໍ່ໄດ້ຈັດສົ່ງເກີນ 7 ວັນ -> ສົ່ງຫາ warehouse, delivery
+//   2) Asset Tracking ທີ່ສະຖານະເປັນ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ແຕ່ຄ້າງບໍ່ໄດ້ຈັດສົ່ງເກີນ 7 ວັນ -> ສົ່ງຫາ warehouse, delivery
 // ==========================================================================
 const PENDING_REQUEST_REMINDER_HOURS = 24;
 const DELIVERY_STUCK_REMINDER_DAYS = 7;
@@ -93,15 +93,17 @@ const DELIVERED_STATUS = "ສຳເລັດ";
 const LOAN_USER_REMINDER_DAYS = 1;
 // ສະຖານະ Asset ທີ່ຖ້າຖືກຕັ້ງ (ປ່ຽນເປັນສະຖານະນີ້) ໃຫ້ແຈ້ງເຕືອນ warehouse/delivery ວ່າມີລາຍການຈັດສົ່ງໃໝ່
 // ລຳດັບຂັ້ນຕອນ Asset: ຍັງບໍ່ທັນເຊັນເອກະສານ -> ຍັງບໍ່ຊັບມິດ PowerApp -> ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ (Admin ຕັ້ງຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
-//   -> [ສະແກນຕູ້ຂຶ້ນລົດ ຂຶ້ນລົດ] ຢູ່ລະຫວ່າງຈັດສົ່ງ (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ) -> [ລາຍງານການຈັດສົ່ງ] ສຳເລັດ
+//   -> [ສະແກນຕູ້ຂຶ້ນລົດ ຂຶ້ນລົດ] ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ) -> [ລາຍງານການຈັດສົ່ງ] ສຳເລັດ
 const WAITING_DISPATCH_STATUS = "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ";
 // Doc Type "ຕູ້ເຄື່ອນຍ້າຍ" / "ເກັບຄືນສາງ": ຈຸດເລີ່ມຂອງວຽກສາງ ໃຊ້ຊື່ "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ" (ໃຊ້ໜ້າທີ່ຄືກັນກັບ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ)
 const COLLECT_WAITING_STATUS = "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ";
 const COLLECT_DOC_TYPES = ["ຕູ້ເຄື່ອນຍ້າຍ", "ເກັບຄືນສາງ"];
 const WAITING_DISPATCH_STATUSES = [WAITING_DISPATCH_STATUS, COLLECT_WAITING_STATUS];
-const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ລະຫວ່າງຈັດສົ່ງ"];
+const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"];
 // ປ່ຽນເປັນສະຖານະເຫຼົ່ານີ້ -> push ແຈ້ງ warehouse/delivery (ລວມ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ທີ່ເປັນຈຸດເລີ່ມຂອງວຽກຂອງສາງ)
 const DISPATCH_NOTIFY_STATUSES = [...WAITING_DISPATCH_STATUSES, ...SHIPPING_NOTIFY_STATUSES];
+// ສະຖານະທີ່ສະແດງໃນແຜນທີ່: ລໍຖ້າ (ຂົນສົ່ງ/ເກັບຕູ້ຮ້ານເກົ່າ) + ຢູ່ເທິງລົດ (ແລະ ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ສຳລັບຂໍ້ມູນເກົ່າ)
+const MAP_STATUSES = [...WAITING_DISPATCH_STATUSES, ...SHIPPING_NOTIFY_STATUSES];
 // ຈຳນວນ MDE ສູງສຸດທີ່ Admin ເລືອກສົ່ງແຈ້ງເຕືອນໃນການກົດຄັ້ງດຽວ (ກັນ Worker ເກີນຂີດຈຳກັດ subrequest ຕໍ່ 1 ຄຳຂໍ)
 const MAX_BULK_MDE_NOTIFY = 150;
 // ຈຳນວນອີເມວສູງສຸດທີ່ສົ່ງໃນການກົດຄັ້ງດຽວ (ກັນເກີນຂີດຈຳກັດ subrequest ຂອງ Worker ແລະ ໂຄຕ້າສົ່ງ Gmail ຕໍ່ມື້)
@@ -689,14 +691,14 @@ async function runAutomatedNotificationChecks(env) {
     sentAny = true;
   }
 
-  // 2) Asset Tracking ທີ່ສະຖານະເປັນ "ຢູ່ລະຫວ່າງຈັດສົ່ງ" ຫຼື "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ແຕ່ຄ້າງບໍ່ໄດ້ຈັດສົ່ງເກີນ 7 ວັນ (ນັບຈາກ last_update) -> ແຈ້ງເຕືອນ warehouse, delivery
+  // 2) Asset Tracking ທີ່ສະຖານະເປັນ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" ຫຼື "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ແຕ່ຄ້າງບໍ່ໄດ້ຈັດສົ່ງເກີນ 7 ວັນ (ນັບຈາກ last_update) -> ແຈ້ງເຕືອນ warehouse, delivery
   const stuckRow = await env.DB.prepare(
     `SELECT COUNT(*) AS cnt FROM assets
      WHERE status IN (${SHIPPING_NOTIFY_STATUSES.map(() => '?').join(',')}) AND last_update <= datetime('now', ?)`
   ).bind(...SHIPPING_NOTIFY_STATUSES, `-${DELIVERY_STUCK_REMINDER_DAYS} days`).first();
   const stuckCount = (stuckRow && stuckRow.cnt) || 0;
   if (stuckCount > 0) {
-    const line = `• ${stuckCount} ຕູ້ເຢັນ ຢູ່ໃນສະຖານະ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຄ້າງບໍ່ໄດ້ຈັດສົ່ງເກີນ ${DELIVERY_STUCK_REMINDER_DAYS} ວັນ`;
+    const line = `• ${stuckCount} ຕູ້ເຢັນ ຢູ່ໃນສະຖານະ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຄ້າງບໍ່ໄດ້ຈັດສົ່ງເກີນ ${DELIVERY_STUCK_REMINDER_DAYS} ວັນ`;
     summaryLines.push(line);
     await sendWebPushToRoles(env, ["warehouse", "delivery"], {
       title: "ສະຫຼຸບແຈ້ງເຕືອນປະຈຳວັນ",
@@ -7113,7 +7115,7 @@ export default {
 
       const DELIVERED_STATUS = "ສຳເລັດ";
       const viewAll = canViewAll(requester.role);
-      const mapPlaceholders = SHIPPING_NOTIFY_STATUSES.map(() => "?").join(",");
+      const mapPlaceholders = MAP_STATUSES.map(() => "?").join(",");
 
       const isDsmBc = requester.role === "dsm";
       const assetCountStmt = viewAll
@@ -7123,10 +7125,10 @@ export default {
         : env.DB.prepare("SELECT COUNT(*) AS cnt FROM assets WHERE mde_code = ? AND IFNULL(status,'') != ?").bind(requester.mde_code, DELIVERED_STATUS);
 
       const mapCountStmt = viewAll
-        ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(...SHIPPING_NOTIFY_STATUSES)
+        ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(...MAP_STATUSES)
         : isDsmBc
-        ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE ${TEAM_MDE_SQL} AND status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(requester.team || "", ...SHIPPING_NOTIFY_STATUSES)
-        : env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE mde_code = ? AND status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(requester.mde_code, ...SHIPPING_NOTIFY_STATUSES);
+        ? env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE ${TEAM_MDE_SQL} AND status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(requester.team || "", ...MAP_STATUSES)
+        : env.DB.prepare(`SELECT COUNT(*) AS cnt FROM assets WHERE mde_code = ? AND status IN (${mapPlaceholders}) AND latitude IS NOT NULL AND longitude IS NOT NULL`).bind(requester.mde_code, ...MAP_STATUSES);
 
       // ຂັ້ນ 1 (Admin ກວດ) / ຂັ້ນ 2 (ສາງອະນຸມັດ): badge ນັບສະເພາະຄຳຂໍທີ່ລໍຖ້າໃຫ້ role ນັ້ນດຳເນີນການ
       const requestCountStmt = viewAll
@@ -8318,7 +8320,7 @@ export default {
 
         await env.DB.prepare("UPDATE assets SET status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ?").bind(status, id).run();
 
-        // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
+        // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
         if (existingAsset && existingAsset.status !== status && DISPATCH_NOTIFY_STATUSES.includes(status)) {
           try {
             const mdeName = await getMdeName(env, existingAsset.mde_code);
@@ -8802,7 +8804,7 @@ export default {
           ).bind(outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, qr_code || null, serial_number || null, capex || null, lat, lng,
             old_outlet_code || null, old_outlet_name || null, oldLat, oldLng, status, id).run();
 
-          // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
+          // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
           if (existingAsset && existingAsset.status !== status && DISPATCH_NOTIFY_STATUSES.includes(status)) {
             try {
               const mdeName = await getMdeName(env, mde_code);
@@ -8834,7 +8836,7 @@ export default {
           const trackingNo = `TRK${String(newId).padStart(4, '0')}`;
           await env.DB.prepare("UPDATE assets SET tracking_no = ? WHERE id = ?").bind(trackingNo, newId).run();
 
-          // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສ້າງ Asset ໃໝ່ ພ້ອມຕັ້ງສະຖານະເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ລະຫວ່າງຈັດສົ່ງ" ທັນທີ
+          // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສ້າງ Asset ໃໝ່ ພ້ອມຕັ້ງສະຖານະເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" ທັນທີ
           if (DISPATCH_NOTIFY_STATUSES.includes(status)) {
             try {
               const mdeName = await getMdeName(env, mde_code);
@@ -9308,7 +9310,7 @@ export default {
     }
 
     // 7d-2. ສະແກນຕູ້ຂຶ້ນລົດ — ຜູ້ສະແກນກວດຮ້ານ/ຕູ້/ເອກະສານຈາກໜ້າຈໍແລ້ວກົດຢືນຢັນ:
-    //   Asset "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" -> "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ), ສະຕັອກສາງ = "ຢູ່ເທິງລົດ"
+    //   Asset "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" -> "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ), ສະຕັອກສາງ = "ຢູ່ເທິງລົດ"
     //   outlet_code (ບໍ່ບັງຄັບ): ຖ້າສົ່ງມາ ຕ້ອງກົງກັບຮ້ານຂອງ Asset (ເກັບໄວ້ເພື່ອຄວາມເຂົ້າກັນໄດ້ກັບໜ້າຈໍເກົ່າ)
     if (url.pathname === "/api/asset-delivery/dispatch" && request.method === "POST") {
       try {
@@ -9350,7 +9352,7 @@ export default {
         if (!assetRow) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
 
         const DELIVERED_STATUS = "ສຳເລັດ";
-        const ON_TRUCK_STATUS = "ຢູ່ລະຫວ່າງຈັດສົ່ງ";
+        const ON_TRUCK_STATUS = "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ";
         const MOVE_STATUS = "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ";
         if (assetRow.status === DELIVERED_STATUS) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
         if (assetRow.doc_type === RETURN_TO_WAREHOUSE_DOC_TYPE) {
@@ -9360,7 +9362,7 @@ export default {
           return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
         }
         // ອອກສາງໄດ້ສະເພາະຕູ້ທີ່ Admin ຕັ້ງ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ແລ້ວ (ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
-        // ຍັງຍອມ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
+        // ຍັງຍອມ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
         const DISPATCHABLE = [...WAITING_DISPATCH_STATUSES, ON_TRUCK_STATUS, MOVE_STATUS];
         // ຕູ້ຕິດທຸງ "ດ່ວນ" ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າສະຖານະ/ເອກະສານຈະຄົບຫຼືບໍ່; ຕູ້ປົກກະຕິຕ້ອງເຊັນເອກະສານຄົບກ່ອນ
         const isUrgent = !!assetRow.flagged;
@@ -9435,7 +9437,7 @@ export default {
         if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
         const actor = requester.email || String(userId);
         const isAdminRole = requester.role === "admin";
-        const ON_TRUCK_STATUS = "ຢູ່ລະຫວ່າງຈັດສົ່ງ";
+        const ON_TRUCK_STATUS = "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ";
 
         if (!id && stock_id) {
           const stock = await env.DB.prepare("SELECT status, truck_closed_at FROM warehouse_stock WHERE id = ?").bind(stock_id).first();
@@ -9472,7 +9474,7 @@ export default {
         if (!requester || !canViewAll(requester.role)) return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
         const r1 = await env.DB.prepare(
           "UPDATE assets SET truck_closed_at = CURRENT_TIMESTAMP WHERE status = ? AND dispatched_at IS NOT NULL AND truck_closed_at IS NULL"
-        ).bind("ຢູ່ລະຫວ່າງຈັດສົ່ງ").run();
+        ).bind("ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ").run();
         const r2 = await env.DB.prepare(
           "UPDATE warehouse_stock SET truck_closed_at = CURRENT_TIMESTAMP WHERE status = 'on_truck' AND truck_closed_at IS NULL"
         ).run();
@@ -9490,7 +9492,7 @@ export default {
       const { results } = await env.DB.prepare(
         `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by, truck_closed_at, flagged
          FROM assets WHERE status = ? AND dispatched_at IS NOT NULL ORDER BY dispatched_at DESC LIMIT 200`
-      ).bind("ຢູ່ລະຫວ່າງຈັດສົ່ງ").all();
+      ).bind("ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ").all();
       // ຕູ້ດ່ວນບໍ່ມີເອກະສານທີ່ຂຶ້ນລົດຈາກສະຕັອກໂດຍກົງ (ບໍ່ຜູກ Asset Tracking)
       const { results: stockOnTruck } = await env.DB.prepare(
         `SELECT s.id, s.cooler_brand, s.cooler_type, s.qr_code, s.updated_at AS dispatched_at, s.truck_closed_at

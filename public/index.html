@@ -5937,8 +5937,8 @@ body.dlv-popup-open { overflow: hidden; }
             <div class="guide-status-list">
               <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</span><span>MDE ຊັບມິດ PowerApp ຜ່ານແລ້ວ — ລໍຖ້າສາງສະແກນຕູ້ຂຶ້ນລົດ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
           <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</span><span>ສະເພາະ Doc Type ຕູ້ເຄື່ອນຍ້າຍ / ເກັບຄືນສາງ — ຈຸດເລີ່ມຂອງວຽກສາງ ຄືກັບ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</span><span>Asset ກຳລັງຖືກເຄື່ອນຍ້າຍ</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ລະຫວ່າງຈັດສົ່ງ</span><span>Asset ກຳລັງຖືກຈັດສົ່ງໄປຫາຮ້ານ</span></div>
+              
+              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</span><span>Asset ກຳລັງຖືກຈັດສົ່ງໄປຫາຮ້ານ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ທັນເຊັນເອກະສານ</span><span>ຍັງຄ້າງການສົ່ງເອກະສານ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ຊັບມິດ PowerApp</span><span>ຍັງຄ້າງການຊັບມິດໃນ PowerApp</span></div>
               <div class="guide-status-row"><span class="badge badge-approved">ສຳເລັດ</span><span>ຈັດສົ່ງສຳເລັດແລ້ວ - ລາຍການຈະຍ້າຍໄປເບິ່ງທີ່ <b>ປະຫວັດການຈັດສົ່ງ Asset</b></span></div>
@@ -7335,13 +7335,12 @@ body.dlv-popup-open { overflow: hidden; }
         <div class="input-wrapper"><i class="fa-solid fa-toggle-on"></i>
           <select id="editAssetStatus" class="form-control">
             <option value="">-- ເລືອກ Status --</option>
-            <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
             <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
             <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
            <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
             <option value="ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</option>
             <option value="ສຳເລັດ">ສຳເລັດ</option>
-            <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>
+            <option value="ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</option>
           </select>
         </div>
       </div>
@@ -7379,13 +7378,12 @@ body.dlv-popup-open { overflow: hidden; }
         <div class="input-wrapper"><i class="fa-solid fa-toggle-on"></i>
           <select id="editStatusOnly" class="form-control">
             <option value="">-- ເລືອກ Status --</option>
-            <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
             <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
             <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
             <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
             <option value="ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</option>
             <option value="ສຳເລັດ">ສຳເລັດ</option>
-            <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>
+            <option value="ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</option>
           </select>
         </div>
       </div>
@@ -19417,22 +19415,19 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       'ສຳເລັດ': 'badge-approved',                 // ສຳເລັດແລ້ວ - ສີຂຽວ
       'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 'badge-purple',
       'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ': 'badge-purple',    // ລໍຖ້າສາງຂົນສົ່ງ (Admin ຈັດການ) - ສີມ່ວງ
-      'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 'badge-info',           // ກຳລັງດຳເນີນການ - ສີຟ້າ
+      'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ': 'badge-info',           // ກຳລັງດຳເນີນການ - ສີຟ້າ
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 'badge-purple',      // ກຳລັງດຳເນີນການ (ຍ້າຍຮ້ານ) - ສີມ່ວງ
       'ຍັງບໍ່ທັນເຊັນເອກະສານ': 'badge-rejected',    // ຄ້າງ/ຕ້ອງຮີບແກ້ໄຂ - ສີແດງ
       'ຍັງບໍ່ຊັບມິດ PowerApp': 'badge-pending'     // ຄ້າງ - ສີເຫຼືອງ
     };
     /* ປ້າຍສະຖານະ "ສຳເລັດ" ຕາມ Doc Type (ຄ່າໃນ DB ຍັງເປັນ "ສຳເລັດ" ເພື່ອບໍ່ໃຫ້ກະທົບລາຍງານ/ຕົວກອງ/ກວດຊ້ຳ) */
-/* ຄີສຳລັບ Pill/ຕົວກອງ: "ສຳເລັດ" ແຍກຕາມ Doc Type (ຕູ້ເຄື່ອນຍ້າຍ / ເກັບຄືນສາງ) — ຄ່າໃນ DB ບໍ່ປ່ຽນ */
-function assetStatusKey(a) {
-  return (a && a.status === 'ສຳເລັດ') ? assetStatusText(a) : (a && a.status);
-}
 function assetStatusText(a) {
   const st = (a && a.status) || '-';
   if (st === 'ສຳເລັດ') {
     if (a.doc_type === 'ເກັບຄືນສາງ') return 'ເກັບກັບສາງສຳເລັດ';
     if (a.doc_type === 'ຕູ້ເຄື່ອນຍ້າຍ') return 'ຈັດສົ່ງສຳເລັດ';
   }
+  if (st === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.doc_type === 'ເກັບຄືນສາງ') return 'ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ';
   return st;
 }
 function assetStatusBadgeClass(status) {
@@ -19490,7 +19485,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('assetPageDesc').textContent = isAdmin
         ? 'ຈັດການລາຍການຊັບສິນທັງໝົດໃນລະບົບ'
         : isWarehouse
-        ? 'ລາຍການ Asset ທີ່ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ / ຢູ່ລະຫວ່າງຈັດສົ່ງ / ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ຫຼື ຖືກຕິດທຸງ (ດ່ວນ)'
+        ? 'ລາຍການ Asset ທີ່ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ / ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ / ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ຫຼື ຖືກຕິດທຸງ (ດ່ວນ)'
         : `ລາຍການຊັບສິນຂອງ MDE: ${currentUser.mde_code}`;
 
       const list = document.getElementById('assetCardList');
@@ -19508,23 +19503,19 @@ function assetStatusBadgeClass(status) {
         ? `<option value="">-- ທຸກ Status --</option>
            <option value="ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</option>
            <option value="ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</option>
-           <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
-           <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>`
+           <option value="ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</option>`
         : `<option value="">-- ທຸກ Status --</option>
-           <option value="ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ">ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ</option>
            <option value="ຍັງບໍ່ທັນເຊັນເອກະສານ">ຍັງບໍ່ທັນເຊັນເອກະສານ</option>
            <option value="ຍັງບໍ່ຊັບມິດ PowerApp">ຍັງບໍ່ຊັບມິດ PowerApp</option>
            <option value="ສຳເລັດ">ສຳເລັດ</option>
-           <option value="ຈັດສົ່ງສຳເລັດ">ຈັດສົ່ງສຳເລັດ</option>
-           <option value="ເກັບກັບສາງສຳເລັດ">ເກັບກັບສາງສຳເລັດ</option>
-           <option value="ຢູ່ລະຫວ່າງຈັດສົ່ງ">ຢູ່ລະຫວ່າງຈັດສົ່ງ</option>`;
+           <option value="ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</option>`;
       renderAssetStatusPills({}, 0);
       try {
         const res = await fetch(`/api/assets?userId=${currentUser.id}`);
         const assets = await res.json();
-        // role warehouse: ໃຫ້ເຫັນສະເພາະ Asset ທີ່ "ຢູ່ລະຫວ່າງຈັດສົ່ງ" / "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື ຖືກຕິດທຸງໄວ້ (ດ່ວນ) ເທົ່ານັ້ນ
+        // role warehouse: ໃຫ້ເຫັນສະເພາະ Asset ທີ່ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" / "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື ຖືກຕິດທຸງໄວ້ (ດ່ວນ) ເທົ່ານັ້ນ
         currentAssetsData = isWarehouse
-          ? assets.filter(a => a.status === 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ' || a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' || a.status === 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ' || a.status === 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ' || a.flagged)
+          ? assets.filter(a => a.status === 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ' || a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' || a.status === 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ' || a.status === 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ' || a.flagged)
           : assets;
         filterAssetTracking();
         refreshMenuBadges();
@@ -19693,11 +19684,9 @@ function assetStatusBadgeClass(status) {
     /* ສີຂອງ Status (ໃຊ້ທັງ Filter Pills ແລະ ແຖບສີຊ້າຍຂອງ card) - ສອດຄ່ອງກັບສີ badge ເກົ່າ */
     const ASSET_STATUS_COLOR = {
       'ສຳເລັດ': '#15803d',
-      'ຈັດສົ່ງສຳເລັດ': '#15803d',
-      'ເກັບກັບສາງສຳເລັດ': '#15803d',
       'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': '#0891B2',
       'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ': '#0891B2',
-      'ຢູ່ລະຫວ່າງຈັດສົ່ງ': '#2563EB',
+      'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ': '#2563EB',
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': '#7C3AED',
       'ຍັງບໍ່ທັນເຊັນເອກະສານ': '#C0311A',
       'ຍັງບໍ່ຊັບມິດ PowerApp': '#C4780F'
@@ -19767,10 +19756,10 @@ function assetStatusBadgeClass(status) {
       });
 
       const counts = {};
-      base.forEach(a => { const k = assetStatusKey(a); counts[k] = (counts[k] || 0) + 1; });
+      base.forEach(a => { counts[a.status] = (counts[a.status] || 0) + 1; });
       renderAssetStatusPills(counts, base.length);
 
-      const filtered = statusFilter ? base.filter(a => assetStatusKey(a) === statusFilter) : base;
+      const filtered = statusFilter ? base.filter(a => a.status === statusFilter) : base;
       document.getElementById('assetResultCount').innerHTML = `ສະແດງ <b>${filtered.length}</b> / ${all.length} ລາຍການ`;
       renderAssetCardList(filtered);
     }
@@ -19831,7 +19820,7 @@ function assetStatusBadgeClass(status) {
 
     /* ===== Workflow stepper ຂອງ Asset Detail ===== */
     const AD_STEPS = ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', 'ຈັດສົ່ງສຳເລັດ'];
-    const AD_STEP_OF = { 'ຍັງບໍ່ທັນເຊັນເອກະສານ': 0, 'ຍັງບໍ່ຊັບມິດ PowerApp': 1, 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 2, 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ': 2, 'ຢູ່ລະຫວ່າງຈັດສົ່ງ': 3, 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 3, 'ສຳເລັດ': 4 };
+    const AD_STEP_OF = { 'ຍັງບໍ່ທັນເຊັນເອກະສານ': 0, 'ຍັງບໍ່ຊັບມິດ PowerApp': 1, 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ': 2, 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ': 2, 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ': 3, 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': 3, 'ສຳເລັດ': 4 };
 
     /* ຊື່ຂັ້ນຕອນຕາມ Doc Type (ສະຖານະໃນ DB ບໍ່ປ່ຽນ — ປ່ຽນສະເພາະຂໍ້ຄວາມທີ່ສະແດງ)
        · ຕູ້ເຄື່ອນຍ້າຍ: ... → ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ → ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ → ຈັດສົ່ງສຳເລັດ
@@ -19839,7 +19828,7 @@ function assetStatusBadgeClass(status) {
     function adStepsFor(a) {
       const dt = a && a.doc_type;
       if (dt === 'ຕູ້ເຄື່ອນຍ້າຍ' || dt === 'ເກັບຄືນສາງ') {
-        return ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', dt === 'ເກັບຄືນສາງ' ? 'ເກັບກັບສາງສຳເລັດ' : 'ຈັດສົ່ງສຳເລັດ'];
+        return ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', dt === 'ເກັບຄືນສາງ' ? 'ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ' : 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', dt === 'ເກັບຄືນສາງ' ? 'ເກັບກັບສາງສຳເລັດ' : 'ຈັດສົ່ງສຳເລັດ'];
       }
       return AD_STEPS;
     }
@@ -20345,7 +20334,7 @@ function assetStatusBadgeClass(status) {
     let assetMapInstance = null;
     let assetMapMarkersLayer = null;
     // ສະແດງເທິງແຜນທີ່ສະເພາะ Asset ที่กำลัง "เคลื่อนย้าย" หรือ "กำลังจัดส่ง" เท่านั้น (ตรงกับ SHIPPING_NOTIFY_STATUSES ฝั่ง backend)
-    const MAP_VISIBLE_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ລະຫວ່າງຈັດສົ່ງ"];
+    const MAP_VISIBLE_STATUSES = ["ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ", "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ", "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"]; // ລໍຖ້າ + ຢູ່ເທິງລົດ (ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ເກັບໄວ້ສຳລັບຂໍ້ມູນເກົ່າ)
     // ຊຸດສີສຳລັບແຍກ Doc Type ເທິງແຜນທີ່ (ວົນຊ້ຳຖ້າ Doc Type ມີຫຼາຍກວ່າສີ)
     const MAP_DOCTYPE_PALETTE = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
     const mapDoctypeColorCache = {};
@@ -20442,7 +20431,7 @@ function assetStatusBadgeClass(status) {
           const mdeInfo = dbMdeList.find(m => m.mde_code === a.mde_code);
           const color = colorForDocType(a.doc_type);
           docTypesSeen.add(a.doc_type || 'ບໍ່ລະບຸ');
-          const isOnTruck = a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && !!a.dispatched_at;
+          const isOnTruck = a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && !!a.dispatched_at;
           const marker = L.marker([lat, lng], { icon: pulseMarkerIcon(color, a.outlet_name, !!a.flagged, isOnTruck), zIndexOffset: isOnTruck ? 1000 : 0 }).addTo(assetMapMarkersLayer);
           const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
           const isRelocation = a.doc_type === RELOCATION_DOC_TYPE;
@@ -20492,7 +20481,7 @@ function assetStatusBadgeClass(status) {
         legend.id = 'mapDoctypeLegend';
         legend.className = 'map-doctype-legend';
         legend.innerHTML =
-          (points.some(a => a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && a.dispatched_at) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#1d4ed8;"></span><b style="color:#1d4ed8;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</b></div>` : '') +
+          (points.some(a => a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.dispatched_at) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#1d4ed8;"></span><b style="color:#1d4ed8;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</b></div>` : '') +
           (points.some(a => a.flagged) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#ef4444;"></span><b style="color:#ef4444;">🚩 ດ່ວນ (ຕິດທຸງ)</b></div>` : '') +
           [...docTypesSeen].sort().map(dt =>
           `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:${colorForDocType(dt === 'ບໍ່ລະບຸ' ? '' : dt)};"></span>${esc(dt)}</div>`
@@ -21033,7 +21022,7 @@ function assetStatusBadgeClass(status) {
     let dispatchStockId = null; // ຕູ້ດ່ວນບໍ່ມີເອກະສານ (ບໍ່ຜູກ Asset): id ຂອງແຖວໃນສະຕັອກສາງ
     let dispatchLoan = null; // ໃບສັນຍາຢືມຂອງຕູ້ທີ່ສະແກນຢູ່ (ຖ້າມີ) — ໃຊ້ກັບປຸ່ມ "ເບິ່ງເອກະສານ"
     const DISPATCH_WAITING_STATUS = 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ';
-    const DISPATCH_LEGACY_OK = ['ຢູ່ລະຫວ່າງຈັດສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ']; // ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນລໍຖ້າສາງ (ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ)
+    const DISPATCH_LEGACY_OK = ['ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ']; // ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນລໍຖ້າສາງ (ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ)
 
     /* ເປີດກ້ອງສະແກນທັນທີ — ໃຊ້ຕອນເຂົ້າໜ້າ (ມືຖື) ແລະ ປຸ່ມ "ເປີດກ້ອງ" */
     function dispatchOpenScanner() {
@@ -21068,7 +21057,7 @@ function assetStatusBadgeClass(status) {
         if (data.already_delivered) { dispatchSetMsg(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ', '#dc2626'); return; }
         const a = data.item;
         if (a.doc_type === 'ເກັບຄືນສາງ') { dispatchSetMsg('ເອກະສານ "ເກັບຄືນສາງ" ບໍ່ຕ້ອງສະແກນຂຶ້ນລົດ', '#dc2626'); return; }
-        if (a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
+        if (a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
         dispatchLoan = data.loan_contract || null;
         const urgent = !!a.flagged;
         const loanBlock = !urgent && dispatchLoan && dispatchLoan.status !== 'completed';
@@ -21355,7 +21344,7 @@ function assetStatusBadgeClass(status) {
 
         const a = data.item;
         // ຕູ້ທີ່ສະແກນຂຶ້ນລົດແລ້ວ = ກຳລັງສົ່ງ; ຖ້າຍັງບໍ່ສະແກນ ກໍຍັງຈັດສົ່ງໄດ້ (ເຕືອນເທົ່ານັ້ນ)
-        if (a.dispatched_at && a.status === 'ຢູ່ລະຫວ່າງຈັດສົ່ງ') { msgEl.textContent = 'ຕູ້ຢູ່ເທິງລົດ ກຳລັງສົ່ງ — ຮອດຮ້ານແລ້ວ ກະລຸນາຖ່າຍຮູບ ແລະ ໃຫ້ລູກຄ້າເຊັນຮັບ'; msgEl.style.color = '#16a34a'; msgEl.classList.remove('hidden'); }
+        if (a.dispatched_at && a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ') { msgEl.textContent = 'ຕູ້ຢູ່ເທິງລົດ ກຳລັງສົ່ງ — ຮອດຮ້ານແລ້ວ ກະລຸນາຖ່າຍຮູບ ແລະ ໃຫ້ລູກຄ້າເຊັນຮັບ'; msgEl.style.color = '#16a34a'; msgEl.classList.remove('hidden'); }
         else { msgEl.textContent = 'ໝາຍເຫດ: ຕູ້ນີ້ຍັງບໍ່ໄດ້ສະແກນຂຶ້ນລົດ (ໃຊ້ເມນູ ສະແກນຕູ້ຂຶ້ນລົດ)'; msgEl.style.color = '#d97706'; msgEl.classList.remove('hidden'); }
         document.getElementById('deliverAssetId').value = a.id;
         deliverLoanContract = data.loan_contract || null;
