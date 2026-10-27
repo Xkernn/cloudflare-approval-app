@@ -2666,6 +2666,150 @@ async function tokenCanBypassMaintenance(env, request) {
   }
 }
 
+// ==========================================================================
+// ສົ່ງອີເມວເຕືອນ "ເອກະສານຄ້າງເຊັນ" ຫາ MDE (ໃບຍັງບໍ່ເຊັນ) ແລະ DSM (ລໍຖ້າ DSM ເຊັນ) ອັດຕະໂນມັດ
+//  - ຮັນເອງທຸກວັນຈັນ 06:00 ເວລາລາວ ຜ່ານ Cron Trigger (SIGN_REMINDER_CRON) ສະເພາະໃບທີ່ຄ້າງ >= 7 ມື້
+//  - Admin ກົດປຸ່ມ "ສົ່ງເມວເຕືອນຄ້າງເຊັນ" ໄດ້ທຸກເວລາ (POST /api/admin/pending-sign-reminders/run-auto, ຄ້າງກີ່ມື້ກໍໄດ້)
+//  ໃຊ້ Gmail ຕົວດຽວກັນກັບການສົ່ງເມວດ້ວຍມື (sendEmail). appUrl ຈຳເປັນສຳລັບລິ້ງເຊັນຂອງ DSM
+//  (ປຸ່ມ: ໃຊ້ origin ຂອງຄຳຂໍ; Cron: ໃຊ້ env.APP_URL — ຕ້ອງຕັ້ງໃນ wrangler.toml [vars])
+// ==========================================================================
+const SIGN_REMINDER_MIN_AGE_DAYS = 7;
+const SIGN_REMINDER_CRON = "0 23 * * 0"; // ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ (UTC+7)
+async function runSignReminderEmails(env, { appUrl = "", minAgeDays = SIGN_REMINDER_MIN_AGE_DAYS, actor = "auto-weekly" } = {}) {
+  const age = Math.max(0, Math.min(365, Number(minAgeDays) || 0));
+  const ageBind = `-${age} days`;
+  const base = String(appUrl || "").replace(/\/+$/, "");
+  const out = { mde_emailed: 0, dsm_emailed: 0, lines: [] };
+  let mailStopped = "";
+  const stopMsg = (em) => em.startsWith("MAIL_NOT_CONFIGURED") ? "ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Gmail (GMAIL_* secrets)" : "Gmail Token ໃຊ້ບໍ່ໄດ້ (ໝົດອາຍຸ/ຖືກຖອນ)";
+  const isStop = (em) => em.startsWith("MAIL_NOT_CONFIGURED") || em.startsWith("GMAIL_TOKEN_FAILED");
+
+  // ---------- MDE: ໃບສັນຍາຢືມ / ໃບ T- ທີ່ຍັງເປັນ draft (ຍັງບໍ່ເຊັນ) ----------
+  const mdeDocs = await env.DB.prepare(
+    `SELECT 'loan' AS kind, mde_code, doc_no, outlet_name FROM loan_contracts
+       WHERE status = 'draft' AND IFNULL(mde_code, '') != '' AND created_at <= datetime('now', ?1)
+     UNION ALL
+     SELECT 'cancel' AS kind, mde_code, doc_no, outlet_name FROM cancel_contracts
+       WHERE status = 'draft' AND IFNULL(mde_code, '') != '' AND created_at <= datetime('now', ?1)`
+  ).bind(ageBind).all();
+  const byMde = new Map();
+  for (const r of (mdeDocs.results || [])) {
+    if (!byMde.has(r.mde_code)) byMde.set(r.mde_code, []);
+    byMde.get(r.mde_code).push(r);
+  }
+  if (byMde.size) {
+    const userRes = await env.DB.prepare("SELECT id, mde_code, email FROM users WHERE role = 'user' AND status = 'approved' AND mde_code IS NOT NULL ORDER BY id").all();
+    const userBy = new Map();
+    for (const u of (userRes.results || [])) if (!userBy.has(u.mde_code)) userBy.set(u.mde_code, u);
+    const nameRes = await env.DB.prepare("SELECT mde_code, mde_name FROM mde_list").all();
+    const nameBy = new Map((nameRes.results || []).map((r) => [r.mde_code, r.mde_name]));
+    const noEmail = [], failed = [], skipped = [];
+    for (const [code, docs] of byMde) {
+      const u = userBy.get(code);
+      const to = u ? String(u.email || "").trim() : "";
+      if (!to || !EMAIL_PATTERN.test(to)) { noEmail.push(code); continue; }
+      if (mailStopped || out.mde_emailed >= MAX_BULK_MDE_EMAIL) { skipped.push(code); continue; }
+      try {
+        const loanN = docs.filter((d) => d.kind === "loan").length;
+        const cancelN = docs.filter((d) => d.kind === "cancel").length;
+        const parts = [];
+        if (loanN) parts.push(`ໃບສັນຍາຢືມ ${loanN} ໃບ`);
+        if (cancelN) parts.push(`ໃບເກັບຕູ້ເຂົ້າສາງ (T-) ${cancelN} ໃບ`);
+        const shown = docs.slice(0, MAX_SIGN_DOCS_PER_EMAIL);
+        const mail = buildSignReminderEmail({
+          subject: "ເຕືອນ: ມີເອກະສານຄ້າງເຊັນ",
+          who: `MDE ${nameBy.get(code) ? code + " - " + nameBy.get(code) : code}`,
+          intro: `ທ່ານມີເອກະສານທີ່ຍັງບໍ່ໄດ້ເຊັນ${age ? ` (ຄ້າງເກີນ ${age} ມື້)` : ""}: ${parts.join(", ")}`,
+          docs: shown.map((d) => ({ label: `${d.kind === "cancel" ? "ໃບ T-" : "ໃບສັນຍາຢືມ"} ${d.doc_no || ""}${d.outlet_name ? " — " + d.outlet_name : ""}`.trim() })),
+          moreCount: docs.length - shown.length,
+          footer: "ກະລຸນາເຂົ້າລະບົບເພື່ອເຊັນເອກະສານໂດຍໄວ ເພື່ອຈະໄດ້ຮັບລະຫັດຕູ້.",
+          appUrl: base,
+        });
+        await sendEmail(env, { to, subject: mail.subject, text: mail.text, html: mail.html });
+        out.mde_emailed++;
+      } catch (e) {
+        const em = String((e && e.message) || "");
+        console.error("runSignReminderEmails mde", code, em);
+        if (isStop(em)) { mailStopped = stopMsg(em); skipped.push(code); } else failed.push(code);
+      }
+    }
+    out.lines.push(`ສົ່ງເມວຫາ MDE ສຳເລັດ ${out.mde_emailed} ຄົນ (ຄ້າງເຊັນທັງໝົດ ${byMde.size} ຄົນ)`);
+    if (noEmail.length) out.lines.push(`MDE ທີ່ບໍ່ມີອີເມວທີ່ຖືກຮູບແບບ: ${noEmail.join(", ")}`);
+    if (failed.length) out.lines.push(`ສົ່ງເມວບໍ່ສຳເລັດ: ${failed.join(", ")}`);
+    if (skipped.length && !mailStopped) out.lines.push(`ຍັງບໍ່ໄດ້ສົ່ງ (ເກີນ ${MAX_BULK_MDE_EMAIL} ສະບັບຕໍ່ຄັ້ງ): ${skipped.join(", ")}`);
+  } else {
+    out.lines.push("ບໍ່ມີ MDE ທີ່ຄ້າງເຊັນເອກະສານ");
+  }
+
+  // ---------- DSM: ໃບທີ່ MDE ເຊັນແລ້ວ ລໍຖ້າ DSM ເຊັນ (ແນບລິ້ງເຊັນຕໍ່ໃບ) ----------
+  const dsmDocs = await env.DB.prepare(
+    `SELECT 'loan' AS kind, l.id AS id, l.doc_no AS doc_no, l.outlet_name AS outlet_name, l.mde_code AS mde_code, m.team AS team
+       FROM loan_contracts l LEFT JOIN mde_list m ON m.mde_code = l.mde_code
+       WHERE l.status = 'awaiting_dsm' AND l.created_at <= datetime('now', ?1)
+     UNION ALL
+     SELECT 'cancel' AS kind, c.id AS id, c.doc_no AS doc_no, c.outlet_name AS outlet_name, c.mde_code AS mde_code, m.team AS team
+       FROM cancel_contracts c LEFT JOIN mde_list m ON m.mde_code = c.mde_code
+       WHERE c.status = 'awaiting_dsm' AND c.created_at <= datetime('now', ?1)
+     ORDER BY 3`
+  ).bind(ageBind).all();
+  const byTeam = new Map();
+  for (const r of (dsmDocs.results || [])) {
+    if (!r.team) continue;
+    if (!byTeam.has(r.team)) byTeam.set(r.team, []);
+    byTeam.get(r.team).push(r);
+  }
+  if (!byTeam.size) {
+    out.lines.push("ບໍ່ມີເອກະສານທີ່ລໍຖ້າ DSM ເຊັນ");
+  } else if (!base) {
+    out.lines.push("ຂ້າມການສົ່ງເມວຫາ DSM: ຍັງບໍ່ໄດ້ຕັ້ງ APP_URL ໃນ wrangler.toml [vars] (ຕ້ອງໃຊ້ສ້າງລິ້ງເຊັນ DSM)");
+  } else {
+    const dsmRes = await env.DB.prepare("SELECT team, dsm_name, email FROM dsm_list").all();
+    const dsmBy = new Map((dsmRes.results || []).map((d) => [d.team, d]));
+    const noDsm = [], noEmail = [], failed = [], skipped = [];
+    for (const [team, docs] of byTeam) {
+      const d = dsmBy.get(team);
+      if (!d) { noDsm.push(team); continue; }
+      const to = String(d.email || "").trim();
+      if (!to || !EMAIL_PATTERN.test(to)) { noEmail.push(team); continue; }
+      if (mailStopped || out.dsm_emailed >= MAX_BULK_SIGN_DSM) { skipped.push(team); continue; }
+      try {
+        const shown = docs.slice(0, MAX_SIGN_DOCS_PER_EMAIL);
+        const prepared = [];
+        for (const doc of shown) {
+          const lk = await ensureDsmSignLink(env, doc.kind, doc.id, actor, false);
+          prepared.push({ doc, token: lk.token, expires_at: lk.expires_at });
+        }
+        const mail = buildSignReminderEmail({
+          subject: `ເຕືອນ: ມີເອກະສານລໍຖ້າ DSM ເຊັນ ${docs.length} ໃບ`,
+          who: `DSM ${d.dsm_name || ""} (Team ${team})`.replace(/\s+/g, " "),
+          intro: `ມີເອກະສານທີ່ MDE ເຊັນແລ້ວ ແລະ ລໍຖ້າທ່ານເຊັນ ${docs.length} ໃບ${age ? ` (ຄ້າງເກີນ ${age} ມື້)` : ""} — ກົດລິ້ງຂອງແຕ່ລະໃບເພື່ອເຊັນ:`,
+          docs: prepared.map((x) => ({
+            label: `${x.doc.kind === "cancel" ? "ໃບ T-" : "ໃບສັນຍາຢືມ"} ${x.doc.doc_no || ""}${x.doc.outlet_name ? " — " + x.doc.outlet_name : ""}${x.doc.mde_code ? " [" + x.doc.mde_code + "]" : ""}`.trim(),
+            url: `${base}/dsm-sign?t=${x.token}`,
+            note: x.expires_at ? `ໝົດອາຍຸ ${fmtLaoExpiry(x.expires_at)}` : "",
+          })),
+          moreCount: docs.length - shown.length,
+          footer: "ລິ້ງແຕ່ລະອັນໃຊ້ເຊັນໄດ້ຄັ້ງດຽວ ແລະ ໝົດອາຍຸຕາມເວລາທີ່ລະບຸ (ເວລາລາວ). ຢ່າສົ່ງຕໍ່ລິ້ງໃຫ້ຜູ້ອື່ນ.",
+        });
+        await sendEmail(env, { to, subject: mail.subject, text: mail.text, html: mail.html });
+        out.dsm_emailed++;
+      } catch (e) {
+        const em = String((e && e.message) || "");
+        console.error("runSignReminderEmails dsm", team, em);
+        if (isStop(em)) { mailStopped = stopMsg(em); skipped.push(team); } else failed.push(team);
+      }
+    }
+    out.lines.push(`ສົ່ງເມວຫາ DSM ສຳເລັດ ${out.dsm_emailed} Team (ມີເອກະສານລໍເຊັນ ${byTeam.size} Team)`);
+    if (noDsm.length) out.lines.push(`ບໍ່ພົບ DSM ຂອງ Team: ${noDsm.join(", ")}`);
+    if (noEmail.length) out.lines.push(`DSM ຍັງບໍ່ມີອີເມວ: ${noEmail.join(", ")}`);
+    if (failed.length) out.lines.push(`ສົ່ງເມວບໍ່ສຳເລັດ: ${failed.join(", ")}`);
+    if (skipped.length && !mailStopped) out.lines.push(`ຍັງບໍ່ໄດ້ສົ່ງ: ${skipped.join(", ")}`);
+  }
+  if (mailStopped) out.lines.push(`ສົ່ງອີເມວບໍ່ໄດ້: ${mailStopped}`);
+  out.summary = out.lines.join("\n");
+  return out;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -8727,6 +8871,23 @@ export default {
       }
     }
 
+    // 6e5. Admin: ກົດສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ ຫາ MDE + DSM ທັງໝົດທີ່ຄ້າງ ທັນທີ (min_age_days ບໍ່ໃສ່ = ທຸກໃບທີ່ຄ້າງ)
+    //      ໂຕອັດຕະໂນມັດ (ທຸກວັນຈັນ 06:00 ເວລາລາວ, ຄ້າງ >= 7 ມື້) ຢູ່ໃນ scheduled() ລຸ່ມສຸດ
+    if (url.pathname === "/api/admin/pending-sign-reminders/run-auto" && request.method === "POST") {
+      try {
+        const body = await request.json().catch(() => ({}));
+        const minAge = body && body.min_age_days !== undefined ? Number(body.min_age_days) : 0;
+        if (isNaN(minAge) || minAge < 0 || minAge > 365) return Response.json({ error: "min_age_days ບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+        const result = await runSignReminderEmails(env, {
+          appUrl: new URL(request.url).origin, minAgeDays: minAge, actor: (session && session.email) || "admin",
+        });
+        return Response.json({ message: result.summary, mde_emailed: result.mde_emailed, dsm_emailed: result.dsm_emailed });
+      } catch (e) {
+        console.error("/api/admin/pending-sign-reminders/run-auto", e);
+        return Response.json({ error: `ສົ່ງເມວເຕືອນລົ້ມເຫລວ: ${e.message || e}` }, { status: 500 });
+      }
+    }
+
     // 6e6. Admin: ສົ່ງແຈ້ງເຕືອນເອກະສານຄ້າງເຊັນ
     //   kind = 'mde': ສົ່ງ Push ຫາ MDE (+ ອີເມວຖ້າຕິກ) ຕາມ mde_code ທີ່ເລືອກ
     //   kind = 'dsm': ໃຊ້ລິ້ງເຊັນເດີມຂອງແຕ່ລະໃບ (ຖ້າຍັງບໍ່ໝົດອາຍຸ; ບໍ່ມີ/ໝົດອາຍຸ ຈຶ່ງອອກລິ້ງໃໝ່ 7 ວັນ) ແລ້ວສົ່ງອີເມວຫາ DSM ຂອງ Team ທີ່ເລືອກ (ຕ້ອງມີອີເມວໃນໜ້າຈັດການ DSM)
@@ -12007,6 +12168,12 @@ export default {
   // Cron Trigger (ຕັ້ງເວລາໄວ້ໃນ wrangler.toml ຊ່ອງ [triggers] crons)
   // ຮັນອັດຕະໂນມັດທຸກເຊົ້າ ເພື່ອກວດ ແລະ ສົ່ງສະຫຼຸບແຈ້ງເຕືອນຫາ admin/warehouse
   async scheduled(event, env, ctx) {
+    if (event.cron === SIGN_REMINDER_CRON) {
+      // ທຸກວັນຈັນ 06:00 ເວລາລາວ: ສົ່ງເມວເຕືອນເອກະສານຄ້າງເຊັນ (MDE + DSM) ສະເພາະໃບທີ່ຄ້າງ >= 7 ມື້
+      ctx.waitUntil(runSignReminderEmails(env, { appUrl: env.APP_URL || "", minAgeDays: SIGN_REMINDER_MIN_AGE_DAYS, actor: "auto-weekly" })
+        .catch((e) => console.error("scheduled runSignReminderEmails", e)));
+      return;
+    }
     ctx.waitUntil(runAutomatedNotificationChecks(env));
   }
 };

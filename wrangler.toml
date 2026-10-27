@@ -40,7 +40,14 @@ VAPID_SUBJECT = "mailto:admin@example.com"
 GMAIL_SENDER = "kernlaleo@gmail.com"
 GMAIL_SENDER_NAME = "cooler-system"
 
+# ໂດເມນຂອງແອັບ (ບໍ່ມີ / ທ້າຍ) — ໃຊ້ສ້າງລິ້ງເຊັນ DSM ໃນອີເມວທີ່ສົ່ງອັດຕະໂນມັດທຸກວັນຈັນ (Cron ບໍ່ມີ request ຈຶ່ງຮູ້ໂດເມນເອງບໍ່ໄດ້)
+# ປົດ comment ແລ້ວໃສ່ໂດເມນຈິງ ເຊັ່ນ https://cloudflare-approval-app.<subdomain>.workers.dev ຫຼື ໂດເມນຂອງທ່ານ
+APP_URL = "https://cooler-system.xaisanasin.com"
+
 # ແຈ້ງເຕືອນອັດຕະໂນມັດ (ຄຳຂໍຄ້າງ / ອະນຸມັດແລ້ວແຕ່ບໍ່ໄດ້ຈັດສົ່ງ / ງົບປະມານໃກ້ໝົດ)
 # ຮັນທຸກມື້ເວລາ 01:00 UTC = 08:00 ໂມງເຊົ້າ ເວລາລາວ (UTC+7)
 [triggers]
-crons = ["0 1 * * *"]
+# - "0 1 * * *"  = ແຈ້ງເຕືອນປະຈຳວັນ (ຂ້າງເທິງ)
+# - "0 23 * * 0" = ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ -> ສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ (MDE + DSM) ສະເພາະໃບທີ່ຄ້າງ >= 7 ມື້
+#   (ຕ້ອງໃຫ້ກົງກັບ SIGN_REMINDER_CRON ໃນ src/index.js)
+crons = ["0 1 * * *", "0 23 * * 0"]

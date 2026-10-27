@@ -2865,6 +2865,9 @@ body.dlv-popup-open { overflow: hidden; }
           <button id="btnDsmSignReminder" class="btn-add" onclick="openSignReminderModal('dsm')" style="background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);">
             <i class="fa-solid fa-file-signature mr-1"></i> DSM ຄ້າງເຊັນ
           </button>
+          <button id="btnRunSignReminderAuto" class="btn-add" onclick="handleRunSignReminderAuto()" title="ສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ ຫາ MDE ແລະ DSM ທຸກຄົນທີ່ຍັງຄ້າງ ທັນທີ (ລະບົບຍັງສົ່ງເອງທຸກວັນຈັນ 06:00 ສຳລັບໃບທີ່ຄ້າງເກີນ 7 ມື້)" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+            <i class="fa-solid fa-envelope-circle-check mr-1"></i> ສົ່ງເມວເຕືອນຄ້າງເຊັນ (MDE + DSM)
+          </button>
         </div>
         <div id="notifCheckAlert" class="alert hidden" style="margin-bottom: 16px; white-space: pre-line;"></div>
         <!-- แท็บสลับหน้า Admin -->
@@ -9412,6 +9415,33 @@ body.dlv-popup-open { overflow: hidden; }
         alertBox.textContent = data.sent
           ? `ສົ່ງແຈ້ງເຕືອນຫາ admin/warehouse ແລ້ວ:\n${data.summary}`
           : (data.summary || 'ບໍ່ມີລາຍການທີ່ຕ້ອງແຈ້ງເຕືອນໃນຕອນນີ້');
+        alertBox.className = 'alert alert-success';
+      } catch (e) {
+        alertBox.textContent = e.message || 'ເກີດຂໍ້ຜິດພາດ';
+        alertBox.className = 'alert alert-error';
+      }
+      alertBox.style.whiteSpace = 'pre-line';
+      alertBox.classList.remove('hidden');
+      btn.disabled = false;
+    }
+
+    /* ===== ສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ ຫາ MDE + DSM ທຸກຄົນທີ່ຍັງຄ້າງ ດ້ວຍການກົດດຽວ =====
+       (ລະບົບຍັງສົ່ງເອງອັດຕະໂນມັດທຸກວັນຈັນ 06:00 ເວລາລາວ ສະເພາະໃບທີ່ຄ້າງເກີນ 7 ມື້ — ເບິ່ງ scheduled() ໃນ src/index.js) */
+    async function handleRunSignReminderAuto() {
+      if (!await appConfirm('ສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ ຫາ MDE (ໃບທີ່ຍັງບໍ່ເຊັນ) ແລະ DSM (ໃບລໍຖ້າ DSM ເຊັນ) ທຸກຄົນທີ່ຍັງຄ້າງ ດຽວນີ້?\n\nໝາຍເຫດ: ລະບົບຈະສົ່ງເອງອັດຕະໂນມັດທຸກວັນຈັນ 06:00 ສຳລັບໃບທີ່ຄ້າງເກີນ 7 ມື້ ຢູ່ແລ້ວ.')) return;
+      const btn = document.getElementById('btnRunSignReminderAuto');
+      const alertBox = document.getElementById('notifCheckAlert');
+      btn.disabled = true;
+      alertBox.classList.add('hidden');
+      try {
+        const res = await fetch('/api/admin/pending-sign-reminders/run-auto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ min_age_days: 0 })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'ສົ່ງເມວເຕືອນລົ້ມເຫລວ');
+        alertBox.textContent = data.message || 'ສົ່ງເມວເຕືອນຮຽບຮ້ອຍແລ້ວ';
         alertBox.className = 'alert alert-success';
       } catch (e) {
         alertBox.textContent = e.message || 'ເກີດຂໍ້ຜິດພາດ';
