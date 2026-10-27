@@ -11413,7 +11413,8 @@ export default {
         return Response.json({ error: "ທ່ານບໍ່ມີສິດເປີດ PDF ໃບນີ້ (ບໍ່ແມ່ນໃບຂອງ MDE ທ່ານ)" }, { status: 403 });
       }
       // ຍັງບໍ່ໄດ້ເຊັນຮັບ (ຮ່າງ) - ບໍ່ໃຫ້ເປີດ/ດາວໂຫຼດ PDF ຈົນກວ່າ MDE ຈະເຊັນຮັບກ່ອນ
-      if (row.status !== "completed") {
+      // admin / warehouse / delivery ເບິ່ງ PDF ໄດ້ທຸກສະຖານະ (ແມ່ນແຕ່ຍັງບໍ່ເຊັນ); ຜູ້ໃຊ້ອື່ນຕ້ອງລໍເຊັນຄົບກ່ອນ
+      if (row.status !== "completed" && !["admin", "warehouse", "delivery"].includes(session.role)) {
         return Response.json({ error: row.status === "awaiting_dsm"
           ? "ໃບນີ້ລໍຖ້າ DSM ເຊັນ - ກະລຸນາສົ່ງລິ້ງໃຫ້ DSM ເຊັນກ່ອນ ຈຶ່ງຈະເປີດ PDF ໄດ້"
           : "ຍັງບໍ່ໄດ້ເຊັນຮັບໃບສັນຍານີ້ - ກະລຸນາເຊັນຮັບກ່ອນຈຶ່ງຈະເປີດ PDF ໄດ້" }, { status: 400 });
@@ -11787,7 +11788,8 @@ export default {
       if (!canViewAll(session.role) && String(row.mde_code || "").trim().toUpperCase() !== String(session.mde_code || "").trim().toUpperCase()) {
         return Response.json({ error: "ທ່ານບໍ່ມີສິດເປີດ PDF ໃບນີ້ (ບໍ່ແມ່ນໃບຂອງ MDE ທ່ານ)" }, { status: 403 });
       }
-      if (row.status !== "completed") {
+      // admin / warehouse / delivery ເບິ່ງ PDF ໄດ້ທຸກສະຖານະ (ແມ່ນແຕ່ຍັງບໍ່ເຊັນ); ຜູ້ໃຊ້ອື່ນຕ້ອງລໍເຊັນຄົບກ່ອນ
+      if (row.status !== "completed" && !["admin", "warehouse", "delivery"].includes(session.role)) {
         return Response.json({ error: row.status === "awaiting_dsm"
           ? "ໃບນີ້ລໍຖ້າ DSM ເຊັນ - ກະລຸນາສົ່ງລິ້ງໃຫ້ DSM ເຊັນກ່ອນ ຈຶ່ງຈະເປີດ PDF ໄດ້"
           : "ຍັງບໍ່ໄດ້ເຊັນຮັບໃບນີ້ - ກະລຸນາເຊັນຮັບກ່ອນຈຶ່ງຈະເປີດ PDF ໄດ້" }, { status: 400 });

@@ -23518,7 +23518,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         }
         const contract = data[0]; // ລ້າສຸດ (ORDER BY id DESC)
         closeDetailModal();
-        if (contract.status === 'completed') {
+        if (contract.status === 'completed' || ['admin', 'warehouse', 'delivery'].includes(currentUser && currentUser.role)) {
           openLoanContractPdf(contract.id);
         } else if (contract.status === 'awaiting_dsm') {
           openDsmLinkModal('loan', contract.id, contract, 'ໃບນີ້ລໍຖ້າ DSM ເຊັນ — ສົ່ງລິ້ງໃຫ້ DSM ເພື່ອເຊັນ (PDF ເປີດໄດ້ຫຼັງ DSM ເຊັນແລ້ວ)');
@@ -23541,6 +23541,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           alert('ຍັງບໍ່ມີໃບເກັບຕູ້ເຂົ້າສາງ (T-) ສຳລັບ Asset ນີ້');
           return;
         }
+        const canSeeUnsigned = ['admin', 'warehouse', 'delivery'].includes(currentUser && currentUser.role);
+        if (canSeeUnsigned) { closeDetailModal(); openCancelContractPdf((data.find(c => c.status === 'completed') || data[0]).id); return; } // ເບິ່ງ PDF ໄດ້ແມ່ນແຕ່ຍັງບໍ່ເຊັນ
         const done = data.find(c => c.status === 'completed'); // ເອົາໃບທີ່ເຊັນແລ້ວອັນລ່າສຸດກ່ອນ
         const waiting = !done && data.find(c => c.status === 'awaiting_dsm');
         if (waiting) {
