@@ -28945,6 +28945,7 @@ function assetStatusBadgeClass(status) {
     function startNotificationPolling() {
       stopNotificationPolling();
       voiceEntryPending = true; voiceLastNotifId = null; voiceLastUnread = null; // ເຂົ້າແອັບໃໝ່ (login/ເປີດແອັບ) -> ເຕືອນສຽງຄືນ
+      refreshAllBadgeCounts(); // ກວດທັນທີຕອນເຂົ້າແອັບ (ບໍ່ລໍຮອບ 60 ວິ) -> ໄດ້ຍິນສຽງເຕືອນພາຍໃນບໍ່ເທົ່າໃດວິນາທີ
       notificationPollTimer = setInterval(() => {
         refreshAllBadgeCounts();
         pingAppActivity(false); // ຈຳກັດເອງບໍ່ໃຫ້ຖີ່ກວ່າທຸກ 5 ນາທີ
@@ -29043,11 +29044,12 @@ function assetStatusBadgeClass(status) {
       pending_dsm:      '/voices/pending_dsm.mp3',      // ມີເອກະສານຄ້າງເຊັນ ດີເອັສເອັມ (DSM)
       dsm_signed:       '/voices/dsm_signed.mp3'        // ດີເອັສເອັມ (DSM) ເຊັນເອກະສານແລ້ວ ເບິ່ງລະຫັດຕູ້ ແລະ ໂຫຼດເອກະສານໄດ້
     };
-    const VOICE_SPEED = 1.5;
+    const VOICE_SPEED = 1.25;
     let voiceQueue = [], voicePlaying = false, voiceUnlockWait = false, voiceEntryPending = true, voiceHiddenAt = 0, voiceLastNotifId = null, voiceLastUnread = null, voiceNotifBusy = false;
 
     function voicePlay(key, onMissing) {
       if (!VOICE_FILES[key]) return;
+      if (voiceQueue.some(q => q.key === key)) return; // ສຽງດຽວກັນທີ່ລໍຄິວຢູ່ແລ້ວ ບໍ່ຕ້ອງເພີ່ມຊ້ຳ
       voiceQueue.push({ key, onMissing });
       voiceNext();
     }
@@ -29059,11 +29061,11 @@ function assetStatusBadgeClass(status) {
       const finish = (missing) => {
         if (done) return; done = true; voicePlaying = false;
         if (missing) { try { item.onMissing ? item.onMissing() : reqVoiceChime(); } catch (e) { /* ignore */ } }
-        voiceNext();
+        setTimeout(voiceNext, 500); // ຢຸດສັ້ນໆ ລະຫວ່າງແຕ່ລະສຽງ ເມື່ອມີຫຼາຍຢ່າງຄ້າງ
       };
       try {
         const a = new Audio(VOICE_FILES[item.key]);
-        a.playbackRate = VOICE_SPEED; a.defaultPlaybackRate = VOICE_SPEED; // ເລັ່ງຄວາມໄວ x1.5
+        a.playbackRate = VOICE_SPEED; a.defaultPlaybackRate = VOICE_SPEED; // ເລັ່ງຄວາມໄວ x1.25
         a.preservesPitch = true; // ບໍ່ໃຫ້ສຽງແຫຼມຂຶ້ນເມື່ອເລັ່ງ
         a.onended = () => finish(false);
         a.onerror = () => finish(true);      // ບໍ່ມີໄຟລ໌ / ຫຼີ້ນບໍ່ໄດ້
