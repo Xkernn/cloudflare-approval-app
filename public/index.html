@@ -19486,7 +19486,7 @@ function assetStatusBadgeClass(status) {
       const why = a.loan_state === 'draft'
         ? 'ອອກໃບແລ້ວ ແຕ່ຍັງບໍ່ທັນເຊັນ'
         : (cancel ? 'ຍັງບໍ່ໄດ້ອອກໃບເກັບຕູ້ເຂົ້າສາງ (T-)' : 'ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ');
-      return `<span class="badge badge-rejected" title="${why}"><i class="fa-solid fa-file-circle-xmark"></i> ${label}: ບໍ່ມີເອກະສານ</span>`;
+      return `<span class="badge badge-rejected" title="${why}"><i class="fa-solid fa-file-circle-xmark"></i> ${label}: ຍັງບໍ່ເຊັນເອກະສານ</span>`;
     }
     function deliveryDocBadgeHtml(a) {
       if (a.delivery_doc_state === 'with_doc') {
