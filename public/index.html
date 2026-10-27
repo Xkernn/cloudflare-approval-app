@@ -28568,15 +28568,7 @@ function assetStatusBadgeClass(status) {
           ? `<button type="button" class="btn-act" style="background:#EAF0F0; color:#4B6469;" onclick="event.stopPropagation(); openLoanContractPdf(${r.loan_contract_id})"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF</button>`
           : '';
       }
-      if (!historyLoanCanAct(r)) return '';
-      if (r.loan_state === 'awaiting_dsm') {
-        return r.loan_contract_id
-          ? `<button type="button" class="btn-act btn-edit" onclick="event.stopPropagation(); historyOpenDsmLink(${r.id})"><i class="fa-solid fa-user-tie mr-1"></i> ສົ່ງລິ້ງ DSM</button>`
-          : '';
-      }
-      return r.loan_state === 'none'
-        ? `<button type="button" class="btn-act btn-delete" onclick="event.stopPropagation(); openHistoryLoanModal(${r.id})"><i class="fa-solid fa-file-signature mr-1"></i> ອອກໃບສັນຍາ</button>`
-        : `<button type="button" class="btn-act btn-edit" onclick="event.stopPropagation(); openHistoryLoanModal(${r.id})"><i class="fa-solid fa-signature mr-1"></i> ເຊັນໃບສັນຍາ</button>`;
+      return ''; // ອອກໃບສັນຍາ / ເຊັນໃບສັນຍາ / ສົ່ງລິ້ງ DSM ບໍ່ໃຫ້ກົດຈາກໜ້ານີ້ — ໃຫ້ໄປທີ່ໜ້າເຊັນເອກະສານ
     }
 
     function historyRequestCardHtml(r, isAdmin) {
@@ -28702,7 +28694,8 @@ function assetStatusBadgeClass(status) {
       );
       /* ອະນຸມັດແລ້ວ + ຕ້ອງມີໃບສັນຍາ: ຕ້ອງເຮັດຂັ້ນຕອນເຊັນເອກະສານໃຫ້ຄົບ (loan_state = completed) ຈຶ່ງຈະໄດ້ລະຫັດຕູ້ (QR / Serial / CapEx) */
       const codeLocked = r.status === 'approved' && !!r.loan_required && r.loan_state !== 'completed';
-      if (codeLocked) {
+      const hideCodes = codeLocked && !['admin', 'warehouse'].includes(currentUser.role); // Admin / warehouse ເຫັນລະຫັດຕູ້ສະເໝີ
+      if (hideCodes) {
         fields.push(['ລະຫັດຕູ້ (QR / Serial / CapEx)', raw('<span class="badge badge-pending">🔒 ຍັງບໍ່ໄດ້ຮັບລະຫັດຕູ້ — ເຊັນເອກະສານໃຫ້ຄົບກ່ອນ</span>')]);
       } else {
         fields.push(['QR Code', r.qr_code], ['Serial Number', r.serial_number], ['CapEx', r.capex]);
@@ -28712,9 +28705,9 @@ function assetStatusBadgeClass(status) {
       }
       const noteBox = (bg, fg, html) => raw(`<div style="background:${bg}; color:${fg}; border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.6; text-align:left; white-space:normal;">${html}</div>`);
       if (codeLocked) {
-        const stepHint = r.loan_state === 'none' ? 'ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ — ກົດ "ອອກໃບສັນຍາ" ຫຼື ໄປໜ້າເຊັນເອກະສານ'
-          : (r.loan_state === 'awaiting_dsm' ? 'ໃບສັນຍາລໍຖ້າ DSM ເຊັນ — ກົດ "ສົ່ງລິ້ງ DSM" ໃຫ້ DSM ເຊັນ'
-          : 'ມີໃບສັນຍາແລ້ວ ແຕ່ຍັງເຊັນບໍ່ຄົບ — ກົດ "ເຊັນໃບສັນຍາ" ຫຼື ໄປໜ້າເຊັນເອກະສານ');
+        const stepHint = r.loan_state === 'none' ? 'ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ — ກົດ "ໄປໜ້າເຊັນເອກະສານ" ເພື່ອອອກໃບ'
+          : (r.loan_state === 'awaiting_dsm' ? 'ໃບສັນຍາລໍຖ້າ DSM ເຊັນ — ກົດ "ໄປໜ້າເຊັນເອກະສານ" ເພື່ອສົ່ງລິ້ງໃຫ້ DSM'
+          : 'ມີໃບສັນຍາແລ້ວ ແຕ່ຍັງເຊັນບໍ່ຄົບ — ກົດ "ໄປໜ້າເຊັນເອກະສານ" ເພື່ອເຊັນໃຫ້ຄົບ');
         fields.push(['ຄຳອະທິບາຍ', noteBox('#FFF7E6', '#7a4a06',
           `<b>✅ ຄຳຂໍນີ້ຖືກອະນຸມັດແລ້ວ</b> ແຕ່ຍັງບໍ່ໄດ້ລະຫັດຕູ້.<br>ຕ້ອງເຮັດຂັ້ນຕອນເຊັນເອກະສານໃຫ້ຄົບກ່ອນ (ອອກໃບສັນຍາຢືມ → MDE ເຊັນ → DSM ເຊັນ) ຈຶ່ງຈະໄດ້ຮັບລະຫັດຕູ້ (QR Code / Serial / CapEx).<br><b>ຕອນນີ້:</b> ${stepHint}`)]);
       } else if (r.status === 'approved' && r.loan_required && r.loan_state === 'completed') {
@@ -28724,13 +28717,9 @@ function assetStatusBadgeClass(status) {
       } else if (r.status === 'rejected') {
         fields.push(['ຄຳອະທິບາຍ', noteBox('#FDECEA', '#991B1B', '<b>❌ ຄຳຂໍນີ້ຖືກປະຕິເສດ</b> — ຈະບໍ່ມີລະຫັດຕູ້ ແລະ ບໍ່ຕ້ອງເຊັນເອກະສານ. ຖ້າຍັງຕ້ອງການຕູ້ ໃຫ້ສົ່ງຄຳຂໍໃໝ່ທີ່ໜ້າ Asset Request ຫຼື ສອບຖາມ Admin.')]);
       }
-      const loanAction = (r.status === 'approved' && r.loan_required && r.loan_state === 'awaiting_dsm' && r.loan_contract_id && historyLoanCanAct(r))
-        ? `<button onclick="closeDetailModal(); historyOpenDsmLink(${r.id})" class="btn-act btn-edit"><i class="fa-solid fa-user-tie mr-1"></i> ສົ່ງລິ້ງ DSM</button>`
-        : (r.status === 'approved' && r.loan_required && r.loan_state && r.loan_state !== 'completed' && r.loan_state !== 'awaiting_dsm' && historyLoanCanAct(r))
-        ? `<button onclick="openHistoryLoanModal(${r.id})" class="btn-act ${r.loan_state === 'none' ? 'btn-delete' : 'btn-edit'}"><i class="fa-solid fa-signature mr-1"></i> ${r.loan_state === 'none' ? 'ອອກໃບສັນຍາ' : 'ເຊັນໃບສັນຍາ'}</button>`
-        : (r.loan_state === 'completed' && r.loan_contract_id
-          ? `<button onclick="openLoanContractPdf(${r.loan_contract_id})" class="btn-act" style="background:#EAF0F0; color:#4B6469;"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF ໃບສັນຍາ</button>`
-          : '');
+      const loanAction = (r.loan_state === 'completed' && r.loan_contract_id)
+        ? `<button onclick="openLoanContractPdf(${r.loan_contract_id})" class="btn-act" style="background:#EAF0F0; color:#4B6469;"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF ໃບສັນຍາ</button>`
+        : '';
       const goSign = (codeLocked && ['user', 'admin'].includes(currentUser.role) && historyLoanCanAct(r))
         ? `<button onclick="closeDetailModal(); pendingLoanTab = 'queue'; switchView('loanContract')" class="btn-act btn-edit"><i class="fa-solid fa-file-signature mr-1"></i> ໄປໜ້າເຊັນເອກະສານ</button>`
         : '';
