@@ -93,11 +93,15 @@ const DELIVERED_STATUS = "ສຳເລັດ";
 const LOAN_USER_REMINDER_DAYS = 1;
 // ສະຖານະ Asset ທີ່ຖ້າຖືກຕັ້ງ (ປ່ຽນເປັນສະຖານະນີ້) ໃຫ້ແຈ້ງເຕືອນ warehouse/delivery ວ່າມີລາຍການຈັດສົ່ງໃໝ່
 // ລຳດັບຂັ້ນຕອນ Asset: ຍັງບໍ່ທັນເຊັນເອກະສານ -> ຍັງບໍ່ຊັບມິດ PowerApp -> ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ (Admin ຕັ້ງຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
-//   -> [ສະແກນຕູ້ອອກສາງ ຂຶ້ນລົດ] ຢູ່ລະຫວ່າງຈັດສົ່ງ (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ) -> [ລາຍງານການຈັດສົ່ງ] ສຳເລັດ
+//   -> [ສະແກນຕູ້ຂຶ້ນລົດ ຂຶ້ນລົດ] ຢູ່ລະຫວ່າງຈັດສົ່ງ (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ) -> [ລາຍງານການຈັດສົ່ງ] ສຳເລັດ
 const WAITING_DISPATCH_STATUS = "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ";
+// Doc Type "ຕູ້ເຄື່ອນຍ້າຍ" / "ເກັບຄືນສາງ": ຈຸດເລີ່ມຂອງວຽກສາງ ໃຊ້ຊື່ "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ" (ໃຊ້ໜ້າທີ່ຄືກັນກັບ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ)
+const COLLECT_WAITING_STATUS = "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ";
+const COLLECT_DOC_TYPES = ["ຕູ້ເຄື່ອນຍ້າຍ", "ເກັບຄືນສາງ"];
+const WAITING_DISPATCH_STATUSES = [WAITING_DISPATCH_STATUS, COLLECT_WAITING_STATUS];
 const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ລະຫວ່າງຈັດສົ່ງ"];
 // ປ່ຽນເປັນສະຖານະເຫຼົ່ານີ້ -> push ແຈ້ງ warehouse/delivery (ລວມ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ທີ່ເປັນຈຸດເລີ່ມຂອງວຽກຂອງສາງ)
-const DISPATCH_NOTIFY_STATUSES = [WAITING_DISPATCH_STATUS, ...SHIPPING_NOTIFY_STATUSES];
+const DISPATCH_NOTIFY_STATUSES = [...WAITING_DISPATCH_STATUSES, ...SHIPPING_NOTIFY_STATUSES];
 // ຈຳນວນ MDE ສູງສຸດທີ່ Admin ເລືອກສົ່ງແຈ້ງເຕືອນໃນການກົດຄັ້ງດຽວ (ກັນ Worker ເກີນຂີດຈຳກັດ subrequest ຕໍ່ 1 ຄຳຂໍ)
 const MAX_BULK_MDE_NOTIFY = 150;
 // ຈຳນວນອີເມວສູງສຸດທີ່ສົ່ງໃນການກົດຄັ້ງດຽວ (ກັນເກີນຂີດຈຳກັດ subrequest ຂອງ Worker ແລະ ໂຄຕ້າສົ່ງ Gmail ຕໍ່ມື້)
@@ -1429,7 +1433,7 @@ const ROUTE_ROLES = {
   "/api/admin/update-asset-request-status": ROLE_STAFF, // warehouse/delivery ອະນຸມັດຄຳຂໍໄດ້
   "/api/asset-status/update": ROLE_ADMIN,
   "/api/no-doc-delivery": ROLE_STAFF,
-  "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ອອກສາງຂຶ້ນລົດ — warehouse / delivery / admin
+  "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ຂຶ້ນລົດ — warehouse / delivery / admin
   "/api/asset-delivery/on-truck": ROLE_STAFF,
   "/api/asset-delivery/dispatch-cancel": ROLE_STAFF, // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ)
   "/api/asset-delivery/close-truck": ROLE_STAFF, // ປິດລົດ (ຈົບການຂຶ້ນຕູ້)
@@ -1971,7 +1975,7 @@ async function restoreWarehouseStockFromTruck(env, { id, qr_code, serial_number 
   }
 }
 
-// ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ: 'in_warehouse' / 'reserved' -> 'on_truck' (ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ)
+// ສະແກນຕູ້ຂຶ້ນລົດ: 'in_warehouse' / 'reserved' -> 'on_truck' (ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ)
 // ສາງເດີມຄືເກົ່າ (ຍັງບໍ່ຍ້າຍໄປສາງ "ຮ້ານຄ້າ" ຈົນກວ່າຈະຈັດສົ່ງສຳເລັດ) — ບໍ່ throw error ບໍ່ໃຫ້ກະທົບຂັ້ນຕອນຫຼັກ
 async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorEmail, note) {
   try {
@@ -9303,7 +9307,7 @@ export default {
       });
     }
 
-    // 7d-2. ສະແກນຕູ້ອອກຈາກສາງຂຶ້ນລົດ — ຜູ້ສະແກນກວດຮ້ານ/ຕູ້/ເອກະສານຈາກໜ້າຈໍແລ້ວກົດຢືນຢັນ:
+    // 7d-2. ສະແກນຕູ້ຂຶ້ນລົດ — ຜູ້ສະແກນກວດຮ້ານ/ຕູ້/ເອກະສານຈາກໜ້າຈໍແລ້ວກົດຢືນຢັນ:
     //   Asset "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" -> "ຢູ່ລະຫວ່າງຈັດສົ່ງ" (ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ), ສະຕັອກສາງ = "ຢູ່ເທິງລົດ"
     //   outlet_code (ບໍ່ບັງຄັບ): ຖ້າສົ່ງມາ ຕ້ອງກົງກັບຮ້ານຂອງ Asset (ເກັບໄວ້ເພື່ອຄວາມເຂົ້າກັນໄດ້ກັບໜ້າຈໍເກົ່າ)
     if (url.pathname === "/api/asset-delivery/dispatch" && request.method === "POST") {
@@ -9337,7 +9341,7 @@ export default {
                  (stock_id, warehouse_id, old_warehouse_id, action, cooler_brand, cooler_type, cooler_model, qr_code, serial_number, capex, old_status, new_status, changed_by, notes)
                VALUES (?, ?, NULL, 'update', ?, ?, ?, ?, ?, ?, ?, 'on_truck', ?, ?)`
             ).bind(stock.id, stock.warehouse_id, stock.cooler_brand, stock.cooler_type, stock.cooler_model,
-              stock.qr_code, stock.serial_number, stock.capex, stock.status, actor, "ສະແກນອອກສາງຂຶ້ນລົດ — ຕູ້ດ່ວນບໍ່ມີເອກະສານ (ບໍ່ຜູກ Asset Tracking)").run();
+              stock.qr_code, stock.serial_number, stock.capex, stock.status, actor, "ສະແກນຂຶ້ນລົດ — ຕູ້ດ່ວນບໍ່ມີເອກະສານ (ບໍ່ຜູກ Asset Tracking)").run();
           } catch (e) { console.error("dispatch stock history", e); }
           return Response.json({ message: "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ (ຕູ້ດ່ວນບໍ່ມີເອກະສານ) — ຕູ້ກຳລັງເດີນທາງໄປຮ້ານ" });
         }
@@ -9350,14 +9354,14 @@ export default {
         const MOVE_STATUS = "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ";
         if (assetRow.status === DELIVERED_STATUS) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
         if (assetRow.doc_type === RETURN_TO_WAREHOUSE_DOC_TYPE) {
-          return Response.json({ error: "ເອກະສານ \"ເກັບຄືນສາງ\" ບໍ່ຕ້ອງສະແກນອອກສາງ (ຕູ້ມາຈາກຮ້ານ)" }, { status: 400 });
+          return Response.json({ error: "ເອກະສານ \"ເກັບຄືນສາງ\" ບໍ່ຕ້ອງສະແກນຂຶ້ນລົດ (ຕູ້ມາຈາກຮ້ານ)" }, { status: 400 });
         }
         if (assetRow.status === ON_TRUCK_STATUS && assetRow.dispatched_at) {
-          return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນອອກສາງເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
+          return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
         }
         // ອອກສາງໄດ້ສະເພາະຕູ້ທີ່ Admin ຕັ້ງ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ແລ້ວ (ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
-        // ຍັງຍອມ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນອອກສາງ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
-        const DISPATCHABLE = [WAITING_DISPATCH_STATUS, ON_TRUCK_STATUS, MOVE_STATUS];
+        // ຍັງຍອມ "ຢູ່ລະຫວ່າງຈັດສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
+        const DISPATCHABLE = [...WAITING_DISPATCH_STATUSES, ON_TRUCK_STATUS, MOVE_STATUS];
         // ຕູ້ຕິດທຸງ "ດ່ວນ" ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າສະຖານະ/ເອກະສານຈະຄົບຫຼືບໍ່; ຕູ້ປົກກະຕິຕ້ອງເຊັນເອກະສານຄົບກ່ອນ
         const isUrgent = !!assetRow.flagged;
         if (!isUrgent) {
@@ -9374,7 +9378,7 @@ export default {
         if (!isUrgent && !DISPATCHABLE.includes(assetRow.status)) {
           return Response.json({
             code: "NOT_WAITING_DISPATCH",
-            error: `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະປັດຈຸບັນ "${assetRow.status || "-"}" (ຕ້ອງເປັນ "${WAITING_DISPATCH_STATUS}" ກ່ອນ ຫຼັງຈາກ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`,
+            error: `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະປັດຈຸບັນ "${assetRow.status || "-"}" (ຕ້ອງເປັນ "${COLLECT_DOC_TYPES.includes(assetRow.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS}" ກ່ອນ ຫຼັງຈາກ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`,
           }, { status: 400 });
         }
         if (checkCode && String(assetRow.outlet_code || "").trim().toLowerCase() !== checkCode.toLowerCase()) {
@@ -9393,14 +9397,14 @@ export default {
 
         await markWarehouseStockOnTruck(
           env, { qr_code: assetRow.qr_code, serial_number: assetRow.serial_number }, actor,
-          `ສະແກນອອກສາງຂຶ້ນລົດ - Tracking No ${assetRow.tracking_no} (Outlet: ${assetRow.outlet_name || "-"})`
+          `ສະແກນຂຶ້ນລົດ - Tracking No ${assetRow.tracking_no} (Outlet: ${assetRow.outlet_name || "-"})`
         );
         runInBackground(ctx, notifyMdeUserOfStatusChange(env, assetRow.mde_code, assetRow.tracking_no, assetRow.outlet_name, ON_TRUCK_STATUS));
 
         return Response.json({ message: "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ — ຕູ້ກຳລັງເດີນທາງໄປຮ້ານ" });
       } catch (e) {
         console.error("/api/asset-delivery/dispatch", e);
-        return Response.json({ error: "ບໍ່ສາມາດບັນທຶກການສະແກນອອກສາງໄດ້" }, { status: 500 });
+        return Response.json({ error: "ບໍ່ສາມາດບັນທຶກການສະແກນຂຶ້ນລົດໄດ້" }, { status: 500 });
       }
     }
 
@@ -9445,7 +9449,7 @@ export default {
         if (!a) return Response.json({ error: "ບໍ່ພົບ Asset ນີ້ໃນລະບົບ" }, { status: 404 });
         if (a.status !== ON_TRUCK_STATUS || !a.dispatched_at) return Response.json({ error: "ຕູ້ນີ້ບໍ່ໄດ້ຢູ່ເທິງລົດ (ອາດຍົກເລີກ ຫຼື ຈັດສົ່ງໄປແລ້ວ)" }, { status: 400 });
         if (a.truck_closed_at && !isAdminRole) return Response.json({ error: "ປິດລົດແລ້ວ — ຍົກເລີກບໍ່ໄດ້ (ໃຫ້ Admin ຍົກເລີກ)" }, { status: 400 });
-        const prev = (a.dispatch_prev_status && a.dispatch_prev_status !== ON_TRUCK_STATUS) ? a.dispatch_prev_status : WAITING_DISPATCH_STATUS;
+        const prev = (a.dispatch_prev_status && a.dispatch_prev_status !== ON_TRUCK_STATUS) ? a.dispatch_prev_status : (COLLECT_DOC_TYPES.includes(a.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS);
         const upd = await env.DB.prepare(
           `UPDATE assets SET status = ?, dispatched_at = NULL, dispatched_by = NULL, truck_closed_at = NULL, dispatch_prev_status = NULL, last_update = CURRENT_TIMESTAMP
            WHERE id = ? AND status = ? AND dispatched_at IS NOT NULL`
@@ -9481,7 +9485,7 @@ export default {
       }
     }
 
-    // ລາຍການຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ (ສະແກນອອກສາງແລ້ວ ຍັງບໍ່ທັນຈັດສົ່ງສຳເລັດ)
+    // ລາຍການຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ (ສະແກນຂຶ້ນລົດແລ້ວ ຍັງບໍ່ທັນຈັດສົ່ງສຳເລັດ)
     if (url.pathname === "/api/asset-delivery/on-truck" && request.method === "GET") {
       const { results } = await env.DB.prepare(
         `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by, truck_closed_at, flagged
