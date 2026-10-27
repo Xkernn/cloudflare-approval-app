@@ -3125,7 +3125,7 @@ body.dlv-popup-open { overflow: hidden; }
         <div class="loan-type-list">
           <button type="button" id="deliveryHubCardDispatch" class="loan-type-card" onclick="openDeliverySub('dispatchOut')">
             <div class="loan-type-card-title"><i class="fa-solid fa-truck-ramp-box"></i> ສະແກນຕູ້ຂຶ້ນລົດ</div>
-            <div class="loan-type-card-sub">ສະແກນຕູ້ → ກວດຮ້ານ/ເອກະສານ → ຕູ້ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ</div>
+            <div class="loan-type-card-sub">ສະແກນຕູ້ → ກວດຮ້ານ/ເອກະສານ → ຕູ້ຢູ່ເທິງລົດ (ສົ່ງໄປຮ້ານ / ເກັບຈາກຮ້ານເກົ່າ)</div>
           </button>
           <button type="button" id="deliveryHubCardConfirm" class="loan-type-card" onclick="openDeliverySub('deliverConfirm')">
             <div class="loan-type-card-title"><i class="fa-solid fa-qrcode"></i> ລາຍງານການຈັດສົ່ງ</div>
@@ -3249,7 +3249,7 @@ body.dlv-popup-open { overflow: hidden; }
         <div class="page-header">
           <div>
             <h1>ສະແກນຕູ້ຂຶ້ນລົດ</h1>
-            <p>ສະແກນຕູ້ → ກວດຮ້ານ/ຕູ້/ເອກະສານ → ຢືນຢັນຂຶ້ນລົດ. ສະເພາະຕູ້ທີ່ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ". ເມື່ອຮອດຮ້ານ ໃຫ້ໃຊ້ "ລາຍງານການຈັດສົ່ງ"</p>
+            <p>ສະແກນຕູ້ → ກວດຮ້ານ/ຕູ້/ເອກະສານ → ຢືນຢັນຂຶ້ນລົດ. ສະເພາະຕູ້ທີ່ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ຫຼື "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ" (ເກັບຄືນສາງ / ຕູ້ເຄື່ອນຍ້າຍ — ສະແກນຂຶ້ນລົດຕອນເກັບຈາກຮ້ານເກົ່າ). ເມື່ອຮອດຮ້ານ/ສາງ ໃຫ້ໃຊ້ "ລາຍງານການຈັດສົ່ງ"</p>
           </div>
         </div>
 
@@ -5939,6 +5939,8 @@ body.dlv-popup-open { overflow: hidden; }
           <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</span><span>ສະເພາະ Doc Type ຕູ້ເຄື່ອນຍ້າຍ / ເກັບຄືນສາງ — ຈຸດເລີ່ມຂອງວຽກສາງ ຄືກັບ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
               
               <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</span><span>Asset ກຳລັງຖືກຈັດສົ່ງໄປຫາຮ້ານ</span></div>
+              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ</span><span>Doc Type ເກັບຄືນສາງ — ທີມງານສະແກນຕູ້ຂຶ້ນລົດຕອນເກັບຈາກຮ້ານເກົ່າ ແລະ ກຳລັງນຳກັບສາງ</span></div>
+              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງເຄື່ອນຍ້າຍ</span><span>Doc Type ຕູ້ເຄື່ອນຍ້າຍ — ທີມງານສະແກນຕູ້ຂຶ້ນລົດຕອນເກັບຈາກຮ້ານເກົ່າ ແລະ ກຳລັງນຳໄປຮ້ານໃໝ່</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ທັນເຊັນເອກະສານ</span><span>ຍັງຄ້າງການສົ່ງເອກະສານ</span></div>
               <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ຊັບມິດ PowerApp</span><span>ຍັງຄ້າງການຊັບມິດໃນ PowerApp</span></div>
               <div class="guide-status-row"><span class="badge badge-approved">ສຳເລັດ</span><span>ຈັດສົ່ງສຳເລັດແລ້ວ - ລາຍການຈະຍ້າຍໄປເບິ່ງທີ່ <b>ປະຫວັດການຈັດສົ່ງ Asset</b></span></div>
@@ -19428,6 +19430,7 @@ function assetStatusText(a) {
     if (a.doc_type === 'ຕູ້ເຄື່ອນຍ້າຍ') return 'ຈັດສົ່ງສຳເລັດ';
   }
   if (st === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.doc_type === 'ເກັບຄືນສາງ') return 'ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ';
+  if (st === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.doc_type === 'ຕູ້ເຄື່ອນຍ້າຍ') return 'ຢູ່ເທິງລົດ / ກຳລັງເຄື່ອນຍ້າຍ';
   return st;
 }
 function assetStatusBadgeClass(status) {
@@ -19828,7 +19831,7 @@ function assetStatusBadgeClass(status) {
     function adStepsFor(a) {
       const dt = a && a.doc_type;
       if (dt === 'ຕູ້ເຄື່ອນຍ້າຍ' || dt === 'ເກັບຄືນສາງ') {
-        return ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', dt === 'ເກັບຄືນສາງ' ? 'ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ' : 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ', dt === 'ເກັບຄືນສາງ' ? 'ເກັບກັບສາງສຳເລັດ' : 'ຈັດສົ່ງສຳເລັດ'];
+        return ['ລໍຖ້າເອກະສານ', 'ລໍຖ້າ Submit PowerApp', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', dt === 'ເກັບຄືນສາງ' ? 'ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ' : 'ຢູ່ເທິງລົດ / ກຳລັງເຄື່ອນຍ້າຍ', dt === 'ເກັບຄືນສາງ' ? 'ເກັບກັບສາງສຳເລັດ' : 'ຈັດສົ່ງສຳເລັດ'];
       }
       return AD_STEPS;
     }
@@ -21056,11 +21059,10 @@ function assetStatusBadgeClass(status) {
         }
         if (data.already_delivered) { dispatchSetMsg(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ', '#dc2626'); return; }
         const a = data.item;
-        if (a.doc_type === 'ເກັບຄືນສາງ') { dispatchSetMsg('ເອກະສານ "ເກັບຄືນສາງ" ບໍ່ຕ້ອງສະແກນຂຶ້ນລົດ', '#dc2626'); return; }
         if (a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
         dispatchLoan = data.loan_contract || null;
         const urgent = !!a.flagged;
-        const loanBlock = !urgent && dispatchLoan && dispatchLoan.status !== 'completed';
+        const loanBlock = !urgent && a.doc_type !== 'ເກັບຄືນສາງ' && dispatchLoan && dispatchLoan.status !== 'completed'; // ເກັບຄືນສາງ: ເອກະສານແມ່ນໃບເກັບຕູ້ (T-) ບໍ່ຕ້ອງກວດໃບສັນຍາຢືມ
         const canDispatch = urgent || (!loanBlock && ((a.status === DISPATCH_WAITING_STATUS || a.status === 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ') || DISPATCH_LEGACY_OK.includes(a.status)));
         dispatchStockId = null;
         const bn = document.getElementById('dispatchUrgentBanner');
@@ -21182,7 +21184,7 @@ function assetStatusBadgeClass(status) {
             : `<button type="button" class="btn-act btn-delete" style="white-space:nowrap;" onclick="dispatchCancel(${cancelArgs})"><i class="fa-solid fa-rotate-left mr-1"></i> ຍົກເລີກ</button>`}
         </div>`;
         const stockHtml = stockItems.map(i => row(`<b>⚡ ຕູ້ດ່ວນບໍ່ມີເອກະສານ</b>${i.truck_closed_at ? ' 🔒' : ''}<br><span style="color:var(--text-muted);">${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span>`, !!i.truck_closed_at, `null, ${Number(i.id)}`)).join('');
-        const assetHtml = items.map(i => row(`<b>${i.flagged ? '🚩 ' : ''}${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b>${i.truck_closed_at ? ' 🔒' : ''}<br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span>`, !!i.truck_closed_at, `${Number(i.id)}, null`)).join('');
+        const assetHtml = items.map(i => row(`<b>${i.flagged ? '🚩 ' : ''}${esc(i.outlet_code || '-')} - ${esc(i.outlet_name || '-')}</b>${i.truck_closed_at ? ' 🔒' : ''}${i.doc_type === 'ເກັບຄືນສາງ' ? ' <span class="badge badge-info">ກຳລັງເກັບກັບ</span>' : i.doc_type === 'ຕູ້ເຄື່ອນຍ້າຍ' ? ' <span class="badge badge-info">ກຳລັງເຄື່ອນຍ້າຍ</span>' : ''}<br><span style="color:var(--text-muted);">${esc(i.tracking_no || '-')} · ${esc(i.cooler_brand || '-')} ${esc(i.cooler_type || '')} · QR ${esc(i.qr_code || '-')}</span>`, !!i.truck_closed_at, `${Number(i.id)}, null`)).join('');
         box.innerHTML = total ? stockHtml + assetHtml : '<span style="color:var(--text-muted);">ບໍ່ມີຕູ້ຢູ່ເທິງລົດ</span>';
       } catch (e) {
         box.textContent = 'ໂຫລດລາຍການບໍ່ສຳເລັດ';

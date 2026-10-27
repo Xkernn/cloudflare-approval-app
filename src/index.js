@@ -99,6 +99,12 @@ const WAITING_DISPATCH_STATUS = "ລໍຖ້າຂົນສົ່ງອອກ�
 const COLLECT_WAITING_STATUS = "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ";
 const COLLECT_DOC_TYPES = ["ຕູ້ເຄື່ອນຍ້າຍ", "ເກັບຄືນສາງ"];
 const WAITING_DISPATCH_STATUSES = [WAITING_DISPATCH_STATUS, COLLECT_WAITING_STATUS];
+// ຄ່າໃນ DB ຍັງເປັນ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" ສະເໝີ — ປ່ຽນສະເພາະຂໍ້ຄວາມທີ່ສະແດງ/ແຈ້ງເຕືອນຕາມ Doc Type
+function onTruckLabel(docType) {
+  if (docType === "ເກັບຄືນສາງ") return "ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ";
+  if (docType === "ຕູ້ເຄື່ອນຍ້າຍ") return "ຢູ່ເທິງລົດ / ກຳລັງເຄື່ອນຍ້າຍ";
+  return "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ";
+}
 const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"];
 // ປ່ຽນເປັນສະຖານະເຫຼົ່ານີ້ -> push ແຈ້ງ warehouse/delivery (ລວມ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ທີ່ເປັນຈຸດເລີ່ມຂອງວຽກຂອງສາງ)
 const DISPATCH_NOTIFY_STATUSES = [...WAITING_DISPATCH_STATUSES, ...SHIPPING_NOTIFY_STATUSES];
@@ -1963,13 +1969,21 @@ async function restoreWarehouseStockFromTruck(env, { id, qr_code, serial_number 
     if (!stock && qr_code) stock = await env.DB.prepare("SELECT * FROM warehouse_stock WHERE qr_code = ? AND qr_code != '' AND status = 'on_truck' ORDER BY updated_at DESC LIMIT 1").bind(qr_code).first();
     if (!stock && serial_number) stock = await env.DB.prepare("SELECT * FROM warehouse_stock WHERE serial_number = ? AND serial_number != '' AND status = 'on_truck' ORDER BY updated_at DESC LIMIT 1").bind(serial_number).first();
     if (!stock || stock.status !== "on_truck") return false;
-    await env.DB.prepare("UPDATE warehouse_stock SET status = 'in_warehouse', truck_closed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(stock.id).run();
+    // ຖ້າຕູ້ນີ້ຂຶ້ນລົດມາຈາກຮ້ານເກົ່າ (ສະຕັອກເດີມ = 'outlet') ຍົກເລີກແລ້ວຕ້ອງກັບເປັນ 'outlet' ບໍ່ແມ່ນ 'in_warehouse'
+    let restoreTo = "in_warehouse";
+    try {
+      const h = await env.DB.prepare(
+        "SELECT old_status FROM warehouse_stock_history WHERE stock_id = ? AND new_status = 'on_truck' ORDER BY id DESC LIMIT 1"
+      ).bind(stock.id).first();
+      if (h && h.old_status === "outlet") restoreTo = "outlet";
+    } catch (e) { console.error("restoreWarehouseStockFromTruck lookup", e); }
+    await env.DB.prepare("UPDATE warehouse_stock SET status = ?, truck_closed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(restoreTo, stock.id).run();
     await env.DB.prepare(
       `INSERT INTO warehouse_stock_history
          (stock_id, warehouse_id, old_warehouse_id, action, cooler_brand, cooler_type, cooler_model, qr_code, serial_number, capex, old_status, new_status, changed_by, notes)
-       VALUES (?, ?, NULL, 'update', ?, ?, ?, ?, ?, ?, 'on_truck', 'in_warehouse', ?, ?)`
+       VALUES (?, ?, NULL, 'update', ?, ?, ?, ?, ?, ?, 'on_truck', ?, ?, ?)`
     ).bind(stock.id, stock.warehouse_id, stock.cooler_brand, stock.cooler_type, stock.cooler_model,
-      stock.qr_code, stock.serial_number, stock.capex, actorEmail || null, note || null).run();
+      stock.qr_code, stock.serial_number, stock.capex, restoreTo, actorEmail || null, note || null).run();
     return true;
   } catch (e) {
     console.error("restoreWarehouseStockFromTruck", e);
@@ -1979,7 +1993,8 @@ async function restoreWarehouseStockFromTruck(env, { id, qr_code, serial_number 
 
 // ສະແກນຕູ້ຂຶ້ນລົດ: 'in_warehouse' / 'reserved' -> 'on_truck' (ຢູ່ເທິງລົດ ກຳລັງເດີນທາງໄປຮ້ານ)
 // ສາງເດີມຄືເກົ່າ (ຍັງບໍ່ຍ້າຍໄປສາງ "ຮ້ານຄ້າ" ຈົນກວ່າຈະຈັດສົ່ງສຳເລັດ) — ບໍ່ throw error ບໍ່ໃຫ້ກະທົບຂັ້ນຕອນຫຼັກ
-async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorEmail, note) {
+// opts.allowOutlet = true: ຕູ້ທີ່ສະຕັອກເປັນ 'outlet' (ຢູ່ຮ້ານເກົ່າ) ກໍຂຶ້ນລົດໄດ້ — ໃຊ້ກັບ Doc Type ເກັບຄືນສາງ / ຕູ້ເຄື່ອນຍ້າຍ ທີ່ທີມງານໄປເກັບຕູ້ຈາກຮ້ານເກົ່າ
+async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorEmail, note, opts = {}) {
   try {
     let stock = null;
     if (qr_code) {
@@ -1992,7 +2007,8 @@ async function markWarehouseStockOnTruck(env, { qr_code, serial_number }, actorE
         "SELECT * FROM warehouse_stock WHERE serial_number = ? AND serial_number != '' ORDER BY updated_at DESC LIMIT 1"
       ).bind(serial_number).first();
     }
-    if (!stock || (stock.status !== "in_warehouse" && stock.status !== "reserved")) return;
+    const okFrom = stock && (stock.status === "in_warehouse" || stock.status === "reserved" || (opts.allowOutlet && stock.status === "outlet"));
+    if (!okFrom) return;
     await env.DB.prepare(
       "UPDATE warehouse_stock SET status = 'on_truck', truck_closed_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     ).bind(stock.id).run();
@@ -9355,9 +9371,8 @@ export default {
         const ON_TRUCK_STATUS = "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ";
         const MOVE_STATUS = "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ";
         if (assetRow.status === DELIVERED_STATUS) return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
-        if (assetRow.doc_type === RETURN_TO_WAREHOUSE_DOC_TYPE) {
-          return Response.json({ error: "ເອກະສານ \"ເກັບຄືນສາງ\" ບໍ່ຕ້ອງສະແກນຂຶ້ນລົດ (ຕູ້ມາຈາກຮ້ານ)" }, { status: 400 });
-        }
+        // ເກັບຄືນສາງ / ຕູ້ເຄື່ອນຍ້າຍ: ທີມງານສະແກນຕູ້ຂຶ້ນລົດຕອນໄປເກັບຈາກຮ້ານເກົ່າ (ບໍ່ແມ່ນອອກຈາກສາງ)
+        const isCollect = COLLECT_DOC_TYPES.includes(assetRow.doc_type);
         if (assetRow.status === ON_TRUCK_STATUS && assetRow.dispatched_at) {
           return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
         }
@@ -9366,7 +9381,8 @@ export default {
         const DISPATCHABLE = [...WAITING_DISPATCH_STATUSES, ON_TRUCK_STATUS, MOVE_STATUS];
         // ຕູ້ຕິດທຸງ "ດ່ວນ" ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າສະຖານະ/ເອກະສານຈະຄົບຫຼືບໍ່; ຕູ້ປົກກະຕິຕ້ອງເຊັນເອກະສານຄົບກ່ອນ
         const isUrgent = !!assetRow.flagged;
-        if (!isUrgent) {
+        // ເກັບຄືນສາງ: ເອກະສານແມ່ນໃບເກັບຕູ້ (T-) ບໍ່ແມ່ນໃບສັນຍາຢືມ — ບໍ່ຕ້ອງກວດໃບສັນຍາຢືມ
+        if (!isUrgent && assetRow.doc_type !== RETURN_TO_WAREHOUSE_DOC_TYPE) {
           const loan = await findLoanContractForAsset(env, assetRow);
           if (loan && loan.status !== "completed") {
             return Response.json({
@@ -9399,11 +9415,15 @@ export default {
 
         await markWarehouseStockOnTruck(
           env, { qr_code: assetRow.qr_code, serial_number: assetRow.serial_number }, actor,
-          `ສະແກນຂຶ້ນລົດ - Tracking No ${assetRow.tracking_no} (Outlet: ${assetRow.outlet_name || "-"})`
+          `ສະແກນຂຶ້ນລົດ - Tracking No ${assetRow.tracking_no} (Outlet: ${assetRow.outlet_name || "-"})`,
+          { allowOutlet: isCollect }
         );
-        runInBackground(ctx, notifyMdeUserOfStatusChange(env, assetRow.mde_code, assetRow.tracking_no, assetRow.outlet_name, ON_TRUCK_STATUS));
+        runInBackground(ctx, notifyMdeUserOfStatusChange(env, assetRow.mde_code, assetRow.tracking_no, assetRow.outlet_name, onTruckLabel(assetRow.doc_type)));
 
-        return Response.json({ message: "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ — ຕູ້ກຳລັງເດີນທາງໄປຮ້ານ" });
+        const okMsg = assetRow.doc_type === RETURN_TO_WAREHOUSE_DOC_TYPE ? "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ — ຕູ້ກຳລັງເກັບກັບສາງ"
+          : assetRow.doc_type === "ຕູ້ເຄື່ອນຍ້າຍ" ? "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ — ຕູ້ກຳລັງເຄື່ອນຍ້າຍ"
+          : "ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ — ຕູ້ກຳລັງເດີນທາງໄປຮ້ານ";
+        return Response.json({ message: okMsg });
       } catch (e) {
         console.error("/api/asset-delivery/dispatch", e);
         return Response.json({ error: "ບໍ່ສາມາດບັນທຶກການສະແກນຂຶ້ນລົດໄດ້" }, { status: 500 });
@@ -9490,7 +9510,7 @@ export default {
     // ລາຍການຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ (ສະແກນຂຶ້ນລົດແລ້ວ ຍັງບໍ່ທັນຈັດສົ່ງສຳເລັດ)
     if (url.pathname === "/api/asset-delivery/on-truck" && request.method === "GET") {
       const { results } = await env.DB.prepare(
-        `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, dispatched_at, dispatched_by, truck_closed_at, flagged
+        `SELECT id, tracking_no, outlet_code, outlet_name, qr_code, cooler_brand, cooler_type, mde_code, doc_type, old_outlet_code, old_outlet_name, dispatched_at, dispatched_by, truck_closed_at, flagged
          FROM assets WHERE status = ? AND dispatched_at IS NOT NULL ORDER BY dispatched_at DESC LIMIT 200`
       ).bind("ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ").all();
       // ຕູ້ດ່ວນບໍ່ມີເອກະສານທີ່ຂຶ້ນລົດຈາກສະຕັອກໂດຍກົງ (ບໍ່ຜູກ Asset Tracking)
