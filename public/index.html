@@ -28698,13 +28698,31 @@ function assetStatusBadgeClass(status) {
         ['ປະເພດສັນຍາ', LOAN_CONTRACT_TYPE_LABEL[r.contract_type] || '-'],
         ['ເຫດຜົນ', r.reason],
         ['ສະຖານະ', raw(`<span class="badge ${requestStageClass(r)}">${esc(requestStageLabel(r))}</span>`)],
-        ['QR Code', r.qr_code],
-        ['Serial Number', r.serial_number],
-        ['CapEx', r.capex],
         ['ວັນທີ່ຂໍ', fmtLaoTs(r.requested_at)]
       );
+      /* ອະນຸມັດແລ້ວ + ຕ້ອງມີໃບສັນຍາ: ຕ້ອງເຮັດຂັ້ນຕອນເຊັນເອກະສານໃຫ້ຄົບ (loan_state = completed) ຈຶ່ງຈະໄດ້ລະຫັດຕູ້ (QR / Serial / CapEx) */
+      const codeLocked = r.status === 'approved' && !!r.loan_required && r.loan_state !== 'completed';
+      if (codeLocked) {
+        fields.push(['ລະຫັດຕູ້ (QR / Serial / CapEx)', raw('<span class="badge badge-pending">🔒 ຍັງບໍ່ໄດ້ຮັບລະຫັດຕູ້ — ເຊັນເອກະສານໃຫ້ຄົບກ່ອນ</span>')]);
+      } else {
+        fields.push(['QR Code', r.qr_code], ['Serial Number', r.serial_number], ['CapEx', r.capex]);
+      }
       if (r.status === 'approved' && r.loan_required && r.loan_state) {
         fields.push(['ໃບສັນຍາຢືມ', raw(historyLoanChipHtml(r))]);
+      }
+      const noteBox = (bg, fg, html) => raw(`<div style="background:${bg}; color:${fg}; border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.6; text-align:left; white-space:normal;">${html}</div>`);
+      if (codeLocked) {
+        const stepHint = r.loan_state === 'none' ? 'ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ — ກົດ "ອອກໃບສັນຍາ" ຫຼື ໄປໜ້າເຊັນເອກະສານ'
+          : (r.loan_state === 'awaiting_dsm' ? 'ໃບສັນຍາລໍຖ້າ DSM ເຊັນ — ກົດ "ສົ່ງລິ້ງ DSM" ໃຫ້ DSM ເຊັນ'
+          : 'ມີໃບສັນຍາແລ້ວ ແຕ່ຍັງເຊັນບໍ່ຄົບ — ກົດ "ເຊັນໃບສັນຍາ" ຫຼື ໄປໜ້າເຊັນເອກະສານ');
+        fields.push(['ຄຳອະທິບາຍ', noteBox('#FFF7E6', '#7a4a06',
+          `<b>✅ ຄຳຂໍນີ້ຖືກອະນຸມັດແລ້ວ</b> ແຕ່ຍັງບໍ່ໄດ້ລະຫັດຕູ້.<br>ຕ້ອງເຮັດຂັ້ນຕອນເຊັນເອກະສານໃຫ້ຄົບກ່ອນ (ອອກໃບສັນຍາຢືມ → MDE ເຊັນ → DSM ເຊັນ) ຈຶ່ງຈະໄດ້ຮັບລະຫັດຕູ້ (QR Code / Serial / CapEx).<br><b>ຕອນນີ້:</b> ${stepHint}`)]);
+      } else if (r.status === 'approved' && r.loan_required && r.loan_state === 'completed') {
+        fields.push(['ຄຳອະທິບາຍ', noteBox('#E8F6EE', '#166534', '<b>✅ ເຊັນເອກະສານຄົບແລ້ວ</b> — ລະຫັດຕູ້ (QR Code / Serial / CapEx) ສະແດງຢູ່ດ້ານເທິງແລ້ວ. ສາມາດເບິ່ງ PDF ໃບສັນຍາໄດ້ທີ່ປຸ່ມດ້ານລຸ່ມ.')]);
+      } else if (r.status === 'approved') {
+        fields.push(['ຄຳອະທິບາຍ', noteBox('#E8F6EE', '#166534', '<b>✅ ຄຳຂໍນີ້ຖືກອະນຸມັດແລ້ວ</b> — ບໍ່ຕ້ອງເຊັນໃບສັນຍາຢືມ. ລະຫັດຕູ້ສະແດງຢູ່ດ້ານເທິງ.')]);
+      } else if (r.status === 'rejected') {
+        fields.push(['ຄຳອະທິບາຍ', noteBox('#FDECEA', '#991B1B', '<b>❌ ຄຳຂໍນີ້ຖືກປະຕິເສດ</b> — ຈະບໍ່ມີລະຫັດຕູ້ ແລະ ບໍ່ຕ້ອງເຊັນເອກະສານ. ຖ້າຍັງຕ້ອງການຕູ້ ໃຫ້ສົ່ງຄຳຂໍໃໝ່ທີ່ໜ້າ Asset Request ຫຼື ສອບຖາມ Admin.')]);
       }
       const loanAction = (r.status === 'approved' && r.loan_required && r.loan_state === 'awaiting_dsm' && r.loan_contract_id && historyLoanCanAct(r))
         ? `<button onclick="closeDetailModal(); historyOpenDsmLink(${r.id})" class="btn-act btn-edit"><i class="fa-solid fa-user-tie mr-1"></i> ສົ່ງລິ້ງ DSM</button>`
@@ -28713,7 +28731,10 @@ function assetStatusBadgeClass(status) {
         : (r.loan_state === 'completed' && r.loan_contract_id
           ? `<button onclick="openLoanContractPdf(${r.loan_contract_id})" class="btn-act" style="background:#EAF0F0; color:#4B6469;"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF ໃບສັນຍາ</button>`
           : '');
-      const actions = loanAction + (currentUser.role === 'admin'
+      const goSign = (codeLocked && ['user', 'admin'].includes(currentUser.role) && historyLoanCanAct(r))
+        ? `<button onclick="closeDetailModal(); pendingLoanTab = 'queue'; switchView('loanContract')" class="btn-act btn-edit"><i class="fa-solid fa-file-signature mr-1"></i> ໄປໜ້າເຊັນເອກະສານ</button>`
+        : '';
+      const actions = goSign + loanAction + (currentUser.role === 'admin'
         ? `<button onclick="closeDetailModal(); deleteHistoryRequest(${r.id})" class="btn-act btn-delete"><i class="fa-solid fa-trash mr-1"></i> ລຶບ</button>`
         : '');
       openDetailModal(`${r.cooler_brand || '-'} / ${r.cooler_type || '-'}`, fields, actions);
