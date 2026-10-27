@@ -1078,6 +1078,8 @@
     .am-wrap { margin: 4px 0 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; overflow: hidden; background: #f8fafc; }
     .am-map { height: 210px; width: 100%; }
     .am-cap { padding: 8px 12px; font-size: 13px; color: #334155; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .am-bar { height: 4px; background: #e2e8f0; }
+    .am-bar i { display: block; height: 100%; width: 0; background: #2563EB; }
     .am-note { padding: 14px 12px; font-size: 13px; color: #92400e; background: #fffbeb; }
     .am-pin { width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 2px solid var(--pc, #0891B2); display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
     .am-truck-wrap { width: 40px; height: 40px; }
@@ -19826,26 +19828,34 @@ function assetStatusBadgeClass(status) {
       return null;
     }
 
+    /* ຂໍເສັ້ນທາງຖະໜົນຈິງຈາກ server (/api/route) — ສຳເລັດຈຶ່ງ cache; ຂໍບໍ່ໄດ້ = null (ບໍ່ແຕ້ມເສັ້ນຊື່ແທນ) */
     async function amFetchRoute(from, to) {
       const key = from.join(',') + '|' + to.join(',');
       if (amRouteCache.has(key)) return amRouteCache.get(key);
-      let pts = [from, to];
-      try {
-        const ctl = new AbortController();
-        const t = setTimeout(() => ctl.abort(), 6000);
-        const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`, { signal: ctl.signal });
-        clearTimeout(t);
-        const j = await r.json();
-        const c = j && j.routes && j.routes[0] && j.routes[0].geometry && j.routes[0].geometry.coordinates;
-        if (c && c.length > 1) pts = c.map(([lng, lat]) => [lat, lng]);
-      } catch (e) { /* ໃຊ້ເສັ້ນຊື່ */ }
-      amRouteCache.set(key, pts);
-      return pts;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const r = await fetch(`/api/route?from=${from[0]},${from[1]}&to=${to[0]},${to[1]}`);
+          if (r.ok) {
+            const j = await r.json();
+            if (j && j.points && j.points.length > 1) {
+              const out = { pts: j.points, km: (j.distance || 0) / 1000, min: Math.max(1, Math.round((j.duration || 0) / 60)) };
+              amRouteCache.set(key, out);
+              return out;
+            }
+          }
+        } catch (e) { /* ລອງອີກຄັ້ງ */ }
+      }
+      return null;
     }
+
+    let amLastAsset = null;
+    function amRetry() { if (amLastAsset) renderAssetMiniMap(amLastAsset); }
+    const amFmtDur = (m) => m >= 60 ? `${Math.floor(m / 60)} ຊມ ${m % 60} ນາທີ` : `${m} ນາທີ`;
 
     async function renderAssetMiniMap(a) {
       amTeardown();
       if (!a || !AM_STATUSES.includes(a.status) || typeof L === 'undefined') return;
+      amLastAsset = a;
       const box = document.getElementById('detailModalMap');
       const my = amToken;
       const onTruck = a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ';
@@ -19881,7 +19891,11 @@ function assetStatusBadgeClass(status) {
         return;
       }
 
-      box.innerHTML = '<div id="amMapEl" class="am-map"></div><div class="am-cap" id="amCap"></div>';
+      // ຈຸດເລີ່ມ/ປາຍຂອງເສັ້ນທາງທີ່ຈະແຕ້ມ
+      const rFrom = onTruck ? pickup : whPt;
+      const rTo = onTruck ? dest : waitTarget;
+
+      box.innerHTML = '<div id="amMapEl" class="am-map"></div><div class="am-bar hidden" id="amBar"><i id="amBarFill"></i></div><div class="am-cap" id="amCap"></div>';
       box.classList.remove('hidden');
       amMap = L.map('amMapEl', { zoomControl: false, scrollWheelZoom: false, attributionControl: true });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OSM' }).addTo(amMap);
@@ -19891,30 +19905,41 @@ function assetStatusBadgeClass(status) {
       const cap = document.getElementById('amCap');
       const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      if (!onTruck) {
-        // ລົດລໍຖ້າຢູ່ສາງ ເຕັ້ນເບົາໆ + ເສັ້ນປະໄປຈຸດຕໍ່ໄປ
-        L.polyline([whPt, waitTarget], { color: '#0891B2', weight: 3, opacity: .6, dashArray: '6 8' }).addTo(amMap);
+      // ໝຸດ
+      if (onTruck) {
+        pin(pickup, isReturn || isMove ? '📍' : '🏭', '#64748b', pickupLabel);
+        pin(dest, isReturn ? '🏭' : '🏪', '#2563EB', destLabel);
+      } else {
         pin(waitTarget, isReturn || isMove ? '📍' : '🏪', '#0891B2', waitTargetLabel);
-        L.marker(whPt, { icon: truckIcon(true), zIndexOffset: 1000 }).addTo(amMap);
         pin(whPt, '🏭', '#64748b', wh.name);
-        cap.innerHTML = `<span>🚚 ລົດລໍຖ້າຢູ່ສາງ ${esc(wh.name)}</span><span style="color:var(--text-muted);">→ ${esc(waitTargetLabel)}</span>`;
-        amMap.fitBounds([whPt, waitTarget], { padding: [38, 38], maxZoom: 16 });
-        setTimeout(() => { if (my === amToken && amMap) amMap.invalidateSize(); }, 60);
+      }
+      amMap.fitBounds([rFrom, rTo], { padding: [38, 38], maxZoom: 16 });
+      setTimeout(() => { if (my === amToken && amMap) amMap.invalidateSize(); }, 60);
+      const truck = L.marker(rFrom, { icon: truckIcon(!onTruck), zIndexOffset: 1000 }).addTo(amMap);
+      cap.innerHTML = '<span style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫລດເສັ້ນທາງຖະໜົນ...</span>';
+
+      const rt = await amFetchRoute(rFrom, rTo);
+      if (my !== amToken || !amMap) return;
+      if (!rt) {
+        // ບໍ່ແຕ້ມເສັ້ນຊື່ — ແຈ້ງໃຫ້ລອງໃໝ່
+        cap.innerHTML = `<span style="color:#b45309;"><i class="fa-solid fa-triangle-exclamation"></i> ໂຫລດເສັ້ນທາງຖະໜົນບໍ່ສຳເລັດ</span><button type="button" class="btn-act btn-edit" style="padding:4px 10px;" onclick="amRetry()"><i class="fa-solid fa-rotate-right mr-1"></i> ລອງໃໝ່</button>`;
         return;
       }
+      const route = rt.pts;
+      const info = `<span style="color:var(--text-muted);">ຈຳລອງເສັ້ນທາງຕາມຖະໜົນ · ~${rt.km.toFixed(1)} ກມ · ປະມານ ${esc(amFmtDur(rt.min))}</span>`;
+      L.polyline(route, onTruck
+        ? { color: '#2563EB', weight: 5, opacity: .8 }
+        : { color: '#0891B2', weight: 4, opacity: .6, dashArray: '8 10' }).addTo(amMap);
+      amMap.fitBounds(L.latLngBounds(route), { padding: [38, 38], maxZoom: 16 });
 
-      // ຢູ່ເທິງລົດ: ແລ່ນຕາມເສັ້ນທາງ
-      pin(pickup, isReturn || isMove ? '📍' : '🏭', '#64748b', pickupLabel);
-      pin(dest, isReturn ? '🏭' : '🏪', '#2563EB', destLabel);
-      amMap.fitBounds([pickup, dest], { padding: [38, 38], maxZoom: 16 });
-      setTimeout(() => { if (my === amToken && amMap) amMap.invalidateSize(); }, 60);
-      cap.innerHTML = `<span>🚚 ${esc(assetStatusText(a))}</span><span style="color:var(--text-muted);">${esc(pickupLabel)} → ${esc(destLabel)}</span>`;
-      const route = await amFetchRoute(pickup, dest);
-      if (my !== amToken || !amMap) return;
-      L.polyline(route, { color: '#2563EB', weight: 4, opacity: .75 }).addTo(amMap);
+      if (!onTruck) {
+        cap.innerHTML = `<span>🚚 ລົດລໍຖ້າຢູ່ສາງ ${esc(wh.name)} → ${esc(waitTargetLabel)}</span>${info}`;
+        return;
+      }
+      cap.innerHTML = `<span>🚚 ${esc(assetStatusText(a))}: ${esc(pickupLabel)} → ${esc(destLabel)}</span>${info}`;
 
-      // ຄວາມຍາວສະສົມຂອງເສັ້ນທາງ (ປະມານ ຫົວໜ່ວຍເມັດ lat/lng ແກ້ cos(lat))
-      const k = Math.cos(pickup[0] * Math.PI / 180);
+      // ຄວາມຍາວສະສົມຂອງເສັ້ນທາງ (ປັບ cos(lat) ໃຫ້ລອງຕິຈູດ)
+      const k = Math.cos(rFrom[0] * Math.PI / 180);
       const cum = [0];
       for (let i = 1; i < route.length; i++) {
         const dy = route[i][0] - route[i - 1][0], dx = (route[i][1] - route[i - 1][1]) * k;
@@ -19927,15 +19952,17 @@ function assetStatusBadgeClass(status) {
         const seg = (cum[i] - cum[i - 1]) || 1, t = Math.min(1, Math.max(0, (d - cum[i - 1]) / seg));
         return [route[i - 1][0] + (route[i][0] - route[i - 1][0]) * t, route[i - 1][1] + (route[i][1] - route[i - 1][1]) * t, route[i][1] - route[i - 1][1]];
       };
-      const truck = L.marker(route[0], { icon: truckIcon(false), zIndexOffset: 1000 }).addTo(amMap);
+      const bar = document.getElementById('amBar'), fill = document.getElementById('amBarFill');
+      bar.classList.remove('hidden');
       const setPos = (f) => {
         const [la, ln, dlng] = at(f);
         truck.setLatLng([la, ln]);
         const el = truck.getElement() && truck.getElement().firstChild;
         if (el) el.classList.toggle('flip', dlng < 0);
+        fill.style.width = (f * 100).toFixed(1) + '%';
       };
       if (reduce) { setPos(0.5); return; }
-      const DUR = 7000, PAUSE = 1400;
+      const DUR = Math.min(16000, Math.max(6000, rt.km * 400)), PAUSE = 1400; // ໄລຍະໄກ = ແລ່ນດົນຂຶ້ນ (6-16 ວິ)
       const run = () => {
         const t0 = performance.now();
         const step = (now) => {
@@ -19947,6 +19974,7 @@ function assetStatusBadgeClass(status) {
         };
         amRaf = requestAnimationFrame(step);
       };
+      setPos(0);
       run();
     }
 

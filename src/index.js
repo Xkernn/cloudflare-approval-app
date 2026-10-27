@@ -8174,6 +8174,59 @@ export default {
       return Response.json(await attachDocStates(env, results || []));
     }
 
+    // 6b. ເສັ້ນທາງຖະໜົນຈິງ (ຂັບລົດ) ລະຫວ່າງ 2 ຈຸດ ສຳລັບ mini map — ຂໍຈາກ OSRM ຝັ່ງ server (ກັນ CORS/ບລັອກຝັ່ງ browser) + cache 1 ວັນ
+    // GET /api/route?from=lat,lng&to=lat,lng -> { points: [[lat,lng],...], distance (m), duration (s) } ; ຂໍບໍ່ໄດ້ -> 502 (ບໍ່ສົ່ງເສັ້ນຊື່)
+    if (url.pathname === "/api/route" && request.method === "GET") {
+      const parsePt = (v) => {
+        const m = /^(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(String(v || "").trim());
+        if (!m) return null;
+        const la = Number(m[1]), ln = Number(m[2]);
+        return (Math.abs(la) <= 90 && Math.abs(ln) <= 180) ? [la, ln] : null;
+      };
+      const from = parsePt(url.searchParams.get("from"));
+      const to = parsePt(url.searchParams.get("to"));
+      if (!from || !to) return Response.json({ error: "ພິກັດບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+      const f5 = (n) => n.toFixed(5);
+      const coordStr = `${f5(from[1])},${f5(from[0])};${f5(to[1])},${f5(to[0])}`;
+      const cache = caches.default;
+      const cacheKey = new Request(`https://route-cache.internal/v1/${coordStr}`);
+      try {
+        const hit = await cache.match(cacheKey);
+        if (hit) return hit;
+      } catch (e) { /* ບໍ່ມີ cache ກໍຂໍໃໝ່ */ }
+      const servers = [
+        "https://router.project-osrm.org/route/v1/driving/",
+        "https://routing.openstreetmap.de/routed-car/route/v1/driving/",
+      ];
+      for (const base of servers) {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 6000);
+        try {
+          const r = await fetch(`${base}${coordStr}?overview=full&geometries=geojson`, { signal: ctl.signal, headers: { "User-Agent": "cooler-approval-app/1.0" } });
+          clearTimeout(timer);
+          if (!r.ok) continue;
+          const j = await r.json();
+          const route = j && j.code === "Ok" && j.routes && j.routes[0];
+          const coords = route && route.geometry && route.geometry.coordinates;
+          if (!coords || coords.length < 2) continue;
+          // ຈຳກັດຈຳນວນຈຸດ (~2500) ແຕ່ຮັກສາຈຸດສຸດທ້າຍ
+          const step = Math.max(1, Math.ceil(coords.length / 2500));
+          const pts = [];
+          for (let i = 0; i < coords.length; i += step) pts.push([Number(coords[i][1].toFixed(5)), Number(coords[i][0].toFixed(5))]);
+          const last = coords[coords.length - 1];
+          const lastPt = [Number(last[1].toFixed(5)), Number(last[0].toFixed(5))];
+          if (pts[pts.length - 1][0] !== lastPt[0] || pts[pts.length - 1][1] !== lastPt[1]) pts.push(lastPt);
+          const res = Response.json({ points: pts, distance: route.distance, duration: route.duration }, { headers: { "Cache-Control": "public, max-age=86400" } });
+          try { ctx.waitUntil(cache.put(cacheKey, res.clone())); } catch (e) {}
+          return res;
+        } catch (e) {
+          clearTimeout(timer);
+          console.error("/api/route", base, e && e.message);
+        }
+      }
+      return Response.json({ error: "ຂໍເສັ້ນທາງຖະໜົນບໍ່ສຳເລັດ" }, { status: 502 });
+    }
+
     // 6c. ຂໍ້ມູນສາງຕົ້ນທາງ ສຳລັບ mini map ໃນ popup Asset Tracking (ລົດອອກຈາກສາງ -> ຮ້ານ)
     // ສາງ = ສາງຂອງສະຕັອກທີ່ QR/Serial ກົງກັບ Asset; ຖ້າສາງນັ້ນບໍ່ມີພິກັດ (ເຊັ່ນ ສາງ "ຮ້ານຄ້າ") ໃຫ້ໃຊ້ສາງຫຼັກທີ່ມີພິກັດ
     if (url.pathname === "/api/asset-route-info" && request.method === "GET") {
