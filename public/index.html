@@ -28944,6 +28944,7 @@ function assetStatusBadgeClass(status) {
 
     function startNotificationPolling() {
       stopNotificationPolling();
+      voiceEntryPending = true; voiceLastNotifId = null; voiceLastUnread = null; // ເຂົ້າແອັບໃໝ່ (login/ເປີດແອັບ) -> ເຕືອນສຽງຄືນ
       notificationPollTimer = setInterval(() => {
         refreshAllBadgeCounts();
         pingAppActivity(false); // ຈຳກັດເອງບໍ່ໃຫ້ຖີ່ກວ່າທຸກ 5 ນາທີ
@@ -29017,16 +29018,118 @@ function assetStatusBadgeClass(status) {
         const fresh = rows.filter(r => !reqVoiceSeen.has(r.id)).reverse(); // ເກົ່າ -> ໃໝ່
         ids.forEach(id => reqVoiceSeen.add(id));
         reqVoiceLastCount = n;
-        fresh.slice(0, 3).forEach(r => {
-          let name = mdeNameFor(r.mde_code) || '';
-          if (/[\u0E80-\u0EFF]/.test(name)) name = ''; // ຊື່ອັກສອນລາວ ສຽງໄທອ່ານບໍ່ໄດ້ -> ອ່ານລະຫັດ MDE ແທນ
-          name = name || r.mde_code || '';
-          reqVoiceSpeak(`มีคำขอเบิกตู้แช่ใหม่ จาก MDE ${name}`.trim());
-        });
-        if (fresh.length > 3) reqVoiceSpeak(`และอีก ${fresh.length - 3} รายการ`);
+        if (fresh.length) {
+          voicePlay('new_request', () => {
+            fresh.slice(0, 3).forEach(r => {
+              let name = mdeNameFor(r.mde_code) || '';
+              if (/[\u0E80-\u0EFF]/.test(name)) name = ''; // ຊື່ອັກສອນລາວ ສຽງໄທອ່ານບໍ່ໄດ້ -> ອ່ານລະຫັດ MDE ແທນ
+              name = name || r.mde_code || '';
+              reqVoiceSpeak(`มีคำขอเบิกตู้แช่ใหม่ จาก MDE ${name}`.trim());
+            });
+            if (fresh.length > 3) reqVoiceSpeak(`และอีก ${fresh.length - 3} รายการ`);
+          });
+        }
       } catch (e) { /* ລອງໃໝ່ຮອບຖັດໄປ */ }
       finally { reqVoiceBusy = false; }
     }
+
+    /* ===================== ສຽງ MP3 ພາສາລາວ ຕອນມີແຈ້ງເຕືອນໃໝ່ (ໄຟລ໌ຢູ່ /voices/<key>.mp3) =====================
+       ສ້າງໄຟລ໌ສຽງລ່ວງໜ້າ (ເຊັ່ນ Narakeet) ແລ້ວວາງໃນ public/voices/ — ຖ້າບໍ່ມີໄຟລ໌ຈະບໍ່ມີສຽງ (ເຫຼີ້ນສຽງ "ປິງ" ແທນ)
+       ກວດຕອນ poll badge (ທຸກ 60 ວິ): notifUnread ເພີ່ມ -> ດຶງສະເພາະແຈ້ງເຕືອນໃໝ່ກວ່າ id ທີ່ຮູ້ແລ້ວ ແລ້ວເຫຼີ້ນສຽງຕາມປະເພດ */
+    const VOICE_FILES = {
+      new_request:      '/voices/new_request.mp3',      // ມີຄຳຂໍເບີກຕູ້ແຊ່ໃໝ່ ຈາກ ເອັມດີອີ (MDE)
+      request_approved: '/voices/request_approved.mp3', // ມີຄຳຂໍເບີກຕູ້ຖືກອະນຸມັດແລ້ວ
+      pending_mde:      '/voices/pending_mde.mp3',      // ມີເອກະສານຄ້າງເຊັນ ເອັມດີອີ (MDE)
+      pending_dsm:      '/voices/pending_dsm.mp3',      // ມີເອກະສານຄ້າງເຊັນ ດີເອັສເອັມ (DSM)
+      dsm_signed:       '/voices/dsm_signed.mp3'        // ດີເອັສເອັມ (DSM) ເຊັນເອກະສານແລ້ວ ເບິ່ງລະຫັດຕູ້ ແລະ ໂຫຼດເອກະສານໄດ້
+    };
+    let voiceQueue = [], voicePlaying = false, voiceUnlockWait = false, voiceEntryPending = true, voiceHiddenAt = 0, voiceLastNotifId = null, voiceLastUnread = null, voiceNotifBusy = false;
+
+    function voicePlay(key, onMissing) {
+      if (!VOICE_FILES[key]) return;
+      voiceQueue.push({ key, onMissing });
+      voiceNext();
+    }
+    function voiceNext() {
+      if (voicePlaying || voiceUnlockWait || !voiceQueue.length) return;
+      const item = voiceQueue.shift();
+      voicePlaying = true;
+      let done = false;
+      const finish = (missing) => {
+        if (done) return; done = true; voicePlaying = false;
+        if (missing) { try { item.onMissing ? item.onMissing() : reqVoiceChime(); } catch (e) { /* ignore */ } }
+        voiceNext();
+      };
+      try {
+        const a = new Audio(VOICE_FILES[item.key]);
+        a.onended = () => finish(false);
+        a.onerror = () => finish(true);      // ບໍ່ມີໄຟລ໌ / ຫຼີ້ນບໍ່ໄດ້
+        const pr = a.play();
+        if (pr && pr.catch) pr.catch((err) => {
+          if (err && err.name === 'NotAllowedError') {
+            // ບຣາວເຊີຍັງບໍ່ອະນຸຍາດ (ຍັງບໍ່ໄດ້ແຕະໜ້າຈໍ) -> ເກັບໄວ້ ແລ້ວເຫຼີ້ນເມື່ອແຕະໜ້າຈໍຄັ້ງທຳອິດ
+            done = true; voicePlaying = false; voiceQueue.unshift(item);
+            if (!voiceUnlockWait) {
+              voiceUnlockWait = true;
+              document.addEventListener('pointerdown', () => { voiceUnlockWait = false; voiceNext(); }, { once: true, passive: true });
+            }
+          } else finish(true);
+        });
+      } catch (e) { finish(true); }
+    }
+
+    // ແຈ້ງເຕືອນ -> ຊື່ສຽງ (null = ບໍ່ມີສຽງ)
+    function voiceKeyForNotification(n) {
+      const title = String(n.title || ''), t = title + ' ' + String(n.body || '');
+      if (title.includes('DSM ເຊັນ')) return 'dsm_signed';
+      if (title.includes('ຂໍລະຫັດຂອງທ່ານໄດ້ຮັບການອະນຸມັດ')) return 'request_approved';
+      if (title.includes('ມີຄຳຂໍເບີກ')) return (currentUser && currentUser.role === 'admin') ? null : 'new_request'; // admin ມີສຽງຂອງຕົນເອງຢູ່ requestVoiceCheck
+      if (title.includes('ແຈ້ງເຕືອນພິເສດ')) {
+        if (t.includes('DSM')) return 'pending_dsm';
+        if (t.includes('ຄ້າງເຊັນ')) return 'pending_mde';
+        return null;
+      }
+      if (title.includes('ມີເອກະສານຄ້າງເຊັນ')) return 'pending_mde';
+      return null;
+    }
+
+    async function voiceNotificationCheck(unread) {
+      if (!currentUser || voiceNotifBusy) return;
+      const n = Number(unread) || 0;
+      if (voiceLastUnread !== null && n <= voiceLastUnread && voiceLastNotifId !== null) { voiceLastUnread = n; return; }
+      voiceNotifBusy = true;
+      try {
+        const base = voiceLastNotifId === null ? 0 : voiceLastNotifId;
+        // ຄັ້ງທຳອິດ: ດຶງ id ຫຼ້າສຸດມາເປັນຈຸດເລີ່ມຕົ້ນເງຽບໆ (ບໍ່ອ່ານຂອງເກົ່າ)
+        const res = await fetch(`/api/notifications?userId=${currentUser.id}` + (voiceLastNotifId === null ? '' : `&after=${base}`));
+        if (!res.ok) return;
+        const data = await res.json();
+        const rows = data.notifications || [];
+        if (voiceLastNotifId === null) {
+          voiceLastNotifId = rows.reduce((m, r) => Math.max(m, Number(r.id) || 0), 0);
+          voiceLastUnread = n; return;
+        }
+        let maxId = voiceLastNotifId;
+        const keys = [];
+        rows.forEach(r => { maxId = Math.max(maxId, Number(r.id) || 0); const k = !r.is_read && voiceKeyForNotification(r); if (k && !keys.includes(k)) keys.push(k); });
+        voiceLastNotifId = maxId; voiceLastUnread = n;
+        keys.forEach(k => voicePlay(k));
+      } catch (e) { /* ລອງໃໝ່ຮອບຖັດໄປ */ }
+      finally { voiceNotifBusy = false; }
+    }
+
+    // ສຽງເຕືອນທຸກຄັ້ງທີ່ເຂົ້າແອັບ ຖ້າເອກະສານຍັງຄ້າງ (ເຂົ້າຕອນ login/ເປີດແອັບ ແລະ ຕອນກັບມາຈາກພື້ນຫຼັງ > 60 ວິ)
+    function voiceEntryReminder(v) {
+      if (!voiceEntryPending || !v) return;
+      voiceEntryPending = false;
+      if (v.pendingMde > 0) voicePlay('pending_mde');
+      if (v.pendingDsm > 0) voicePlay('pending_dsm');
+      if (v.dsmSignedUnseen > 0) voicePlay('dsm_signed');
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { voiceHiddenAt = Date.now(); return; }
+      if (currentUser && voiceHiddenAt && Date.now() - voiceHiddenAt > 60000) { voiceEntryPending = true; refreshAllBadgeCounts(); }
+    });
 
     // ດຶງ badge ຈຳນວນທັງໝົດຄັ້ງດຽວຈາກ /api/badge-counts (COUNT(*) ຝັ່ງ server)
     // ແທນທີ່ຈະເອີ້ນ /api/assets, /api/asset-requests, /api/cooler-event, /api/notifications, /api/announcements
@@ -29043,6 +29146,8 @@ function assetStatusBadgeClass(status) {
         setMenuBadge('assetRequestBadge', c.assetRequest || 0);
         setMenuBadge('coolerEventBadge', c.coolerEvent || 0);
         requestVoiceCheck(c.assetRequest || 0); // ສຽງເຕືອນຄຳຂໍເບີກຕູ້ໃໝ່ (admin)
+        voiceNotificationCheck(c.notifUnread || 0); // ສຽງ MP3 ແຈ້ງເຕືອນໃໝ່ (ທຸກ role)
+        voiceEntryReminder(c.voice); // ສຽງເຕືອນເອກະສານຄ້າງ ທຸກຄັ້ງທີ່ເຂົ້າແອັບ
         setMenuBadge('loanContractDraftBadge', c.loanContractDraft || 0);
         setMenuBadge('historyLoanBadge', c.historyLoanPending || 0); setMenuBadge('historyLoanCardBadge', c.historyLoanPending || 0);
 

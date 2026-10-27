@@ -513,6 +513,7 @@ INSERT INTO users (email, password_hash, team, mde_code, role, status) VALUES
 
 CREATE TABLE IF NOT EXISTS loan_contracts (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    mde_seen_at      DATETIME,                 -- MDE ເປີດເບິ່ງໃບທີ່ເຊັນຄົບແລ້ວຄັ້ງທຳອິດ (ໃຊ້ຢຸດສຽງເຕືອນ)
     doc_no           TEXT UNIQUE,              -- ຕັ້ງຫຼັງ insert ຄື DOC0001 (ຄືຮູບແບບ tracking_no)
     asset_id         INTEGER REFERENCES assets(id),
     tracking_no      TEXT,                     -- ອ້າງອີງ assets.tracking_no ຕອນອອກໃບ (ຖ້າມີ)

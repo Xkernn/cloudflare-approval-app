@@ -7363,7 +7363,31 @@ export default {
       const results = await env.DB.batch(stmts);
       const [assetRow, mapRow, requestRow, notifRow, annRow, loanDraftRow, historyLoanRow, coolerRow] = results;
 
+      // ສຽງເຕືອນຕອນເຂົ້າແອັບ (ຈຳນວນເອກະສານທີ່ຍັງຄ້າງ) — MDE: ຄ້າງເຊັນເອງ / ຄ້າງ DSM / DSM ເຊັນແລ້ວແຕ່ຍັງບໍ່ເຄີຍເປີດເບິ່ງ; DSM: ເອກະສານຂອງ Team ທີ່ລໍຕົນເຊັນ
+      // ແຍກ query ແລະ try/catch ເພື່ອບໍ່ໃຫ້ badge ອື່ນພັງ ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_mde_seen_at.sql
+      const voice = { pendingMde: 0, pendingDsm: 0, dsmSignedUnseen: 0 };
+      try {
+        if (isDsmBc) {
+          const r = await env.DB.batch([
+            env.DB.prepare(`SELECT COUNT(*) AS cnt FROM loan_contracts WHERE ${TEAM_MDE_SQL} AND status = 'awaiting_dsm'`).bind(requester.team || ""),
+            env.DB.prepare(`SELECT COUNT(*) AS cnt FROM cancel_contracts WHERE ${TEAM_MDE_SQL} AND status = 'awaiting_dsm'`).bind(requester.team || ""),
+          ]);
+          voice.pendingDsm = r.reduce((a, x) => a + (x.results[0]?.cnt || 0), 0);
+        } else if (!viewAll && requester.mde_code) {
+          const m = String(requester.mde_code).trim().toUpperCase();
+          const q = (tbl) => env.DB.prepare(
+            `SELECT SUM(status = 'draft') AS d, SUM(status = 'awaiting_dsm') AS a, SUM(status = 'completed' AND mde_seen_at IS NULL) AS u FROM ${tbl} WHERE UPPER(TRIM(mde_code)) = ?`
+          ).bind(m);
+          const r = await env.DB.batch([q("loan_contracts"), q("cancel_contracts")]);
+          for (const x of r) {
+            const row = x.results[0] || {};
+            voice.pendingMde += row.d || 0; voice.pendingDsm += row.a || 0; voice.dsmSignedUnseen += row.u || 0;
+          }
+        }
+      } catch (e) { /* ຍັງບໍ່ໄດ້ຮັນ migration -> ບໍ່ມີສຽງເຕືອນຕອນເຂົ້າແອັບ */ }
+
       return Response.json({
+        voice,
         assetTracking: assetRow.results[0]?.cnt || 0,
         mapTracking: mapRow.results[0]?.cnt || 0,
         assetRequest: requestRow.results[0]?.cnt || 0,
@@ -7381,6 +7405,14 @@ export default {
       const userId = url.searchParams.get("userId");
       if (!userId) return Response.json({ error: "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ງານ" }, { status: 400 });
 
+      // ?after=<id> -> ສະເພາະແຈ້ງເຕືອນໃໝ່ກວ່າ id ນັ້ນ (ສູງສຸດ 20 ແຖວ) — ໃຊ້ກັບສຽງແຈ້ງເຕືອນ ເພື່ອບໍ່ໃຫ້ອ່ານ 200 ແຖວທຸກຄັ້ງ
+      const afterId = parseInt(url.searchParams.get("after") || "", 10);
+      if (Number.isFinite(afterId)) {
+        const { results: fresh } = await env.DB.prepare(
+          "SELECT id, title, body, url, is_read FROM notifications WHERE user_id = ? AND id > ? ORDER BY id ASC LIMIT 20"
+        ).bind(userId, afterId).all();
+        return Response.json({ notifications: fresh || [] });
+      }
       const { results } = await env.DB.prepare(
         "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 200"
       ).bind(userId).all();
@@ -11734,6 +11766,10 @@ export default {
           ? "ໃບນີ້ລໍຖ້າ DSM ເຊັນ - ກະລຸນາສົ່ງລິ້ງໃຫ້ DSM ເຊັນກ່ອນ ຈຶ່ງຈະເປີດ PDF ໄດ້"
           : "ຍັງບໍ່ໄດ້ເຊັນຮັບໃບສັນຍານີ້ - ກະລຸນາເຊັນຮັບກ່ອນຈຶ່ງຈະເປີດ PDF ໄດ້" }, { status: 400 });
       }
+      // MDE (ເຈົ້າຂອງໃບ) ເປີດເບິ່ງໃບທີ່ເຊັນຄົບແລ້ວ -> ໝາຍວ່າເຄີຍເບິ່ງ (ຢຸດສຽງເຕືອນ "DSM ເຊັນແລ້ວ" ຕອນເຂົ້າແອັບ)
+      if (row.status === "completed" && !canViewAll(session.role)) {
+        try { await env.DB.prepare("UPDATE loan_contracts SET mde_seen_at = CURRENT_TIMESTAMP WHERE id = ? AND mde_seen_at IS NULL").bind(row.id).run(); } catch (e) { /* ຍັງບໍ່ໄດ້ຮັນ migration */ }
+      }
       try {
         const pdfBytes = await buildLoanPdf(env, row, { ownerDocBytes: await ownerDocBytesFor(env, session, row, false) });
         return new Response(pdfBytes, {
@@ -12108,6 +12144,10 @@ export default {
         return Response.json({ error: row.status === "awaiting_dsm"
           ? "ໃບນີ້ລໍຖ້າ DSM ເຊັນ - ກະລຸນາສົ່ງລິ້ງໃຫ້ DSM ເຊັນກ່ອນ ຈຶ່ງຈະເປີດ PDF ໄດ້"
           : "ຍັງບໍ່ໄດ້ເຊັນຮັບໃບນີ້ - ກະລຸນາເຊັນຮັບກ່ອນຈຶ່ງຈະເປີດ PDF ໄດ້" }, { status: 400 });
+      }
+      // MDE (ເຈົ້າຂອງໃບ) ເປີດເບິ່ງໃບທີ່ເຊັນຄົບແລ້ວ -> ໝາຍວ່າເຄີຍເບິ່ງ (ຢຸດສຽງເຕືອນ "DSM ເຊັນແລ້ວ" ຕອນເຂົ້າແອັບ)
+      if (row.status === "completed" && !canViewAll(session.role)) {
+        try { await env.DB.prepare("UPDATE cancel_contracts SET mde_seen_at = CURRENT_TIMESTAMP WHERE id = ? AND mde_seen_at IS NULL").bind(row.id).run(); } catch (e) { /* ຍັງບໍ່ໄດ້ຮັນ migration */ }
       }
       try {
         const pdfBytes = await buildCancelPdf(env, row, { ownerDocBytes: await ownerDocBytesFor(env, session, row, false) });
