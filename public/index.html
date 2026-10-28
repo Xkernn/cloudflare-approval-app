@@ -13313,6 +13313,23 @@ body.dlv-popup-open { overflow: hidden; }
       }
 
       const s = hits[0];
+      // ສະຖານະ "ຈອງແລ້ວ": ບອກວ່າຮ້ານໃດ / MDE ໃດ ເປັນຜູ້ຈອງ (ແລະ ຖ້ຽວລົດ ຖ້າຢູ່ໃນຖ້ຽວ)
+      let reserveFields = [];
+      if (s.status === 'reserved') {
+        try {
+          const rr = await fetch(`/api/warehouse-stock/reservation?id=${encodeURIComponent(s.id)}`);
+          const rd = rr.ok ? await rr.json() : null;
+          const src = rd && (rd.asset || rd.request);
+          if (src) {
+            reserveFields = [
+              ['ຈອງໃຫ້ຮ້ານ', [src.outlet_name, src.outlet_code ? '(' + src.outlet_code + ')' : ''].filter(Boolean).join(' ') || '-'],
+              ['MDE ທີ່ຈອງ', [src.mde_code, src.mde_name].filter(Boolean).join(' - ') || '-']
+            ];
+          } else {
+            reserveFields = [['ຜູ້ຈອງ', 'ບໍ່ພົບຮ້ານ/MDE ທີ່ກົງກັບ QR/Serial ນີ້']];
+          }
+        } catch (e) { /* ສະແດງຂໍ້ມູນສະຕັອກປົກກະຕິ */ }
+      }
       const fields = [
         ['ສາງ', s.warehouse_name],
         ['Brand', s.cooler_brand],
@@ -13322,6 +13339,7 @@ body.dlv-popup-open { overflow: hidden; }
         ['Serial Number', s.serial_number],
         ['CapEx', s.capex],
         ['ສະຖານະ', STOCK_STATUS_LABEL[s.status] || s.status],
+        ...reserveFields,
         ['ສະພາບຕູ້', STOCK_COOLER_STATUS_LABEL[s.cooler_status] || s.cooler_status],
         ['ໝາຍເຫດ', s.notes]
       ];

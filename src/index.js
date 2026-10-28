@@ -1464,6 +1464,7 @@ const ROUTE_ROLES = {
   "/api/cooler-writeoff": ROLE_WH, // ລາຍງານຕູ້ແຊ່ສະສາງ - admin + warehouse ເທົ່ານັ້ນ (ລຶບ = admin ຜ່ານ /api/admin/delete-cooler-writeoff)
   "/api/warehouse-stock": ROLE_STAFF,
   "/api/warehouse-stock/history": ROLE_STAFF,
+  "/api/warehouse-stock/reservation": ROLE_STAFF,
   "/api/warehouse-stock/budget-alerts": ROLE_STAFF,
   "/api/admin/save-warehouse-stock": ROLE_WH,
   "/api/admin/delete-warehouse-stock": ROLE_ADMIN, // ລຶບລາຍການສະຕັອກ - ຈຳກັດສະເພາະ admin (warehouse ເພີ່ມ/ແກ້ໄຂໄດ້ ແຕ່ລຶບບໍ່ໄດ້)
@@ -3118,6 +3119,36 @@ export default {
 
     // ==================== ກວດນັບສາງປະຈຳເດືອນ (Stock Count) ====================
     // ລາຍການຮອບກວດນັບ (ຮອງຮັບ ?warehouse_id=)
+    // ຕູ້ສະຕັອກສະຖານະ "ຈອງແລ້ວ" — ໃຜຈອງ: ຮ້ານໃດ / MDE ໃດ (ຫາຈາກ Asset Tracking ຫຼື ຄຳຂໍທີ່ອະນຸມັດແລ້ວ ທີ່ QR/Serial ກົງກັນ) ແລະ ຖ້າຢູ່ໃນຖ້ຽວລົດ ບອກເລກຖ້ຽວ/ແຂວງ
+    if (url.pathname === "/api/warehouse-stock/reservation" && request.method === "GET") {
+      try {
+        const id = url.searchParams.get("id");
+        const st = id ? await env.DB.prepare("SELECT id, qr_code, serial_number FROM warehouse_stock WHERE id = ?").bind(id).first() : null;
+        if (!st) return Response.json({ error: "ບໍ່ພົບລາຍການສະຕັອກ" }, { status: 404 });
+        const qr = String(st.qr_code || "").trim(), sn = String(st.serial_number || "").trim();
+        const out = { asset: null, request: null, trip: null };
+        if (qr || sn) {
+          const m = (a) => a && a.mde_code ? env.DB.prepare("SELECT mde_name, phone, team FROM mde_list WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?))").bind(a.mde_code).first() : Promise.resolve(null);
+          const match = "((qr_code = ?1 AND ?1 != '') OR (serial_number = ?2 AND ?2 != ''))";
+          const asset = await env.DB.prepare(
+            `SELECT tracking_no, outlet_code, outlet_name, mde_code, doc_type, status FROM assets WHERE ${match} AND IFNULL(status, '') != 'ສຳເລັດ' ORDER BY id DESC LIMIT 1`
+          ).bind(qr, sn).first();
+          if (asset) { const mi = await m(asset); out.asset = { ...asset, mde_name: mi && mi.mde_name, mde_phone: mi && mi.phone }; }
+          const reqRow = await env.DB.prepare(
+            `SELECT outlet_code, outlet_name, mde_code FROM asset_requests WHERE status = 'approved' AND ${match} ORDER BY id DESC LIMIT 1`
+          ).bind(qr, sn).first();
+          if (reqRow) { const mi = await m(reqRow); out.request = { ...reqRow, mde_name: mi && mi.mde_name, mde_phone: mi && mi.phone }; }
+        }
+        out.trip = await env.DB.prepare(
+          "SELECT t.trip_no, t.status, l.ship_province FROM ship_trip_stock l JOIN ship_trips t ON t.id = l.trip_id WHERE l.stock_id = ? ORDER BY l.id DESC LIMIT 1"
+        ).bind(st.id).first();
+        return Response.json(out);
+      } catch (e) {
+        console.error("/api/warehouse-stock/reservation", e);
+        return Response.json({ error: "ໂຫລດຂໍ້ມູນການຈອງບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     if (url.pathname === "/api/stock-counts" && request.method === "GET") {
       const warehouseId = url.searchParams.get("warehouse_id");
       let sql = STOCK_COUNT_SUMMARY_SQL + " WHERE 1=1";
