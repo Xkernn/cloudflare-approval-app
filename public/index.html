@@ -9851,7 +9851,7 @@ body.dlv-popup-open { overflow: hidden; }
       if (role === 'delivery') {
         navDashboard.classList.add('hidden');
         navAsset.classList.add('hidden');
-        navMap.classList.add('hidden');
+        navMap.classList.remove('hidden'); // ທີມຈັດສົ່ງ: ເຫັນ Map Tracking (ເບິ່ງທຸກ Asset ຄືກັບ admin/warehouse)
         navRequest.classList.add('hidden');
         navHistory.classList.remove('hidden'); // ທີມຈັດສົ່ງ: ເມນູ "ປະຫວັດ Asset" ເປີດປະຫວັດການຈັດສົ່ງໂດຍກົງ
         document.getElementById('nav-loan-contract').classList.add('hidden'); // ທີມຈັດສົ່ງ: ບໍ່ອອກໃບສັນຍາຢືມ — ລູກຄ້າເຊັນຮັບໃນຂັ້ນຕອນລາຍງານການຈັດສົ່ງແທນ
@@ -9897,7 +9897,7 @@ body.dlv-popup-open { overflow: hidden; }
     }
 
     /* ===================== ແຖບລຸ່ມ 5 ປຸ່ມ + ໜ້າເມນູ (ມືຖື) =====================
-       ແຖບລຸ່ມ: ໜ້າຫຼັກ · Map · ເມນູ · ແຈ້ງເຕືອນ · ຕັ້ງຄ່າ   (role delivery ບໍ່ມີ Map)
+       ແຖບລຸ່ມ: ໜ້າຫຼັກ · Map · ເມນູ · ແຈ້ງເຕືອນ · ຕັ້ງຄ່າ   (ທຸກ role ມີ Map ຍົກເວັ້ນ user)
        ເມນູອື່ນທັງໝົດ (ຕາມສິດຂອງ role) ຢູ່ໃນ "ໜ້າເມນູ" ເຊິ່ງເປີດຈາກປຸ່ມ "ເມນູ"
        ເມນູທີ່ມັກ: ເກັບໃນ localStorage ຕໍ່ຜູ້ໃຊ້ · ປຸ່ມ ແກ້ໄຂ -> ກົດ +/− ຫຼື ກົດຄ້າງແລ້ວລາກ
        ໝາຍເຫດ: ໃຊ້ id ຂອງເມນູຂ້າງ (nav-*) ເປັນແຫຼ່ງຄວາມຈິງເລື່ອງສິດ/ການຊ່ອນ ເພາະ applyRoleMenu() ຍັງຄວບຄຸມຢູ່ */
@@ -10198,7 +10198,7 @@ body.dlv-popup-open { overflow: hidden; }
       user:      ['home', 'menu', 'notif', 'profile'],
       admin:     ['home', 'map', 'menu', 'notif', 'profile'],
       warehouse: ['home', 'map', 'menu', 'notif', 'profile'],
-      delivery:  ['home', 'menu', 'notif', 'profile'],
+      delivery:  ['home', 'map', 'menu', 'notif', 'profile'],
       dsm:       ['home', 'map', 'menu', 'notif', 'profile']
     };
 
@@ -20633,7 +20633,7 @@ function assetStatusBadgeClass(status) {
     }
 
     async function loadAssetMap() {
-      document.getElementById('mapPageDesc').textContent = (currentUser.role === 'admin' || currentUser.role === 'warehouse')
+      document.getElementById('mapPageDesc').textContent = (currentUser.role === 'admin' || currentUser.role === 'warehouse' || currentUser.role === 'delivery')
         ? 'ສະແດງຕຳແໜ່ງ Asset ທີ່ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ/ຈັດສົ່ງ (ແຍກສີຕາມ Doc Type) ບວກລາຍການທີ່ຕິດທຸງໄວ້ທັງໝົດ (ສີແດງ ດ່ວນ)'
         : `ສະແດງຕຳແໜ່ງ Asset ທີ່ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ/ຈັດສົ່ງ ຂອງ MDE: ${currentUser.mde_code} ບວກລາຍການທີ່ຕິດທຸງໄວ້ ເທິງແຜນທີ່`;
 
