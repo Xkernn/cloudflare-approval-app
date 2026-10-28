@@ -72,6 +72,28 @@ async function getAccessToken(env) {
   return cachedToken.token;
 }
 
+// ກວດສຸຂະພາບ Gmail Token (ໃຊ້ໃນ Cron ປະຈຳວັນ) — ບັງຄັບແລກ access token ໃໝ່ ບໍ່ໃຊ້ຄ່າ cache
+// ການແລກ token ທຸກວັນຍັງຊ່ວຍໃຫ້ token ຖືກນັບວ່າ "ມີການໃຊ້ງານ" (ກັນຖືກຍົກເລີກຍ້ອນບໍ່ໃຊ້ເກີນ 6 ເດືອນ)
+// ຜົນ: { ok:true } | { ok:false, kind:"not_configured"|"revoked"|"transient", detail }
+//   revoked = Google ຕອບ 400/401 (invalid_grant / invalid_client ...) -> ຕ້ອງສ້າງ token ໃໝ່
+//   transient = ເຄືອຂ່າຍ/Google ຂັດຂ້ອງຊົ່ວຄາວ -> ບໍ່ຄວນແຈ້ງເຕືອນວ່າ token ໝົດອາຍຸ
+export async function checkGmailToken(env) {
+  const missing = ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER"].filter((k) => !env[k]);
+  if (missing.length || String(env.GMAIL_SENDER).includes("CHANGE_ME")) {
+    return { ok: false, kind: "not_configured", detail: missing.join(",") || "GMAIL_SENDER" };
+  }
+  cachedToken = null;
+  try {
+    await getAccessToken(env);
+    return { ok: true };
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    const m = msg.match(/^GMAIL_TOKEN_FAILED (\d{3})/);
+    if (m && (m[1] === "400" || m[1] === "401")) return { ok: false, kind: "revoked", detail: msg };
+    return { ok: false, kind: "transient", detail: msg };
+  }
+}
+
 export async function sendEmail(env, { to, subject, text, html }) {
   const missing = ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER"].filter((k) => !env[k]);
   if (missing.length || String(env.GMAIL_SENDER).includes("CHANGE_ME")) {

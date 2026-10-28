@@ -5,7 +5,7 @@ import { PDFDocument } from "pdf-lib";
 import { buildLoanPdf } from "./lib/clpdf.js";
 import { buildCancelPdf } from "./lib/cancelpdf.js";
 import { buildTripDocPdf } from "./lib/tripdocpdf.js";
-import { sendEmail } from "./lib/mailer.js";
+import { sendEmail, checkGmailToken } from "./lib/mailer.js";
 
 // ອອກໃບສັນຍາຢືມ — ເດົາ handover_type ຈາກ assets.doc_type ອັດຕະໂນມັດ (ແກ້ໄຂໄດ້ຢູ່ໜ້າຟອມກ່ອນອອກໃບ)
 // "ເກັບຄືນສາງ" ບໍ່ແມ່ນການມອບຕູ້ອອກ ຈຶ່ງບໍ່ມີ checkbox ໃຫ້ (null = ບໍ່ກາເຄື່ອງໝາຍໃດ)
@@ -847,6 +847,57 @@ async function runAutomatedNotificationChecks(env) {
   if (loanReminderUsers > 0) {
     summaryLines.push(`• ແຈ້ງເຕືອນ MDE ${loanReminderUsers} ຄົນ ໃຫ້ເຊັນ/ອອກໃບສັນຍາຢືມ`);
     sentAny = true;
+  }
+
+  // 9) ກວດ Gmail Token (ໃຊ້ສົ່ງ OTP / ເມວເຕືອນເຊັນເອກະສານ) -> ແຈ້ງເຕືອນ admin ຜ່ານ Push (ບໍ່ໃຊ້ Gmail ເພາະມັນອາດໃຊ້ບໍ່ໄດ້)
+  //    (ກ) ກວດຕົວຈິງທຸກວັນ: ຖ້າໝົດອາຍຸ/ຖືກຖອນແລ້ວ -> ແຈ້ງທັນທີທຸກວັນຈົນກວ່າຈະແກ້
+  //    (ຂ) ເຕືອນລ່ວງໜ້າ: Google ບໍ່ບອກວັນໝົດອາຍຸ ຈຶ່ງອ່ານຈາກ app_settings.gmail_token_expires_at (YYYY-MM-DD, ບໍ່ບັງຄັບ)
+  //        ແຈ້ງເມື່ອເຫຼືອ <= GMAIL_TOKEN_WARN_DAYS ວັນ. ຖ້າ consent screen ເປັນ Production ບໍ່ຕ້ອງຕັ້ງຄ່ານີ້
+  try {
+    const health = await checkGmailToken(env);
+    if (!health.ok && health.kind === "revoked") {
+      const line = "• Gmail Token ໝົດອາຍຸ/ຖືກຖອນແລ້ວ — ລະບົບສົ່ງອີເມວ (OTP ລືມລະຫັດຜ່ານ, ເຕືອນເຊັນເອກະສານ) ໃຊ້ບໍ່ໄດ້. ກະລຸນາສ້າງ GMAIL_REFRESH_TOKEN ໃໝ່";
+      summaryLines.push(line);
+      await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
+        title: "ດ່ວນ: Gmail Token ໃຊ້ບໍ່ໄດ້",
+        body: line,
+        url: "dashboard",
+      });
+      sentAny = true;
+    } else if (!health.ok && health.kind === "not_configured") {
+      const line = `• ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Gmail (${health.detail}) — ລະບົບສົ່ງອີເມວຍັງໃຊ້ບໍ່ໄດ້`;
+      summaryLines.push(line);
+      await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
+        title: "ແຈ້ງເຕືອນ: ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Gmail",
+        body: line,
+        url: "dashboard",
+      });
+      sentAny = true;
+    } else if (health.ok) {
+      const expRow = await env.DB.prepare("SELECT value FROM app_settings WHERE key = 'gmail_token_expires_at'").first()
+        .catch(() => null);
+      const expStr = expRow && String(expRow.value || "").trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(expStr || "")) {
+        const laoToday = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+        const daysLeft = Math.round((Date.parse(expStr + "T00:00:00Z") - Date.parse(laoToday + "T00:00:00Z")) / 86400000);
+        if (daysLeft <= GMAIL_TOKEN_WARN_DAYS) {
+          const line = daysLeft >= 0
+            ? `• Gmail Token ຈະໝົດອາຍຸໃນອີກ ${daysLeft} ວັນ (${expStr}) — ກະລຸນາສ້າງ GMAIL_REFRESH_TOKEN ໃໝ່ກ່ອນໝົດ`
+            : `• Gmail Token ເກີນວັນໝົດອາຍຸທີ່ຕັ້ງໄວ້ (${expStr}) — ຖ້າສ້າງໃໝ່ແລ້ວ ໃຫ້ອັບເດດວັນໝົດອາຍຸ`;
+          summaryLines.push(line);
+          await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
+            title: "ເຕືອນ: Gmail Token ໃກ້ໝົດອາຍຸ",
+            body: line,
+            url: "dashboard",
+          });
+          sentAny = true;
+        }
+      }
+    }
+    // kind === "transient": ບໍ່ແຈ້ງ (ຮອບຕໍ່ໄປຈະກວດໃໝ່) ແຕ່ບັນທຶກ log
+    if (!health.ok && health.kind === "transient") console.error("gmail token check transient:", health.detail);
+  } catch (e) {
+    console.error("gmail token check", e && e.message);
   }
 
   if (!sentAny) {
@@ -2678,6 +2729,7 @@ async function tokenCanBypassMaintenance(env, request) {
 //  (ປຸ່ມ: ໃຊ້ origin ຂອງຄຳຂໍ; Cron: ໃຊ້ env.APP_URL — ຕ້ອງຕັ້ງໃນ wrangler.toml [vars])
 // ==========================================================================
 const SIGN_REMINDER_MIN_AGE_DAYS = 7;
+const GMAIL_TOKEN_WARN_DAYS = 2; // ເຕືອນ admin ລ່ວງໜ້າກ່ອນ Gmail Token ໝົດອາຍຸ (ມື້)
 const SIGN_REMINDER_CRON = "0 23 * * SUN"; // ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ (UTC+7)
 async function runSignReminderEmails(env, { appUrl = "", minAgeDays = SIGN_REMINDER_MIN_AGE_DAYS, actor = "auto-weekly" } = {}) {
   const age = Math.max(0, Math.min(365, Number(minAgeDays) || 0));
