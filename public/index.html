@@ -20696,8 +20696,12 @@ function assetStatusBadgeClass(status) {
           const hasOldLatLng = hasNum(oldLat) && hasNum(oldLng);
           const oldNavUrl = hasOldLatLng ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(Number(oldLat))},${encodeURIComponent(Number(oldLng))}` : '';
           const oldPhone = (oldMaster && oldMaster.phone) ? String(oldMaster.phone).trim() : ''; // ເບີໂທຮ້ານເກົ່າ (ຈາກ Outlet Master Data)
-          const oldTel = oldPhone.replace(/[^0-9+]/g, '');
-          const oldWa = oldPhone ? dsmPhoneDigits(oldPhone) : '';
+          // ປຸ່ມ WhatsApp ຂະໜາດນ້ອຍ ຕໍ່ທ້າຍເບີໂທ (ບໍ່ມີເບີ -> ບໍ່ສະແດງປຸ່ມ)
+          const waBtn = (phone) => {
+            const ph = String(phone || '').trim();
+            if (!ph) return '';
+            return ` <a href="https://wa.me/${esc(dsmPhoneDigits(ph))}" target="_blank" rel="noopener" title="WhatsApp ${esc(ph)}" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:1px 8px; margin-left:4px; font-size:11.5px; font-weight:700; line-height:1.6; color:#fff; background:#16a34a; border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
+          };
           const lbl = (text) => `<span style="color:#0f172a; font-weight:700;">${esc(text)}:</span>`;
           marker.bindPopup(`
             ${isOnTruck ? `<span class="badge badge-info" style="margin-bottom:6px; display:inline-block;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</span><br>` : ''}
@@ -20706,7 +20710,7 @@ function assetStatusBadgeClass(status) {
             <span class="badge badge-default">${esc(assetStatusText(a))}</span><br>
             ${lbl('Outlet Name')} ${esc(a.outlet_name || '-')}<br>
             ${lbl('Outlet Code')} ${esc(a.outlet_code || '-')}<br>
-            ${lbl('ເບີໂທຮ້ານ')} ${esc(outletInfo && outletInfo.phone ? outletInfo.phone : '-')}<br>
+            ${lbl('ເບີໂທຮ້ານ')} ${esc(outletInfo && outletInfo.phone ? outletInfo.phone : '-')}${waBtn(outletInfo && outletInfo.phone)}<br>
             ${lbl('Brand')} ${esc(a.cooler_brand || '-')}<br>
             ${lbl('Type')} ${esc(a.cooler_type || '-')}<br>
             ${lbl('QR Code')} ${esc(a.qr_code || '-')}<br>
@@ -20714,13 +20718,12 @@ function assetStatusBadgeClass(status) {
             ${lbl('CapEx')} ${esc(a.capex || '-')}<br>
             ${lbl('MDE Code')} ${esc(a.mde_code || '-')}<br>
             ${lbl('MDE Name')} ${esc(mdeInfo ? mdeInfo.mde_name : '-')}<br>
-            ${lbl('ເບີໂທ MDE')} ${esc(mdeInfo && mdeInfo.phone ? mdeInfo.phone : '-')}<br>
+            ${lbl('ເບີໂທ MDE')} ${esc(mdeInfo && mdeInfo.phone ? mdeInfo.phone : '-')}${waBtn(mdeInfo && mdeInfo.phone)}<br>
             ${lbl('Doc Type')} <span style="color:${color}; font-weight:700;">${esc(a.doc_type || '-')}</span>
             ${isRelocation ? `<br><br><b style="color:#0f172a;">ຮ້ານເດີມ:</b><br>
             ${lbl('Outlet Code')} ${esc(a.old_outlet_code || '-')}<br>
             ${lbl('Outlet Name')} ${esc(a.old_outlet_name || '-')}<br>
-            ${lbl('ເບີໂທຮ້ານເກົ່າ')} ${esc(oldPhone || '-')}<br>
-            ${oldPhone ? `<a href="tel:${esc(oldTel)}" class="btn-submit" style="display:inline-block; text-decoration:none; padding:6px 12px; margin:4px 6px 4px 0; background:#0ea5e9;"><i class="fa-solid fa-phone mr-1"></i> ໂທ</a><a href="https://wa.me/${esc(oldWa)}" target="_blank" rel="noopener" class="btn-submit" style="display:inline-block; text-decoration:none; padding:6px 12px; margin:4px 0; background:#16a34a;"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</a><br>` : ''}
+            ${lbl('ເບີໂທຮ້ານເກົ່າ')} ${esc(oldPhone || '-')}${waBtn(oldPhone)}<br>
             ${lbl('Lat/Long')} ${esc((oldLat ?? '-'))}, ${esc((oldLng ?? '-'))}` : ''}
             <br><br>
             <a href="${navUrl}" target="_blank" rel="noopener" class="btn-submit" style="display:block; text-align:center; text-decoration:none; padding:8px 10px; margin-top:4px;">
