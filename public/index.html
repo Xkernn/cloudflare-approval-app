@@ -2129,6 +2129,19 @@
     #view-asset-request     { --ph-ico: "\f1d8"; }
     #view-user-guide        { --ph-ico: "\f518"; }
     #view-playbook          { --ph-ico: "\f02e"; }
+    /* ໃບເອກະສານອອນລາຍ: PDF ລຽງຕໍ່ກັນ + ຊື່ຮ້ານຢູ່ກ້ອງ */
+    .od-item { margin: 0 0 22px; }
+    .od-pdf { background: #f1f5f9; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; overflow: hidden; min-height: 120px; }
+    .od-pdf .od-page { display: block; border-bottom: 1px solid #e2e8f0; background: #fff; }
+    .od-pdf .od-page:last-child { border-bottom: 0; }
+    .od-pdf-ph { padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 13.5px; }
+    .od-pdf-empty { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 13.5px; min-height: 0; }
+    .od-more { padding: 8px 12px; text-align: center; font-size: 12.5px; font-weight: 600; color: #1d4ed8; background: #eff6ff; }
+    .od-cap { padding: 10px 4px 0; }
+    .od-cap-name { font-weight: 700; font-size: 15px; }
+    .od-cap-code { color: var(--text-muted); font-weight: 600; margin-left: 4px; }
+    .od-cap-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+    #view-online-docs       { --ph-ico: "\f15c"; }
     .pb-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:16px 16px 0; }
     .pb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; padding:16px; }
     .pb-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1px 3px rgba(15,23,42,.06); transition:transform .18s ease, box-shadow .18s ease; }
@@ -2662,6 +2675,9 @@ body.dlv-popup-open { overflow: hidden; }
           </button>
           <button id="nav-vte-budget" class="menu-item mm-only hidden" onclick="switchView('vteBudget')">
             <i class="fa-solid fa-city"></i> ງົບຕູ້ແຊ່ນະຄອນຫຼວງ
+          </button>
+          <button id="nav-online-docs" class="menu-item hidden" onclick="switchView('onlineDocs')">
+            <i class="fa-solid fa-file-pdf"></i> ໃບເອກະສານອອນລາຍ
           </button>
           <button id="nav-playbook" class="menu-item" onclick="switchView('playbook')">
             <i class="fa-solid fa-book-bookmark"></i> ຂະໜາດຕູ້ແຊ່
@@ -5862,6 +5878,25 @@ body.dlv-popup-open { overflow: hidden; }
           </div>
         </div>
       </div>
+      <!-- VIEW: ໃບເອກະສານອອນລາຍ (admin) — Asset ທີ່ກຳລັງລໍເກັບ/ລໍຂົນສົ່ງ/ຢູ່ເທິງລົດ/ຕິດທຸງ + ປຸ່ມເປີດ PDF ໃບສັນຍາ -->
+      <div id="view-online-docs" class="hidden">
+        <div class="page-header">
+          <div>
+            <h1>ໃບເອກະສານອອນລາຍ</h1>
+            <p>ເບິ່ງ PDF ໃບສັນຍາຢືມ / ໃບ T- ຂອງຕູ້ທີ່ລໍເກັບ, ລໍຂົນສົ່ງ, ຢູ່ເທິງລົດ ແລະ ຕູ້ຕິດທຸງ</p>
+          </div>
+        </div>
+        <div class="content-card">
+          <div class="pb-toolbar">
+            <div class="input-wrapper" style="flex:1; min-width:200px; max-width:420px;"><i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="odSearch" class="form-control" placeholder="ຄົ້ນຫາ ຊື່ຮ້ານ / ລະຫັດຮ້ານ / Tracking / MDE / QR / Serial / ເລກໃບ..." oninput="odRender()">
+            </div>
+            <button type="button" class="btn-act btn-reset" onclick="odLoad()"><i class="fa-solid fa-rotate"></i> ໂຫລດໃໝ່</button>
+          </div>
+          <div id="odFilterTabs" class="at-pills" style="display:flex; gap:8px; flex-wrap:wrap; margin:10px 0;"></div>
+          <div id="odList"></div>
+        </div>
+      </div>
       <!-- VIEW: Playbook (ຂະໜາດ + ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ) -->
       <div id="view-playbook" class="hidden">
         <div class="page-header">
@@ -8065,7 +8100,7 @@ body.dlv-popup-open { overflow: hidden; }
       history: 'nav-history', historyHub: 'nav-history', deliveryHub: 'nav-delivery-hub', delivery: 'nav-history', deliverConfirm: 'nav-delivery-hub', dispatchOut: 'nav-delivery-hub',
       noDocDelivery: 'nav-delivery-hub', coolerEvent: 'nav-delivery-hub', coolerWriteOff: 'nav-delivery-hub', coolerWriteOffList: 'nav-delivery-hub', noDocDeliveryList: 'nav-delivery-hub', coolerEventList: 'nav-delivery-hub', profile: 'nav-profile',
       announcements: 'nav-announcements', warehouseStock: 'nav-warehouse-stock', stockCount: 'nav-stock-count', coolerMaster: 'nav-cooler-master', lostCooler: 'nav-lost-cooler', newCooler: 'nav-new-cooler', newCoolerHub: 'nav-new-cooler', shipTrip: 'nav-new-cooler', provBudget: 'nav-prov-budget', vteBudget: 'nav-vte-budget', teamBudget: 'nav-team-budget', shipPlan: 'nav-new-cooler', ncFill: 'nav-new-cooler',
-      loanContract: 'nav-loan-contract', notifications: 'nav-notifications', playbook: 'nav-playbook'
+      loanContract: 'nav-loan-contract', notifications: 'nav-notifications', playbook: 'nav-playbook', onlineDocs: 'nav-online-docs'
     };
     let pendingDeepLinkView = null;
     // url ຂອງ push/ແຈ້ງເຕືອນ ອາດເປັນ "view:tab" (ເຊັ່ນ loanContract:queue = ແຖບເອກະສານຍັງບໍ່ເຊັນ, loanContract:docs = ແຖບເອກະສານສຳເລັດແລ້ວ)
@@ -9058,8 +9093,10 @@ body.dlv-popup-open { overflow: hidden; }
       document.getElementById('view-profile').classList.add('hidden');
       document.getElementById('view-user-guide').classList.add('hidden');
       document.getElementById('view-playbook').classList.add('hidden');
+      document.getElementById('view-online-docs').classList.add('hidden');
       document.getElementById('view-dsm-sign').classList.add('hidden');
       document.getElementById('nav-playbook').classList.remove('active');
+      document.getElementById('nav-online-docs').classList.remove('active');
 
       document.getElementById('nav-dashboard').classList.remove('active');
       document.getElementById('nav-home').classList.remove('active');
@@ -9270,6 +9307,12 @@ body.dlv-popup-open { overflow: hidden; }
         document.getElementById('nav-dsm-sign').classList.add('active');
         document.getElementById('view-dsm-sign').classList.remove('hidden');
         loadDsmSign();
+      } else if (viewName === 'onlineDocs') {
+        // ສະເພາະ Admin (server ກວດສິດຊ້ຳ: /api/admin/online-docs)
+        if (!currentUser || currentUser.role !== 'admin') { switchView('dashboard'); return; }
+        document.getElementById('nav-online-docs').classList.add('active');
+        document.getElementById('view-online-docs').classList.remove('hidden');
+        odLoad();
       } else if (viewName === 'playbook') {
         document.getElementById('nav-playbook').classList.add('active');
         document.getElementById('view-playbook').classList.remove('hidden');
@@ -9860,7 +9903,8 @@ body.dlv-popup-open { overflow: hidden; }
         navStockCount.classList.add('hidden');
         navCoolerMaster.classList.add('hidden');
         document.getElementById('nav-lost-cooler').classList.add('hidden');
-        navNewCooler.classList.add('hidden');
+        navNewCooler.classList.add('hidden');        document.getElementById('nav-online-docs').classList.add('hidden');
+
         document.getElementById('nav-prov-budget').classList.add('hidden');
         document.getElementById('nav-team-budget').classList.add('hidden');
         document.getElementById('nav-vte-budget').classList.add('hidden');
@@ -9876,6 +9920,7 @@ body.dlv-popup-open { overflow: hidden; }
         navCoolerMaster.classList.toggle('hidden', !(role === 'admin' || role === 'warehouse' || role === 'user')); // admin + warehouse + user (delivery ບໍ່ເຫັນ)
         navNewCooler.classList.toggle('hidden', !(role === 'admin' || role === 'warehouse'));
         document.getElementById('nav-lost-cooler').classList.toggle('hidden', role !== 'admin'); // Manage Lost Cooler Master Data: admin ເທົ່ານັ້ນ
+        document.getElementById('nav-online-docs').classList.toggle('hidden', role !== 'admin'); // ໃບເອກະສານອອນລາຍ: admin ເທົ່ານັ້ນ
         document.getElementById('nav-prov-budget').classList.toggle('hidden', role !== 'admin');
         document.getElementById('nav-team-budget').classList.toggle('hidden', role !== 'user' && role !== 'dsm');
         document.getElementById('nav-vte-budget').classList.toggle('hidden', role !== 'admin');
@@ -9920,6 +9965,7 @@ body.dlv-popup-open { overflow: hidden; }
       { key: 'teambudget', nav: 'nav-team-budget',   view: 'teamBudget',      icon: 'fa-solid fa-chart-pie', label: 'ງົບປະມານຕູ້ຂອງທີມ',        badge: null,                    tone: 'teal' },
       { key: 'vte',       nav: 'nav-vte-budget',     view: 'vteBudget',      icon: 'fa-solid fa-city',      label: 'ງົບຕູ້ແຊ່ນະຄອນຫຼວງ',        badge: null,                    tone: 'green' },
       { key: 'ann',       nav: 'nav-announcements',  view: 'announcements',  icon: 'fa-bullhorn',          label: 'ປະກາດ',              badge: 'announcementUnreadBadge', tone: 'orange' },
+      { key: 'onlinedocs', nav: 'nav-online-docs',  view: 'onlineDocs',    icon: 'fa-solid fa-file-pdf',        label: 'ໃບເອກະສານອອນລາຍ',        badge: null,                    tone: 'red', roles: ['admin'] },
       { key: 'playbook',  nav: 'nav-playbook',       view: 'playbook',       icon: 'fa-solid fa-book-bookmark',   label: 'ຂະໜາດຕູ້ແຊ່',            badge: null,                    tone: 'sky' },
       { key: 'guide',     nav: 'nav-user-guide',     view: 'userGuide',      icon: 'fa-book-open',         label: 'ຄູ່ມືການໃຊ້',        badge: null,                    tone: 'purple' },
       { key: 'tour',      nav: 'nav-tour',           action: 'tour',          icon: 'fa-circle-question',   label: 'ແນະນຳການໃຊ້',        badge: null,                    tone: 'slate' }
@@ -29819,6 +29865,155 @@ function assetStatusBadgeClass(status) {
         </div>
       `).join('');
       hydrateAnnouncementImages(list);
+    }
+
+    /* ===================== ໃບເອກະສານອອນລາຍ (admin) =====================
+       ດຶງ Asset ສະຖານະ ລໍເກັບຕູ້ຮ້ານເກົ່າ / ລໍຂົນສົ່ງອອກຈາກສາງ / ຢູ່ເທິງລົດ / ຕິດທຸງ ພ້ອມໃບສັນຍາຢືມ + ໃບ T- ຈາກ /api/admin/online-docs
+       ກົດປຸ່ມເພື່ອເປີດ PDF (ໃຊ້ fetchAndOpenPdf ມີ token) */
+    let odData = { assets: [], loans: [], cancels: [] };
+    let odFilter = 'all';
+    const OD_FILTERS = [
+      ['all', 'ທັງໝົດ'],
+      ['flag', '🚩 ຕິດທຸງ'],
+      ['collect', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ'],
+      ['wait', 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ'],
+      ['truck', 'ຢູ່ເທິງລົດ']
+    ];
+    function odGroupOf(a) {
+      if (a.status === 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ') return 'collect';
+      if (a.status === 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ') return 'wait';
+      if (a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ') return 'truck';
+      return '';
+    }
+    async function odLoad() {
+      const list = document.getElementById('odList');
+      if (list) list.innerHTML = '<div class="nf-skel"></div><div class="nf-skel"></div><div class="nf-skel"></div>';
+      try {
+        const res = await fetch('/api/admin/online-docs');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ');
+        odData = { assets: data.assets || [], loans: data.loans || [], cancels: data.cancels || [] };
+        odRender();
+      } catch (err) {
+        if (list) list.innerHTML = `<div class="card-list-error">${esc(err.message || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ')}</div>`;
+      }
+    }
+    function odSetFilter(k) { odFilter = k; odRender(); }
+    function odRender() {
+      const list = document.getElementById('odList'), tabs = document.getElementById('odFilterTabs');
+      if (!list || !tabs) return;
+      const q = ((document.getElementById('odSearch') || {}).value || '').trim().toLowerCase();
+      const loansBy = new Map(), cancelsBy = new Map();
+      odData.loans.forEach(d => { if (!loansBy.has(d.asset_id)) loansBy.set(d.asset_id, []); loansBy.get(d.asset_id).push(d); });
+      odData.cancels.forEach(d => { if (!cancelsBy.has(d.asset_id)) cancelsBy.set(d.asset_id, []); cancelsBy.get(d.asset_id).push(d); });
+      const countOf = k => odData.assets.filter(a => k === 'all' ? true : k === 'flag' ? !!a.flagged : odGroupOf(a) === k).length;
+      tabs.innerHTML = OD_FILTERS.map(([k, label]) =>
+        `<button type="button" class="at-pill ${odFilter === k ? 'active' : ''}" onclick="odSetFilter('${k}')">${label}<span class="at-pill-count">${countOf(k)}</span></button>`).join('');
+      let rows = odData.assets.filter(a => odFilter === 'all' ? true : odFilter === 'flag' ? !!a.flagged : odGroupOf(a) === odFilter);
+      if (q) rows = rows.filter(a => {
+        const docs = [...(loansBy.get(a.id) || []), ...(cancelsBy.get(a.id) || [])].map(d => d.doc_no).join(' ');
+        return [a.outlet_name, a.outlet_code, a.tracking_no, a.mde_code, a.qr_code, a.serial_number, docs].some(v => (v || '').toString().toLowerCase().includes(q));
+      });
+      if (!rows.length) { list.innerHTML = '<div class="mgmt-card-list-empty">ບໍ່ມີລາຍການ</div>'; return; }
+      const stBadge = a => {
+        const g = odGroupOf(a);
+        return `<span class="badge ${g === 'truck' ? 'badge-purple' : 'badge-pending'}">${esc(typeof assetStatusText === 'function' ? assetStatusText(a) : a.status)}</span>`;
+      };
+      const hintOf = d => d.status === 'completed' ? 'ເຊັນຄົບແລ້ວ' : (d.status === 'awaiting_dsm' ? 'ລໍ DSM ເຊັນ' : 'ຍັງບໍ່ເຊັນ (ຮ່າງ)');
+      // PDF ລຽງຕໍ່ກັນ: ແຕ່ລະໃບສະແດງໜ້າທຳອິດຂອງ PDF (ໂຫລດເມື່ອເລື່ອນມາເຖິງ) ກົດແລ້ວເປີດເບິ່ງທຸກໜ້າ ແລ້ວມີຊື່ຮ້ານ + ລະຫັດຮ້ານ ຢູ່ກ້ອງ
+      const html = [];
+      rows.forEach(a => {
+        const docs = [...(loansBy.get(a.id) || []).map(d => ({ kind: 'loan', d })), ...(cancelsBy.get(a.id) || []).map(d => ({ kind: 'cancel', d }))];
+        const cap = (d, kind) => `
+          <div class="od-cap">
+            <div class="od-cap-name">${a.flagged ? '<i class="fa-solid fa-flag" style="color:#dc2626;"></i> ' : ''}${esc(a.outlet_name || '-')} <span class="od-cap-code">${esc(a.outlet_code || '')}</span></div>
+            <div class="od-cap-sub">${d ? esc((kind === 'cancel' ? 'ໃບ T- ' : 'ໃບສັນຍາຢືມ ') + (d.doc_no || '#' + d.id)) + ' · ' + esc(hintOf(d)) + ' · ' : ''}${esc(a.tracking_no || '')} · MDE ${esc(a.mde_code || '-')} · ${stBadge(a)}</div>
+            ${d ? `<button type="button" class="btn-act btn-reset" style="margin-top:6px;" onclick="odOpenPdf('${kind}', ${Number(d.id)})"><i class="fa-solid fa-up-right-from-square"></i> ເບິ່ງທຸກໜ້າ / ດາວໂຫຼດ</button>` : ''}
+          </div>`;
+        if (!docs.length) {
+          html.push(`<div class="od-item od-item-empty"><div class="od-pdf od-pdf-empty">ຍັງບໍ່ມີໃບສັນຍາ / ໃບ T- ຂອງຕູ້ນີ້</div>${cap(null, '')}</div>`);
+          return;
+        }
+        docs.forEach(({ kind, d }) => html.push(`<div class="od-item"><div class="od-pdf" data-od-kind="${kind}" data-od-id="${Number(d.id)}"><div class="od-pdf-ph"><i class="fa-solid fa-file-pdf"></i> ກຳລັງໂຫລດ PDF...</div></div>${cap(d, kind)}</div>`));
+      });
+      list.innerHTML = html.join('');
+      odObservePdfs();
+    }
+
+    /* ---- ສະແດງ PDF ໃນໜ້າ (pdf.js ໂຫລດຈາກ cdnjs ຄັ້ງທຳອິດທີ່ເປີດເມນູ) — render ສະເພາະໜ້າທຳອິດເປັນ canvas ---- */
+    let odPdfJsPromise = null, odObserver = null;
+    const odPdfCache = new Map();   // key kind:id -> ArrayBuffer
+    function odEnsurePdfJs() {
+      if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+      if (odPdfJsPromise) return odPdfJsPromise;
+      odPdfJsPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = () => {
+          try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { /* ignore */ }
+          resolve(window.pdfjsLib);
+        };
+        s.onerror = () => { odPdfJsPromise = null; reject(new Error('ໂຫລດຕົວອ່ານ PDF ບໍ່ໄດ້')); };
+        document.head.appendChild(s);
+      });
+      return odPdfJsPromise;
+    }
+    function odObservePdfs() {
+      if (odObserver) odObserver.disconnect();
+      const boxes = document.querySelectorAll('#odList .od-pdf[data-od-id]');
+      if (!('IntersectionObserver' in window)) { boxes.forEach(odRenderPdf); return; }
+      odObserver = new IntersectionObserver((entries) => {
+        entries.forEach(en => { if (en.isIntersecting) { odObserver.unobserve(en.target); odRenderPdf(en.target); } });
+      }, { rootMargin: '600px 0px' });
+      boxes.forEach(b => odObserver.observe(b));
+    }
+    async function odRenderPdf(box) {
+      const kind = box.dataset.odKind, id = box.dataset.odId, key = kind + ':' + id;
+      try {
+        const lib = await odEnsurePdfJs();
+        let buf = odPdfCache.get(key);
+        if (!buf) {
+          const res = await fetch(`${kind === 'cancel' ? '/api/cancel-contracts/pdf' : '/api/loan-contracts/pdf'}?id=${encodeURIComponent(id)}`);
+          if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'ເປີດ PDF ບໍ່ໄດ້'); }
+          buf = await res.arrayBuffer();
+          odPdfCache.set(key, buf);
+        }
+        const pdf = await lib.getDocument({ data: buf.slice(0) }).promise;
+        const width = Math.max(280, box.clientWidth || 600);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const frag = document.createDocumentFragment();
+        for (let n = 1; n <= 1; n++) { // ສະແດງສະເພາະໜ້າທຳອິດ — ກົດເພື່ອເປີດເບິ່ງທຸກໜ້າ
+          const page = await pdf.getPage(n);
+          const base = page.getViewport({ scale: 1 });
+          const vp = page.getViewport({ scale: (width / base.width) * dpr });
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
+          canvas.style.width = '100%'; canvas.style.height = 'auto'; canvas.className = 'od-page';
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+          frag.appendChild(canvas);
+        }
+        box.innerHTML = ''; box.appendChild(frag);
+        box.style.cursor = 'pointer';
+        box.title = 'ກົດເພື່ອເບິ່ງເອກະສານເຕັມ';
+        box.onclick = () => odOpenPdf(kind, id);
+        if (pdf.numPages > 1) {
+          const more = document.createElement('div');
+          more.className = 'od-more';
+          more.innerHTML = `<i class="fa-solid fa-up-right-from-square"></i> ກົດເພື່ອເບິ່ງທຸກໜ້າ (${pdf.numPages} ໜ້າ)`;
+          box.appendChild(more);
+        } else {
+          const more = document.createElement('div');
+          more.className = 'od-more';
+          more.innerHTML = '<i class="fa-solid fa-up-right-from-square"></i> ກົດເພື່ອເປີດເຕັມຈໍ';
+          box.appendChild(more);
+        }
+      } catch (err) {
+        box.innerHTML = `<div class="od-pdf-ph" style="color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(err.message || 'ສະແດງ PDF ບໍ່ໄດ້')} — ກົດ "ເບິ່ງທຸກໜ້າ" ແທນ</div>`;
+      }
+    }
+    function odOpenPdf(kind, id) {
+      const base = kind === 'cancel' ? '/api/cancel-contracts/pdf' : '/api/loan-contracts/pdf';
+      return fetchAndOpenPdf(`${base}?id=${encodeURIComponent(id)}`, (kind === 'cancel' ? 'cancel-contract-' : 'loan-contract-') + id);
     }
 
     /* ===================== Playbook: ຂະໜາດ + ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ =====================
