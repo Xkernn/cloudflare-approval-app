@@ -2136,6 +2136,7 @@
     .od-pdf .od-page:last-child { border-bottom: 0; }
     .od-pdf-ph { padding: 36px 16px; text-align: center; color: var(--text-muted); font-size: 13.5px; }
     .od-pdf-empty { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 13.5px; min-height: 0; }
+    .od-load-btn { display: block; width: 100%; padding: 34px 16px; border: 0; background: transparent; color: #1d4ed8; font-weight: 700; font-size: 14px; cursor: pointer; }
     .od-more { padding: 8px 12px; text-align: center; font-size: 12.5px; font-weight: 600; color: #1d4ed8; background: #eff6ff; }
     .od-cap { padding: 10px 4px 0; }
     .od-cap-name { font-weight: 700; font-size: 15px; }
@@ -29920,7 +29921,7 @@ function assetStatusBadgeClass(status) {
         return `<span class="badge ${g === 'truck' ? 'badge-purple' : 'badge-pending'}">${esc(typeof assetStatusText === 'function' ? assetStatusText(a) : a.status)}</span>`;
       };
       const hintOf = d => d.status === 'completed' ? 'ເຊັນຄົບແລ້ວ' : (d.status === 'awaiting_dsm' ? 'ລໍ DSM ເຊັນ' : 'ຍັງບໍ່ເຊັນ (ຮ່າງ)');
-      // PDF ລຽງຕໍ່ກັນ: ແຕ່ລະໃບສະແດງໜ້າທຳອິດຂອງ PDF (ໂຫລດເມື່ອເລື່ອນມາເຖິງ) ກົດແລ້ວເປີດເບິ່ງທຸກໜ້າ ແລ້ວມີຊື່ຮ້ານ + ລະຫັດຮ້ານ ຢູ່ກ້ອງ
+      // PDF ລຽງຕໍ່ກັນ: ແຕ່ລະໃບສະແດງໜ້າທຳອິດຂອງ PDF (ກົດປຸ່ມຈຶ່ງໂຫລດ ບໍ່ໂຫລດເອງ) ກົດແລ້ວເປີດເບິ່ງທຸກໜ້າ ແລ້ວມີຊື່ຮ້ານ + ລະຫັດຮ້ານ ຢູ່ກ້ອງ
       const html = [];
       rows.forEach(a => {
         const docs = [...(loansBy.get(a.id) || []).map(d => ({ kind: 'loan', d })), ...(cancelsBy.get(a.id) || []).map(d => ({ kind: 'cancel', d }))];
@@ -29934,10 +29935,9 @@ function assetStatusBadgeClass(status) {
           html.push(`<div class="od-item od-item-empty"><div class="od-pdf od-pdf-empty">ຍັງບໍ່ມີໃບສັນຍາ / ໃບ T- ຂອງຕູ້ນີ້</div>${cap(null, '')}</div>`);
           return;
         }
-        docs.forEach(({ kind, d }) => html.push(`<div class="od-item"><div class="od-pdf" data-od-kind="${kind}" data-od-id="${Number(d.id)}"><div class="od-pdf-ph"><i class="fa-solid fa-file-pdf"></i> ກຳລັງໂຫລດ PDF...</div></div>${cap(d, kind)}</div>`));
+        docs.forEach(({ kind, d }) => html.push(`<div class="od-item"><div class="od-pdf" data-od-kind="${kind}" data-od-id="${Number(d.id)}"><button type="button" class="od-load-btn" onclick="odLoadOne(this.parentNode)"><i class="fa-solid fa-file-pdf"></i> ກົດເພື່ອໂຫລດ PDF</button></div>${cap(d, kind)}</div>`));
       });
-      list.innerHTML = html.join('');
-      odObservePdfs();
+      list.innerHTML = html.join(''); // ບໍ່ໂຫລດ PDF ອັດຕະໂນມັດ — ກົດປຸ່ມ "ກົດເພື່ອໂຫລດ PDF" ເທິງແຕ່ລະໃບເອງ
     }
 
     /* ---- ສະແດງ PDF ໃນໜ້າ (pdf.js ໂຫລດຈາກ cdnjs ຄັ້ງທຳອິດທີ່ເປີດເມນູ) — render ສະເພາະໜ້າທຳອິດເປັນ canvas ---- */
@@ -29957,6 +29957,12 @@ function assetStatusBadgeClass(status) {
         document.head.appendChild(s);
       });
       return odPdfJsPromise;
+    }
+    function odLoadOne(box) {
+      if (!box || box.dataset.odBusy) return;
+      box.dataset.odBusy = '1';
+      box.innerHTML = '<div class="od-pdf-ph"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫລດ PDF...</div>';
+      odRenderPdf(box).finally(() => { delete box.dataset.odBusy; });
     }
     function odObservePdfs() {
       if (odObserver) odObserver.disconnect();

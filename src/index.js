@@ -11481,7 +11481,8 @@ export default {
       try {
         const statuses = [COLLECT_WAITING_STATUS, WAITING_DISPATCH_STATUS, "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"];
         const ph = statuses.map(() => "?").join(",");
-        const cond = `(status IN (${ph}) OR flagged = 1)`;
+        // ຈັດສົ່ງສຳເລັດແລ້ວ (status = ສຳເລັດ) ບໍ່ເອົາມາໂຊ ເຖິງວ່າຈະຕິດທຸງກໍຕາມ
+        const cond = `(status IN (${ph}) OR (flagged = 1 AND IFNULL(status, '') != 'ສຳເລັດ'))`;
         const [assets, loans, cancels] = await env.DB.batch([
           env.DB.prepare(
             `SELECT id, tracking_no, outlet_code, outlet_name, mde_code, doc_type, status, flagged, qr_code, serial_number, cooler_brand, cooler_type, last_update
