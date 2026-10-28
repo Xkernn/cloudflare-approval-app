@@ -2337,6 +2337,8 @@
     .tour-card { position: fixed; width: min(340px, calc(100vw - 24px)); background: #fff; color: #0f172a; border-radius: 18px; padding: 18px 18px 14px; box-shadow: 0 20px 50px rgba(0,0,0,.35); animation: tourPop .22s ease; }
     @keyframes tourPop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
     .tour-card .tour-icon { width: 44px; height: 44px; border-radius: 14px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 10px; }
+    .tour-card { overflow: visible; }
+    .tour-voice-btn { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e8f0; background: #f8fafc; color: var(--primary); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
     .tour-card h4 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
     .tour-card p { margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: #475569; white-space: pre-line; }
     .tour-dots { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -5933,23 +5935,27 @@ body.dlv-popup-open { overflow: hidden; }
             <div class="guide-intro-icon"><i class="fa-solid fa-book-open"></i></div>
             <div>
               <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">ເມນູທີ່ທ່ານໃຊ້ໄດ້</h3>
-              <p style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">ທ່ານເຫັນຂໍ້ມູນສະເພາະຂອງ MDE ຕົນເອງເທົ່ານັ້ນ. ກົດຫົວຂໍ້ດ້ານລຸ່ມເພື່ອເບິ່ງລາຍລະອຽດແຕ່ລະເມນູ.</p>
+              <p style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">ທ່ານເຫັນຂໍ້ມູນສະເພາະຂອງ MDE ຕົນເອງເທົ່ານັ້ນ (ບໍ່ເຫັນ Map Tracking ແລະ ເມນູລາຍງານການຈັດສົ່ງ). ກົດຫົວຂໍ້ດ້ານລຸ່ມເພື່ອເບິ່ງລາຍລະອຽດແຕ່ລະເມນູ.</p>
             </div>
           </div>
           <div class="guide-menu-grid">
             <div class="guide-menu-tile"><b><i class="fa-solid fa-chart-pie"></i>ງົບປະມານຂອງທີມ</b><span>ເບິ່ງໂຄຕ້າ, ທີ່ໃຊ້ໄປແລ້ວ ແລະ ຄົງເຫຼືອ ແຍກຕາມ Brand</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-clipboard-list"></i>Asset Request</b><span>ສົ່ງຄຳຂໍເບີກ Asset ໃໝ່ ແລະ ຕິດຕາມຄຳຂໍທີ່ລໍຖ້າອະນຸມັດ</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-boxes-stacked"></i>Asset Tracking</b><span>ເບິ່ງລາຍການ Asset ຂອງ MDE ທ່ານ ແລະ Status ປັດຈຸບັນ</span></div>
+            <div class="guide-menu-tile"><b><i class="fa-solid fa-file-signature"></i>ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ</b><span>ອອກ ແລະ ເຊັນໃບສັນຍາຢືມ (DOC-), ໃບຍົກເລີກ/ເກັບຕູ້ເຂົ້າສາງ (T-) ແລ້ວສົ່ງລິ້ງໃຫ້ DSM ເຊັນ</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-clock-rotate-left"></i>ປະຫວັດ Asset</b><span>ມີ 2 card: ປະຫວັດການຂໍ Asset (ຄຳຂໍທຸກສະຖານະ) ແລະ ປະຫວັດການຈັດສົ່ງ Asset (Status = ສຳເລັດ)</span></div>
+            <div class="guide-menu-tile"><b><i class="fa-solid fa-magnifying-glass-location"></i>ຄົ້ນຫາຕູ້ (Master)</b><span>ພິມ ຫຼື ສະແກນ QR / Serial / CapEx ເພື່ອເບິ່ງວ່າຕູ້ນັ້ນຢູ່ໃສໃນລະບົບ</span></div>
+            <div class="guide-menu-tile"><b><i class="fa-solid fa-book-bookmark"></i>ຂະໜາດຕູ້ແຊ່</b><span>ເບິ່ງຂະໜາດ ແລະ ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-bell"></i>ແຈ້ງເຕືອນ / ປະກາດ</b><span>ຂໍ້ຄວາມແຈ້ງເຕືອນ ແລະ ຂ່າວສານຈາກບໍລິສັດ ຫຼື Admin</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-user-gear"></i>Profile (ຊື່ MDE ຂອງທ່ານ)</b><span>ຂໍ້ມູນບັນຊີ, ປ່ຽນລະຫັດຜ່ານ ແລະ ເປີດ Push Notification</span></div>
+            <div class="guide-menu-tile"><b><i class="fa-solid fa-key"></i>ລືມລະຫັດຜ່ານ</b><span>ຂໍ OTP ທາງອີເມວ ແລ້ວຕັ້ງລະຫັດຜ່ານໃໝ່ ຈາກໜ້າເຂົ້າສູ່ລະບົບ</span></div>
           </div>
         </div>
 
         <details class="guide-item" open>
           <summary><i class="fa-solid fa-sack-dollar guide-ico"></i> 1. ເບິ່ງງົບປະມານຂອງທີມ</summary>
           <div class="guide-body">
-            <p>ເມນູ <b>ງົບປະມານຂອງທີມ</b> ສະແດງຕາຕະລາງຂອງທີມທ່ານ ແຍກຕາມ Cooler Brand:</p>
+            <p>ເມນູ <b>ງົບປະມານຕູ້ຂອງທີມ</b> ສະແດງຕາຕະລາງຂອງທີມທ່ານ ແຍກຕາມ Cooler Brand:</p>
             <ul>
               <li><b>ໂຄຕ້າ (ເບີກໄດ້)</b> - ຈຳນວນທັງໝົດທີ່ທີມໄດ້ຮັບສິດເບີກ</li>
               <li><b>ໃຊ້ໄປແລ້ວ</b> - ຈຳນວນທີ່ເບີກໄປແລ້ວ</li>
@@ -5964,7 +5970,7 @@ body.dlv-popup-open { overflow: hidden; }
           <div class="guide-body">
             <ol>
               <li>ເຂົ້າເມນູ <b>Asset Request</b> ແລ້ວກົດປຸ່ມ <b>ສົ່ງຄຳຂໍ Asset ໃໝ່</b></li>
-              <li>ປ້ອນ <b>Outlet Code</b> ແລະ <b>Outlet Name</b> (ບັງຄັບທັງສອງຊ່ອງ)</li>
+              <li>ປ້ອນ <b>Outlet Code</b> - ລະບົບດຶງ <b>Outlet Name</b> ຈາກ Outlet Master Data ໃຫ້ອັດຕະໂນມັດ (ແກ້ເອງບໍ່ໄດ້). ຖ້າຮ້ານ<b>ບໍ່ມີ Outlet Code</b> ໃຫ້ຕິກ <b>"ຮ້ານນີ້ບໍ່ມີ Outlet Code"</b> ແລ້ວພິມຊື່ຮ້ານ ແລະ ຕື່ມຂໍ້ມູນຮ້ານໃຫ້ຄົບ (ຊື່ເຈົ້າຂອງຮ້ານ, ປະເພດ, ລະດັບຮ້ານ, ແຂວງ, ບ້ານ, ເມືອງ, ເບີໂທຜູ້ຕິດຕໍ່)</li>
               <li>ເລືອກ <b>ສະພາບ</b>:
                 <ul style="margin-top:6px;">
                   <li><b>ໃໝ່</b> - ຕັດງົບປະມານຂອງທີມ; ເລືອກໄດ້ສະເພາະ Brand ທີ່ທີມທ່ານມີງົບປະມານ</li>
@@ -5972,11 +5978,12 @@ body.dlv-popup-open { overflow: hidden; }
                 </ul>
               </li>
               <li>ເລືອກ <b>Cooler Brand</b> ແລະ <b>Cooler Type</b> - ຖ້າເລືອກ "ໃໝ່" ລະບົບຈະສະແດງ <b>ໂຄຕ້າຄົງເຫຼືອ</b> ໃຫ້ເຫັນ</li>
-              <li>ເລືອກ <b>Doc Type</b> (ບັງຄັບ)</li>
-              <li>ຂຽນ <b>ເຫດຜົນ / ໝາຍເຫດ</b> ຂອງການເບີກ</li>
-              <li>ກົດສົ່ງຄຳຂໍ ແລ້ວລໍຖ້າການອະນຸມັດ</li>
+              <li>ເລືອກ <b>Doc Type</b> ແລະ <b>ປະເພດສັນຍາ</b> (partner club / competitive / None Contract) - ບັງຄັບທັງສອງ</li>
+              <li>ຂຽນ <b>ເຫດຜົນ / ໝາຍເຫດ</b> (ບັງຄັບ)</li>
+              <li>ຖ່າຍ ຫຼື ເລືອກ <b>ຮູບຮ້ານຄ້າ</b> ໃຫ້ເຫັນໜ້າຮ້ານ (ບັງຄັບ)</li>
+              <li>ກົດ <b>ສົ່ງຄຳຂໍ</b> ແລ້ວລໍຖ້າການອະນຸມັດ</li>
             </ol>
-            <p>ຫຼັງສົ່ງແລ້ວ ຄຳຂໍຈະຢູ່ໃນໜ້າ Asset Request ດ້ວຍສະຖານະ <span class="badge badge-pending">ລໍຖ້າອະນຸມັດ</span>. ເມື່ອ Admin/Warehouse <b>ອະນຸມັດ</b> ຫຼື <b>ປະຕິເສດ</b> ແລ້ວ ທ່ານຈະໄດ້ຮັບການແຈ້ງເຕືອນ ແລະ ຄຳຂໍນັ້ນຈະຍ້າຍໄປເບິ່ງທີ່ເມນູ <b>ປະຫວັດການຂໍ Asset</b>. ເມື່ອອະນຸມັດ Asset ຈະປາກົດໃນ <b>Asset Tracking</b>.</p>
+            <p>ຫຼັງສົ່ງແລ້ວ ຄຳຂໍຈະຢູ່ໃນໜ້າ Asset Request ດ້ວຍສະຖານະ <span class="badge badge-pending">ລໍຖ້າອະນຸມັດ</span>. ເມື່ອ Admin/Warehouse <b>ອະນຸມັດ</b> ຫຼື <b>ປະຕິເສດ</b> ແລ້ວ ທ່ານຈະໄດ້ຮັບການແຈ້ງເຕືອນ ແລະ ຄຳຂໍນັ້ນຈະຍ້າຍໄປເບິ່ງທີ່ເມນູ <b>ປະຫວັດ Asset → ປະຫວັດການຂໍ Asset</b>. ເມື່ອອະນຸມັດ Asset ຈະປາກົດໃນ <b>Asset Tracking</b> ດ້ວຍສະຖານະ "ຍັງບໍ່ທັນເຊັນເອກະສານ".</p>
             <div class="guide-note"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ຄຳຂໍ "ຂອງໃໝ່" ທີ່ຍັງລໍຖ້າອະນຸມັດ ຖືກນັບເຂົ້າໂຄຕ້າທັນທີ. ຖ້າໂຄຕ້າຂອງ Brand/Type ນັ້ນເຕັມ ຫຼືທີມບໍ່ມີງົບປະມານ ລະບົບຈະບໍ່ໃຫ້ສົ່ງຄຳຂໍ ໃຫ້ຕິດຕໍ່ Admin ຫຼືເລືອກ "ມືສອງ" ຖ້າເໝາະສົມ.</div>
           </div>
         </details>
@@ -5986,42 +5993,82 @@ body.dlv-popup-open { overflow: hidden; }
           <div class="guide-body">
             <p>ໜ້ານີ້ສະແດງລາຍການ Asset ຂອງ MDE ທ່ານ ແບບ <b>ເບິ່ງໄດ້ຢ່າງດຽວ</b> (ແກ້ໄຂບໍ່ໄດ້).</p>
             <ul>
-              <li><b>ຄົ້ນຫາ</b> ດ້ວຍ Tracking No, Outlet, MDE, QR ຫຼື Serial ໃນຊ່ອງຄົ້ນຫາ</li>
+              <li><b>ຄົ້ນຫາ</b> ດ້ວຍ Tracking No, Outlet, MDE, QR ຫຼື Serial ໃນຊ່ອງຄົ້ນຫາ (ໃນບັດຈະສະແດງ ຊື່ຮ້ານ + ລະຫັດຮ້ານ ເປັນຫົວຂໍ້)</li>
               <li><b>ກອງຕາມ Status</b> ໃນ dropdown "ທຸກ Status"</li>
               <li>ກົດທີ່ລາຍການເພື່ອເບິ່ງລາຍລະອຽດ</li>
               <li>ກົດ <b>Export Excel</b> ເພື່ອດາວໂຫຼດລາຍການເປັນໄຟລ໌ Excel</li>
             </ul>
-            <p>ຄວາມໝາຍຂອງ Status:</p>
+            <p>ລຳດັບ Status ທີ່ປົກກະຕິ ແລະ ຄວາມໝາຍ:</p>
             <div class="guide-status-list">
-              <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</span><span>MDE ຊັບມິດ PowerApp ຜ່ານແລ້ວ — ລໍຖ້າສາງສະແກນຕູ້ຂຶ້ນລົດ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
-          <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</span><span>ສະເພາະ Doc Type ຕູ້ເຄື່ອນຍ້າຍ / ເກັບຄືນສາງ — ຈຸດເລີ່ມຂອງວຽກສາງ ຄືກັບ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
-              
-              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</span><span>Asset ກຳລັງຖືກຈັດສົ່ງໄປຫາຮ້ານ</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ</span><span>Doc Type ເກັບຄືນສາງ — ທີມງານສະແກນຕູ້ຂຶ້ນລົດຕອນເກັບຈາກຮ້ານເກົ່າ ແລະ ກຳລັງນຳກັບສາງ</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຢູ່ເທິງລົດ / ກຳລັງເຄື່ອນຍ້າຍ</span><span>Doc Type ຕູ້ເຄື່ອນຍ້າຍ — ທີມງານສະແກນຕູ້ຂຶ້ນລົດຕອນເກັບຈາກຮ້ານເກົ່າ ແລະ ກຳລັງນຳໄປຮ້ານໃໝ່</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ທັນເຊັນເອກະສານ</span><span>ຍັງຄ້າງການສົ່ງເອກະສານ</span></div>
-              <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ຊັບມິດ PowerApp</span><span>ຍັງຄ້າງການຊັບມິດໃນ PowerApp</span></div>
-              <div class="guide-status-row"><span class="badge badge-approved">ສຳເລັດ</span><span>ຈັດສົ່ງສຳເລັດແລ້ວ - ລາຍການຈະຍ້າຍໄປເບິ່ງທີ່ <b>ປະຫວັດການຈັດສົ່ງ Asset</b></span></div>
+              <div class="guide-status-row"><span class="badge badge-rejected">ຍັງບໍ່ທັນເຊັນເອກະສານ</span><span>ເລີ່ມຕົ້ນຫຼັງອະນຸມັດ - ຍັງຄ້າງການເຊັນໃບສັນຍາ. ເມື່ອ MDE ແລະ DSM ເຊັນໃບສັນຍາຄົບ ລະບົບປ່ຽນເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp" ໃຫ້ເອງ</span></div>
+              <div class="guide-status-row"><span class="badge badge-pending">ຍັງບໍ່ຊັບມິດ PowerApp</span><span>ເຊັນເອກະສານຄົບແລ້ວ ແຕ່ຍັງຄ້າງການຊັບມິດໃນ PowerApp</span></div>
+              <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ</span><span>MDE ຊັບມິດ PowerApp ຜ່ານແລ້ວ - ລໍຖ້າສາງສະແກນຕູ້ຂຶ້ນລົດ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
+              <div class="guide-status-row"><span class="badge badge-purple">ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ</span><span>ສະເພາະ Doc Type ຕູ້ເຄື່ອນຍ້າຍ / ເກັບຄືນສາງ - ຈຸດເລີ່ມຂອງວຽກສາງ ຄືກັບ ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ · Admin ເປັນຜູ້ຕັ້ງສະຖານະນີ້</span></div>
+              <div class="guide-status-row"><span class="badge badge-info">ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ</span><span>ສາງສະແກນຂຶ້ນລົດແລ້ວ ກຳລັງຈັດສົ່ງໄປຫາຮ້ານ</span></div>
+              <div class="guide-status-row"><span class="badge badge-info">ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ</span><span>Doc Type ເກັບຄືນສາງ - ທີມງານເກັບຕູ້ຈາກຮ້ານເກົ່າ ແລະ ກຳລັງນຳກັບສາງ</span></div>
+              <div class="guide-status-row"><span class="badge badge-info">ຢູ່ເທິງລົດ / ກຳລັງເຄື່ອນຍ້າຍ</span><span>Doc Type ຕູ້ເຄື່ອນຍ້າຍ - ເກັບຈາກຮ້ານເກົ່າ ແລະ ກຳລັງນຳໄປຮ້ານໃໝ່</span></div>
+              <div class="guide-status-row"><span class="badge badge-approved">ສຳເລັດ</span><span>ຈັດສົ່ງສຳເລັດແລ້ວ (ຕູ້ເຄື່ອນຍ້າຍ = ຈັດສົ່ງສຳເລັດ, ເກັບຄືນສາງ = ເກັບກັບສາງສຳເລັດ) - ລາຍການຈະຍ້າຍໄປເບິ່ງທີ່ <b>ປະຫວັດການຈັດສົ່ງ Asset</b></span></div>
             </div>
+            <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ຕູ້ທີ່ເອກະສານຍັງເຊັນບໍ່ຄົບ ສາງຈະສະແກນຂຶ້ນລົດບໍ່ໄດ້ (ເວັ້ນແຕ່ Admin ຕິດທຸງ "ດ່ວນ") - ຈຶ່ງຄວນເຊັນໃບສັນຍາໃຫ້ຄົບໄວໆ.</div>
           </div>
         </details>
 
         <details class="guide-item">
-          <summary><i class="fa-solid fa-clock-rotate-left guide-ico"></i> 4. ປະຫວັດການຂໍ Asset</summary>
+          <summary><i class="fa-solid fa-file-signature guide-ico"></i> 4. ໃບສັນຍາຢືມ (DOC-) ແລະ ໃບຍົກເລີກ (T-)</summary>
           <div class="guide-body">
-            <p>ເບິ່ງຄຳຂໍທັງໝົດຂອງ MDE ທ່ານ <b>ທຸກສະຖານະ</b> (ລໍຖ້າອະນຸມັດ / ອະນຸມັດແລ້ວ / ຖືກປະຕິເສດ) ແລະ Asset ທີ່ Track ຢູ່ປັດຈຸບັນ.</p>
+            <p>ເມນູ <b>ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ</b> ໃຊ້ອອກເອກະສານຂອງຮ້ານ. ມີ 3 ແຖບ:</p>
             <ul>
-              <li>ຄົ້ນຫາດ້ວຍ Outlet, Brand, Type, ຜູ້ຂໍ ຫຼື Status</li>
+              <li><b>ສ້າງໃບເອກະສານໃໝ່</b> - ເລືອກປະເພດເອກະສານ (ກົດ card ເພື່ອເປີດໜ້າຍ່ອຍ ແລະ ມີປຸ່ມ ກັບຄືນ)</li>
+              <li><b>ເອກະສານຍັງບໍ່ເຊັນ</b> - ໃບທີ່ບັນທຶກແລ້ວ ແຕ່ຍັງລໍຖ້າ MDE ຫຼື DSM ເຊັນ (ມີຕົວເລກສີແດງບອກຈຳນວນ)</li>
+              <li><b>ເອກະສານສຳເລັດແລ້ວ</b> - ໃບທີ່ເຊັນຄົບແລ້ວ ເປີດ/ດາວໂຫຼດ PDF ໄດ້. ຄົ້ນຫາດ້ວຍເລກທີໃບ, ລະຫັດ/ຊື່ຮ້ານ, MDE, Serial, QR</li>
+            </ul>
+
+            <p><b>ປະເພດເອກະສານ:</b></p>
+            <div class="guide-status-list">
+              <div class="guide-status-row"><span class="badge badge-info">DOC-</span><span><b>ໃບສັນຍາຢືມ ແລະ ນຳໃຊ້ຕູ້ແຊ່ເບຍລາວ</b> - ມອບຕູ້ໃຫ້ຮ້ານ ແລະ ຕູ້ເຄື່ອນຍ້າຍ. ເລກທີ DOC- ລະບົບສ້າງໃຫ້ອັດຕະໂນມັດຕອນບັນທຶກ</span></div>
+              <div class="guide-status-row"><span class="badge badge-info">T-</span><span><b>ໃບສະເໜີຍົກເລີກສັນຍາຢືມຕູ້ແຊ່</b> - ເກັບຕູ້ຄືນສາງ (ຮ້ານປິດ, ຕູ້ເປ່ເພ, ທຸລະກິດນ້ອຍລົງ, ມອບຕູ້ໃໝ່ປ່ຽນແທນ)</span></div>
+              <div class="guide-status-row"><span class="badge badge-default">ສຳຫຼວດຄືນ</span><span><b>ຕູ້ແຊ່ສຳຫຼວດຄືນ</b> - ຕູ້ທີ່ພົບຢູ່ຮ້ານແຕ່ບໍ່ມີໃນລະບົບ ບັນທຶກເຂົ້າລະບົບ. (ໃບແຈ້ງສູນຫາຍ L- ຍັງບໍ່ເປີດໃຊ້)</span></div>
+            </div>
+
+            <p><b>ຂັ້ນຕອນອອກໃບສັນຍາຢືມ (DOC-)</b> ມີ 7 ຂັ້ນຕອນ:</p>
+            <ol>
+              <li><b>ຂໍ້ມູນຕູ້ແຊ່</b> - ຄົ້ນຫາຮ້ານຈາກ Outlet Master Data, ໃສ່ MDE Code (ລະບົບດຶງຫົວໜ້າທີມ DSM ໃຫ້ເອງ), ເລືອກແບນຕູ້; ດຶງຂໍ້ມູນຈາກ Cooler Master ໄດ້ໂດຍສະແກນ/ພິມ QR, Serial ຫຼື CapEx</li>
+              <li><b>ປະເພດສັນຍາ</b> - ເລືອກປະເພດສັນຍາ, ການມອບຕູ້, ຂະໜາດຕູ້ (ຈຳນວນປະຕູ). ຖ້າເປັນຕູ້ເຄື່ອນຍ້າຍ ໃຫ້ໃສ່ລະຫັດຮ້ານເກົ່າ ແລະ ເຫດຜົນຍ້າຍຕູ້</li>
+              <li><b>ຍອດຂາຍ</b> - ຍອດຂາຍລວມ (Total) ຂອງ Beer, Premium, CSD/Energy ແລະ Drinking Water/Soda</li>
+              <li><b>ແຜນຜັງ</b> - ແຜນຜັງການວາງຕູ້ຢູ່ຮ້ານ</li>
+              <li><b>ເອກະສານ + ເຊັນ</b> - ແນບເອກະສານເຈົ້າຂອງຮ້ານ ແລ້ວ <b>MDE ເຊັນລາຍເຊັນ</b></li>
+              <li><b>ລາຍເຊັນ DSM</b> - ລະບົບສ້າງ <b>ລິ້ງໃຊ້ໄດ້ຄັ້ງດຽວ</b> ໃຫ້ສົ່ງໃຫ້ DSM ທາງ WhatsApp / SMS / ກັອບປີ້ ເພື່ອເຊັນ (ລິ້ງບໍ່ມີວັນໝົດອາຍຸຖ້າຍັງບໍ່ເຊັນ; ຕ້ອງການໃໝ່ກົດ "ສ້າງລິ້ງໃໝ່"). ຫຼື DSM ເຂົ້າບັນຊີຂອງຕົນເອງ ແລ້ວເຊັນໃນເມນູ "ເຊັນເອກະສານ DSM"</li>
+              <li><b>ສະຫຼຸບ</b> - ກວດຜົນ, ເມື່ອ DSM ເຊັນແລ້ວ ເປີດ/ດາວໂຫຼດ PDF ໄດ້</li>
+            </ol>
+            <p><b>ຂັ້ນຕອນອອກໃບຍົກເລີກ (T-)</b> ມີ 5 ຂັ້ນຕອນ: <b>ໃບສັນຍາເດີມ</b> (ເລືອກຮ້ານ + MDE) → <b>ເຫດຜົນ</b> (ຕິກໄດ້ຫຼາຍຂໍ້, ຂໍ້ມູນຕູ້ ແລະ ສະແກນ QR) → <b>ເອກະສານ + ເຊັນ</b> (MDE ເຊັນ) → <b>ລາຍເຊັນ DSM</b> → <b>ສະຫຼຸບ</b>. ວິທີສົ່ງລິ້ງໃຫ້ DSM ຄືກັນກັບໃບ DOC-.</p>
+
+            <div class="guide-note"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ຫຼັງກົດ <b>"ບັນທຶກ ແລະ ສົ່ງລິ້ງໃຫ້ DSM"</b> ຂັ້ນຕອນກ່ອນໜ້າແກ້ໄຂ ຫຼື ຍ້ອນກັບບໍ່ໄດ້. ເອກະສານຈະຄ້າງຢູ່ແຖບ <b>"ເອກະສານຍັງບໍ່ເຊັນ"</b> ຈົນກວ່າ DSM ຈະເຊັນ - ກົດ "ກວດວ່າ DSM ເຊັນແລ້ວຫຼືຍັງ" ເພື່ອອັບເດດ. ລິ້ງນີ້ໃຊ້ໄດ້ຄັ້ງດຽວ. User ລຶບເອກະສານເອງບໍ່ໄດ້ (ໃຫ້ແຈ້ງ Admin).</div>
+            <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ເມື່ອ MDE ແລະ DSM ເຊັນຄົບ Status ຂອງ Asset ຈະປ່ຽນເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp" ເອງ ແລະ ໃນ PDF ລວມມີເອກະສານສຳລັບສົ່ງ PowerApp. ເປີດ PDF ຄັ້ງທຳອິດ ລະບົບຈະບັນທຶກໄຟລ໌ລົງເຄື່ອງໃຫ້ອັດຕະໂນມັດ (ຊື່ຮ້ານ_ປະເພດຕູ້). ໃບ T- ຕ້ອງເຊັນຮັບໃຫ້ແລ້ວກ່ອນຈຶ່ງເປີດ PDF ໄດ້.</div>
+          </div>
+        </details>
+
+        <details class="guide-item">
+          <summary><i class="fa-solid fa-clock-rotate-left guide-ico"></i> 5. ປະຫວັດການຂໍ Asset</summary>
+          <div class="guide-body">
+            <p>ເບິ່ງຄຳຂໍທັງໝົດຂອງ MDE ທ່ານ <b>ທຸກສະຖານະ</b> ແລະ Asset ທີ່ Track ຢູ່ປັດຈຸບັນ.</p>
+            <div class="guide-status-list">
+              <div class="guide-status-row"><span class="badge badge-pending">ລໍຖ້າອະນຸມັດ</span><span>ສົ່ງຄຳຂໍແລ້ວ ລໍຖ້າ Admin/Warehouse ກວດ</span></div>
+              <div class="guide-status-row"><span class="badge badge-approved">ອະນຸມັດແລ້ວ</span><span>ອະນຸມັດແລ້ວ ແລະ ມີ Asset ໃນ Asset Tracking</span></div>
+              <div class="guide-status-row"><span class="badge badge-rejected">ຖືກປະຕິເສດ</span><span>ຄຳຂໍຖືກປະຕິເສດ</span></div>
+              <div class="guide-status-row"><span class="badge badge-default">ຍົກເລີກ</span><span>ຄຳຂໍທີ່ອະນຸມັດແລ້ວ ແຕ່ Asset ນັ້ນຖືກ Admin ລຶບອອກຈາກລະບົບ</span></div>
+            </div>
+            <ul>
+              <li>ຄົ້ນຫາດ້ວຍ Outlet, Brand, Type, ຜູ້ຂໍ (ສະແດງເປັນຊື່ MDE) ຫຼື Status</li>
               <li>ເລືອກ <b>ແຍກລາຍມື້ / ລາຍອາທິດ / ລາຍເດືອນ</b> ເພື່ອຈັດກຸ່ມລາຍການ</li>
               <li>ກົດທີ່ລາຍການເພື່ອເບິ່ງລາຍລະອຽດ ລວມທັງ QR Code / Serial / CapEx ຫຼັງອະນຸມັດ</li>
-              <li>ຄຳຂໍທີ່ອະນຸມັດແລ້ວ ແຕ່ <b>ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ</b> ຫຼື <b>ຍັງບໍ່ທັນເຊັນ</b> ຈະມີປ້າຍ ⚠ ເຕືອນ ແລະ ຕົວເລກສີແດງທີ່ເມນູ - ກົດປຸ່ມ <b>ອອກໃບສັນຍາ</b> / <b>ເຊັນໃບສັນຍາ</b> ໃນລາຍການໄດ້ເລີຍ</li>
+              <li>ຄຳຂໍທີ່ອະນຸມັດແລ້ວ ແຕ່ <b>ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ</b>, <b>ຍັງບໍ່ທັນເຊັນ</b> ຫຼື <b>ລໍຖ້າ DSM ເຊັນ</b> ຈະມີປ້າຍເຕືອນ ແລະ ຕົວເລກສີແດງທີ່ເມນູ - ກົດປຸ່ມ <b>ອອກໃບສັນຍາ</b> / <b>ເຊັນໃບສັນຍາ</b> ໃນລາຍການໄດ້ເລີຍ</li>
             </ul>
             <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ຖ້າຄຳຂໍຫາຍຈາກໜ້າ Asset Request ໃຫ້ມາເບິ່ງທີ່ນີ້ - ອາດຖືກອະນຸມັດ ຫຼື ປະຕິເສດແລ້ວ.</div>
           </div>
         </details>
 
         <details class="guide-item">
-          <summary><i class="fa-solid fa-truck-ramp-box guide-ico"></i> 5. ປະຫວັດການຈັດສົ່ງ Asset</summary>
+          <summary><i class="fa-solid fa-truck-ramp-box guide-ico"></i> 6. ປະຫວັດການຈັດສົ່ງ Asset</summary>
           <div class="guide-body">
             <p>ລາຍການ Asset ຂອງ MDE ທ່ານທີ່ <b>ຈັດສົ່ງສຳເລັດແລ້ວ</b> (Status = ສຳເລັດ), ກົດເບິ່ງລາຍລະອຽດ ແລະ ຮູບຢືນຢັນການຈັດສົ່ງໄດ້.</p>
             <ul>
@@ -6033,38 +6080,94 @@ body.dlv-popup-open { overflow: hidden; }
         </details>
 
         <details class="guide-item">
-          <summary><i class="fa-solid fa-bell guide-ico"></i> 6. ແຈ້ງເຕືອນ ແລະ ປະກາດ</summary>
+          <summary><i class="fa-solid fa-magnifying-glass-location guide-ico"></i> 7. ຄົ້ນຫາຕູ້ (Cooler Master)</summary>
+          <div class="guide-body">
+            <p>ເມນູ <b>ຄົ້ນຫາຕູ້ (Master)</b> ໃຊ້ກວດວ່າຕູ້ແຊ່ໜ່ວຍໜຶ່ງ ເປັນຂອງໃຜ ແລະ ຢູ່ໃສ ຕາມຂໍ້ມູນ Master ຕູ້ແຊ່ທົ່ວປະເທດ. ເປັນ <b>ເບິ່ງໄດ້ຢ່າງດຽວ</b> (ນຳເຂົ້າ/ລຶບຂໍ້ມູນເປັນສິດຂອງ Admin).</p>
+            <ol>
+              <li>ພິມ <b>QR Code, Serial ຫຼື CapEx</b> ໃນຊ່ອງຄົ້ນຫາ ແລ້ວກົດ <b>Enter</b> ຫຼືປຸ່ມ <b>ຄົ້ນຫາ</b></li>
+              <li>ຫຼືກົດ <b>ກ້ອງ</b> ເພື່ອສະແກນ QR ຈາກຕູ້ໂດຍກົງ (ໃນມືຖືມີທາງລັດ "Scan ກວດທີ່ມາຂອງຕູ້ແຊ່" ຢູ່ໜ້າເມນູ)</li>
+              <li>ຈະກອງຕາມ <b>ແຂວງ</b> ກໍໄດ້ ຈາກ dropdown "ທຸກແຂວງ"</li>
+            </ol>
+            <p>ຜົນຄົ້ນຫາສະແດງ Brand / Type / Model, QR / Serial / CapEx, ຮ້ານ ແລະ ທີ່ຢູ່ຕາມ Master, ສະຖານະ, ແລະ <b>ຕຳແໜ່ງໃນລະບົບ</b> (ສະຕັອກສາງ, Asset Tracking, ຕູ້ແຊ່ເຂົ້າໃໝ່, Event, ສະສາງ) ພ້ອມເວລາອັບເດດຫຼ້າສຸດ.</p>
+            <ul>
+              <li>ພົບກົງເປ໊ະ = ສະແດງລາຍລະອຽດຕູ້ນັ້ນເລີຍ</li>
+              <li>ພົບແບບບາງສ່ວນ = ມີຫຼາຍລາຍການທີ່ຂຶ້ນຕົ້ນຄືກັນ ກົດເລືອກລາຍການທີ່ຕ້ອງການ</li>
+              <li>ບໍ່ພົບ = ກວດລະຫັດອີກຄັ້ງ ຫຼື ແຈ້ງ Admin ວ່າຕູ້ນີ້ອາດຍັງບໍ່ຢູ່ໃນ Master</li>
+            </ul>
+            <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ການຄົ້ນຫາໃຊ້ສະເພາະ QR, Serial ແລະ CapEx (ຄົ້ນຫາຕາມຕົວອັກສອນເລີ່ມຕົ້ນ) - ຖ້າຄົ້ນຫາດ້ວຍຊື່ຮ້ານບໍ່ພົບ ໃຫ້ໃຊ້ລະຫັດຕູ້ແທນ. ໃນຂັ້ນຕອນອອກໃບສັນຍາ ກໍມີປຸ່ມ "ດຶງຂໍ້ມູນຈາກ Cooler Master" ເພື່ອຕື່ມຂໍ້ມູນຕູ້ອັດຕະໂນມັດ.</div>
+          </div>
+        </details>
+
+        <details class="guide-item">
+          <summary><i class="fa-solid fa-book-bookmark guide-ico"></i> 8. ຂະໜາດຕູ້ແຊ່ (Playbook)</summary>
+          <div class="guide-body">
+            <p>ເບິ່ງຂະໜາດ ແລະ ຮູບຂອງຕູ້ແຊ່ແຕ່ລະປະເພດ ເພື່ອເລືອກຕູ້ໃຫ້ເໝາະກັບຮ້ານ ກ່ອນສົ່ງຄຳຂໍ. ຂໍ້ມູນຖືກຈັດການໂດຍ Admin (User ເບິ່ງໄດ້ຢ່າງດຽວ).</p>
+          </div>
+        </details>
+
+        <details class="guide-item">
+          <summary><i class="fa-solid fa-bell guide-ico"></i> 9. ແຈ້ງເຕືອນ ແລະ ປະກາດ</summary>
           <div class="guide-body">
             <ul>
-              <li><b>ແຈ້ງເຕືອນ</b> - ບັນທຶກແຈ້ງເຕືອນທັງໝົດຂອງທ່ານ ເຊັ່ນ ຜົນອະນຸມັດ/ປະຕິເສດຄຳຂໍ. ກົດ <b>ໝາຍວ່າອ່ານໝົດ</b> ຫຼື <b>ລຶບທັງໝົດ</b> ໄດ້</li>
-              <li><b>ປະກາດ</b> - ຂ່າວສານຈາກບໍລິສັດ ຫຼື Admin. ກົດ <b>ໝາຍວ່າອ່ານໝົດ</b> ເມື່ອອ່ານແລ້ວ</li>
+              <li><b>ແຈ້ງເຕືອນ</b> - ບັນທຶກແຈ້ງເຕືອນທັງໝົດຂອງທ່ານ ເຊັ່ນ ຜົນອະນຸມັດ/ປະຕິເສດຄຳຂໍ, ໃບສັນຍາລໍຖ້າເຊັນ, DSM ເຊັນແລ້ວ. ແຕະເທິງແຈ້ງເຕືອນເພື່ອໄປຫາໜ້າທີ່ກ່ຽວຂ້ອງ. ກົດ <b>ໝາຍວ່າອ່ານໝົດ</b> ຫຼື <b>ລຶບທັງໝົດ</b> ໄດ້</li>
+              <li><b>ປະກາດ</b> - ຂ່າວສານຈາກບໍລິສັດ ຫຼື Admin (ອາດມີຮູບແນບ). ກົດ <b>ໝາຍວ່າອ່ານໝົດ</b> ເມື່ອອ່ານແລ້ວ</li>
               <li>ຕົວເລກສີແດງທີ່ເມນູ ໝາຍເຖິງຈຳນວນທີ່ຍັງບໍ່ໄດ້ອ່ານ</li>
+              <li><b>ສຽງເຕືອນ</b> - ເມື່ອເຂົ້າແອັບ ຖ້າຍັງມີວຽກຄ້າງ ລະບົບຈະເປີດສຽງເຕືອນ ເຊັ່ນ ເອກະສານລໍຖ້າ MDE ເຊັນ, ລໍຖ້າ DSM ເຊັນ, ຫຼື DSM ເຊັນແລ້ວ (ໃຫ້ເປີດເບິ່ງລະຫັດຕູ້ ແລະ ດາວໂຫຼດເອກະສານ) ຈົນກວ່າຈະດຳເນີນການ</li>
+              <li><b>ແຈ້ງເຕືອນພິເສດ</b> - Admin ອາດສົ່ງແຈ້ງເຕືອນພິເສດຫາທ່ານ ເຊັ່ນ "ເອກະສານຍັງບໍ່ຊັບມິດ PowerApp", "ເອກະສານຄ້າງເຊັນ" ຫຼື "ຄ້າງ DSM ເຊັນ". ຕອນມີແຈ້ງເຕືອນນີ້ຄ້າງ ທ່ານຈະເຂົ້າໄດ້ສະເພາະໜ້າທີ່ຕ້ອງດຳເນີນການ ຈົນກວ່າຈະແກ້ແລ້ວ</li>
             </ul>
             <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ເປີດ Push Notification ໃນໜ້າ Profile ເພື່ອໃຫ້ແຈ້ງເຕືອນເດັ້ງຂຶ້ນມາຢູ່ອຸປະກອນຂອງທ່ານ ເຖິງແມ່ນບໍ່ໄດ້ເປີດແອັບຢູ່.</div>
           </div>
         </details>
 
         <details class="guide-item">
-          <summary><i class="fa-solid fa-user-gear guide-ico"></i> 7. Profile, ປ່ຽນລະຫັດຜ່ານ ແລະ Push Notification</summary>
+          <summary><i class="fa-solid fa-user-gear guide-ico"></i> 10. Profile, ປ່ຽນລະຫັດຜ່ານ ແລະ Push Notification</summary>
           <div class="guide-body">
             <p>ກົດປຸ່ມທີ່ສະແດງ <b>MDE Code - ຊື່ MDE</b> ຂອງທ່ານໃນເມນູດ້ານລຸ່ມ ເພື່ອເຂົ້າໜ້າ Profile:</p>
             <ul>
               <li><b>ຂໍ້ມູນບັນຊີ</b> - ອີເມວ, Role, Team ແລະ MDE Code</li>
-              <li><b>ປ່ຽນລະຫັດຜ່ານ</b> - ປ້ອນລະຫັດຜ່ານປັດຈຸບັນ ແລະ ລະຫັດໃໝ່ (ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ)</li>
+              <li><b>ປ່ຽນລະຫັດຜ່ານ</b> - (ເມື່ອຍັງຈື່ລະຫັດເກົ່າໄດ້) ປ້ອນລະຫັດຜ່ານປັດຈຸບັນ ແລະ ລະຫັດໃໝ່ (ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ)</li>
               <li><b>Push Notification</b> - ກົດ <b>ເປີດການແຈ້ງເຕືອນ</b> ແລ້ວອະນຸຍາດໃນ browser; ກົດ <b>ທົດສອບການແຈ້ງເຕືອນ</b> ເພື່ອກວດວ່າໃຊ້ງານໄດ້</li>
+              <li><b>ຕິດຕັ້ງແອັບລົງມືຖື</b> - ກົດ <b>ຕິດຕັ້ງແອັບໃສ່ໜ້າຈໍຫຼັກ</b>; iPhone/iPad ໃຫ້ກົດ Share ໃນ Safari ແລ້ວເລືອກ "Add to Home Screen"</li>
             </ul>
             <div class="guide-note"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ຫຼັງປ່ຽນລະຫັດຜ່ານ ອຸປະກອນອື່ນທີ່ login ຢູ່ຈະຖືກເດັ້ງອອກ ແລະ ຕ້ອງ login ໃໝ່.</div>
           </div>
         </details>
 
         <details class="guide-item">
-          <summary><i class="fa-solid fa-circle-question guide-ico"></i> 8. ບັນຫາທີ່ພົບເລື້ອຍ</summary>
+          <summary><i class="fa-solid fa-key guide-ico"></i> 11. ລືມລະຫັດຜ່ານ</summary>
+          <div class="guide-body">
+            <p>ຖ້າລືມລະຫັດຜ່ານ ໃຫ້ຕັ້ງໃໝ່ເອງດ້ວຍ <b>OTP ທາງອີເມວ</b> (ເຮັດຈາກໜ້າເຂົ້າສູ່ລະບົບ ບໍ່ຕ້ອງ login):</p>
+            <ol>
+              <li>ຢູ່ໜ້າເຂົ້າສູ່ລະບົບ ກົດ <b>"ລືມລະຫັດຜ່ານ?"</b></li>
+              <li>ປ້ອນ <b>MDE Code ຫຼື ອີເມວ</b> ທີ່ລົງທະບຽນໄວ້ ແລ້ວກົດ <b>"ສົ່ງ OTP ໄປອີເມວຂອງຂ້ອຍ"</b></li>
+              <li>ເປີດອີເມວ ແລະ ເອົາ <b>ລະຫັດ OTP 6 ຕົວເລກ</b> ມາໃສ່ (ຖ້າບໍ່ເຫັນໃຫ້ກວດກ່ອງ Spam)</li>
+              <li>ປ້ອນ <b>ລະຫັດຜ່ານໃໝ່</b> (ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ) ແລະ <b>ຢືນຢັນລະຫັດຜ່ານໃໝ່</b> ອີກຄັ້ງ</li>
+              <li>ກົດ <b>"ຕັ້ງລະຫັດຜ່ານໃໝ່"</b> ແລ້ວ login ດ້ວຍລະຫັດໃໝ່</li>
+            </ol>
+            <ul>
+              <li>OTP ໃຊ້ໄດ້ <b>10 ນາທີ</b> ແລະ <b>ໃຊ້ໄດ້ຄັ້ງດຽວ</b>; ປ້ອນຜິດ 5 ຄັ້ງ OTP ຈະຖືກຍົກເລີກ ຕ້ອງຂໍໃໝ່</li>
+              <li>ກົດຂໍ OTP ຊ້ຳໄດ້ຫຼັງ 60 ວິນາທີ; ຂໍຫຼາຍເກີນໄປ (10 ຄັ້ງ / 15 ນາທີ) ຕ້ອງລໍຖ້າກ່ອນ</li>
+              <li>ຫຼັງຕັ້ງລະຫັດໃໝ່ ອຸປະກອນອື່ນທີ່ login ຢູ່ຈະຖືກເດັ້ງອອກ</li>
+              <li>ຫ້າມບອກ OTP ກັບໃຜ</li>
+            </ul>
+            <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ຖ້າຍັງຈື່ລະຫັດເກົ່າໄດ້ ໃຫ້ປ່ຽນໃນໜ້າ Profile ແທນ. ຖ້າເຂົ້າອີເມວທີ່ລົງທະບຽນບໍ່ໄດ້ ໃຫ້ຕິດຕໍ່ Admin ເພື່ອຂໍຣີເຊັດລະຫັດຜ່ານໃຫ້.</div>
+          </div>
+        </details>
+
+        <details class="guide-item">
+          <summary><i class="fa-solid fa-circle-question guide-ico"></i> 12. ບັນຫາທີ່ພົບເລື້ອຍ</summary>
           <div class="guide-body">
             <ul>
-              <li><b>ສະໝັກແລ້ວ login ບໍ່ໄດ້</b> - ບັນຊີໃໝ່ຕ້ອງລໍຖ້າ Admin ອະນຸມັດກ່ອນ. ການລົງທະບຽນໃຊ້ໄດ້ສະເພາະ MDE Code ທີ່ມີໃນລະບົບ.</li>
+              <li><b>ສະໝັກແລ້ວ login ບໍ່ໄດ້</b> - ການລົງທະບຽນຕ້ອງຢືນຢັນອີເມວດ້ວຍ OTP, ເລືອກ Team ແລະ MDE Code ທີ່ມີໃນລະບົບ. ບັນຊີໃໝ່ຕ້ອງລໍຖ້າ Admin ອະນຸມັດກ່ອນ.</li>
+              <li><b>ລືມລະຫັດຜ່ານ</b> - ກົດ "ລືມລະຫັດຜ່ານ?" ທີ່ໜ້າເຂົ້າສູ່ລະບົບ (ເບິ່ງຫົວຂໍ້ 11).</li>
+              <li><b>ບໍ່ໄດ້ຮັບ OTP</b> - ກວດກ່ອງ Spam, ກວດວ່າໃສ່ MDE Code/ອີເມວຖືກ, ແລ້ວລໍຖ້າ 60 ວິນາທີກົດສົ່ງໃໝ່.</li>
               <li><b>ຖືກເດັ້ງອອກເອງ</b> - ການ login ຢູ່ໄດ້ປະມານ 7 ວັນ ຫຼື ຖືກເດັ້ງອອກເມື່ອປ່ຽນລະຫັດຜ່ານ, ໃຫ້ login ໃໝ່.</li>
-              <li><b>ສົ່ງຄຳຂໍ "ໃໝ່" ບໍ່ໄດ້</b> - ທີມຍັງບໍ່ມີງົບປະມານ ຫຼື ໂຄຕ້າເຕັມ. ກວດໃນເມນູ "ງົບປະມານຂອງທີມ".</li>
-              <li><b>ບໍ່ເຫັນ Asset / ບໍ່ເຫັນຢູ່ແຜນທີ່</b> - Asset ອາດຈະ "ສຳເລັດ" ແລ້ວ (ໄປເບິ່ງທີ່ປະຫວັດການຈັດສົ່ງ) ຫຼື ຍັງບໍ່ມີພິກັດ.</li>
+              <li><b>ສົ່ງຄຳຂໍ "ໃໝ່" ບໍ່ໄດ້</b> - ທີມຍັງບໍ່ມີງົບປະມານ ຫຼື ໂຄຕ້າເຕັມ. ກວດໃນເມນູ "ງົບປະມານຕູ້ຂອງທີມ".</li>
+              <li><b>ບໍ່ພົບ Outlet Code ຕອນຂໍຕູ້</b> - ກວດລະຫັດອີກຄັ້ງ ຫຼືຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວຕື່ມຂໍ້ມູນຮ້ານ.</li>
+              <li><b>ເອກະສານຄ້າງຢູ່ "ເອກະສານຍັງບໍ່ເຊັນ"</b> - ຍັງລໍຖ້າ DSM ເຊັນ. ສົ່ງລິ້ງໃຫ້ DSM ອີກຄັ້ງ (ກົດ "ສ້າງລິ້ງໃໝ່") ແລ້ວກົດ "ກວດວ່າ DSM ເຊັນແລ້ວຫຼືຍັງ".</li>
+              <li><b>ເຂົ້າເມນູອື່ນບໍ່ໄດ້ (ເດັ້ງກັບໜ້າແຈ້ງເຕືອນ)</b> - ມີແຈ້ງເຕືອນພິເສດຄ້າງຢູ່ ຕ້ອງດຳເນີນການໃນໜ້າທີ່ແຈ້ງກ່ອນ.</li>
+              <li><b>ບໍ່ເຫັນ Asset</b> - Asset ອາດຈະ "ສຳເລັດ" ແລ້ວ (ໄປເບິ່ງທີ່ປະຫວັດການຈັດສົ່ງ) ຫຼື ຄຳຂໍຍັງບໍ່ໄດ້ຮັບອະນຸມັດ.</li>
+              <li><b>ຄົ້ນຫາຕູ້ (Master) ບໍ່ພົບ</b> - ຄົ້ນຫາໄດ້ສະເພາະ QR, Serial, CapEx ເທົ່ານັ້ນ ກວດການພິມໃຫ້ຖືກ ຫຼື ໃຊ້ກ້ອງສະແກນ.</li>
               <li><b>ບໍ່ໄດ້ຮັບ Push Notification</b> - ກວດວ່າເປີດໃນໜ້າ Profile ແລ້ວ ແລະ browser ອະນຸຍາດການແຈ້ງເຕືອນ. ແຈ້ງເຕືອນທັງໝົດຍັງເຫັນໄດ້ໃນເມນູ "ແຈ້ງເຕືອນ".</li>
             </ul>
             <p>ຖ້າຍັງແກ້ບໍ່ໄດ້ ໃຫ້ຕິດຕໍ່ Admin.ເກີ້ນ ໄຊຊະນະສິນ ສີປະເສີດ 020 77900609</p>
@@ -10405,27 +10508,69 @@ body.dlv-popup-open { overflow: hidden; }
     /* ໃຊ້ຮ່ວມກັນທັງ login ໃໝ່ ແລະ ການກູ້ Session ເກົ່າຕອນເປີດແອັບ */
 
     /* ===== Onboarding Tour: ແນະນຳການໃຊ້ງານເບື້ອງຕົ້ນ (ເປີດອັດຕະໂນມັດຄັ້ງທຳອິດ, ກົດ ? ທີ່ແຖບຂ້າງເພື່ອເບິ່ງຊ້ຳ) ===== */
-    const TOUR_VERSION = 'v1';
+    const TOUR_VERSION = 'v2'; // ປ່ຽນເລກນີ້ = ທຸກຄົນເຫັນທົວຫຼັກອີກຄັ້ງ (v2: ອັບເດດເມນູຕາມລະບົບປັດຈຸບັນ)
+    /* [id ເມນູຂ້າງ, ໄອຄອນ, ຫົວຂໍ້, ຄຳອະທິບາຍ] — ຫົວຂໍ້/ຄຳອະທິບາຍເປັນ function ໄດ້ ຖ້າຕ້ອງແຕກຕ່າງຕາມ role
+       ສະແດງສະເພາະເມນູທີ່ role ນັ້ນເຫັນຈິງ (tourIsVisible) ລຽງຕາມລຳດັບເມນູຂ້າງ */
     const TOUR_NAV_STEPS = [
       ['nav-home', 'fa-house', 'ໜ້າຫຼັກ', 'ໜ້າຕ້ອນຮັບ ພ້ອມທາງລັດໄປຫາເມນູທີ່ໃຊ້ບໍ່ອີກ.'],
-      ['nav-dashboard', 'fa-house', 'ໜ້າຫຼັກ', 'ໜ້າຕ້ອນຮັບ ພ້ອມທາງລັດໄປຫາເມນູທີ່ໃຊ້ບໍ່ອີກ.'],
-      ['nav-asset', 'fa-boxes-stacked', 'Asset Tracking', 'ຕິດຕາມຕູ້ແຊ່ທຸກໜ່ວຍ ວ່າຢູ່ຮ້ານໃດ ແລະ ຢູ່ຂັ້ນຕອນໃດ (ຍັງບໍ່ສົ່ງເອກະສານ, ກຳລັງຈັດສົ່ງ, ສຳເລັດ). ຄົ້ນຫາດ້ວຍ Tracking No, QR ຫຼື ຊື່ຮ້ານໄດ້.'],
-      ['nav-map', 'fa-map-location-dot', 'Map Tracking', 'ເບິ່ງຕຳແໜ່ງຕູ້ແຊ່ຂອງຮ້ານຕ່າງໆເທິງແຜນທີ່.'],
-      ['nav-request', 'fa-clipboard-list', 'Asset Request', 'ຂໍຕູ້ແຊ່ໃໝ່ຢູ່ບ່ອນນີ້: ເລືອກຮ້ານ (ຖ້າຮ້ານບໍ່ມີ Outlet Code ໃຫ້ຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວຕື່ມຂໍ້ມູນຮ້ານ), ເລືອກຕູ້ ແລ້ວສົ່ງຄຳຂໍ. ຫຼັງຈາກນັ້ນ admin ຈະກວດ ແລະ ອະນຸມັດ.'],
-      ['nav-history', 'fa-clock-rotate-left', 'ປະຫວັດ Asset', 'ເບິ່ງຄຳຂໍທີ່ເຄີຍສົ່ງ ແລະ ສະຖານະຂອງແຕ່ລະຄຳຂໍ. ຖ້າມີເລກແດງ ໝາຍວ່າມີໃບສັນຍາທີ່ຍັງຕ້ອງເຊັນ.'],
-      ['nav-delivery-hub', 'fa-qrcode', 'ລາຍງານການຈັດສົ່ງ', 'ລາຍງານການສົ່ງຕູ້ໃຫ້ຮ້ານ: ສະແກນ QR/Serial ແລະ ຖ່າຍຮູບຢືນຢັນຕອນສົ່ງສຳເລັດ.'],
-      ['nav-loan-contract', 'fa-file-signature', 'ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ', 'ໃບສັນຍາຢືມຕູ້ຖືກອອກອັດຕະໂນມັດຫຼັງອະນຸມັດ. ເຂົ້າມາບ່ອນນີ້ເພື່ອກວດຂໍ້ມູນ ແລະ ເຊັນຮັບ.'],
-      ['nav-warehouse-stock', 'fa-boxes-stacked', 'ສະຕັອກສາງ', 'ເບິ່ງຈຳນວນຕູ້ໃນສາງ ແລະ ລາຍການທີ່ຖືກຈອງແລ້ວ.'],
+      ['nav-dashboard',
+        () => currentUser.role === 'admin' ? 'fa-chart-pie' : 'fa-house',
+        () => currentUser.role === 'admin' ? 'Admin Management' : (currentUser.role === 'user' ? 'ໜ້າຫຼັກ' : 'User Dashboard'),
+        () => currentUser.role === 'admin'
+          ? 'ສູນຄວບຄຸມຂອງ Admin: ອະນຸມັດຜູ້ໃຊ້, ຈັດການ MDE / Outlet / ສາງ, ງົບປະມານ ແລະ ຕັ້ງຄ່າລະບົບ.'
+          : (currentUser.role === 'user'
+            ? 'ໜ້າສະຫຼຸບຂອງ MDE ທ່ານ ພ້ອມທາງລັດ ແລະ ເລກແຈ້ງເຕືອນເອກະສານທີ່ຍັງຄ້າງ (ເຊັນ, PowerApp, DSM). ຖ້າມີແຈ້ງເຕືອນພິເສດຄ້າງ ຕ້ອງດຳເນີນການໃຫ້ແລ້ວກ່ອນຈຶ່ງໄປເມນູອື່ນໄດ້.'
+            : 'ພາບລວມຂໍ້ມູນຂອງທີມ ແລະ ທາງລັດໄປຫາເມນູທີ່ໃຊ້ບໍ່ອີກ.')],
+      ['nav-asset', 'fa-boxes-stacked', 'Asset Tracking', 'ຕິດຕາມຕູ້ແຊ່ແຕ່ລະໜ່ວຍ ວ່າຢູ່ຮ້ານໃດ ແລະ ຢູ່ຂັ້ນຕອນໃດ: ຍັງບໍ່ທັນເຊັນເອກະສານ → ຍັງບໍ່ຊັບມິດ PowerApp → ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ → ຢູ່ເທິງລົດ → ສຳເລັດ. ຄົ້ນຫາດ້ວຍ Tracking No, QR, Serial ຫຼື ຊື່ຮ້ານໄດ້.'],
+      ['nav-map', 'fa-map-location-dot', 'Map Tracking', 'ເບິ່ງຕຳແໜ່ງຕູ້ແຊ່ເທິງແຜນທີ່ (ຕູ້ທີ່ຢູ່ເທິງລົດມີສີພິເສດ). ກົດໝຸດເພື່ອເບິ່ງຂໍ້ມູນຮ້ານ ແລະ ກົດ WhatsApp ຫາເບີໂທໄດ້.'],
+      ['nav-request', 'fa-clipboard-list', 'Asset Request', 'ຂໍຕູ້ແຊ່ໃໝ່: ໃສ່ Outlet Code (ຖ້າຮ້ານບໍ່ມີໃຫ້ຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວຕື່ມຂໍ້ມູນຮ້ານ), ເລືອກ Brand/Type, Doc Type, ປະເພດສັນຍາ, ໃສ່ເຫດຜົນ ແລະ ແນບຮູບຮ້ານຄ້າ ແລ້ວສົ່ງຄຳຂໍ ໃຫ້ admin ກວດ ແລະ ອະນຸມັດ.'],
+      ['nav-history', 'fa-clock-rotate-left', 'ປະຫວັດ Asset', 'ມີ 2 card: ປະຫວັດການຂໍ Asset (ທຸກສະຖານະ ລວມ ຍົກເລີກ) ແລະ ປະຫວັດການຈັດສົ່ງ Asset. ເລກແດງ = ມີໃບສັນຍາທີ່ຍັງບໍ່ໄດ້ອອກ ຫຼື ຍັງຕ້ອງເຊັນ.'],
+      ['nav-delivery-hub', 'fa-qrcode', 'ລາຍງານການຈັດສົ່ງ', 'ລວມວຽກຈັດສົ່ງ: ສະແກນຕູ້ຂຶ້ນລົດ, ລາຍງານຈັດສົ່ງ (ສະແກນ QR/Serial + ຖ່າຍຮູບ + ລູກຄ້າເຊັນ), ຈັດສົ່ງບໍ່ມີເອກະສານ, ຕູ້ Event ແລະ ຕູ້ສະສາງ. ກົດ card ເພື່ອເປີດໜ້າຍ່ອຍ.'],
+      ['nav-loan-contract', 'fa-file-signature', 'ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ', 'ອອກເອກະສານ: ໃບສັນຍາຢືມ (DOC-), ໃບຍົກເລີກ/ເກັບຕູ້ເຂົ້າສາງ (T-) ແລະ ຕູ້ແຊ່ສຳຫຼວດຄືນ. ມີ 3 ແຖບ: ສ້າງໃບໃໝ່ · ເອກະສານຍັງບໍ່ເຊັນ · ເອກະສານສຳເລັດແລ້ວ. ເຊັນຮັບແລ້ວຕ້ອງສົ່ງລິ້ງໃຫ້ DSM ເຊັນຕໍ່.'],
+      ['nav-warehouse-stock', 'fa-warehouse', 'ສະຕັອກສາງ', 'ລາຍການຕູ້ໃນສາງ, ແຖບ ພາບລວມ (Dashboard), ສະແກນຫາຕູ້ໃນສາງ ແລະ ເບິ່ງຕູ້ທີ່ຖືກຈອງ ວ່າຈອງໃຫ້ຮ້ານ/MDE ໃດ.'],
       ['nav-stock-count', 'fa-clipboard-check', 'ກວດນັບສາງ', 'ບັນທຶກຜົນການກວດນັບສະຕັອກສາງ.'],
-      ['nav-cooler-master', 'fa-magnifying-glass-location', 'ຄົ້ນຫາຕູ້ (Master)', 'ສະແກນ/ຄົ້ນຫາ QR, Serial, CapEx ເພື່ອເບິ່ງວ່າຕູ້ນີ້ຢູ່ໃສ ຕາມຂໍ້ມູນ Master ຕູ້ແຊ່ທົ່ວປະເທດ.'],
-      ['nav-lost-cooler', 'fa-triangle-exclamation', 'Manage Lost Cooler Master Data', 'Admin ຈັດການຕູ້ທີ່ຢູ່ໃນ Cooler Master ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ: ເພີ່ມ, ກວດສອບ ແລະ ຢືນຢັນສູນຫາຍ.'],
-      ['nav-new-cooler', 'fa-snowflake', 'ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ', 'ຈັດການຕູ້ແຊ່ທີ່ເຂົ້າໃໝ່ ແລະ ແຜນຈັດສົ່ງໄປຕ່າງແຂວງ.'],
-      ['nav-prov-budget', 'fa-map-location-dot', 'ງົບຕູ້ແຊ່ຕ່າງແຂວງ', 'ຕິດຕາມງົບປະມານຕູ້ແຊ່ຂອງແຕ່ລະແຂວງ.'],
-      ['nav-notifications', 'fa-bell', 'ແຈ້ງເຕືອນ', 'ຂໍ້ຄວາມແຈ້ງເຕືອນຕ່າງໆ ເຊັ່ນ ຄຳຂໍໄດ້ຮັບອະນຸມັດ ຫຼື ມີໃບສັນຍາລໍຖ້າເຊັນ. ແຕະເທິງແຈ້ງເຕືອນເພື່ອໄປຫາໜ້າທີ່ກ່ຽວຂ້ອງທັນທີ.'],
-      ['nav-announcements', 'fa-bullhorn', 'ປະກາດ', 'ປະກາດຈາກທີມງານ. ເລກແດງໝາຍເຖິງປະກາດທີ່ຍັງບໍ່ໄດ້ອ່ານ.'],
-      ['nav-profile', 'fa-user-gear', 'ຂໍ້ມູນສ່ວນຕົວ (Profile)', 'ເບິ່ງຂໍ້ມູນບັນຊີ ແລະ ປ່ຽນລະຫັດຜ່ານ.'],
+      ['nav-cooler-master', 'fa-magnifying-glass-location', 'ຄົ້ນຫາຕູ້ (Master)', 'ພິມ ຫຼື ສະແກນກ້ອງ QR / Serial / CapEx ເພື່ອເບິ່ງວ່າຕູ້ນີ້ຢູ່ໃສ ຕາມຂໍ້ມູນ Master ຕູ້ແຊ່ທົ່ວປະເທດ ພ້ອມຕຳແໜ່ງໃນລະບົບ (ສະຕັອກສາງ, Asset Tracking, ຕູ້ເຂົ້າໃໝ່, Event).'],
+      ['nav-lost-cooler', 'fa-triangle-exclamation', 'Manage Lost Cooler Master Data', 'Admin ຈັດການຕູ້ທີ່ຢູ່ໃນ Cooler Master ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ: ກວດສອບ ແລະ ຢືນຢັນສູນຫາຍ.'],
+      ['nav-new-cooler', 'fa-snowflake', 'ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ', 'ຮັບຕູ້ໃໝ່ເຂົ້າສາງ, ສະແກນຢືນຢັນວ່າມີຕູ້, ແຜນສົ່ງຕູ້ຕ່າງແຂວງ ແລະ ຖ້ຽວລົດສົ່ງຕູ້ຕ່າງແຂວງ (ເຊັນ, ຂຶ້ນລົດ, ລິ້ງໃຫ້ຜູ້ຮັບເຊັນ). ສາງເຫັນສະເພາະບາງເມນູຍ່ອຍ.'],
+      ['nav-prov-budget', 'fa-wallet', 'ງົບຕູ້ແຊ່ຕ່າງແຂວງ', 'ຕິດຕາມ ແລະ ນຳເຂົ້າ (Excel) ງົບປະມານຕູ້ແຊ່ຂອງແຕ່ລະແຂວງ.'],
+      ['nav-team-budget', 'fa-chart-pie', 'ງົບປະມານຕູ້ຂອງທີມ', 'ເບິ່ງໂຄຕ້າ, ທີ່ໃຊ້ໄປແລ້ວ ແລະ ຄົງເຫຼືອ ຂອງທີມ ແຍກຕາມ Brand. ຄວນກວດກ່ອນຂໍຕູ້ "ໃໝ່".'],
+      ['nav-vte-budget', 'fa-city', 'ງົບຕູ້ແຊ່ນະຄອນຫຼວງ', 'ຕິດຕາມງົບປະມານຕູ້ແຊ່ຂອງນະຄອນຫຼວງວຽງຈັນ.'],
+      ['nav-playbook', 'fa-book-bookmark', 'ຂະໜາດຕູ້ແຊ່ (Playbook)', 'ເບິ່ງຂະໜາດ ແລະ ຮູບຂອງຕູ້ແຊ່ແຕ່ລະປະເພດ ກ່ອນເລືອກຕູ້ໃຫ້ຮ້ານ.'],
+      ['nav-notifications', 'fa-bell', 'ແຈ້ງເຕືອນ', 'ຂໍ້ຄວາມແຈ້ງເຕືອນ ເຊັ່ນ ຄຳຂໍໄດ້ຮັບອະນຸມັດ, ມີໃບສັນຍາລໍຖ້າເຊັນ ຫຼື DSM ເຊັນແລ້ວ. ແຕະເທິງແຈ້ງເຕືອນເພື່ອໄປຫາໜ້າທີ່ກ່ຽວຂ້ອງທັນທີ. ບາງຄັ້ງແອັບຈະມີສຽງເວົ້າເຕືອນເອກະສານທີ່ຍັງຄ້າງ.'],
+      ['nav-announcements', 'fa-bullhorn', 'ປະກາດ', 'ປະກາດຈາກທີມງານ (ອາດມີຮູບແນບ). ເລກແດງໝາຍເຖິງປະກາດທີ່ຍັງບໍ່ໄດ້ອ່ານ.'],
+      ['nav-profile', 'fa-user-gear', 'ຂໍ້ມູນສ່ວນຕົວ (Profile)', 'ປຸ່ມສະແດງ MDE Code - ຊື່ MDE ຂອງທ່ານ: ເບິ່ງຂໍ້ມູນບັນຊີ, ປ່ຽນລະຫັດຜ່ານ, ເປີດ Push Notification ແລະ ຕິດຕັ້ງແອັບລົງມືຖື.'],
+      ['nav-dsm-sign', 'fa-file-signature', 'ເຊັນເອກະສານ DSM', 'ລາຍການສັນຍາຢືມ (DOC-) ແລະ ໃບຍົກເລີກ (T-) ຂອງທີມ ທີ່ລໍຖ້າ DSM ກວດ ແລະ ເຊັນ.'],
+      ['nav-user-guide', 'fa-book-open', 'ຄູ່ມືການນຳໃຊ້', 'ຄູ່ມືລະອຽດສຳລັບ User: ວິທີຂໍ Asset, ອອກໃບສັນຍາ DOC-/T-, ຄົ້ນຫາຕູ້ Master, ລືມລະຫັດຜ່ານ ແລະ ອື່ນໆ.'],
       ['nav-tour', 'fa-circle-question', 'ເບິ່ງຄູ່ມືນີ້ຄືນໄດ້ທຸກເວລາ', 'ກົດປຸ່ມ ? ນີ້ເພື່ອເລີ່ມການແນະນຳໃໝ່ອີກຄັ້ງ.'],
     ];
+    /* ===== ສຽງອະທິບາຍໃນທົວຫຼັກ (v2): ເຫຼີ້ນ /voices/tour/<voice>.mp3 ຕາມແຕ່ລະຂັ້ນຕອນ · ບໍ່ມີໄຟລ໌ = ງຽບ (ບໍ່ error)
+       ປຸ່ມ 🔊/🔇 ໃນບັດ ເປີດ-ປິດສຽງ (ຈື່ໄວ້ໃນເຄື່ອງ) · ລາຍການຂໍ້ຄວາມຂອງແຕ່ລະໄຟລ໌ຢູ່ public/voices/tour/SCRIPT.txt ===== */
+    const TOUR_VOICE_DIR = '/voices/tour/';
+    const TOUR_VOICE_MUTE_KEY = 'lbc_tour_voice_mute';
+    let _tourAudio = null;
+    function tourVoiceMuted() { try { return localStorage.getItem(TOUR_VOICE_MUTE_KEY) === '1'; } catch (e) { return false; } }
+    function tourVoiceStop() {
+      if (_tourAudio) { try { _tourAudio.pause(); } catch (e) {} _tourAudio = null; }
+    }
+    function tourVoicePlay(step) {
+      tourVoiceStop();
+      if (!step || !step.voice || tourVoiceMuted()) return;
+      try {
+        const a = new Audio(TOUR_VOICE_DIR + step.voice + '.mp3');
+        const sp = (typeof VOICE_SPEED === 'number') ? VOICE_SPEED : 1;
+        a.playbackRate = sp; a.defaultPlaybackRate = sp;
+        _tourAudio = a;
+        const pr = a.play();
+        if (pr && pr.catch) pr.catch(() => {}); // ບໍ່ມີໄຟລ໌ ຫຼື browser ບລັອກ autoplay -> ງຽບ
+      } catch (e) { /* ignore */ }
+    }
+    function tourVoiceToggle() {
+      const mute = !tourVoiceMuted();
+      try { localStorage.setItem(TOUR_VOICE_MUTE_KEY, mute ? '1' : '0'); } catch (e) {}
+      if (mute) tourVoiceStop(); else if (_tour) tourVoicePlay(_tour.steps[_tour.i]);
+      const b = document.getElementById('tourVoiceBtn');
+      if (b) { b.innerHTML = mute ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>'; b.title = mute ? 'ເປີດສຽງອະທິບາຍ' : 'ປິດສຽງອະທິບາຍ'; }
+    }
     let _tour = null;
 
     function tourStorageKey() {
@@ -10437,19 +10582,20 @@ body.dlv-popup-open { overflow: hidden; }
     }
     function tourBuildSteps() {
       const steps = [{
-        icon: 'fa-rocket', title: 'ຍິນດີຕ້ອນຮັບ!',
-        text: 'ມາເບິ່ງວິທີໃຊ້ລະບົບແບບໄວໆ ໃຊ້ເວລາບໍ່ຮອດ 1 ນາທີ.\nຂັ້ນຕອນຫຼັກ: ຂໍ Asset → admin ອະນຸມັດ → ໄດ້ໃບສັນຍາຢືມ → ເຊັນຮັບ → ຈັດສົ່ງຕູ້ໃຫ້ຮ້ານ.'
+        voice: 'welcome', icon: 'fa-rocket', title: 'ຍິນດີຕ້ອນຮັບ!',
+        text: 'ມາເບິ່ງວິທີໃຊ້ລະບົບແບບໄວໆ ໃຊ້ເວລາບໍ່ຮອດ 1 ນາທີ.\nຂັ້ນຕອນຫຼັກ: ຂໍ Asset → admin ອະນຸມັດ → ອອກໃບສັນຍາ ແລະ ເຊັນ (MDE + DSM) → PowerApp → ສາງຂົນສົ່ງ → ຈັດສົ່ງຕູ້ໃຫ້ຮ້ານ.'
       }];
       if (window.innerWidth <= 992) {
         const labels = [...document.querySelectorAll('#mobileTabbar .mobile-tab-label')].map((e) => e.textContent.trim()).filter(Boolean).join(' · ');
-        steps.push({ target: 'mobileTabbar', icon: 'fa-table-cells-large', title: 'ແຖບເມນູດ້ານລຸ່ມ',
+        steps.push({ voice: 'tabbar', target: 'mobileTabbar', icon: 'fa-table-cells-large', title: 'ແຖບເມນູດ້ານລຸ່ມ',
           text: (labels ? labels + '\n' : '') + 'ກົດ "ເມນູ" ເພື່ອເບິ່ງທຸກເມນູ ແລະ ກົດ "ແກ້ໄຂ" ເພື່ອປັກໝຸດເມນູທີ່ໃຊ້ບໍ່ອີກໄວ້ໃນ "ລາຍການທີ່ມັກ".' });
       }
       TOUR_NAV_STEPS.forEach(([id, icon, title, text]) => {
         const el = document.getElementById(id);
-        if (tourIsVisible(el)) steps.push({ target: id, nav: true, icon, title, text });
+        const val = (v) => (typeof v === 'function' ? v() : v);
+        if (tourIsVisible(el)) steps.push({ voice: (id === 'nav-dashboard' ? 'nav-dashboard-' + (currentUser.role === 'admin' ? 'admin' : (currentUser.role === 'user' ? 'user' : 'team')) : id), target: id, nav: true, icon: val(icon), title: val(title), text: val(text) });
       });
-      steps.push({ icon: 'fa-flag-checkered', title: 'ພ້ອມໃຊ້ງານແລ້ວ!', text: 'ຕໍ່ໄປ ທຸກຄັ້ງທີ່ກົດເຂົ້າເມນູໃດເປັນຄັ້ງທຳອິດ ຈະມີຄູ່ມືສັ້ນໆ ອະທິບາຍເມນູຍ່ອຍ ແລະ ປຸ່ມຕ່າງໆ ໃນໜ້ານັ້ນ.\n' + (window.innerWidth <= 992 ? 'ຖ້າມີຂໍ້ສົງໄສ ເປີດ "ເມນູ" ແລ້ວກົດ "ແນະນຳການໃຊ້" ເພື່ອເບິ່ງຄູ່ມືນີ້ອີກຄັ້ງ.' : 'ຖ້າມີຂໍ້ສົງໄສ ກົດປຸ່ມ ? ທີ່ແຖບຂ້າງເພື່ອເບິ່ງຄູ່ມືນີ້ອີກຄັ້ງ.') });
+      steps.push({ voice: 'finish', icon: 'fa-flag-checkered', title: 'ພ້ອມໃຊ້ງານແລ້ວ!', text: 'ຕໍ່ໄປ ທຸກຄັ້ງທີ່ກົດເຂົ້າເມນູໃດເປັນຄັ້ງທຳອິດ ຈະມີຄູ່ມືສັ້ນໆ ອະທິບາຍເມນູຍ່ອຍ ແລະ ປຸ່ມຕ່າງໆ ໃນໜ້ານັ້ນ.\n' + (window.innerWidth <= 992 ? 'ຖ້າມີຂໍ້ສົງໄສ ເປີດ "ເມນູ" ແລ້ວກົດ "ແນະນຳການໃຊ້" ເພື່ອເບິ່ງຄູ່ມືນີ້ອີກຄັ້ງ.' : 'ຖ້າມີຂໍ້ສົງໄສ ກົດປຸ່ມ ? ທີ່ແຖບຂ້າງເພື່ອເບິ່ງຄູ່ມືນີ້ອີກຄັ້ງ.') });
       return steps;
     }
     function tourMount(steps, page) {
@@ -10476,6 +10622,7 @@ body.dlv-popup-open { overflow: hidden; }
     function endOnboardingTour(markDone) {
       if (!_tour) return;
       const wasPage = _tour.page;
+      tourVoiceStop();
       document.removeEventListener('keydown', _tour.onKey);
       window.removeEventListener('resize', _tour.onResize);
       _tour.layer.remove();
@@ -10504,6 +10651,7 @@ body.dlv-popup-open { overflow: hidden; }
       const dots = _tour.steps.map((_, k) => `<span class="${k === _tour.i ? 'on' : ''}"></span>`).join('');
       card.innerHTML = `
         <div class="tour-icon"><i class="fa-solid ${step.icon}"></i></div>
+        ${step.voice ? `<button type="button" id="tourVoiceBtn" class="tour-voice-btn" onclick="tourVoiceToggle()" title="${tourVoiceMuted() ? 'ເປີດສຽງອະທິບາຍ' : 'ປິດສຽງອະທິບາຍ'}"><i class="fa-solid ${tourVoiceMuted() ? 'fa-volume-xmark' : 'fa-volume-high'}"></i></button>` : ''}
         <h4>${esc(step.title)}</h4>
         <p>${esc(step.text)}</p>
         <div class="tour-dots">${dots}</div>
@@ -10542,6 +10690,7 @@ body.dlv-popup-open { overflow: hidden; }
         if (inMenu && !mmIsOpen()) { openMenuPage(); _tour.openedSidebar = true; }
         else if (!inMenu && mmIsOpen() && _tour.openedSidebar) { closeMenuPage(); _tour.openedSidebar = false; }
       }
+      if (_tour.voiceIdx !== _tour.i) { _tour.voiceIdx = _tour.i; if (step.voice) tourVoicePlay(step); else tourVoiceStop(); }
       const target = tourEl(step);
       if (target) target.scrollIntoView({ block: 'center', behavior: 'auto' });
       place();
