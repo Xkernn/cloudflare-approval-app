@@ -717,6 +717,11 @@
     .trip-prov-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .trip-prov-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 16px; font-weight: 800; line-height: 1.3; box-shadow: 0 2px 6px rgba(12,140,166,.28); }
     .trip-prov-chip i { font-size: 13px; opacity: .9; }
+    .trip-wh-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: var(--primary-soft, #E0F2F6); color: var(--primary); border: 1px solid var(--primary); font-size: 13px; font-weight: 700; line-height: 1.3; }
+    .trip-wh-chip i { font-size: 11px; opacity: .85; }
+    .rt-chip.wh i { font-size: 10px; }
+    .rt-whs { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 5px; }
+    .st-wh-head { margin: 8px 0 2px 14px; font-size: 13px; font-weight: 700; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
     .trip-prov-chip.trip-prov-empty { background: #E2E8F0; color: #64748B; box-shadow: none; font-size: 13px; font-weight: 600; }
     .trip-prov-hint { font-size: 11.5px; font-weight: 600; color: var(--text-muted); align-self: center; }
     .trip-no-line { font-size: 12.5px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -15600,10 +15605,29 @@ async function ncExportLots(lot) {
       return { provs, fromPlan };
     }
     // ຫົວຂໍ້ card ຖ້ຽວ: ຊື່ແຂວງເດັ່ນກ່ອນ ແລ້ວຈຶ່ງເລກຖ້ຽວ + ທະບຽນລົດ
+    // ສາງສະເພາະແຂວງ (ສາງຍ່ອຍ) ຂອງແຂວງໜຶ່ງໃນຖ້ຽວ: ຈາກຕູ້ທີ່ໃສ່ແລ້ວ + ແຜນຂອງຖ້ຽວ. ຄືນ [{ name, count, scanned }] (ແຂວງທີ່ບໍ່ມີສາງຍ່ອຍ = [])
+    function stProvWhs(tripId, prov) {
+      const m = new Map();
+      ncTripItems(tripId).forEach(n => {
+        if (ncProvKey(n) !== prov) return;
+        const w = (n.ship_warehouse || '').trim();
+        if (!w) return;
+        if (!m.has(w)) m.set(w, { name: w, count: 0, scanned: 0 });
+        const o = m.get(w); o.count++; if (stItemScanned(n)) o.scanned++;
+      });
+      stPlanItems(tripId).forEach(pl => {
+        if (String(pl.province || '').trim() !== prov) return;
+        const w = (pl.warehouse || '').trim();
+        if (w && !m.has(w)) m.set(w, { name: w, count: 0, scanned: 0 });
+      });
+      return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    // ຫົວຂໍ້ card ຖ້ຽວ — ແຂວງທີ່ມີສາງຍ່ອຍ ສະແດງ pill ສາງຍ່ອຍຕໍ່ທ້າຍ pill ແຂວງ
     function ncTripTitleHtml(t) {
       const { provs, fromPlan } = ncTripProvInfo(t);
       const chips = provs.length
-        ? provs.map(p => `<span class="trip-prov-chip"><i class="fa-solid fa-location-dot"></i>${esc(p)}</span>`).join('') + (fromPlan ? '<span class="trip-prov-hint">(ຕາມແຜນ)</span>' : '')
+        ? provs.map(p => `<span class="trip-prov-chip"><i class="fa-solid fa-location-dot"></i>${esc(p)}</span>`
+            + stProvWhs(t.id, p).map(w => `<span class="trip-wh-chip" title="ສາງສະເພາະແຂວງ ${esc(p)}"><i class="fa-solid fa-warehouse"></i>${esc(w.name)}</span>`).join('')).join('') + (fromPlan ? '<span class="trip-prov-hint">(ຕາມແຜນ)</span>' : '')
         : '<span class="trip-prov-chip trip-prov-empty"><i class="fa-solid fa-location-dot"></i>ຍັງບໍ່ລະບຸແຂວງ</span>';
       return `<div class="trip-title-wrap"><div class="trip-prov-row">${chips}</div><div class="trip-no-line"><i class="fa-solid fa-truck"></i><span>${esc(t.trip_no)}</span><span>· ເລກທະບຽນລົດ ${esc(t.truck_plate || 'ຍັງບໍ່ລະບຸ')}</span></div></div>`;
     }
@@ -16527,7 +16551,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         let state = 'pending';
         if (sg) state = 'arrived';
         else if (!goSet) { state = 'enroute'; goSet = true; }
-        return { province: k, count: counts.get(k), state, arrived_at: sg ? sg.signed_at : null, receiver: sg ? sg.receiver_name : '', stored: !!r };
+        // ສາງຍ່ອຍຂອງແຂວງ: ແຕ່ລະສາງມີລາຍເຊັນຮັບແຍກກັນ
+        const whs = stProvWhs(t.id, k).map(w => ({ ...w, signed: !!signedRecs.find(x => x.province === k && (x.warehouse || '') === w.name) }));
+        return { province: k, count: counts.get(k), state, arrived_at: sg ? sg.signed_at : null, receiver: sg ? sg.receiver_name : '', stored: !!r, whs };
       });
     }
     // ສົ່ງສຳເລັດແລ້ວ = ລົດອອກແລ້ວ ແລະ ທຸກແຂວງໃນຖ້ຽວ ຜູ້ຮັບເຊັນຮັບຄົບ
@@ -16561,7 +16587,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       const chips = stops.map(s => {
         const cls = s.state === 'arrived' ? 'done' : s.state === 'enroute' ? 'go' : '';
         const ic = s.state === 'arrived' ? '<i class="fa-solid fa-check"></i>' : s.state === 'enroute' ? '<i class="fa-solid fa-truck"></i>' : '';
-        return `<span class="rt-chip ${cls}">${ic}${esc(s.province)}</span>`;
+        const whc = (s.whs || []).map(w => `<span class="rt-chip wh ${w.signed ? 'done' : (s.state === 'enroute' ? 'go' : '')}" title="ສາງສະເພາະແຂວງ"><i class="fa-solid fa-warehouse"></i>${esc(w.name)}</span>`).join('');
+        return `<span class="rt-chip ${cls}">${ic}${esc(s.province)}</span>${whc}`;
       }).join('<i class="fa-solid fa-angle-right rt-sep"></i>');
       const go = stops.find(s => s.state === 'enroute');
       const head = go ? `<span class="badge badge-info">ກຳລັງໄປແຂວງ ${esc(go.province)}</span>` : '<span class="badge badge-approved">ລົດຮອດຄົບທຸກແຂວງ</span>';
@@ -16586,6 +16613,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           <div class="rt-body">
             <div class="rt-name"><span>${esc(s.province)}</span>${open ? '' : stRouteBadge(s.state)}</div>
             <div class="rt-meta">${meta}</div>
+            ${(s.whs && s.whs.length) ? `<div class="rt-whs">${s.whs.map(w => {
+              const wcls = w.signed ? 'done' : (!open && s.state === 'enroute' ? 'go' : '');
+              const wst = w.signed ? ' · ເຊັນຮັບແລ້ວ ✓' : (!open && s.state === 'enroute' ? ' · ລໍຖ້າເຊັນຮັບ' : (open ? ` · ສະແກນ ${w.scanned}/${w.count}` : ''));
+              return `<span class="rt-chip wh ${wcls}"><i class="fa-solid fa-warehouse"></i>${esc(w.name)} · ${w.count} ຕູ້${wst}</span>`;
+            }).join('')}</div>` : ''}
             ${acts ? `<div class="rt-acts">${acts}</div>` : ''}
           </div>
         </div>`;
@@ -16840,7 +16872,13 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         </label>` : '';
       body.innerHTML = toggle + keys.map(k => {
         const all = groups.get(k);
-        const items = stOnlyPending ? all.filter(n => !stItemScanned(n)) : all;
+        const items0 = stOnlyPending ? all.filter(n => !stItemScanned(n)) : all;
+        // ແຂວງທີ່ມີສາງຍ່ອຍ: ຈັດກຸ່ມຕາມສາງ ແລະ ສະແດງ pill ສາງ + ສະແກນແລ້ວ ຂອງແຕ່ລະສາງ
+        const hasWh = all.some(n => (n.ship_warehouse || '').trim());
+        const whStat = new Map();
+        if (hasWh) all.forEach(n => { const w = (n.ship_warehouse || '').trim(); const o = whStat.get(w) || { total: 0, done: 0 }; o.total++; if (stItemScanned(n)) o.done++; whStat.set(w, o); });
+        const items = hasWh ? items0.slice().sort((a, b) => (a.ship_warehouse || '').trim().localeCompare((b.ship_warehouse || '').trim())) : items0;
+        let prevWh = null;
         if (!items.length) return '';
         const done = all.filter(stItemScanned).length;
         return `
@@ -16848,6 +16886,16 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           <span class="badge badge-info" style="margin-left:6px;">${all.length} ຕູ້</span>
           <span class="badge" style="margin-left:4px; background:${done === all.length ? '#dcfce7' : '#fef3c7'}; color:${done === all.length ? '#166534' : '#92400e'};">ສະແກນແລ້ວ ${done}/${all.length}</span></div>
         ${items.map(n => {
+          let whHead = '';
+          if (hasWh) {
+            const w = (n.ship_warehouse || '').trim();
+            if (w !== prevWh) {
+              prevWh = w;
+              const st = whStat.get(w) || { total: 0, done: 0 };
+              const okW = st.done === st.total;
+              whHead = `<div class="st-wh-head"><span class="trip-wh-chip"><i class="fa-solid fa-warehouse"></i>${w ? esc(w) : 'ບໍ່ລະບຸສາງ'}</span><span class="badge badge-info">${st.total} ຕູ້</span><span class="badge" style="background:${okW ? '#dcfce7' : '#fef3c7'}; color:${okW ? '#166534' : '#92400e'};">ສະແກນແລ້ວ ${st.done}/${st.total}</span></div>`;
+            }
+          }
           const title = [n.cooler_brand, n.cooler_type, n.cooler_model].filter(Boolean).join(' / ') || 'ຕູ້ແຊ່';
           const sc = stItemScanned(n);
           const kindArg = `'${n.kind}', ${stItemId(n)}`;
@@ -16859,7 +16907,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
                   : `<button type="button" class="btn-act btn-approve" onclick="stMark(${kindArg})" title="ໝາຍວ່າມີຕູ້ ໂດຍບໍ່ສະແກນ (ກໍລະນີ QR ເສຍ)"><i class="fa-solid fa-check"></i> ໝາຍວ່າມີ</button>`)
               + ` <button type="button" class="btn-act btn-edit" onclick="${n.kind === 'stock' ? `ncTripRemoveStock(${n.link_id})` : `ncTripRemoveCooler(${n.id})`}"><i class="fa-solid fa-xmark"></i> ເອົາອອກ</button>`
             : '';
-          return `
+          return whHead + `
           <div class="mgmt-card" style="${sc ? 'border-left:4px solid #16a34a;' : ''}">
             <div class="mgmt-card-top">
               <div class="mgmt-card-title">${esc(title)} ${n.kind === 'stock' ? '<span class="badge badge-default" style="margin-left:6px;">ຈາກສາງ</span>' : ''}${status}</div>
