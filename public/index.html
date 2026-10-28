@@ -20692,10 +20692,21 @@ function assetStatusBadgeClass(status) {
     // ສະແດງເທິງແຜນທີ່ສະເພາะ Asset ที่กำลัง "เคลื่อนย้าย" หรือ "กำลังจัดส่ง" เท่านั้น (ตรงกับ SHIPPING_NOTIFY_STATUSES ฝั่ง backend)
     const MAP_VISIBLE_STATUSES = ["ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ", "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ", "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"]; // ລໍຖ້າ + ຢູ່ເທິງລົດ (ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ເກັບໄວ້ສຳລັບຂໍ້ມູນເກົ່າ)
     // ຊຸດສີສຳລັບແຍກ Doc Type ເທິງແຜນທີ່ (ວົນຊ້ຳຖ້າ Doc Type ມີຫຼາຍກວ່າສີ)
-    const MAP_DOCTYPE_PALETTE = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
+    // ສີຄົງທີ່ຂອງ Doc Type ຫຼັກ (ເລືອກສີທີ່ຕ່າງກັນຊັດ ແລະ ບໍ່ຊ້ຳກັບສີ "ດ່ວນ" ສີແດງ #ef4444 ແລະ "ຢູ່ເທິງລົດ" ສີນ້ຳເງິນ #1d4ed8)
+    const MAP_DOCTYPE_FIXED = {
+      'ຕູ້ເຄື່ອນຍ້າຍ': '#f97316',      // ສີສົ້ມ
+      'ຕູ້ປ່ຽນແທນ': '#7c3aed',         // ສີມ່ວງ
+      'ມອບຕູ້ໃຫມ່ຄັ້ງແລກ': '#059669',   // ສີຂຽວ
+      'ມອບຕູ້ເພີ່ມ': '#0891b2',         // ສີຟ້າອົມຂຽວ (teal)
+      'ເກັບຄືນສາງ': '#92400e',          // ສີນ້ຳຕານ
+      'ບໍ່ລະບຸ': '#64748b'              // ສີເທົາ
+    };
+    // ຊຸດສີສຳລັບ Doc Type ອື່ນໆ (ຕັດສີແດງ/ນ້ຳເງິນ/ສີທີ່ໃຊ້ຂ້າງເທິງອອກ ເພື່ອບໍ່ໃຫ້ຊ້ຳ/ຄ້າຍກັນ)
+    const MAP_DOCTYPE_PALETTE = ['#db2777', '#ca8a04', '#65a30d', '#0d9488', '#9333ea', '#be123c', '#4d7c0f', '#b45309'];
     const mapDoctypeColorCache = {};
     function colorForDocType(docType) {
-      const key = docType || 'ບໍ່ລະບຸ';
+      const key = String(docType || '').trim() || 'ບໍ່ລະບຸ';
+      if (MAP_DOCTYPE_FIXED[key]) return MAP_DOCTYPE_FIXED[key];
       if (mapDoctypeColorCache[key]) return mapDoctypeColorCache[key];
       // hash ชื่อ doc type ให้ได้สีคงที่ (ชื่อเดิม = สีเดิมเสมอ ไม่ว่าจะโหลดกี่ครั้ง)
       let hash = 0;
