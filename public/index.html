@@ -10973,6 +10973,10 @@ body.dlv-popup-open { overflow: hidden; }
       return r.width > 0 && r.height > 0;
     }
     // ເອີ້ນເມື່ອເຂົ້າໜ້າ/ແຖບຍ່ອຍ — ຖ້າເປັນຄັ້ງທຳອິດຈະເປີດຄູ່ມືຂອງ key ນັ້ນ
+    /* ສຽງອະທິບາຍຂອງຄູ່ມືແຕ່ລະເມນູ: ສະເພາະເມນູຫຼັກໆ ທີ່ລະບຸໄວ້ນີ້ · ໄຟລ໌ /voices/tour/pt-<key>-intro.mp3 ແລະ pt-<key>-<ເລກຂັ້ນ>.mp3
+       (key ປ່ຽນ ":" ເປັນ "_" · ເລກຂັ້ນ = ລຳດັບໃນ PAGE_TOURS[key].steps ເລີ່ມ 1 ຄົງທີ່ ເຖິງຂັ້ນໃດຖືກຂ້າມຕາມ role) */
+    const PT_VOICE_KEYS = ['teamBudget', 'asset', 'request', 'historyHub', 'loanContract', 'loanForm:issue', 'loanForm:return', 'coolerMaster'];
+    function ptVoiceName(key, part) { return 'pt-' + key.replace(/:/g, '_') + '-' + part; }
     function pageTourMaybe(key, tries) {
       const cfg = PAGE_TOURS[key];
       if (!cfg || !currentUser || !ptEnabled() || ptSeen(key)) return;
@@ -10991,14 +10995,16 @@ body.dlv-popup-open { overflow: hidden; }
       }
       const steps = [];
       let waiting = 0;
-      cfg.steps.forEach((s) => {
-        if (!s.sel && !s.target) { steps.push({ icon: s.icon, title: s.title, text: s.text }); return; }
-        if (ptVisible(tourEl(s))) steps.push({ sel: s.sel, target: s.target, icon: s.icon, title: s.title, text: s.text });
+      const pv = PT_VOICE_KEYS.includes(key);
+      cfg.steps.forEach((s, idx) => {
+        const voice = pv ? ptVoiceName(key, idx + 1) : undefined;
+        if (!s.sel && !s.target) { steps.push({ voice, icon: s.icon, title: s.title, text: s.text }); return; }
+        if (ptVisible(tourEl(s))) steps.push({ voice, sel: s.sel, target: s.target, icon: s.icon, title: s.title, text: s.text });
         else if (!s.optional) waiting++;
       });
       if (waiting > 0 && tries < 6) { pageTourMaybe(key, tries + 1); return; } // ຍັງໂຫລດບໍ່ຄົບ
       if (!steps.some((s) => s.sel || s.target)) return; // ບໍ່ມີຫຍັງໃຫ້ຊີ້ (ເຊັ່ນ ອອກຈາກໜ້ານັ້ນແລ້ວ / role ບໍ່ເຫັນ) -> ບໍ່ໝາຍວ່າເຫັນ
-      if (cfg.intro) steps.unshift({ icon: cfg.icon, title: cfg.title, text: cfg.intro });
+      if (cfg.intro) steps.unshift({ voice: pv ? ptVoiceName(key, 'intro') : undefined, icon: cfg.icon, title: cfg.title, text: cfg.intro });
       ptMarkSeen(key);
       tourMount(steps, true);
     }
