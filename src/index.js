@@ -1525,6 +1525,8 @@ const ROUTE_ROLES = {
   "/api/admin/ship-trip-stops/order": ROLE_WH,
   "/api/admin/ship-trips/depart": ROLE_WH,
   "/api/admin/ship-trips/reopen": ROLE_WH,
+  "/api/admin/ship-trips/system-entered": ROLE_ADMIN,   // admin ກົດຢືນຢັນວ່າຖ້ຽວນີ້ເອົາເຂົ້າລະບົບແລ້ວ
+  "/api/admin/ship-trips/system-unentered": ROLE_ADMIN,
   "/api/admin/provinces": ROLE_WH,
 };
 
@@ -6535,6 +6537,26 @@ export default {
       } catch (e) {
         console.error("/api/admin/ship-trips/reopen", e);
         return Response.json({ error: "ເປີດຖ້ຽວຄືນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    // admin ຢືນຢັນວ່າ "ຖ້ຽວນີ້ເອົາເຂົ້າລະບົບແລ້ວ" (ຫຼັງຈາກສົ່ງຕູ້ຮອດທຸກແຂວງ) / ຍົກເລີກການຢືນຢັນ — ເກັບ system_entered_at/by ໃນ ship_trips (migration_add_trip_system_entered.sql)
+    if ((url.pathname === "/api/admin/ship-trips/system-entered" || url.pathname === "/api/admin/ship-trips/system-unentered") && request.method === "POST") {
+      try {
+        const { id } = await request.json();
+        const trip = id ? await env.DB.prepare("SELECT id, status, system_entered_at FROM ship_trips WHERE id = ?").bind(id).first() : null;
+        if (!trip) return Response.json({ error: "ບໍ່ພົບຖ້ຽວລົດ" }, { status: 400 });
+        if (url.pathname.endsWith("/system-entered")) {
+          if (trip.status !== "departed") return Response.json({ error: "ຖ້ຽວນີ້ຍັງບໍ່ໄດ້ຢືນຢັນລົດອອກ" }, { status: 400 });
+          if (trip.system_entered_at) return Response.json({ error: "ຖ້ຽວນີ້ຢືນຢັນເອົາເຂົ້າລະບົບແລ້ວ" }, { status: 400 });
+          await env.DB.prepare("UPDATE ship_trips SET system_entered_at = CURRENT_TIMESTAMP, system_entered_by = ? WHERE id = ?").bind(tripActor, trip.id).run();
+          return Response.json({ message: "ຢືນຢັນເອົາຖ້ຽວເຂົ້າລະບົບແລ້ວ" });
+        }
+        await env.DB.prepare("UPDATE ship_trips SET system_entered_at = NULL, system_entered_by = NULL WHERE id = ?").bind(trip.id).run();
+        return Response.json({ message: "ຍົກເລີກການຢືນຢັນເອົາເຂົ້າລະບົບແລ້ວ" });
+      } catch (e) {
+        console.error("/api/admin/ship-trips/system-entered", e);
+        return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_trip_system_entered.sql ໃຫ້ຮັນກ່ອນ)" }, { status: 500 });
       }
     }
 

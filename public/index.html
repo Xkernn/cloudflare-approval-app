@@ -16675,6 +16675,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               ${open && stPlanTotals(t.id).has ? `<span class="badge badge-info">ແຜນ ${stPlanTotals(t.id).loaded}/${stPlanTotals(t.id).qty}</span>` : ''}
               ${open ? stCountBadge(c) : `<span class="badge badge-info">${c.total} ຕູ້</span>`}
               ${open ? '<span class="badge badge-pending">ກຳລັງຈັດຕູ້ຂຶ້ນລົດ</span>' : (stTripDone(t) ? '<span class="badge badge-approved">ສົ່ງສຳເລັດແລ້ວ</span>' : '<span class="badge badge-purple">ລົດອອກແລ້ວ</span>')}
+              ${t.system_entered_at ? '<span class="badge badge-info"><i class="fa-solid fa-database"></i> ເອົາເຂົ້າລະບົບແລ້ວ</span>' : ''}
               <i class="fa-solid fa-chevron-right" style="color:var(--text-muted);"></i>
             </div>
           </div>
@@ -16729,7 +16730,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         : btn('btn-reset', `ncPrintTrip(${t.id}, 'view')`, 'fa-file-lines', 'ເປີດໃບສົ່ງ', 'ເປີດເບິ່ງໃບສົ່ງ (ບໍ່ສັ່ງພິມທັນທີ)')
           + btn('btn-reset', `ncPrintTrip(${t.id})`, 'fa-print', 'ພິມໃບສົ່ງ', 'ເປີດໃບສົ່ງ ແລ້ວສັ່ງພິມທັນທີ')
           + btn('btn-approve', `stOpenRecv(${t.id})`, 'fa-link', 'ລິ້ງໃຫ້ຜູ້ຮັບເຊັນ', 'ສ້າງລິ້ງ (ໃຊ້ໄດ້ຄັ້ງດຽວ) ໃຫ້ຜູ້ຮັບຕູ້ທີ່ແຂວງເຊັນຮັບ')
-          + btn('btn-edit', `stReopenTrip(${t.id})`, 'fa-rotate-left', 'ເປີດຖ້ຽວຄືນ', 'ກັບເປັນ ກຳລັງຈັດຕູ້ຂຶ້ນລົດ (ກໍລະນີກົດລົດອອກຜິດ)');
+          + btn('btn-edit', `stReopenTrip(${t.id})`, 'fa-rotate-left', 'ເປີດຖ້ຽວຄືນ', 'ກັບເປັນ ກຳລັງຈັດຕູ້ຂຶ້ນລົດ (ກໍລະນີກົດລົດອອກຜິດ)')
+          + stSystemEntryBtn(t);
 
       document.getElementById('stDetailHead').innerHTML = `
         <div class="mgmt-card">
@@ -16738,6 +16740,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
               <span class="badge badge-info">${rows.length} ຕູ້ · ${keys.length} ແຂວງ</span>
               ${open ? '<span class="badge badge-pending">ກຳລັງຈັດຕູ້ຂຶ້ນລົດ</span>' : (stTripDone(t) ? '<span class="badge badge-approved">ສົ່ງສຳເລັດແລ້ວ</span>' : '<span class="badge badge-purple">ລົດອອກແລ້ວ</span>')}
+              ${t.system_entered_at ? '<span class="badge badge-info" title="' + esc((t.system_entered_by || '') + ' · ' + (fmtLaoTs(t.system_entered_at) || '')) + '"><i class="fa-solid fa-database"></i> ເອົາເຂົ້າລະບົບແລ້ວ</span>' : ''}
             </div>
           </div>
           <div class="mgmt-card-sub">
@@ -17225,6 +17228,20 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (await ncTripAction('/api/admin/ship-trips/reopen', id, 'ເປີດຖ້ຽວຄືນແລ້ວ', 'ເປີດຖ້ຽວຄືນບໍ່ສຳເລັດ')) {
         stPanelKey = '';
         stFeedback('info', 'ເປີດຖ້ຽວຄືນແລ້ວ');
+        stRender();
+      }
+    }
+    // ປຸ່ມ admin: ຢືນຢັນວ່າຖ້ຽວທີ່ສົ່ງສຳເລັດແລ້ວ ເອົາເຂົ້າລະບົບແລ້ວ (ສະແດງສະເພາະ admin + ຖ້ຽວທີ່ "ສົ່ງສຳເລັດແລ້ວ")
+    function stSystemEntryBtn(t) {
+      if (!ncIsAdminRole() || !stTripDone(t)) return '';
+      return t.system_entered_at
+        ? `<button type="button" class="btn-act btn-reset" onclick="stSystemEntry(${t.id}, false)" title="ຍົກເລີກການຢືນຢັນ"><i class="fa-solid fa-rotate-left"></i> ຍົກເລີກ "ເອົາເຂົ້າລະບົບແລ້ວ"</button>`
+        : `<button type="button" class="btn-act btn-approve" onclick="stSystemEntry(${t.id}, true)" title="ກົດເມື່ອເອົາຖ້ຽວນີ້ເຂົ້າລະບົບແລ້ວ"><i class="fa-solid fa-database"></i> ຢືນຢັນເອົາເຂົ້າລະບົບແລ້ວ</button>`;
+    }
+    async function stSystemEntry(id, entered) {
+      if (!await appConfirm(entered ? 'ຢືນຢັນວ່າຖ້ຽວນີ້ເອົາເຂົ້າລະບົບແລ້ວ?' : 'ຍົກເລີກການຢືນຢັນ "ເອົາເຂົ້າລະບົບແລ້ວ" ຂອງຖ້ຽວນີ້?', { danger: false })) return;
+      if (await ncTripAction(entered ? '/api/admin/ship-trips/system-entered' : '/api/admin/ship-trips/system-unentered', id, entered ? 'ຢືນຢັນເອົາເຂົ້າລະບົບແລ້ວ' : 'ຍົກເລີກແລ້ວ', 'ບັນທຶກບໍ່ສຳເລັດ')) {
+        stPanelKey = '';
         stRender();
       }
     }
@@ -29044,11 +29061,12 @@ function assetStatusBadgeClass(status) {
       pending_dsm:      '/voices/pending_dsm.mp3',      // ມີເອກະສານຄ້າງເຊັນ ດີເອັສເອັມ (DSM)
       dsm_signed:       '/voices/dsm_signed.mp3'        // ດີເອັສເອັມ (DSM) ເຊັນເອກະສານແລ້ວ ເບິ່ງລະຫັດຕູ້ ແລະ ໂຫຼດເອກະສານໄດ້
     };
-    const VOICE_SPEED = 1.5;
+    const VOICE_SPEED = 1.25;
     let voiceQueue = [], voicePlaying = false, voiceUnlockWait = false, voiceEntryPending = true, voiceHiddenAt = 0, voiceLastNotifId = null, voiceLastUnread = null, voiceNotifBusy = false;
 
     function voicePlay(key, onMissing) {
       if (!VOICE_FILES[key]) return;
+      if (voiceQueue.some(q => q.key === key)) return; // ສຽງດຽວກັນທີ່ລໍຄິວຢູ່ແລ້ວ ບໍ່ຕ້ອງເພີ່ມຊ້ຳ
       voiceQueue.push({ key, onMissing });
       voiceNext();
     }
@@ -29060,11 +29078,11 @@ function assetStatusBadgeClass(status) {
       const finish = (missing) => {
         if (done) return; done = true; voicePlaying = false;
         if (missing) { try { item.onMissing ? item.onMissing() : reqVoiceChime(); } catch (e) { /* ignore */ } }
-        voiceNext();
+        setTimeout(voiceNext, 500); // ຢຸດສັ້ນໆ ລະຫວ່າງແຕ່ລະສຽງ ເມື່ອມີຫຼາຍຢ່າງຄ້າງ
       };
       try {
         const a = new Audio(VOICE_FILES[item.key]);
-        a.playbackRate = VOICE_SPEED; a.defaultPlaybackRate = VOICE_SPEED; // ເລັ່ງຄວາມໄວ x1.5
+        a.playbackRate = VOICE_SPEED; a.defaultPlaybackRate = VOICE_SPEED; // ເລັ່ງຄວາມໄວ x1.25
         a.preservesPitch = true; // ບໍ່ໃຫ້ສຽງແຫຼມຂຶ້ນເມື່ອເລັ່ງ
         a.onended = () => finish(false);
         a.onerror = () => finish(true);      // ບໍ່ມີໄຟລ໌ / ຫຼີ້ນບໍ່ໄດ້

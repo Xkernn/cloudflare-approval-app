@@ -660,7 +660,9 @@ CREATE TABLE ship_trips (
     budget_override_by TEXT,
     sig_sender    TEXT,                          -- key ລາຍເຊັນ ຜູ້ຈັດສົ່ງ/ຜູ້ກວດນັບຕູ້ (R2: trip/<id>/sig-sender-*.png)
     sig_driver    TEXT,                          -- key ລາຍເຊັນ ຄົນຂັບລົດ
-    sig_approver  TEXT                           -- key ລາຍເຊັນ ຜູ້ອະນຸມັດ (ບໍ່ບັງຄັບ)
+    sig_approver  TEXT,                          -- key ລາຍເຊັນ ຜູ້ອະນຸມັດ (ບໍ່ບັງຄັບ)
+    system_entered_at DATETIME,                  -- admin ຢືນຢັນວ່າຖ້ຽວນີ້ເອົາເຂົ້າລະບົບແລ້ວ
+    system_entered_by TEXT
 );
 
 -- ຕູ້ຈາກສາງທີ່ເອົາໄປກັບຖ້ຽວລົດ (ເພີ່ມເຂົ້າຖ້ຽວ = reserved, ລົດອອກ = shipped_out)
