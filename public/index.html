@@ -3586,6 +3586,17 @@ body.dlv-popup-open { overflow: hidden; }
                   <option value="">-- ເລືອກແບນຕູ້ແຊ່ --</option>
                 </select>
               </div>
+              <div id="cmLk_loan_box" class="cm-lk-box" style="background:#f0f9ff; border:1px dashed #7dd3fc; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+                <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;"><i class="fa-solid fa-magnifying-glass-location mr-1"></i> ດຶງຂໍ້ມູນຈາກ Cooler Master <span style="font-size:12px; color:var(--text-muted); font-weight:400;">(ບໍ່ບັງຄັບ — ສະແກນ ຫຼື ພິມ QR / Serial / CapEx / Outlet Code)</span></label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <input type="text" id="cmLk_loan_input" class="form-control" style="flex:1; min-width:150px;" autocomplete="off" placeholder="ສະແກນ ຫຼື ພິມ ແລ້ວກົດ Enter"
+                         onkeydown="if(event.key==='Enter'){event.preventDefault();cmLkSearch('loan');}">
+                  <button type="button" class="btn-add" onclick="cmLkSearch('loan')"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+                  <button type="button" class="btn-add" onclick="openQrScanner('cmLk_loan_input')"><i class="fa-solid fa-qrcode mr-1"></i> ສະແກນ QR Code</button>
+                </div>
+                <div id="cmLk_loan_results" style="margin-top:8px; max-height:260px; overflow:auto;"></div>
+                <div id="cmLk_loan_info" class="hidden" style="margin-top:8px; background:#ecfdf5; border-radius:8px; padding:8px 10px; font-size:13px;"></div>
+              </div>
               <div class="form-group">
                 <label>QR Code ຕູ້</label>
                 <input type="text" id="loanManualQr" class="form-control">
@@ -3810,6 +3821,17 @@ body.dlv-popup-open { overflow: hidden; }
                 <option value="modern_small">1 door modern small (1 ປະຕູລຸ້ນຕ່ຳ)</option>
                 <option value="table_cooler">table cooler (ຕູ້ຕັ້ງໂຕະ)</option>
               </select>
+            </div>
+            <div id="cmLk_cancel_box" class="cm-lk-box" style="background:#f0f9ff; border:1px dashed #7dd3fc; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+              <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;"><i class="fa-solid fa-magnifying-glass-location mr-1"></i> ດຶງຂໍ້ມູນຈາກ Cooler Master <span style="font-size:12px; color:var(--text-muted); font-weight:400;">(ບໍ່ບັງຄັບ — ສະແກນ ຫຼື ພິມ QR / Serial / CapEx / Outlet Code)</span></label>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <input type="text" id="cmLk_cancel_input" class="form-control" style="flex:1; min-width:150px;" autocomplete="off" placeholder="ສະແກນ ຫຼື ພິມ ແລ້ວກົດ Enter"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();cmLkSearch('cancel');}">
+                <button type="button" class="btn-add" onclick="cmLkSearch('cancel')"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+                <button type="button" class="btn-add" onclick="openQrScanner('cmLk_cancel_input')"><i class="fa-solid fa-qrcode mr-1"></i> ສະແກນ QR Code</button>
+              </div>
+              <div id="cmLk_cancel_results" style="margin-top:8px; max-height:260px; overflow:auto;"></div>
+              <div id="cmLk_cancel_info" class="hidden" style="margin-top:8px; background:#ecfdf5; border-radius:8px; padding:8px 10px; font-size:13px;"></div>
             </div>
             <div class="form-group">
               <label>QR Code ຕູ້</label>
@@ -4044,6 +4066,17 @@ body.dlv-popup-open { overflow: hidden; }
               <div id="noDocStockSelectedInfo" class="hidden" style="background:#f3f4f6; border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:13px;"></div>
             </div>
 
+            <div id="cmLk_noDoc_box" class="cm-lk-box" style="background:#f0f9ff; border:1px dashed #7dd3fc; border-radius:10px; padding:10px 12px; margin-bottom:14px;">
+              <label style="display:block; font-weight:700; font-size:13px; margin-bottom:6px;"><i class="fa-solid fa-magnifying-glass-location mr-1"></i> ດຶງຂໍ້ມູນຈາກ Cooler Master <span style="font-size:12px; color:var(--text-muted); font-weight:400;">(ບໍ່ບັງຄັບ — ສະແກນ ຫຼື ພິມ QR / Serial / CapEx / Outlet Code)</span></label>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <input type="text" id="cmLk_noDoc_input" class="form-control" style="flex:1; min-width:150px;" autocomplete="off" placeholder="ສະແກນ ຫຼື ພິມ ແລ້ວກົດ Enter"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();cmLkSearch('noDoc');}">
+                <button type="button" class="btn-add" onclick="cmLkSearch('noDoc')"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+                <button type="button" class="btn-add" onclick="openQrScanner('cmLk_noDoc_input')"><i class="fa-solid fa-qrcode mr-1"></i> ສະແກນ QR Code</button>
+              </div>
+              <div id="cmLk_noDoc_results" style="margin-top:8px; max-height:260px; overflow:auto;"></div>
+              <div id="cmLk_noDoc_info" class="hidden" style="margin-top:8px; background:#ecfdf5; border-radius:8px; padding:8px 10px; font-size:13px;"></div>
+            </div>
             <div class="form-group">
               <label>QR Code</label>
               <input type="text" id="noDocQrCode" class="form-control" placeholder="ປ້ອນ QR Code (ຖ້າມີ)">
@@ -19409,6 +19442,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         if (targetId === 'ceStockSearchInput') {
           searchCeWarehouseStock(true); // ສະແກນແລ້ວ ຖ້າພົບ 1 ລາຍການ ໃຫ້ເລືອກໃຫ້ເລີຍ
         }
+        if (targetId.indexOf('cmLk_') === 0) {
+          cmLkSearch(targetId.split('_')[1]); // ດຶງຂໍ້ມູນຈາກ Cooler Master ເຂົ້າຟອມ (noDoc / loan / cancel)
+        }
       }
     }
 
@@ -22927,6 +22963,7 @@ function assetStatusBadgeClass(status) {
       toggleCancelDoorVariant();
       document.getElementById('cancelSelfMoved').checked = false;
       ['cancelQr', 'cancelSerial', 'cancelCapx'].forEach((id) => { document.getElementById(id).value = ''; });
+      cmLkReset('cancel');
       fillCancelBrandSelect();
       document.querySelectorAll('input[name="cancelReason"]').forEach((el) => { el.checked = false; });
       document.getElementById('cancelSigMdeName').value = '';
@@ -23962,6 +23999,8 @@ function assetStatusBadgeClass(status) {
     let loanEditingContractId = null;
 
     function loanSetDraftLock(on) {
+      const cmBox = document.getElementById('cmLk_loan_box');
+      if (cmBox) cmBox.classList.toggle('hidden', !!on); // ໃບທີ່ລັອກ (ມາຈາກ Asset) ບໍ່ໃຫ້ດຶງຂໍ້ມູນທັບ
       ['loanManualMde', 'loanManualQr', 'loanManualSerial', 'loanManualCapx'].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -24053,6 +24092,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('loanManualQr').value = '';
       document.getElementById('loanManualSerial').value = '';
       document.getElementById('loanManualCapx').value = '';
+      cmLkReset('loan');
       LOAN_SALES_INPUTS.forEach(([, id]) => { document.getElementById(id).value = ''; });
       document.getElementById('loanSigMdeName').value = '';
       clearSignaturePad('loanSigMdeCanvas');
@@ -24555,6 +24595,7 @@ function assetStatusBadgeClass(status) {
 
       const needsStockMaster = STOCK_MASTER_DOC_TYPES.includes(docType);
       document.getElementById('noDocStockSearchWrapper').classList.toggle('hidden', !needsStockMaster);
+      document.getElementById('cmLk_noDoc_box').classList.toggle('hidden', needsStockMaster); // Doc Type ທີ່ບັງຄັບເລືອກຈາກສະຕ໋ອກສາງ ບໍ່ໃຊ້ Cooler Master
       ['noDocQrCode', 'noDocSerialNumber', 'noDocCapex'].forEach(id => {
         document.getElementById(id).readOnly = needsStockMaster;
       });
@@ -24570,6 +24611,102 @@ function assetStatusBadgeClass(status) {
       document.getElementById('noDocQrCode').value = '';
       document.getElementById('noDocSerialNumber').value = '';
       document.getElementById('noDocCapex').value = '';
+      cmLkReset('noDoc');
+    }
+
+    /* ===== ດຶງຂໍ້ມູນຕູ້ຈາກ Cooler Master (QR / Serial / CapEx) ເຂົ້າຟອມ =====
+       ໃຊ້ກັບ: ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ (noDoc), ໃບສັນຍາຢືມ DOC- (loan), ໃບເກັບຕູ້ເຂົ້າສາງ T- (cancel)
+       ສະແກນ/ພິມ -> ຄົ້ນ /api/cooler-master/search -> ເລືອກ -> ຕື່ມ QR/Serial/CapEx + Brand (+ ຈຳນວນປະຕູ ຖ້າອ່ານຈາກ Type ໄດ້). ຊ່ອງຍັງແກ້ໄຂເອງໄດ້ */
+    const CM_LK = {
+      noDoc:  { qr: 'noDocQrCode',   serial: 'noDocSerialNumber', capex: 'noDocCapex' },
+      loan:   { qr: 'loanManualQr',  serial: 'loanManualSerial',  capex: 'loanManualCapx',  brand: 'loanManualCoolerBrand', doors: 'loanDoors',   doorsFn: () => toggleLoanDoorVariant() },
+      cancel: { qr: 'cancelQr',      serial: 'cancelSerial',      capex: 'cancelCapx',      brand: 'cancelBrand',           doors: 'cancelDoors', doorsFn: () => toggleCancelDoorVariant() }
+    };
+    const cmLkRows = {};
+    const cmLkSeq = {};
+
+    function cmLkReset(key) {
+      cmLkSeq[key] = (cmLkSeq[key] || 0) + 1; // ຍົກເລີກຄຳຂໍທີ່ຍັງລໍຖ້າ
+      cmLkRows[key] = [];
+      const ids = [`cmLk_${key}_input`, `cmLk_${key}_results`, `cmLk_${key}_info`];
+      const inp = document.getElementById(ids[0]); if (inp) inp.value = '';
+      const res = document.getElementById(ids[1]); if (res) res.innerHTML = '';
+      const inf = document.getElementById(ids[2]); if (inf) { inf.innerHTML = ''; inf.classList.add('hidden'); }
+    }
+
+    function cmLkDoorsFromType(t) {
+      const m = String(t || '').match(/(?:^|[^0-9])([123])\s*(?:doors?|d|ປະຕູ)(?![a-z])/i);
+      return m ? m[1] : '';
+    }
+
+    function cmLkSetSelect(id, val) {
+      const el = document.getElementById(id);
+      const v = String(val || '').trim();
+      if (!el || !v) return;
+      const hit = Array.from(el.options).find((o) => o.value.trim().toLowerCase() === v.toLowerCase());
+      if (hit) { el.value = hit.value; return; }
+      el.insertAdjacentHTML('beforeend', `<option value="${esc(v)}">${esc(v)}</option>`); // Brand ບໍ່ຢູ່ໃນ Master List -> ໃສ່ໄວ້ ບໍ່ໃຫ້ຄ່າຫາຍ
+      el.value = v;
+    }
+
+    async function cmLkSearch(key) {
+      const resEl = document.getElementById(`cmLk_${key}_results`);
+      const q = document.getElementById(`cmLk_${key}_input`).value.trim();
+      if (!q) { resEl.innerHTML = ''; return; }
+      const seq = (cmLkSeq[key] = (cmLkSeq[key] || 0) + 1);
+      resEl.innerHTML = '<div style="font-size:12px; color:var(--text-muted);">ກຳລັງຄົ້ນຫາ...</div>';
+      try {
+        const res = await fetch('/api/cooler-master/search?outlet=1&limit=20&q=' + encodeURIComponent(q));
+        const d = await res.json().catch(() => ({}));
+        if (seq !== cmLkSeq[key]) return;
+        if (!res.ok) { resEl.innerHTML = `<div style="font-size:12px; color:#dc2626;">${esc(d.error || 'ຄົ້ນຫາບໍ່ສຳເລັດ')}</div>`; return; }
+        const rows = d.matches || [];
+        if (!rows.length) {
+          resEl.innerHTML = '<div style="font-size:12px; color:#dc2626;">ບໍ່ພົບໃນ Cooler Master — ຍັງພິມ QR / Serial / CapEx ເອງໃນຊ່ອງລຸ່ມໄດ້</div>';
+          return;
+        }
+        cmLkRows[key] = rows;
+        window.__cmLkLost = Object.assign(window.__cmLkLost || {}, d.lost || {});
+        if (rows.length === 1 && d.exact) { cmLkPick(key, 0); return; } // ກົງເປ໊ະ 1 ໜ່ວຍ (ເຊັ່ນ ສະແກນ QR) -> ເລືອກໃຫ້ເລີຍ
+        resEl.innerHTML = rows.map((m, i) => `
+          <div onclick="cmLkPick('${key}', ${i})" style="border:1px solid var(--border-color,#e5e7eb); background:#fff; border-radius:8px; padding:8px 10px; margin-bottom:6px; cursor:pointer; font-size:13px;">
+            <b>${esc(m.cooler_brand || '-')} / ${esc(m.cooler_type || '-')}</b>${(d.lost || {})[m.id] ? ' <span style="color:#dc2626; font-weight:700;">⚠ ຢູ່ໃນລາຍການຕູ້ສູນຫາຍ</span>' : ''}<br>
+            QR: ${esc(m.qr_code || '-')} | Serial: ${esc(m.serial_number || '-')} | CapEx: ${esc(m.capex || '-')}<br>
+            <span style="color:var(--text-muted);">ຢູ່: ${esc(m.outlet_code || '-')} ${esc(m.outlet_name || '')}${m.province ? ' · ' + esc(m.province) : ''}</span>
+          </div>`).join('') + (rows.length >= 20 ? '<div style="font-size:12px; color:var(--text-muted);">ສະແດງ 20 ລາຍການທຳອິດ — ພິມໃຫ້ລະອຽດຂຶ້ນເພື່ອຕີບແຄບ</div>' : '');
+      } catch (e) {
+        if (seq === cmLkSeq[key]) resEl.innerHTML = '<div style="font-size:12px; color:#dc2626;">ເຊື່ອມຕໍ່ບໍ່ໄດ້ — ກະລຸນາລອງໃໝ່</div>';
+      }
+    }
+
+    function cmLkPick(key, i) {
+      const m = (cmLkRows[key] || [])[i];
+      const c = CM_LK[key];
+      if (!m || !c) return;
+      document.getElementById(c.qr).value = m.qr_code || '';
+      document.getElementById(c.serial).value = m.serial_number || '';
+      document.getElementById(c.capex).value = m.capex || '';
+      if (key === 'noDoc') {
+        // ຖ້າ Master ບໍ່ມີ Brand/Type ໃຫ້ຮັກສາຄ່າທີ່ເລືອກໄວ້ເດີມ
+        const curBrand = document.getElementById('noDocBrand').value;
+        const curType = document.getElementById('noDocType').value;
+        fillBrandTypeSelects('noDocBrand', 'noDocType', m.cooler_brand || curBrand, m.cooler_type || curType, true);
+      } else {
+        cmLkSetSelect(c.brand, m.cooler_brand);
+        const dr = cmLkDoorsFromType(m.cooler_type);
+        const doorsEl = document.getElementById(c.doors);
+        if (dr && doorsEl && !doorsEl.value) { doorsEl.value = dr; c.doorsFn(); }
+      }
+      document.getElementById(`cmLk_${key}_results`).innerHTML = '';
+      document.getElementById(`cmLk_${key}_input`).value = '';
+      const inf = document.getElementById(`cmLk_${key}_info`);
+      inf.classList.remove('hidden');
+      const lost = (window.__cmLkLost || {})[m.id];
+      inf.innerHTML = `✅ ດຶງຂໍ້ມູນແລ້ວ: <b>${esc(m.cooler_brand || '-')} / ${esc(m.cooler_type || '-')}</b> — QR: ${esc(m.qr_code || '-')} | Serial: ${esc(m.serial_number || '-')} | CapEx: ${esc(m.capex || '-')}<br>
+        <span style="color:var(--text-muted);">ຕາມ Master ຕູ້ຢູ່: ${esc(m.outlet_code || '-')} ${esc(m.outlet_name || '')}</span>
+        ${lost ? '<br><span style="color:#dc2626; font-weight:700;">⚠ ຕູ້ນີ້ຢູ່ໃນລາຍການຕູ້ສູນຫາຍ</span>' : ''}
+        <a onclick="cmLkReset('${key}')" style="color:#2563eb; cursor:pointer; margin-left:8px;">ລ້າງ</a>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">ແກ້ໄຂຊ່ອງດ້ານລຸ່ມເອງໄດ້ ຖ້າຂໍ້ມູນບໍ່ຖືກຕ້ອງ</div>`;
     }
 
     let noDocStockSearchTimer = null;
