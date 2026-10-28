@@ -1525,7 +1525,6 @@ const ROUTE_ROLES = {
   "/api/admin/ship-trip-stops/order": ROLE_WH,
   "/api/admin/ship-trips/depart": ROLE_WH,
   "/api/admin/ship-trips/reopen": ROLE_WH,
-  "/api/admin/online-docs": ROLE_ADMIN,
   "/api/admin/ship-trips/system-entered": ROLE_ADMIN,   // admin ກົດຢືນຢັນວ່າຖ້ຽວນີ້ເອົາເຂົ້າລະບົບແລ້ວ
   "/api/admin/ship-trips/system-unentered": ROLE_ADMIN,
   "/api/admin/provinces": ROLE_WH,
@@ -11473,33 +11472,6 @@ export default {
         : env.DB.prepare("SELECT * FROM loan_contracts WHERE tracking_no = ? ORDER BY id DESC").bind(trackingNo)
       ).all();
       return Response.json(results || []);
-    }
-
-    // ເມນູ "ໃບເອກະສານອອນລາຍ" (admin): Asset ທີ່ສະຖານະ ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ / ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ຢູ່ເທິງລົດ (ກຳລັງສົ່ງ-ເກັບກັບ-ເຄື່ອນຍ້າຍ) ຫຼື ຕິດທຸງ
-    // ພ້ອມໃບສັນຍາຢືມ (DOC) + ໃບ T- ຂອງແຕ່ລະ Asset ເພື່ອກົດເບິ່ງ PDF ໄດ້ທັນທີ (ເປີດ PDF ຜ່ານ /api/loan-contracts/pdf ແລະ /api/cancel-contracts/pdf)
-    if (url.pathname === "/api/admin/online-docs" && request.method === "GET") {
-      try {
-        const statuses = [COLLECT_WAITING_STATUS, WAITING_DISPATCH_STATUS, "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"];
-        const ph = statuses.map(() => "?").join(",");
-        // ຈັດສົ່ງສຳເລັດແລ້ວ (status = ສຳເລັດ) ບໍ່ເອົາມາໂຊ ເຖິງວ່າຈະຕິດທຸງກໍຕາມ
-        const cond = `(status IN (${ph}) OR (flagged = 1 AND IFNULL(status, '') != 'ສຳເລັດ'))`;
-        const [assets, loans, cancels] = await env.DB.batch([
-          env.DB.prepare(
-            `SELECT id, tracking_no, outlet_code, outlet_name, mde_code, doc_type, status, flagged, qr_code, serial_number, cooler_brand, cooler_type, last_update
-               FROM assets WHERE ${cond} ORDER BY flagged DESC, id DESC LIMIT 1000`
-          ).bind(...statuses),
-          env.DB.prepare(
-            `SELECT id, doc_no, asset_id, status, created_at FROM loan_contracts WHERE asset_id IN (SELECT id FROM assets WHERE ${cond}) ORDER BY id DESC`
-          ).bind(...statuses),
-          env.DB.prepare(
-            `SELECT id, doc_no, asset_id, status, created_at FROM cancel_contracts WHERE asset_id IN (SELECT id FROM assets WHERE ${cond}) ORDER BY id DESC`
-          ).bind(...statuses),
-        ]);
-        return Response.json({ assets: assets.results || [], loans: loans.results || [], cancels: cancels.results || [] });
-      } catch (e) {
-        console.error("/api/admin/online-docs", e);
-        return Response.json({ error: "ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
-      }
     }
 
     // ປະຫວັດໃບສັນຍາຢືມທີ່ເຄີຍອອກທັງໝົດ (ສະແດງໃນໜ້າ "ອອກໃບສັນຍາຢືມ" ໃຫ້ຄົ້ນຫາ/ເປີດ PDF ຢ້ອນຫລັງໄດ້)
