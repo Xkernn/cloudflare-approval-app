@@ -2923,6 +2923,11 @@ body.dlv-popup-open { overflow: hidden; }
               <input type="text" id="budgetSearchInput" class="form-control" placeholder="ຄົ້ນຫາຈາກ Team..." oninput="filterBudgetTable()" style="max-width: 320px;">
               <button type="button" id="budgetViewActiveBtn" class="btn-act btn-approve" onclick="setBudgetView(false)">ງົບທີ່ໃຊ້ງານ</button>
               <button type="button" id="budgetViewArchivedBtn" class="btn-act" onclick="setBudgetView(true)"><i class="fa-solid fa-box-archive mr-1"></i> Archive</button>
+              <span style="flex:1;"></span>
+              <button type="button" class="btn-act" onclick="budgetDownloadTemplate()" title="ດາວໂຫລດໄຟລ໌ຕົວຢ່າງສຳລັບ Import"><i class="fa-solid fa-file-arrow-down mr-1"></i> Template</button>
+              <label for="budgetImportInput" id="budgetImportBtn" class="btn-act" style="cursor:pointer;"><i class="fa-solid fa-file-import mr-1"></i> Import Excel</label>
+              <input type="file" id="budgetImportInput" accept=".xlsx,.xls,.csv" class="hidden" onchange="budgetHandleImportFile(event)">
+              <button type="button" class="btn-act" onclick="budgetExportExcel()"><i class="fa-solid fa-file-export mr-1"></i> Export Excel</button>
             </div>
             <div id="budgetArchiveHint" class="hidden" style="font-size:12.5px; color:var(--text-muted); margin-top:8px;">ງົບທີ່ເກັບເຂົ້າ Archive ແລ້ວ (ບໍ່ຖືກນັບໃນໂຄຕ້າ). ຍອດ "ໃຊ້ໄປແລ້ວ" ແມ່ນຄ່າຕອນ archive.</div>
           </div>
@@ -21478,6 +21483,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('budgetViewArchivedBtn').classList.toggle('btn-approve', !!archived);
       document.getElementById('budgetArchiveHint').classList.toggle('hidden', !archived);
       const add = document.getElementById('btnAddBudget'); if (add) add.style.display = archived ? 'none' : '';
+      const imp = document.getElementById('budgetImportBtn'); if (imp) imp.style.display = archived ? 'none' : '';
       loadBudgetTable();
     }
 
@@ -21529,6 +21535,101 @@ function assetStatusBadgeClass(status) {
             </td>
           </tr>`;
       }).join('')).join('');
+    }
+
+
+    /* ===================== Import / Export ງົບປະມານ (ແທັບ ຈັດການງົບປະມານ) ===================== */
+    const BUDGET_COLS = ['Team', 'Cooler Brand', 'Cooler Type', 'ໂຄຕ້າ', 'ຊື່ຮອບ'];
+
+    function budgetDownloadTemplate() {
+      const wb = XLSX.utils.book_new();
+      const sample = [
+        { 'Team': 'VTE_TEAM', 'Cooler Brand': (appCatalog.brands || [])[0] || '', 'Cooler Type': (appCatalog.types || [])[0] || '', 'ໂຄຕ້າ': 10, 'ຊື່ຮອບ': '' }
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sample, { header: BUDGET_COLS }), 'ງົບປະມານ');
+      const teams = [...new Set((dbMdeList || []).map(i => i.team))].filter(Boolean).sort();
+      const help = [];
+      const n = Math.max(teams.length, (appCatalog.brands || []).length, (appCatalog.types || []).length);
+      for (let i = 0; i < n; i++) help.push({ 'Team': teams[i] || '', 'Cooler Brand': (appCatalog.brands || [])[i] || '', 'Cooler Type': (appCatalog.types || [])[i] || '' });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(help), 'ລາຍການທີ່ໃຊ້ໄດ້');
+      XLSX.writeFile(wb, 'budget-template.xlsx');
+    }
+
+    function budgetExportExcel() {
+      const list = allBudgetsData || [];
+      if (!list.length) { alert('ບໍ່ມີຂໍ້ມູນງົບໃຫ້ Export'); return; }
+      const rows = list.map(b => {
+        const used = Number(b.used || 0), quota = Number(b.quota || 0);
+        const row = {
+          'Team': b.team || '',
+          'Cooler Brand': b.cooler_brand || '',
+          'Cooler Type': b.cooler_type || '',
+          'ໂຄຕ້າ': quota,
+          'ຊື່ຮອບ': b.period_label || '',
+          'ໃຊ້ໄປແລ້ວ': used,
+          'ຄົງເຫຼືອ': quota - used
+        };
+        if (budgetShowArchived) row['Archive ເມື່ອ'] = b.archived_at || '';
+        return row;
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), budgetShowArchived ? 'ງົບ Archive' : 'ງົບປະມານ');
+      XLSX.writeFile(wb, `budget${budgetShowArchived ? '-archive' : ''}-${exportStamp()}.xlsx`);
+    }
+
+    function budgetHandleImportFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+          const pick = (r, keys) => { for (const k of keys) { if (r[k] !== undefined && String(r[k]).trim() !== '') return r[k]; } return ''; };
+          const rows = raw.map((r, i) => ({
+            row: i + 2, // ເລກແຖວໃນ Excel (ແຖວ 1 = ຫົວຕາຕະລາງ)
+            team: String(pick(r, ['Team', 'team', 'ທີມ'])).trim(),
+            cooler_brand: String(pick(r, ['Cooler Brand', 'Brand', 'brand', 'cooler_brand'])).trim(),
+            cooler_type: String(pick(r, ['Cooler Type', 'Type', 'type', 'cooler_type'])).trim(),
+            quota: pick(r, ['ໂຄຕ້າ', 'ງົບ', 'quota', 'Quota']),
+            period_label: String(pick(r, ['ຊື່ຮອບ', 'period_label', 'Period'])).trim()
+          })).filter(r => r.team || r.cooler_brand || r.cooler_type || r.quota !== '');
+          if (!rows.length) { alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ (ຕ້ອງມີຄໍລຳ: ' + BUDGET_COLS.join(' / ') + ')'); return; }
+          if (!await appConfirm(`ພົບ ${rows.length} ແຖວ — ງົບທີ່ໃຊ້ງານຢູ່ແລ້ວ (Team+Brand+Type ກົງກັນ) ຈະຖືກອັບເດດໂຄຕ້າ, ອັນໃໝ່ຈະຖືກເພີ່ມ (ບໍ່ສົ່ງແຈ້ງເຕືອນຫາທີມ). ຕ້ອງການນຳເຂົ້າຫຼືບໍ່?`)) return;
+
+          showImportProgress('ກຳລັງນຳເຂົ້າງົບປະມານ...');
+          let inserted = 0, updated = 0, done = 0;
+          const errors = [];
+          const CHUNK = 100;
+          for (let i = 0; i < rows.length; i += CHUNK) {
+            const chunk = rows.slice(i, i + CHUNK);
+            try {
+              const res = await fetch('/api/admin/budgets/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: chunk }) });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) chunk.forEach(r => errors.push({ row: r.row, reason: data.error || 'ນຳເຂົ້າບໍ່ສຳເລັດ' }));
+              else { inserted += data.inserted || 0; updated += data.updated || 0; (data.errors || []).forEach(x => errors.push(x)); }
+            } catch (err) {
+              chunk.forEach(r => errors.push({ row: r.row, reason: 'ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້' }));
+            }
+            done += chunk.length;
+            updateImportProgress(done, rows.length, errors.length, errors);
+          }
+          hideImportProgress();
+          let msg = `ນຳເຂົ້າສຳເລັດ: ເພີ່ມໃໝ່ ${inserted} ແຖວ, ອັບເດດ ${updated} ແຖວ`;
+          if (errors.length) {
+            msg += `\nຂ້າມ ${errors.length} ແຖວ:\n` + errors.slice(0, 15).map(x => `• ແຖວ ${x.row}: ${x.reason}`).join('\n') + (errors.length > 15 ? `\n... ແລະ ອີກ ${errors.length - 15} ແຖວ` : '');
+          }
+          alert(msg);
+          loadBudgetTable();
+        } catch (err) {
+          hideImportProgress();
+          alert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດວ່າເປັນໄຟລ໌ Excel/CSV ທີ່ຖືກຕ້ອງ');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsArrayBuffer(file);
     }
 
     function filterBudgetTable() {

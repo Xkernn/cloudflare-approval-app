@@ -9426,6 +9426,65 @@ export default {
       }
     }
 
+    // 7b-import. Admin Import ງົບປະມານ (Excel -> ສົ່ງເປັນ chunk ≤200 ແຖວ): ແຖວທີ່ Team+Brand+Type ກົງກັບງົບທີ່ໃຊ້ງານຢູ່ = ອັບເດດໂຄຕ້າ, ບໍ່ກົງ = ເພີ່ມໃໝ່
+    // (ບໍ່ສົ່ງແຈ້ງເຕືອນຫາທີມ ເພື່ອບໍ່ໃຫ້ແຈ້ງເຕືອນຖ້ວມຕອນນຳເຂົ້າຫຼາຍແຖວ)
+    if (url.pathname === "/api/admin/budgets/import" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const items = Array.isArray(body.rows) ? body.rows : [];
+        if (!items.length) return Response.json({ error: "ບໍ່ມີຂໍ້ມູນ" }, { status: 400 });
+        if (items.length > 200) return Response.json({ error: "ສົ່ງໄດ້ສູງສຸດ 200 ແຖວຕໍ່ຄັ້ງ" }, { status: 400 });
+        const teamSet = new Set(((await env.DB.prepare("SELECT DISTINCT team FROM mde_list WHERE team IS NOT NULL AND TRIM(team) <> ''").all()).results || []).map((r) => String(r.team).trim()));
+        teamSet.add("ADMIN_SPARE");
+        const brandMap = new Map(((await env.DB.prepare("SELECT name FROM cooler_brands").all()).results || []).map((r) => [String(r.name).trim().toLowerCase(), r.name]));
+        const typeMap = new Map(((await env.DB.prepare("SELECT name FROM cooler_types").all()).results || []).map((r) => [String(r.name).trim().toLowerCase(), r.name]));
+        const activeRows = (await env.DB.prepare("SELECT id, team, cooler_brand, cooler_type FROM budgets WHERE archived_at IS NULL ORDER BY id").all()).results || [];
+        const keyOf = (t, b, ty) => [t, b || "", ty || ""].join("\u0001");
+        const activeByKey = new Map();
+        for (const r of activeRows) { const k = keyOf(r.team, r.cooler_brand, r.cooler_type); if (!activeByKey.has(k)) activeByKey.set(k, r.id); }
+        const errors = [];
+        const stmts = [];
+        const seen = new Set();
+        let inserted = 0, updated = 0;
+        for (const it of items) {
+          const rowNo = Number(it.row) || 0;
+          const fail = (reason) => errors.push({ row: rowNo, reason });
+          const team = String(it.team || "").trim().slice(0, 100);
+          const brandIn = String(it.cooler_brand || "").trim();
+          const typeIn = String(it.cooler_type || "").trim();
+          const quotaRaw = typeof it.quota === "string" ? it.quota.replace(/,/g, "").trim() : it.quota;
+          const quota = Number(quotaRaw);
+          const periodLabel = String(it.period_label || "").trim().slice(0, 40) || null;
+          if (!team) { fail("ຂາດ Team"); continue; }
+          if (quotaRaw === "" || quotaRaw === null || quotaRaw === undefined || !Number.isInteger(quota) || quota < 0) { fail("ໂຄຕ້າຕ້ອງເປັນຈຳນວນເຕັມ ແລະ ບໍ່ຕິດລົບ"); continue; }
+          if (teamSet.size > 1 && !teamSet.has(team)) { fail(`ບໍ່ພົບ Team "${team}" ໃນ MDE List`); continue; }
+          let brand = null, type = null;
+          if (brandIn) { brand = brandMap.get(brandIn.toLowerCase()); if (!brand) { fail(`Brand "${brandIn}" ບໍ່ຢູ່ໃນລະບົບ`); continue; } }
+          if (typeIn) { type = typeMap.get(typeIn.toLowerCase()); if (!type) { fail(`Type "${typeIn}" ບໍ່ຢູ່ໃນລະບົບ`); continue; } }
+          const k = keyOf(team, brand, type);
+          if (seen.has(k)) { fail("ແຖວຊ້ຳໃນໄຟລ໌ (Team/Brand/Type ດຽວກັນ) — ຂ້າມ, ໃຊ້ແຖວທຳອິດ"); continue; }
+          seen.add(k);
+          const existingId = activeByKey.get(k);
+          if (existingId) {
+            stmts.push(env.DB.prepare("UPDATE budgets SET quota = ?, period_label = COALESCE(?, period_label) WHERE id = ?").bind(quota, periodLabel, existingId));
+            updated++;
+          } else {
+            stmts.push(env.DB.prepare(
+              `INSERT INTO budgets (team, cooler_brand, cooler_type, quota, period_label, period_start)
+               VALUES (?1, ?2, ?3, ?4, ?5,
+                 (SELECT MAX(archived_at) FROM budgets WHERE team = ?1 AND IFNULL(cooler_brand, '') = IFNULL(?2, '') AND IFNULL(cooler_type, '') = IFNULL(?3, '') AND archived_at IS NOT NULL))`
+            ).bind(team, brand, type, quota, periodLabel));
+            inserted++;
+          }
+        }
+        if (stmts.length) await env.DB.batch(stmts);
+        return Response.json({ inserted, updated, errors });
+      } catch (e) {
+        console.error("/api/admin/budgets/import", e);
+        return Response.json({ error: "ນຳເຂົ້າງົບບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     // 7b-0. Admin Back up data: ສົ່ງອອກທຸກຕາຕະລາງຂອງ D1 ເປັນໄຟລ໌ JSON (stream ເທື່ອລະ 100 ແຖວ ບໍ່ໃຫ້ຫນ່ວຍຄວາມຈຳເຕັມ)
     // ໝາຍເຫດ: ບໍ່ລວມຮູບໃນ R2 (PHOTOS); ໄຟລ໌ມີຂໍ້ມູນລະອຽດອ່ອນ (ເຊັ່ນ hash ລະຫັດຜ່ານ) ຈຶ່ງໃຫ້ສະເພາະ admin (ຜູ້ຊ່ວຍ admin ຖືກຫ້າມ)
     if (url.pathname === "/api/admin/backup" && request.method === "GET") {
