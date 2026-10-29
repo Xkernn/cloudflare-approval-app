@@ -1374,7 +1374,7 @@ const RECEIPT_NO_CACHE = { "Cache-Control": "no-store", "Referrer-Policy": "no-r
 
 // ຮັນງານພື້ນຫຼັງ (ບໍ່ໃຫ້ການຕອບກັບຊ້າ ເມື່ອທີມມີ user ຫຼາຍຄົນ)
 function runInBackground(ctx, promise) {
-  const safe = Promise.resolve(promise).catch(() => {});
+  const safe = Promise.resolve(promise).catch((e) => console.error("background task failed:", e && e.message ? e.message : e));
   if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(safe);
   return safe;
 }
