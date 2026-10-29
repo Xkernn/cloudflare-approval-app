@@ -670,6 +670,7 @@ async function applyCancelContractSignatures(env, id, row, body) {
     const next = updated.sig_dsm ? "completed" : "awaiting_dsm";
     await env.DB.prepare("UPDATE cancel_contracts SET status = ? WHERE id = ?").bind(next, id).run();
     updated.status = next;
+    if (next === "completed") await advanceAssetAfterCancelSigned(env, updated);
     try {
       await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
         title: next === "completed" ? "ໃບຮັບຕູ້ເຂົ້າສາງ (T-) ເຊັນຄົບແລ້ວ" : "ໃບຮັບຕູ້ເຂົ້າສາງ (T-) ລໍຖ້າ DSM ເຊັນ",
@@ -2238,6 +2239,55 @@ async function advanceAssetAfterLoanSigned(env, contract) {
     }
   } catch (e) {
     console.error("advanceAssetAfterLoanSigned", e);
+  }
+}
+
+// ໃບ T- (cancel_contracts, ຮັບຕູ້ເຂົ້າສາງ) ເຊັນຄົບ (MDE + DSM = completed) -> Asset "ເກັບຄືນສາງ" ທີ່ຜູກກັບໃບນີ້ ຈາກ "ຍັງບໍ່ທັນເຊັນເອກະສານ" ເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp"
+async function advanceAssetAfterCancelSigned(env, contract) {
+  try {
+    if (!contract) return;
+    const tracking = String(contract.tracking_no || "").trim();
+    if (!contract.asset_id && !tracking) return;
+    const FROM = "ຍັງບໍ່ທັນເຊັນເອກະສານ";
+    const TO = "ຍັງບໍ່ຊັບມິດ PowerApp";
+    const asset = await env.DB.prepare(
+      `SELECT id, tracking_no, outlet_name, mde_code FROM assets
+       WHERE status = ? AND (id = ? OR (? != '' AND tracking_no = ?)) AND IFNULL(doc_type, '') = ? LIMIT 1`
+    ).bind(FROM, contract.asset_id || -1, tracking, tracking, RETURN_TO_WAREHOUSE_DOC_TYPE).first();
+    if (!asset) return;
+    const upd = await env.DB.prepare(
+      "UPDATE assets SET status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status = ?"
+    ).bind(TO, asset.id, FROM).run();
+    if (upd.meta && upd.meta.changes > 0) {
+      await notifyMdeUserOfStatusChange(env, asset.mde_code, asset.tracking_no, asset.outlet_name, TO);
+    }
+  } catch (e) {
+    console.error("advanceAssetAfterCancelSigned", e);
+  }
+}
+
+// ແກ້ຕົກຄ້າງ (self-heal): Asset ທີ່ຍັງເປັນ "ຍັງບໍ່ທັນເຊັນເອກະສານ" ທັງທີ່ເອກະສານທີ່ຜູກກັນ (ໃບ DOC- / ໃບ T-) ເຊັນຄົບ (completed) ແລ້ວ
+// -> ປ່ຽນເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp". ໃຊ້ກັບຂໍ້ມູນເກົ່າ ແລະ ກໍລະນີທີ່ ຕອນເຊັນຜູກ Asset ບໍ່ທັນສຳເລັດ. ບໍ່ throw error
+async function reconcileSignedAssets(env) {
+  try {
+    const FROM = "ຍັງບໍ່ທັນເຊັນເອກະສານ";
+    const TO = "ຍັງບໍ່ຊັບມິດ PowerApp";
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE assets SET status = ?1, last_update = CURRENT_TIMESTAMP
+         WHERE status = ?2 AND IFNULL(doc_type, '') != ?3
+           AND EXISTS (SELECT 1 FROM loan_contracts lc WHERE lc.status = 'completed'
+                        AND (lc.asset_id = assets.id OR (IFNULL(lc.tracking_no, '') != '' AND lc.tracking_no = assets.tracking_no)))`
+      ).bind(TO, FROM, RETURN_TO_WAREHOUSE_DOC_TYPE),
+      env.DB.prepare(
+        `UPDATE assets SET status = ?1, last_update = CURRENT_TIMESTAMP
+         WHERE status = ?2 AND IFNULL(doc_type, '') = ?3
+           AND EXISTS (SELECT 1 FROM cancel_contracts cc WHERE cc.status = 'completed'
+                        AND (cc.asset_id = assets.id OR (IFNULL(cc.tracking_no, '') != '' AND cc.tracking_no = assets.tracking_no)))`
+      ).bind(TO, FROM, RETURN_TO_WAREHOUSE_DOC_TYPE),
+    ]);
+  } catch (e) {
+    console.error("reconcileSignedAssets", e);
   }
 }
 
@@ -6329,6 +6379,7 @@ export default {
           return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ ຫຼືມີຄົນເຊັນໄປກ່ອນແລ້ວ" }, { status: 409 });
         }
         if (cfg.table === "loan_contracts") await advanceAssetAfterLoanSigned(env, doc);
+        else if (cfg.table === "cancel_contracts") await advanceAssetAfterCancelSigned(env, doc);
         try {
           await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
             title: `DSM ເຊັນ${cfg.title}ແລ້ວ`,
@@ -6426,6 +6477,7 @@ export default {
         }
         if (doc.sig_dsm) await deleteR2Photos(env, [doc.sig_dsm]); // ລາຍເຊັນເກົ່າ (ຖ້າມີ) ຖືກແທນທີ່ແລ້ວ
         if (cfg.table === "loan_contracts" && doc.sig_mde) await advanceAssetAfterLoanSigned(env, doc);
+        else if (cfg.table === "cancel_contracts" && doc.sig_mde) await advanceAssetAfterCancelSigned(env, doc);
         try {
           await sendWebPushToRoles(env, ["admin", "assistant_admin"], {
             title: doc.sig_mde ? `DSM ເຊັນ${cfg.title}ແລ້ວ — ເອກະສານສຳເລັດ` : `DSM ເຊັນ${cfg.title}ແລ້ວ`,
@@ -8404,6 +8456,7 @@ export default {
 
       // ไม่รวม Asset ที่จัดส่งสำเร็จแล้ว (Status = ສຳເລັດ) เพราะย้ายไปอยู่หน้า "ປະຫວັດການຈັດສົ່ງ Asset" แทน
       const DELIVERED_STATUS = "ສຳເລັດ";
+      await reconcileSignedAssets(env); // Asset ທີ່ເອກະສານເຊັນຄົບແລ້ວ ແຕ່ສະຖານະຍັງຄ້າງ -> ປ່ຽນເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp"
       let results;
       if (canViewAll(requester.role)) {
         ({ results } = await env.DB.prepare(
@@ -12332,6 +12385,7 @@ export default {
         .catch((e) => console.error("scheduled runSignReminderEmails", e)));
       return;
     }
+    ctx.waitUntil(reconcileSignedAssets(env));
     ctx.waitUntil(runAutomatedNotificationChecks(env));
   }
 };
