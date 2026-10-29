@@ -5780,6 +5780,7 @@ body.dlv-popup-open { overflow: hidden; }
           </div>
 
           <div id="requestConditionPills" class="at-pills" role="tablist" aria-label="ສະພາບ"></div>
+          <div id="requestStagePills" class="at-pills" role="tablist" aria-label="ສະຖານະ"></div>
 
           <div class="at-toolbar-filters">
             <div id="requestAdvancedFilters" style="display: contents;">
@@ -28223,6 +28224,9 @@ function assetStatusBadgeClass(status) {
     /* ===================== Asset Request ===================== */
     let currentRequestsData = [];
     let requestConditionFilter = ''; // '' / 'new' / 'used'
+    let requestStageFilter = ''; // '' / 'admin' (ລໍຖ້າ Admin ກວດສອບ) / 'wh' (ລໍຖ້າສາງອະນຸມັດ)
+    const REQUEST_STAGE_COLOR = { admin: '#d97706', wh: '#2563eb' };
+    const requestStageKey = r => (r.admin_checked_at ? 'wh' : 'admin');
     const REQUEST_CONDITION_COLOR = { new: '#15803d', used: '#C4780F' };
 
     async function loadAssetRequests() {
@@ -28239,6 +28243,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('requestBrandFilter').value = '';
       document.getElementById('requestTypeFilter').value = '';
       requestConditionFilter = '';
+      requestStageFilter = '';
       populateRequestFilterOptions();
       // Brand/Type/Status filter มีประโยชน์เฉพาะ admin/warehouse ที่เห็นคำขอจากทุกทีม
       document.getElementById('requestAdvancedFilters').classList.toggle('hidden', !canManage);
@@ -28326,17 +28331,40 @@ function assetStatusBadgeClass(status) {
         return haystack.includes(q);
       });
       const cond = r => (r.asset_condition === 'used' ? 'used' : 'new');
+      // ແຕ່ລະແຖວ Pill ນັບຈຳນວນໂດຍໃຊ້ຕົວກອງຂອງແຖວອື່ນ (ສະພາບ ↔ ສະຖານະ) ເພື່ອໃຫ້ຕົວເລກຖືກຕ້ອງ
+      const forCond = requestStageFilter ? base.filter(r => requestStageKey(r) === requestStageFilter) : base;
+      const forStage = requestConditionFilter ? base.filter(r => cond(r) === requestConditionFilter) : base;
       const counts = { new: 0, used: 0 };
-      base.forEach(r => { counts[cond(r)]++; });
+      forCond.forEach(r => { counts[cond(r)]++; });
       document.getElementById('requestConditionPills').innerHTML = atPillsHtml([
-        { value: '', label: 'ທັງໝົດ', color: '', count: base.length },
+        { value: '', label: 'ທັງໝົດ', color: '', count: forCond.length },
         { value: 'new', label: 'ໃໝ່', color: REQUEST_CONDITION_COLOR.new, count: counts.new },
         { value: 'used', label: 'ມືສອງ', color: REQUEST_CONDITION_COLOR.used, count: counts.used }
       ], requestConditionFilter, 'setRequestConditionPill');
 
-      const filtered = requestConditionFilter ? base.filter(r => cond(r) === requestConditionFilter) : base;
+      // Pill ສະຖານະ (ຂັ້ນອະນຸມັດ) — ສາງເຫັນສະເພາະຂັ້ນສາງ ຈຶ່ງບໍ່ສະແດງແຖວນີ້
+      const stageBox = document.getElementById('requestStagePills');
+      const showStage = currentUser.role !== 'warehouse';
+      stageBox.classList.toggle('hidden', !showStage);
+      if (showStage) {
+        const sc = { admin: 0, wh: 0 };
+        forStage.forEach(r => { sc[requestStageKey(r)]++; });
+        stageBox.innerHTML = atPillsHtml([
+          { value: '', label: 'ທຸກສະຖານະ', color: '', count: forStage.length },
+          { value: 'admin', label: 'ລໍຖ້າ Admin ກວດສອບ', color: REQUEST_STAGE_COLOR.admin, count: sc.admin },
+          { value: 'wh', label: 'ລໍຖ້າສາງອະນຸມັດ', color: REQUEST_STAGE_COLOR.wh, count: sc.wh }
+        ], requestStageFilter, 'setRequestStagePill');
+      }
+
+      const filtered = base.filter(r =>
+        (!requestConditionFilter || cond(r) === requestConditionFilter) &&
+        (!showStage || !requestStageFilter || requestStageKey(r) === requestStageFilter));
       document.getElementById('requestResultCount').innerHTML = `ສະແດງ <b>${filtered.length}</b> / ${all.length} ລາຍການ`;
       renderRequestCardList(filtered);
+    }
+    function setRequestStagePill(value) {
+      requestStageFilter = value;
+      filterAssetRequests();
     }
     function setRequestConditionPill(value) {
       requestConditionFilter = value;
@@ -28352,6 +28380,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('requestBrandFilter').value = '';
       document.getElementById('requestTypeFilter').value = '';
       requestConditionFilter = '';
+      requestStageFilter = '';
       filterAssetRequests();
     }
 
