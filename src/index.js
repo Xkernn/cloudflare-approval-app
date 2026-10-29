@@ -7166,12 +7166,15 @@ export default {
         const user = await env.DB.prepare(
           "SELECT id, email, status FROM users WHERE UPPER(mde_code) = UPPER(?) OR UPPER(email) = UPPER(?)"
         ).bind(identifier, identifier).first();
+        console.log("[forgot-otp] lookup", JSON.stringify({ found: !!user, status: user && user.status, hasEmail: !!(user && user.email) }));
 
         if (user && user.status === "approved" && user.email) {
           // ຈຳກັດ: ບໍ່ເກີນ 3 ຄັ້ງ/ຊົ່ວໂມງ/ຄົນ (ກັນສະແປມອີເມວ ແລະ ກັນໃຊ້ໂຄຕາ Gmail ໝົດ)
           const recent = await env.DB.prepare(
             "SELECT COUNT(*) AS c FROM password_reset_requests WHERE user_id = ? AND requested_at > datetime('now', '-1 hour')"
           ).bind(user.id).first();
+          console.log("[forgot-otp] recent requests in last hour:", recent?.c || 0);
+          if ((recent?.c || 0) >= 3) console.warn("[forgot-otp] SKIPPED: rate limit 3/hour reached");
           if ((recent?.c || 0) < 3) {
             const code = generateResetCode();
             const codeHash = await hashPassword(code);
@@ -7183,6 +7186,7 @@ export default {
               ).bind(user.id, codeHash),
             ]);
             const shown = code; // 6 ຕົວເລກ
+            console.log("[forgot-otp] sending to", user.email);
             runInBackground(ctx, sendEmail(env, {
               to: user.email,
               subject: "ລະຫັດ OTP ສຳລັບຕັ້ງລະຫັດຜ່ານໃໝ່",

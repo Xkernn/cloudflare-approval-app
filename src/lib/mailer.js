@@ -101,4 +101,6 @@ export async function sendEmail(env, { to, subject, text, html }) {
     if (res.status === 401) cachedToken = null;
     throw new Error(`GMAIL_SEND_FAILED ${res.status}: ${(await res.text()).slice(0, 300)}`);
   }
+  const sent = await res.json().catch(() => ({}));
+  console.log("[mailer] Gmail accepted message id=" + (sent.id || "?") + " labels=" + JSON.stringify(sent.labelIds || []) + " to=" + toAddr);
 }
