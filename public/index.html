@@ -24419,7 +24419,13 @@ function assetStatusBadgeClass(status) {
     async function submitLoanContract() {
       if (loanSaving || loanSaved) return; // ກຳລັງບັນທຶກ ຫຼື ບັນທຶກແລ້ວ -> ບໍ່ສ້າງຊ້ຳ
       const outletCode = document.getElementById('loanManualOutletCode').value;
-      if (!outletCode) return;
+      // ໃບຮ່າງ (ແກ້ໄຂໃບເດີມ) ບໍ່ຕ້ອງມີ Outlet Code: ຮ້ານທີ່ບໍ່ຢູ່ໃນ Outlet Master (ເຊັ່ນ Asset ດ່ວນ) ບໍ່ມີລະຫັດຮ້ານ -> ເມື່ອກ່ອນ return ງຽບໆ ເຮັດໃຫ້ປຸ່ມກົດແລ້ວບໍ່ມີຫຍັງເກີດຂຶ້ນ
+      // ໃບໃໝ່ (ບໍ່ມີ Asset) ຍັງຕ້ອງເລືອກຮ້ານ — ແຈ້ງເຕືອນຊັດເຈນແທນການງຽບ
+      if (!outletCode && !loanEditingContractId) {
+        alert('ກະລຸນາເລືອກຮ້ານກ່ອນບັນທຶກ');
+        loanShowStep(1);
+        return;
+      }
       if (!document.getElementById('loanManualMde').value.trim()) {
         alert('ກະລຸນາປ້ອນ MDE Code');
         return;
