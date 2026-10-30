@@ -42,13 +42,15 @@ function inferDoorsFromCooler(...texts) {
   return { doors, variant: doors === 1 && /modern\s*small/.test(t) ? "modern_small" : null };
 }
 
-// ສະຕ໋ອກສາງ (ຢູ່ໃນສາງ + ສະພາບໃໝ່) ຕ່ຳກວ່າງົບທີ່ຍັງຄ້າງເບີກ ຕໍ່ Brand + Type: 1 ປະຕູ = 1D_AMD, 2 ປະຕູ = 2D_MD, 3 ປະຕູ = 3D_MD
+// ສະຕ໋ອກສາງ (ຢູ່ໃນສາງ + ສະພາບໃໝ່) ຕ່ຳກວ່າງົບທີ່ຍັງຄ້າງເບີກ ຕໍ່ Brand + Type: 1 ປະຕູ = 1D_AMD (Wine 1 ປະຕູ = 1D_T), 2 ປະຕູ = 2D_MD, 3 ປະຕູ = 3D_MD
 // ງົບຄ້າງເບີກ = ໂຄຕ້າລວມທຸກທີມ - ຄຳຂໍ 'ໃໝ່' ທີ່ອະນຸມັດແລ້ວ. ຄືນສະເພາະກຸ່ມທີ່ສະຕ໋ອກຕ່ຳກວ່າງົບ
 const BUDGET_MODEL_BY_DOORS = { 1: '1D_AMD', 2: '2D_MD', 3: '3D_MD' };
 // model ທີ່ໃຊ້ກວດງົບ: 1 ປະຕູ = 1D_AMD, 1 ປະຕູ Modern Small = 1D_ASM, 2 ປະຕູ = 2D_MD, 3 ປະຕູ = 3D_MD (table cooler ບໍ່ກວດ)
-function budgetModelFor(...texts) {
+// brand ເປັນ Wine: ຕູ້ Wine Cooler 1 ປະຕູ ໃຊ້ Model 1D_T (ບໍ່ແມ່ນ 1D_AMD) — 2/3 ປະຕູ ຍັງເປັນ 2D_MD / 3D_MD ຄືເກົ່າ
+function budgetModelFor(brand, ...texts) {
   const inf = inferDoorsFromCooler(...texts);
   if (inf.variant === 'table_cooler') return null;
+  if (inf.doors === 1 && /wine/i.test(String(brand || '') + ' ' + texts.join(' '))) return '1D_T';
   if (inf.doors === 1 && inf.variant === 'modern_small') return '1D_ASM';
   return BUDGET_MODEL_BY_DOORS[inf.doors] || null;
 }
@@ -67,7 +69,7 @@ async function computeStockBudgetAlerts(env) {
   const stockMap = {}; for (const r of stock) stockMap[r.brand + '\u0001' + r.model] = r.cnt;
   const alerts = [];
   for (const b of budgets) {
-    const model = budgetModelFor(b.type);
+    const model = budgetModelFor(b.brand, b.type);
     if (!model) continue;
     const outstanding = Math.max((b.total || 0) - (b.approved_in_period || 0), 0);
     const inStock = stockMap[b.brand + '\u0001' + model] || 0;
@@ -10579,7 +10581,7 @@ export default {
           // ເຕືອນເມື່ອສະຕ໋ອກສາງ (ໃໝ່) ຕ່ຳກວ່າງົບປະມານທີ່ຕັ້ງໄວ້: ສະຕ໋ອກ "ຢູ່ໃນສາງ + ສະພາບໃໝ່" ຂອງ Brand + Model ຕາມຈຳນວນປະຕູ
           // (1 ປະຕູ = 1D_AMD, 1 ປະຕູ Modern Small = 1D_ASM, 2 ປະຕູ = 2D_MD, 3 ປະຕູ = 3D_MD) ຕ້ອງ >= ງົບທີ່ຍັງຄ້າງເບີກ (ໂຄຕ້າທັງໝົດ - ທີ່ອະນຸມັດແລ້ວ) ຂອງທຸກທີມ
           if ((reqRow.asset_condition || 'new') === 'new') {
-            const budgetModel = budgetModelFor(reqRow.cooler_type);
+            const budgetModel = budgetModelFor(reqRow.cooler_brand, reqRow.cooler_type);
             if (budgetModel) {
               const q = await env.DB.prepare(
                 `SELECT IFNULL(SUM(quota), 0) AS total FROM budgets
