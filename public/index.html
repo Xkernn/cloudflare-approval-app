@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- impeccable-disable broken-image: <img> ທີ່ບໍ່ມີ src ຖືກຕັ້ງຄ່າດ້ວຍ JS (blob URL ຜ່ານ token) ຕາມການອອກແບບ -->
+
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -451,7 +453,7 @@
     .loan-step-dot {
       width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 2px solid var(--border-color);
       color: var(--text-muted); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;
-      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1); flex-shrink: 0;
       box-shadow: 0 1px 2px rgba(10, 31, 43, 0.06);
     }
     .loan-step.active .loan-step-dot {
@@ -464,7 +466,7 @@
     }
     .loan-step.done .loan-step-dot::before {
       content: '\2713'; font-size: 15px; font-weight: 800; display: block;
-      animation: loanCheckPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: loanCheckPop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
     @keyframes loanDotPulse {
       0%, 100% { box-shadow: 0 0 0 5px var(--primary-soft), 0 4px 10px rgba(12, 140, 166, 0.28); }
@@ -680,7 +682,7 @@
     .at-pill { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 8px 0 12px; border-radius: 999px; border: 1px solid var(--border-color); background: #fff; color: var(--text-main); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: inherit; transition: all .15s; }
     .at-pill:hover { border-color: var(--pc, var(--primary)); background: #FAFDFD; }
     .at-pill-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc, #8FA6AB); flex-shrink: 0; }
-    .at-pill-count { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #EAF0F0; color: #4B6469; font-size: 11.5px; font-weight: 700; text-align: center; }
+    .at-pill-count { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #EAF0F0; color: #4B6469; font-size: 12px; font-weight: 700; text-align: center; }
     .at-pill.active { background: var(--pc, var(--primary)); border-color: var(--pc, var(--primary)); color: #fff; box-shadow: 0 2px 8px rgba(10,31,43,0.18); }
     .at-pill.active .at-pill-dot { background: #fff; }
     .at-pill.active .at-pill-count { background: rgba(255,255,255,0.25); color: #fff; }
@@ -737,7 +739,7 @@
     .rt-whs { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 5px; }
     .st-wh-head { margin: 8px 0 2px 14px; font-size: 13px; font-weight: 700; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
     .trip-prov-chip.trip-prov-empty { background: #E2E8F0; color: #64748B; box-shadow: none; font-size: 13px; font-weight: 600; }
-    .trip-prov-hint { font-size: 11.5px; font-weight: 600; color: var(--text-muted); align-self: center; }
+    .trip-prov-hint { font-size: 12px; font-weight: 600; color: var(--text-muted); align-self: center; }
     .trip-no-line { font-size: 12.5px; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .trip-no-line i { color: #8FA6AB; }
     .mgmt-card-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border-color); }
@@ -854,7 +856,7 @@
         border: 5px solid var(--ink);
         box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
         transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
-        transition: transform .55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
+        transition: transform .55s cubic-bezier(0.22, 1, 0.36, 1), opacity .2s ease;
       }
       .mobile-tab-indicator.on { transform: translateX(var(--ind-x, 0px)) scale(1); opacity: 1; }
 
@@ -867,7 +869,7 @@
       .mobile-tab-icon {
         position: relative; display: flex; align-items: center; justify-content: center;
         width: 22px; height: 22px; font-size: 18px; line-height: 1; color: #7FA0AA;
-        transition: transform .5s cubic-bezier(0.34, 1.56, 0.64, 1), color .2s;
+        transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1), color .2s;
       }
       .mobile-tab-label {
         font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: center; max-width: 100%; height: 26px;
@@ -961,10 +963,10 @@
         width: min(62px, 100%); aspect-ratio: 1; border-radius: 20px; font-size: 25px;
         background: var(--tbg); color: var(--tfg);
         box-shadow: 0 8px 16px -8px rgba(12, 60, 70, .35), inset 0 1px 0 rgba(255,255,255,.7);
-        transition: transform .18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform .18s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .mm-tile:active .mm-ic { transform: scale(.9); }
-      .mm-lbl { font-size: 11.5px; font-weight: 600; line-height: 1.25; text-align: center; max-width: 100%;
+      .mm-lbl { font-size: 12px; font-weight: 600; line-height: 1.25; text-align: center; max-width: 100%;
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
       .mm-ic .menu-badge { position: absolute; top: -5px; right: -5px; margin: 0; font-size: 10px; padding: 0 5px; min-width: 18px;
         text-align: center; line-height: 18px; border: 2px solid #fff; box-sizing: border-box; }
@@ -1017,7 +1019,7 @@
         border: none; background: var(--primary, #0A7890); color: #fff; font-size: 20px;
         box-shadow: 0 6px 18px rgba(6, 20, 27, 0.35); z-index: 225; cursor: grab;
         touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
-        transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, left 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, left 0.32s cubic-bezier(0.22, 1, 0.36, 1);
       }
       .notif-fab.dragging { cursor: grabbing; transform: scale(1.1); box-shadow: 0 10px 26px rgba(6, 20, 27, 0.45); transition: none; }
       .notif-fab.fab-hide, .notif-fab.kb-open-hide { display: none; }
@@ -1158,7 +1160,7 @@
        - hover ຫໍ່ດ້ວຍ (hover: hover) ເພື່ອບໍ່ໃຫ້ຄ້າງເທິງມືຖື
        - ປິດທັງໝົດອັດຕະໂນມັດເມື່ອຜູ້ໃຊ້ຕັ້ງ "ຫຼຸດການເຄື່ອນໄຫວ" ໃນເຄື່ອງ
        ============================================================ */
-    :root { --ease-out: cubic-bezier(0.22, 0.8, 0.3, 1); --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); }
+    :root { --ease-out: cubic-bezier(0.22, 0.8, 0.3, 1); --ease-spring: cubic-bezier(0.22, 1, 0.36, 1); }
 
     @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
     @keyframes viewIn   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -1468,7 +1470,7 @@
     #loanChips { box-shadow: 0 2px 10px rgba(10,31,43,.12), 0 0 0 1px rgba(10,31,43,.05); }
     @media (max-width: 560px) {
       #loanChips { display: flex; width: 100%; max-width: 100%; gap: 3px; padding: 4px; overflow: hidden; margin-bottom: 18px; }
-      #loanChips .loan-chip { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; align-items: center; gap: 3px; padding: 8px 4px; font-size: 11.5px; line-height: 1.25; white-space: normal; text-align: center; border-radius: 18px; }
+      #loanChips .loan-chip { flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; align-items: center; gap: 3px; padding: 8px 4px; font-size: 12px; line-height: 1.25; white-space: normal; text-align: center; border-radius: 18px; }
       #loanChips .loan-chip i { font-size: 14px; }
       #loanChips .loan-chip.active { box-shadow: 0 3px 8px -3px rgba(15,123,79,.55); }
       #loanChips .loan-chip-count { position: absolute; top: 2px; right: 4px; font-size: 10px; padding: 0 5px; min-width: 16px; }
@@ -1505,7 +1507,7 @@
     .pb-rg-pct.bad { color: var(--danger); }
     .pb-region .pb-bar { width: 100%; }
     .pb-rg-num { font-size: 12.5px; color: var(--text-muted); } .pb-rg-num b { color: var(--ink); font-size: 14px; }
-    .pb-rg-break { font-size: 11.5px; color: var(--text-muted); }
+    .pb-rg-break { font-size: 12px; color: var(--text-muted); }
     .pb-rg-pvs { display: flex; flex-wrap: wrap; gap: 4px; }
     .pb-rg-pv { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #F1F6F7; color: #4B6168; font-variant-numeric: tabular-nums; }
     .pb-rg-pv.none { background: transparent; border: 1px dashed #CBD8DB; color: #9AAEB3; font-weight: 500; }
@@ -1518,7 +1520,7 @@
     .pb-chart:nth-child(2) { animation-delay: .06s; } .pb-chart:nth-child(3) { animation-delay: .12s; }
     .pb-chart-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .pb-chart-title small { font-weight: 500; font-size: 12px; color: var(--text-muted); }
-    .pb-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-muted); }
+    .pb-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
     .pb-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
     .pb-hbars { display: flex; flex-direction: column; gap: 4px; max-height: 330px; overflow-y: auto; padding-right: 2px; }
     .pb-hb { display: grid; grid-template-columns: minmax(70px, 108px) 1fr auto; align-items: center; gap: 10px; width: 100%; border: none; background: transparent; font-family: inherit; text-align: left; cursor: pointer; padding: 6px 8px; border-radius: 10px; transition: background .15s, opacity .2s; }
@@ -1576,7 +1578,7 @@
     .sd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px; }
     .sd-card { margin-bottom: 0; padding: 18px 20px; }
     .sd-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-    .sd-title small { font-weight: 500; font-size: 11.5px; color: var(--text-muted); }
+    .sd-title small { font-weight: 500; font-size: 12px; color: var(--text-muted); }
     .sd-empty { font-size: 13px; color: var(--text-muted); padding: 8px 0; }
     .sd-hb { display: grid; grid-template-columns: minmax(70px, 120px) 1fr auto; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; font-family: inherit; text-align: left; cursor: pointer; padding: 5px 6px; border-radius: 10px; transition: background .15s, opacity .2s; }
     .sd-hb:hover { background: #F4FAFA; } .sd-hb.sel { background: var(--primary-soft); } .sd-hb.dim { opacity: .4; }
@@ -2063,7 +2065,7 @@
     .nf-item.open .nf-body { -webkit-line-clamp: unset; display: block; }
     .nf-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .nf-new { font-size: 11px; font-weight: 700; color: #fff; background: var(--c); padding: 2px 9px; border-radius: 999px; letter-spacing: .02em; }
-    .nf-tag { font-size: 11.5px; font-weight: 600; color: var(--c); background: var(--cs); padding: 2px 9px; border-radius: 999px; }
+    .nf-tag { font-size: 12px; font-weight: 600; color: var(--c); background: var(--cs); padding: 2px 9px; border-radius: 999px; }
     .nf-go { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--c); }
     .nf-go i { transition: transform .18s; font-size: 11px; }
     .nf-item:hover .nf-go i { transform: translateX(4px); }
@@ -2304,7 +2306,7 @@
       background: linear-gradient(135deg, #22D3BF, #0A7890); border: 5px solid var(--bg-body);
       box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
-      transition: transform .55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
+      transition: transform .55s cubic-bezier(0.22, 1, 0.36, 1), opacity .2s ease;
     }
     .loan-chip-indicator.on { transform: translateX(var(--ind-x, 0px)) scale(1); opacity: 1; }
 
@@ -2323,7 +2325,7 @@
     #loanChips .loan-chip i {
       display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;
       font-size: 17px; color: #7FA0AA;
-      transition: transform .5s cubic-bezier(0.34, 1.56, 0.64, 1), color .2s;
+      transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1), color .2s;
     }
     #loanChips .loan-chip:active i { transform: scale(.88); }
     #loanChips .loan-chip.active, #loanChips .loan-chip.active:hover { color: #6FE3D6; }
@@ -2332,7 +2334,7 @@
     #loanChips .loan-chip-count {
       position: absolute; top: 4px; left: calc(50% + 8px); right: auto;
       font-size: 10px; padding: 0 5px; min-width: 16px; line-height: 16px; text-align: center;
-      transition: transform .5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1);
     }
     #loanChips .loan-chip.active .loan-chip-count { transform: translateY(calc(var(--lift) * -1)); }
     #loanChips .loan-chip:focus-visible { outline: 2px solid #6FE3D6; outline-offset: -4px; border-radius: 20px; }
@@ -2966,7 +2968,7 @@ body.dlv-popup-open { overflow: hidden; }
         <div id="admin-sec-catalog" class="content-card hidden">
           <div style="display:flex; gap:20px; flex-wrap:wrap; padding:16px;">
             <div style="flex:1; min-width:280px;">
-              <h3 style="font-size:15px; font-weight:700; margin-bottom:10px;">Cooler Brand</h3>
+              <h2 style="font-size:15px; font-weight:700; margin-bottom:10px;">Cooler Brand</h2>
               <div class="table-container">
                 <table>
                   <thead>
@@ -3341,7 +3343,7 @@ body.dlv-popup-open { overflow: hidden; }
         </div>
 
         <div class="content-card" style="max-width: 560px; margin-top: 16px;">
-          <h3 style="font-size:15px; font-weight:700; margin-bottom:8px;"><i class="fa-solid fa-truck-fast mr-1"></i> ຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ <span id="dispatchListCount" style="color:var(--text-muted); font-weight:500;"></span></h3>
+          <h2 style="font-size:15px; font-weight:700; margin-bottom:8px;"><i class="fa-solid fa-truck-fast mr-1"></i> ຕູ້ທີ່ຢູ່ເທິງລົດດຽວນີ້ <span id="dispatchListCount" style="color:var(--text-muted); font-weight:500;"></span></h2>
           <button type="button" id="dispatchCloseBtn" class="btn-submit" style="margin:0 0 10px; background:#0f172a;" onclick="dispatchCloseTruck()" disabled>
             <i class="fa-solid fa-lock mr-1"></i> ປິດລົດ (ຈົບການຂຶ້ນຕູ້) <span id="dispatchCloseCount"></span>
           </button>
@@ -3419,7 +3421,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-qrcode"></i>
                 <input type="file" id="deliverPhotoQrInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'qr')">
               </div>
-              <img id="deliverPhotoQrPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="deliverPhotoQrPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="form-group">
@@ -3427,7 +3429,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-hashtag"></i>
                 <input type="file" id="deliverPhotoSerialInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'serial')">
               </div>
-              <img id="deliverPhotoSerialPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="deliverPhotoSerialPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="loan-nav-btns">
@@ -3443,7 +3445,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-file-invoice-dollar"></i>
                 <input type="file" id="deliverPhotoCapexInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'capex')">
               </div>
-              <img id="deliverPhotoCapexPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="deliverPhotoCapexPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="form-group">
@@ -3451,7 +3453,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-camera"></i>
                 <input type="file" id="deliverPhotoAssetInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'asset')">
               </div>
-              <img id="deliverPhotoAssetPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="deliverPhotoAssetPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="loan-nav-btns">
@@ -3467,7 +3469,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-file-lines"></i>
                 <input type="file" id="deliverPhotoDocumentInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'document')">
               </div>
-              <img id="deliverPhotoDocumentPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 16px;">
+              <img alt="" id="deliverPhotoDocumentPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 16px;">
             </div>
 
             <div class="loan-nav-btns">
@@ -4143,7 +4145,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-qrcode"></i>
                 <input type="file" id="noDocPhotoQrInput" class="form-control" accept="image/*" onchange="handleNoDocPhotoSelect(event, 'qr')">
               </div>
-              <img id="noDocPhotoQrPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="noDocPhotoQrPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="form-group">
@@ -4151,7 +4153,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-hashtag"></i>
                 <input type="file" id="noDocPhotoSerialInput" class="form-control" accept="image/*" onchange="handleNoDocPhotoSelect(event, 'serial')">
               </div>
-              <img id="noDocPhotoSerialPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="noDocPhotoSerialPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="form-group">
@@ -4159,7 +4161,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-file-invoice-dollar"></i>
                 <input type="file" id="noDocPhotoCapexInput" class="form-control" accept="image/*" onchange="handleNoDocPhotoSelect(event, 'capex')">
               </div>
-              <img id="noDocPhotoCapexPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="noDocPhotoCapexPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <div class="form-group">
@@ -4167,7 +4169,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-camera"></i>
                 <input type="file" id="noDocPhotoAssetInput" class="form-control" accept="image/*" onchange="handleNoDocPhotoSelect(event, 'asset')">
               </div>
-              <img id="noDocPhotoAssetPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 16px;">
+              <img alt="" id="noDocPhotoAssetPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 16px;">
             </div>
 
             <p id="noDocAlert" class="hidden alert" style="font-size: 13px;"></p>
@@ -4206,7 +4208,7 @@ body.dlv-popup-open { overflow: hidden; }
 
         <div class="content-card">
           <div style="padding: 16px 16px 0 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-            <h3 style="margin:0;">ລາຍການທີ່ບັນທຶກໄວ້</h3>
+            <h2 style="font-size:1.17em; margin:0;">ລາຍການທີ່ບັນທຶກໄວ້</h2>
             <input type="text" id="noDocSearchInput" class="form-control" placeholder="ຄົ້ນຫາ Outlet Code/Name, MDE Code..." oninput="filterNoDocDeliveries()" style="max-width: 280px;">
           </div>
           <div class="mgmt-card-list" id="noDocDeliveryList"></div>
@@ -4321,7 +4323,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-camera"></i>
                 <input type="file" id="ceTakenPhotoInput" class="form-control" accept="image/*" onchange="handleCoolerEventPhotoSelect(event)">
               </div>
-              <img id="ceTakenPhotoPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="ceTakenPhotoPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
 
             <p id="ceAlert" class="hidden alert" style="font-size: 13px;"></p>
@@ -4359,7 +4361,7 @@ body.dlv-popup-open { overflow: hidden; }
 
         <div class="content-card">
           <div style="padding: 16px 16px 0 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-            <h3 style="margin:0;">ລາຍການທີ່ບັນທຶກໄວ້</h3>
+            <h2 style="font-size:1.17em; margin:0;">ລາຍການທີ່ບັນທຶກໄວ້</h2>
             <input type="text" id="ceSearchInput" class="form-control" placeholder="ຄົ້ນຫາສະຖານທີ່, Event, QR/Serial/CapEx..." oninput="filterCoolerEvents()" style="max-width: 280px;">
           </div>
           <div class="mgmt-card-list" id="coolerEventList"></div>
@@ -4462,7 +4464,7 @@ body.dlv-popup-open { overflow: hidden; }
               <div class="input-wrapper"><i class="fa-solid fa-camera"></i>
                 <input type="file" id="woPhotoInput" class="form-control" accept="image/*" onchange="handleWoPhotoSelect(event)">
               </div>
-              <img id="woPhotoPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+              <img alt="" id="woPhotoPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
             </div>
             <div id="woSummary" style="background:#f9fafb; border:1px solid var(--border-color); border-radius:10px; padding:10px 12px; font-size:13px; margin-bottom:12px;"></div>
             <p id="woAlert" class="hidden alert" style="font-size: 13px;"></p>
@@ -4499,7 +4501,7 @@ body.dlv-popup-open { overflow: hidden; }
 
         <div class="content-card">
           <div style="padding: 16px 16px 0 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-            <h3 style="margin:0;">ລາຍການສະສາງທີ່ບັນທຶກໄວ້ <span id="woCount" style="font-weight:500; color:var(--text-muted); font-size:13px;"></span></h3>
+            <h2 style="font-size:1.17em; margin:0;">ລາຍການສະສາງທີ່ບັນທຶກໄວ້ <span id="woCount" style="font-weight:500; color:var(--text-muted); font-size:13px;"></span></h2>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <input type="text" id="woSearchInput" class="form-control" placeholder="ຄົ້ນຫາ QR/Serial/CapEx, Brand..." oninput="filterCoolerWriteOffs()" style="max-width: 260px;">
               <button type="button" class="filter-clear-btn xl-io" onclick="exportCoolerWriteOffsToExcel()"><i class="fa-solid fa-file-export"></i> Export Excel</button>
@@ -4813,7 +4815,7 @@ body.dlv-popup-open { overflow: hidden; }
       <!-- MODAL (ເພີ່ມ/ແກ້ໄຂ ລາຍການສະຕັອກສາງ) -->
       <div id="stockModal" class="modal-overlay hidden">
         <div class="modal-card">
-          <h3 id="stockModalTitle" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ເພີ່ມລາຍການສະຕັອກ</h3>
+          <h2 id="stockModalTitle" style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ເພີ່ມລາຍການສະຕັອກ</h2>
           <input type="hidden" id="editStockId">
 
           <div class="form-group">
@@ -4948,7 +4950,7 @@ body.dlv-popup-open { overflow: hidden; }
         </div>
         <div id="ncFillCard" class="modal-overlay hidden" onclick="if(event.target===this) ncFillReset()">
          <div class="modal-card" style="max-width:640px; max-height:92vh; overflow:auto;">
-          <h3 style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="fa-solid fa-qrcode mr-2"></i> ຜົນການສະແກນ</h3>
+          <h2 style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="fa-solid fa-qrcode mr-2"></i> ຜົນການສະແກນ</h2>
           <div id="ncFillInfo" class="mgmt-card-sub" style="gap:8px; font-size:13.5px; color:var(--text-main); margin-bottom:12px;"></div>
           <div class="form-group"><label>Serial Number <span style="font-weight:400; color:#64748b;">(ແກ້ໄດ້ສະເພາະເລກລຳດັບ)</span></label>
             <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:6px;">
@@ -5107,7 +5109,7 @@ body.dlv-popup-open { overflow: hidden; }
         <!-- Popup: ເພີ່ມຕູ້ໃໝ່ເຂົ້າຖ້ຽວ — ດຶງຂໍ້ມູນຈາກ "ລາຍການຕູ້ທີ່ Import" ແລ້ວໝາຍແຂວງປາຍທາງ -->
         <div id="stAddModal" class="modal-overlay hidden" onclick="if(event.target===this) stCloseAddNew()">
           <div class="modal-card">
-            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-snowflake mr-2"></i> ເພີ່ມຕູ້ໃໝ່ເຂົ້າຖ້ຽວ</h3>
+            <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-snowflake mr-2"></i> ເພີ່ມຕູ້ໃໝ່ເຂົ້າຖ້ຽວ</h2>
             <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">ຖ້ຽວ: <b id="stAddTripLabel"></b> — ສະແກນ ຫຼື ພິມ QR / Serial / CapEx ເພື່ອດຶງຂໍ້ມູນຕູ້ຈາກລາຍການທີ່ Import</p>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
               <div class="input-wrapper" style="flex:1; min-width:200px;"><i class="fa-solid fa-qrcode"></i>
@@ -5624,7 +5626,7 @@ body.dlv-popup-open { overflow: hidden; }
         </div>
 
         <div class="content-card" style="margin-top: 16px;" id="pbUnbudgetedCard">
-          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-triangle-exclamation mr-2" style="color: var(--amber);"></i> ສົ່ງ / ຈອງຕ່າງແຂວງແລ້ວ ແຕ່ຍັງບໍ່ໄດ້ກຳນົດງົບ</h3>
+          <h2 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-triangle-exclamation mr-2" style="color: var(--amber);"></i> ສົ່ງ / ຈອງຕ່າງແຂວງແລ້ວ ແຕ່ຍັງບໍ່ໄດ້ກຳນົດງົບ</h2>
           <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">ແຂວງ/ສາງ/Brand/Type ທີ່ບໍ່ມີແຖວງົບ ຈະບໍ່ຖືກຈຳກັດ ແຕ່ຍັງນັບຈຳນວນທີ່ສົ່ງໄປ — ກົດ "ກຳນົດງົບ" ເພື່ອຕັ້ງໂຄຕ້າ</p>
           <div class="table-container">
             <table>
@@ -5752,7 +5754,7 @@ body.dlv-popup-open { overflow: hidden; }
 
         <div class="content-card">
           <div style="padding: 16px 16px 0 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-            <h3 style="margin:0;">ລາຍການປະກາດ</h3>
+            <h2 style="font-size:1.17em; margin:0;">ລາຍການປະກາດ</h2>
             <button onclick="markAllAnnouncementsRead()" class="btn-act btn-edit"><i class="fa-solid fa-check-double mr-1"></i> ໝາຍວ່າອ່ານໝົດ</button>
           </div>
           <div class="mgmt-card-list" id="announcementList"></div>
@@ -5907,7 +5909,7 @@ body.dlv-popup-open { overflow: hidden; }
       </div>
       <div id="dsmSignModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,.55); align-items:center; justify-content:center; padding:16px;">
         <div style="background:#fff; border-radius:14px; padding:16px; width:100%; max-width:440px;">
-          <h3 style="margin:0 0 4px;" id="dsmSignModalTitle">ເຊັນເອກະສານ</h3>
+          <h2 style="font-size:1.17em; margin:0 0 4px;" id="dsmSignModalTitle">ເຊັນເອກະສານ</h2>
           <div id="dsmSignModalSub" style="color:#64748b; font-size:13px; margin-bottom:8px;"></div>
           <label style="font-weight:700; font-size:13.5px;">ຊື່ DSM</label>
           <input id="dsmSignName" class="form-control" maxlength="100">
@@ -5954,7 +5956,7 @@ body.dlv-popup-open { overflow: hidden; }
           <div class="guide-intro">
             <div class="guide-intro-icon"><i class="fa-solid fa-book-open"></i></div>
             <div>
-              <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">ເມນູທີ່ທ່ານໃຊ້ໄດ້</h3>
+              <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">ເມນູທີ່ທ່ານໃຊ້ໄດ້</h2>
               <p style="font-size: 14px; color: var(--text-muted); line-height: 1.6;">ທ່ານເຫັນຂໍ້ມູນສະເພາະຂອງ MDE ຕົນເອງເທົ່ານັ້ນ (ບໍ່ເຫັນ Map Tracking ແລະ ເມນູລາຍງານການຈັດສົ່ງ). ກົດຫົວຂໍ້ດ້ານລຸ່ມເພື່ອເບິ່ງລາຍລະອຽດແຕ່ລະເມນູ.</p>
             </div>
           </div>
@@ -6206,9 +6208,9 @@ body.dlv-popup-open { overflow: hidden; }
 
         <div class="profile-grid">
           <div class="content-card">
-            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
+            <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-id-card" style="color: var(--primary); margin-right: 8px;"></i> ຂໍ້ມູນບັນຊີຜູ້ໃຊ້
-            </h3>
+            </h2>
             <div class="profile-info-list">
               <div class="profile-info-item"><span>ອີເມວ (Email)</span><span id="profEmail">-</span></div>
               <div class="profile-info-item"><span>ສິດການໃຊ້ງານ (Role)</span><span id="profRole">-</span></div>
@@ -6992,7 +6994,7 @@ body.dlv-popup-open { overflow: hidden; }
           <button type="button" class="btn-act btn-approve" onclick="stRecvCopy()"><i class="fa-solid fa-copy"></i> ກັອບປີ້ລິ້ງ</button>
           <button type="button" class="btn-act btn-edit" onclick="stRecvShare()"><i class="fa-solid fa-share-nodes"></i> ແບ່ງປັນ / WhatsApp</button>
         </div>
-        <div style="font-size:11.5px; color:#b45309; margin-top:6px;">ລິ້ງນີ້ສະແດງຄັ້ງດຽວ — ປິດແລ້ວຈະເບິ່ງຄືນບໍ່ໄດ້ (ຕ້ອງສ້າງໃໝ່)</div>
+        <div style="font-size: 12px; color:#b45309; margin-top:6px;">ລິ້ງນີ້ສະແດງຄັ້ງດຽວ — ປິດແລ້ວຈະເບິ່ງຄືນບໍ່ໄດ້ (ຕ້ອງສ້າງໃໝ່)</div>
       </div>
       <div id="stRecvList"></div>
       <div id="stRecvSigView" class="hidden" style="margin-top:10px;">
@@ -7180,27 +7182,27 @@ body.dlv-popup-open { overflow: hidden; }
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align:left;">
         <div>
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">QR Code</p>
-          <img id="deliveryPhotoModalQr" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="deliveryPhotoModalQr" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
         <div>
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">Serial Number</p>
-          <img id="deliveryPhotoModalSerial" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="deliveryPhotoModalSerial" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
         <div>
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">CapEx</p>
-          <img id="deliveryPhotoModalCapex" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="deliveryPhotoModalCapex" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
         <div>
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">Asset (ຕູ້ເຢັນ)</p>
-          <img id="deliveryPhotoModalAsset" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="deliveryPhotoModalAsset" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
         <div id="deliveryPhotoModalDocumentWrap">
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">ເອກະສານ</p>
-          <img id="deliveryPhotoModalDocument" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="deliveryPhotoModalDocument" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
         <div id="deliveryPhotoModalSigWrap" class="hidden" style="grid-column: 1 / -1;">
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">ລາຍເຊັນລູກຄ້າ <span id="deliveryPhotoModalSigName"></span></p>
-          <img id="deliveryPhotoModalSig" style="width:100%; max-height:160px; object-fit:contain; border-radius: 10px; background:#fff; border:1px solid #e2e8f0;">
+          <img alt="" id="deliveryPhotoModalSig" style="width:100%; max-height:160px; object-fit:contain; border-radius: 10px; background:#fff; border:1px solid #e2e8f0;">
         </div>
       </div>
       <div style="display: flex; gap: 10px; margin-top: 16px;">
@@ -7357,11 +7359,11 @@ body.dlv-popup-open { overflow: hidden; }
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align:left;">
         <div>
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">ຕອນເອົາໄປ</p>
-          <img id="coolerEventPhotoModalTaken" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="coolerEventPhotoModalTaken" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
         <div>
           <p style="font-size:12px; font-weight:600; color: var(--text-muted); margin-bottom:4px;">ຕອນເອົາກັບ</p>
-          <img id="coolerEventPhotoModalReturned" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+          <img alt="" id="coolerEventPhotoModalReturned" style="width:100%; border-radius: 10px; background:#f1f5f9;">
         </div>
       </div>
       <div style="display: flex; gap: 10px; margin-top: 16px;">
@@ -7374,7 +7376,7 @@ body.dlv-popup-open { overflow: hidden; }
   <div id="coolerWriteOffPhotoModal" class="modal-overlay hidden" onclick="if(event.target===this) closeCoolerWriteOffPhotoModal()">
     <div class="modal-card" style="max-width: 420px; text-align:center;">
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">ຮູບຢືນຢັນຕູ້ແຊ່ສະສາງ</h3>
-      <img id="coolerWriteOffPhotoModalImg" style="width:100%; border-radius: 10px; background:#f1f5f9;">
+      <img alt="" id="coolerWriteOffPhotoModalImg" style="width:100%; border-radius: 10px; background:#f1f5f9;">
       <div style="display: flex; gap: 10px; margin-top: 16px;">
         <button onclick="closeCoolerWriteOffPhotoModal()" class="btn-submit" style="background: #e2e8f0; color: #475569; margin-top:0;">ປິດ</button>
       </div>
@@ -7396,7 +7398,7 @@ body.dlv-popup-open { overflow: hidden; }
         <div class="input-wrapper"><i class="fa-solid fa-camera"></i>
           <input type="file" id="ceReturnPhotoInput" class="form-control" accept="image/*" onchange="handleCoolerEventReturnPhotoSelect(event)">
         </div>
-        <img id="ceReturnPhotoPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
+        <img alt="" id="ceReturnPhotoPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px;">
       </div>
 
       <p id="ceReturnAlert" class="hidden alert" style="font-size: 13px;"></p>
@@ -13612,7 +13614,7 @@ body.dlv-popup-open { overflow: hidden; }
           <span class="sd-hb-n" title="${esc(whName[k])}">${esc(whName[k] || k)}</span>
           <span style="display:block; width:${Math.max(4, rows.length * 100 / whMax)}%;"><span class="sd-rail">${segs}</span></span>
           <span class="sd-hb-v"><b>${rows.length}</b></span></button>`;
-      }).join('') + '</div>' + `<div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--text-muted);">${STOCK_STATUS_ORDER.map(st => `<span><i class="sd-dot" style="--c:${STOCK_STATUS_COLOR_HEX[st]}; display:inline-block; margin-right:5px;"></i>${esc(STOCK_STATUS_LABEL[st])}</span>`).join('')}</div>` : '<div class="sd-empty">ບໍ່ມີຂໍ້ມູນ</div>';
+      }).join('') + '</div>' + `<div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; font-size: 12px; color:var(--text-muted);">${STOCK_STATUS_ORDER.map(st => `<span><i class="sd-dot" style="--c:${STOCK_STATUS_COLOR_HEX[st]}; display:inline-block; margin-right:5px;"></i>${esc(STOCK_STATUS_LABEL[st])}</span>`).join('')}</div>` : '<div class="sd-empty">ບໍ່ມີຂໍ້ມູນ</div>';
 
       // ---- Brand / Type / Model ----
       [['brand', 'sdChartBrand', 0], ['type', 'sdChartType', 1], ['model', 'sdChartModel', 2]].forEach(([k, id, ci]) => {
@@ -16548,7 +16550,7 @@ td.c { text-align: center; }
       background: linear-gradient(135deg, #22D3BF, #0A7890); border: 5px solid var(--pt-bg, var(--bg-body));
       box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
-      transition: transform .55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
+      transition: transform .55s cubic-bezier(0.22, 1, 0.36, 1), opacity .2s ease;
     }
     .pt-ind.on { transform: translateX(var(--ind-x, 0px)) scale(1); opacity: 1; }
     .pt-bar .tab-btn,
@@ -16567,7 +16569,7 @@ td.c { text-align: center; }
     .pt-bar .tab-btn i {
       display: flex; align-items: center; justify-content: center; width: 22px; height: 22px;
       font-size: 17px; color: #7FA0AA; flex-shrink: 0;
-      transition: transform .5s cubic-bezier(0.34, 1.56, 0.64, 1), color .2s;
+      transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1), color .2s;
     }
     .pt-bar .tab-btn:active i { transform: scale(.88); }
     .pt-bar .tab-btn.active, .pt-bar .tab-btn.active:hover { color: #6FE3D6; }
@@ -21136,7 +21138,7 @@ function assetStatusBadgeClass(status) {
           const waBtn = (phone) => {
             const ph = String(phone || '').trim();
             if (!ph) return '';
-            return ` <a href="https://wa.me/${esc(dsmPhoneDigits(ph))}" target="_blank" rel="noopener" title="WhatsApp ${esc(ph)}" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:1px 8px; margin-left:4px; font-size:11.5px; font-weight:700; line-height:1.6; color:#fff; background:#15803d; border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
+            return ` <a href="https://wa.me/${esc(dsmPhoneDigits(ph))}" target="_blank" rel="noopener" title="WhatsApp ${esc(ph)}" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:1px 8px; margin-left:4px; font-size: 12px; font-weight:700; line-height:1.6; color:#fff; background:#15803d; border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
           };
           const lbl = (text) => `<span style="color:#0f172a; font-weight:700;">${esc(text)}:</span>`;
           marker.bindPopup(`
@@ -29034,9 +29036,9 @@ function assetStatusBadgeClass(status) {
               <i class="fa-solid fa-warehouse"></i> ${esc(s.warehouse_name || '-')} &nbsp;
               <span style="color: ${inStock ? '#15803d' : '#ea580c'}; font-weight:600;">${inStock ? '' : '<i class=\"fa-solid fa-triangle-exclamation\"></i> '}${esc(statusText)}</span>
             </div>
-            <div style="font-size:11.5px; color: var(--text-muted); margin-top:2px;">QR: ${esc(s.qr_code || '-')} · SN: ${esc(s.serial_number || '-')} · CapEx: ${esc(s.capex || '-')}</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top:2px;">QR: ${esc(s.qr_code || '-')} · SN: ${esc(s.serial_number || '-')} · CapEx: ${esc(s.capex || '-')}</div>
           </div>`;
-      }).join('') + `<div style="font-size:11.5px; color: var(--text-muted); padding: 2px;"><i class="fa-solid fa-hand-pointer"></i> ກົດເລືອກລາຍການເພື່ອຕື່ມຂໍ້ມູນອັດຕະໂນມັດ</div>`;
+      }).join('') + `<div style="font-size: 12px; color: var(--text-muted); padding: 2px;"><i class="fa-solid fa-hand-pointer"></i> ກົດເລືອກລາຍການເພື່ອຕື່ມຂໍ້ມູນອັດຕະໂນມັດ</div>`;
     }
 
     function pickApproveStockMatch(qr_code, serial_number, capex) {
