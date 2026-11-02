@@ -586,6 +586,20 @@
       .confirm-actions { flex-direction: column-reverse; }
     }
 
+
+    /* Alert / Prompt Modal — ແທນ alert() / prompt() ຂອງ browser (ໃຊ້ຮ່ວມກັບ .confirm-*) */
+    .confirm-box.success .confirm-icon { background: #E3F6EC; color: #1E8E4E; }
+    .confirm-box.warn .confirm-icon { background: var(--amber-soft, #FFF4DB); color: var(--amber, #B7791F); }
+    .confirm-box.success .confirm-btn.ok { background: #1E8E4E; }
+    .confirm-box.warn .confirm-btn.ok { background: var(--amber, #B7791F); }
+    .confirm-box.danger .confirm-btn.ok { background: var(--danger); }
+    .prompt-input {
+      width: 100%; margin-top: 14px; padding: 12px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border-color, #D5E2E6); font-size: 15px; font-family: inherit;
+      box-sizing: border-box; outline: none;
+    }
+    .prompt-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(12, 140, 166, 0.18); }
+
     /* ແຖບຄວາມຄືບໜ້າ Import (ໃຊ້ຮ່ວມກັນ MDE / Outlet / Stock / Asset) */
     .import-progress-track {
       width: 100%; height: 10px; border-radius: 999px; background: #E2ECEF;
@@ -6280,6 +6294,32 @@ body.dlv-popup-open { overflow: hidden; }
     </div>
   </div>
 
+  <!-- Alert Modal (ແທນ appAlert() ຂອງ browser) -->
+  <div id="alertModal" class="confirm-overlay hidden" style="z-index:3100" role="alertdialog" aria-modal="true" aria-labelledby="alertModalTitle" aria-describedby="alertModalMessage">
+    <div class="confirm-box" id="alertModalBox">
+      <div class="confirm-icon" id="alertModalIcon">!</div>
+      <div class="confirm-title" id="alertModalTitle">ແຈ້ງເຕືອນ</div>
+      <div class="confirm-message" id="alertModalMessage"></div>
+      <div class="confirm-actions">
+        <button type="button" class="confirm-btn ok" id="alertModalOkBtn">ຕົກລົງ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Modal (ແທນ prompt() ຂອງ browser) -->
+  <div id="promptModal" class="confirm-overlay hidden" style="z-index:3100" role="dialog" aria-modal="true" aria-labelledby="promptModalTitle">
+    <form class="confirm-box" id="promptModalBox" autocomplete="off">
+      <div class="confirm-icon" id="promptModalIcon">?</div>
+      <div class="confirm-title" id="promptModalTitle">ປ້ອນຂໍ້ມູນ</div>
+      <div class="confirm-message" id="promptModalMessage"></div>
+      <input type="text" class="prompt-input" id="promptModalInput">
+      <div class="confirm-actions">
+        <button type="button" class="confirm-btn cancel" id="promptModalCancelBtn">ຍົກເລີກ</button>
+        <button type="submit" class="confirm-btn ok" id="promptModalOkBtn">ຕົກລົງ</button>
+      </div>
+    </form>
+  </div>
+
   <div id="importProgressModal" class="modal-overlay hidden">
     <div class="modal-card" style="max-width: 380px; text-align:center;">
       <h3 id="importProgressTitle" style="font-size: 17px; font-weight: 700; margin-bottom: 6px;">ກຳລັງນຳເຂົ້າຂໍ້ມູນ...</h3>
@@ -7824,7 +7864,7 @@ body.dlv-popup-open { overflow: hidden; }
   <script>
     // ============================================================
     // appConfirm(message, opts) -> Promise<boolean>
-    // ແທນ confirm() ຂອງ browser ດ້ວຍ modal ກາງຈໍ. ໃຊ້: if (!(await appConfirm('...'))) return;
+    // ແທນ confirm() ຂອງ browser ດ້ວຍ modal ກາງຈໍ. ໃຊ້: if (!(await appConfirm('...')))) return;
     // opts: { title, confirmText, cancelText, danger }  (ບໍ່ໃສ່ = ກວດຈາກຂໍ້ຄວາມອັດຕະໂນມັດ)
     // ============================================================
     let _confirmResolve = null;
@@ -7892,6 +7932,128 @@ body.dlv-popup-open { overflow: hidden; }
       document.getElementById('confirmOkBtn').addEventListener('click', () => _confirmClose(true));
       document.getElementById('confirmCancelBtn').addEventListener('click', () => _confirmClose(false));
       modal.addEventListener('mousedown', e => { if (e.target === modal) _confirmClose(false); });
+    })();
+
+
+
+    // ============================================================
+    // appAlert(message, opts) -> Promise<void>   ແທນ appAlert() ຂອງ browser ດ້ວຍ modal ກາງຈໍ
+    // opts: { title, type: 'success'|'error'|'warn'|'info', okText }  (ບໍ່ໃສ່ type = ກວດຈາກຂໍ້ຄວາມອັດຕະໂນມັດ)
+    // ຖ້າມີຫຼາຍ alert ຕິດກັນ ຈະຕໍ່ແຖວສະແດງທີລະອັນ
+    // ============================================================
+    const _alertQueue = [];
+    let _alertOpen = false;
+    let _alertPrevFocus = null;
+    let _alertCurResolve = null;
+
+    function _alertGuessType(text) {
+      if (/ບໍ່ສຳເລັດ|ຜິດພາດ|ບໍ່ສາມາດ|ບໍ່ໄດ້|ບໍ່ພົບ|ລົ້ມເຫຼວ|ຜິດ|ບລັອກ|ໝົດເວລາ|error|fail/i.test(text)) return 'error';
+      if (/ສຳເລັດ|ແລ້ວ|ຮຽບຮ້ອຍ|ສຳເລັດຮຽບຮ້ອຍ/.test(text) && !/ກະລຸນາ|ຍັງບໍ່/.test(text)) return 'success';
+      if (/ກະລຸນາ|ຍັງບໍ່|ຕ້ອງ|ບໍ່ມີ|ເຕັມ/.test(text)) return 'warn';
+      return 'info';
+    }
+
+    function _alertShowNext() {
+      if (_alertOpen || !_alertQueue.length) return;
+      const item = _alertQueue.shift();
+      _alertOpen = true;
+      _alertCurResolve = item.resolve;
+      const type = item.opts.type || _alertGuessType(item.text);
+      const box = document.getElementById('alertModalBox');
+      box.classList.toggle('danger', type === 'error');
+      box.classList.toggle('success', type === 'success');
+      box.classList.toggle('warn', type === 'warn');
+      document.getElementById('alertModalIcon').textContent = type === 'success' ? '✓' : (type === 'info' ? 'i' : '!');
+      document.getElementById('alertModalTitle').textContent = item.opts.title ||
+        ({ success: 'ສຳເລັດ', error: 'ເກີດຂໍ້ຜິດພາດ', warn: 'ກະລຸນາກວດສອບ', info: 'ແຈ້ງເຕືອນ' }[type]);
+      document.getElementById('alertModalMessage').textContent = item.text;
+      document.getElementById('alertModalOkBtn').textContent = item.opts.okText || 'ຕົກລົງ';
+      _alertPrevFocus = document.activeElement;
+      document.getElementById('alertModal').classList.remove('hidden');
+      document.addEventListener('keydown', _alertKeydown, true);
+      document.getElementById('alertModalOkBtn').focus();
+    }
+
+    function _alertClose() {
+      if (!_alertOpen) return;
+      document.getElementById('alertModal').classList.add('hidden');
+      document.removeEventListener('keydown', _alertKeydown, true);
+      const resolve = _alertCurResolve;
+      _alertCurResolve = null;
+      _alertOpen = false;
+      if (_alertPrevFocus && typeof _alertPrevFocus.focus === 'function') { try { _alertPrevFocus.focus(); } catch (e) {} }
+      _alertPrevFocus = null;
+      if (resolve) resolve();
+      _alertShowNext();
+    }
+
+    function _alertKeydown(e) {
+      if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); _alertClose(); }
+      else if (e.key === 'Tab') { e.preventDefault(); document.getElementById('alertModalOkBtn').focus(); }
+    }
+
+    function appAlert(message, opts) {
+      const text = String(message == null ? '' : message);
+      return new Promise(resolve => {
+        _alertQueue.push({ text, opts: opts || {}, resolve });
+        _alertShowNext();
+      });
+    }
+
+    (function initAlertModal() {
+      document.getElementById('alertModalOkBtn').addEventListener('click', _alertClose);
+      const modal = document.getElementById('alertModal');
+      modal.addEventListener('mousedown', e => { if (e.target === modal) _alertClose(); });
+    })();
+
+    // ============================================================
+    // appPrompt(message, opts) -> Promise<string|null>   ແທນ prompt() ຂອງ browser (ກົດຍົກເລີກ = null)
+    // opts: { title, placeholder, defaultValue, okText, cancelText, type: 'text'|'password' }
+    // ============================================================
+    let _promptResolve = null;
+    let _promptPrevFocus = null;
+
+    function _promptClose(result) {
+      document.getElementById('promptModal').classList.add('hidden');
+      document.removeEventListener('keydown', _promptKeydown, true);
+      const resolve = _promptResolve;
+      _promptResolve = null;
+      if (_promptPrevFocus && typeof _promptPrevFocus.focus === 'function') { try { _promptPrevFocus.focus(); } catch (e) {} }
+      _promptPrevFocus = null;
+      if (resolve) resolve(result);
+    }
+
+    function _promptKeydown(e) {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); _promptClose(null); }
+    }
+
+    function appPrompt(message, opts) {
+      opts = opts || {};
+      if (_promptResolve) _promptClose(null);
+      const input = document.getElementById('promptModalInput');
+      document.getElementById('promptModalTitle').textContent = opts.title || 'ປ້ອນຂໍ້ມູນ';
+      document.getElementById('promptModalMessage').textContent = String(message == null ? '' : message);
+      document.getElementById('promptModalOkBtn').textContent = opts.okText || 'ຕົກລົງ';
+      document.getElementById('promptModalCancelBtn').textContent = opts.cancelText || 'ຍົກເລີກ';
+      input.type = opts.type || 'text';
+      input.placeholder = opts.placeholder || '';
+      input.value = opts.defaultValue || '';
+      return new Promise(resolve => {
+        _promptResolve = resolve;
+        _promptPrevFocus = document.activeElement;
+        document.getElementById('promptModal').classList.remove('hidden');
+        document.addEventListener('keydown', _promptKeydown, true);
+        setTimeout(() => input.focus(), 30);
+      });
+    }
+
+    (function initPromptModal() {
+      const modal = document.getElementById('promptModal');
+      document.getElementById('promptModalBox').addEventListener('submit', e => {
+        e.preventDefault(); _promptClose(document.getElementById('promptModalInput').value);
+      });
+      document.getElementById('promptModalCancelBtn').addEventListener('click', () => _promptClose(null));
+      modal.addEventListener('mousedown', e => { if (e.target === modal) _promptClose(null); });
     })();
 
 
@@ -8096,11 +8258,11 @@ body.dlv-popup-open { overflow: hidden; }
     }
     async function downloadBackup() {
       const btn = document.getElementById('backupBtn');
-      if (!confirm('ສຳຮອງສະຕັອກສາງ + ປະຫວັດການຈັດສົ່ງ Asset ເປັນໄຟລ໌ Excel? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາສັກຄູ່ — ກະລຸນາຢ່າປິດໜ້າຈໍ.')) return;
+      if (!(await appConfirm('ສຳຮອງສະຕັອກສາງ + ປະຫວັດການຈັດສົ່ງ Asset ເປັນໄຟລ໌ Excel? ຖ້າຂໍ້ມູນຫຼາຍ ອາດໃຊ້ເວລາສັກຄູ່ — ກະລຸນາຢ່າປິດໜ້າຈໍ.'))) return;
       const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> ກຳລັງສຳຮອງ...';
       try {
         const res = await fetch('/api/admin/backup-excel');
-        if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.error || 'ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { const d = await res.json().catch(() => ({})); appAlert(d.error || 'ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ'); return; }
         const d = await res.json();
         const stock = d.warehouse_stock || [];
         const delivery = d.asset_delivery_history || [];
@@ -8176,7 +8338,7 @@ body.dlv-popup-open { overflow: hidden; }
 
         const stamp = exportStamp();
         XLSX.writeFile(wb, `backup_${stamp}.xlsx`);
-      } catch (err) { alert('ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ (ການເຊື່ອມຕໍ່ຂາດ ຫຼື ຂໍ້ມູນໃຫຍ່ເກີນໄປ)'); }
+      } catch (err) { appAlert('ສຳຮອງຂໍ້ມູນບໍ່ສຳເລັດ (ການເຊື່ອມຕໍ່ຂາດ ຫຼື ຂໍ້ມູນໃຫຍ່ເກີນໄປ)'); }
       finally { btn.disabled = false; btn.innerHTML = old; }
     }
     async function toggleMaintenance() {
@@ -8191,7 +8353,7 @@ body.dlv-popup-open { overflow: hidden; }
         body: JSON.stringify({ enabled: turnOn, message: document.getElementById('maintMessageInput').value })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ເກີດຂໍ້ຜິດພາດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດ'); return; }
       renderMaintenanceCard({ enabled: data.enabled, message: data.maintenance_message });
       refreshMaintenanceStatus();
     }
@@ -8200,7 +8362,7 @@ body.dlv-popup-open { overflow: hidden; }
       if (!authToken) return;
       authToken = null;
       try { logout(); } catch (err) { /* ຍັງໂຫລດໜ້າບໍ່ທັນແລ້ວ - ບໍ່ຕ້ອງເຮັດຫຍັງ */ }
-      alert('ໝົດເວລາການເຂົ້າສູ່ລະບົບແລ້ວ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່');
+      appAlert('ໝົດເວລາການເຂົ້າສູ່ລະບົບແລ້ວ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່');
     }
 
     /* ==================== PUSH NOTIFICATION ==================== */
@@ -9151,8 +9313,8 @@ body.dlv-popup-open { overflow: hidden; }
       try {
         const res = await fetch('/api/special-alerts/ack', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(d.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
+        if (!res.ok) { appAlert(d.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
       await refreshSpecialAlerts();
     }
     // ດຶງແຈ້ງເຕືອນທີ່ຍັງຄ້າງ — ຖ້າມີ ແລະ ຜູ້ໃຊ້ຢູ່ໜ້າອື່ນທີ່ບໍ່ແມ່ນໜ້າທີ່ຕ້ອງດຳເນີນການ ຈະຂຶ້ນໜ້າເຕັມຈໍທັນທີ
@@ -9698,8 +9860,8 @@ body.dlv-popup-open { overflow: hidden; }
       const statuses = mdeReminderStatuses();
       const codes = mdeReminderTargetCodes();
       const resultBox = document.getElementById('mdeRemResult');
-      if (!statuses.length) { alert('ກະລຸນາເລືອກສະຖານະຢ່າງໜ້ອຍ 1 ຢ່າງ'); return; }
-      if (!codes.length) { alert('ກະລຸນາເລືອກ MDE ຢ່າງໜ້ອຍ 1 ຄົນ'); return; }
+      if (!statuses.length) { appAlert('ກະລຸນາເລືອກສະຖານະຢ່າງໜ້ອຍ 1 ຢ່າງ'); return; }
+      if (!codes.length) { appAlert('ກະລຸນາເລືອກ MDE ຢ່າງໜ້ອຍ 1 ຄົນ'); return; }
       if (!await appConfirm(`ສົ່ງແຈ້ງເຕືອນຫາ MDE ${codes.length} ຄົນ ຕາມສະຖານະທີ່ເລືອກ${document.getElementById('mdeRemSendEmail').checked ? ' (ສົ່ງເຂົ້າອີເມວນຳ)' : ''}?`)) return;
 
       const btn = document.getElementById('btnSendMdeReminder');
@@ -9821,7 +9983,7 @@ body.dlv-popup-open { overflow: hidden; }
     async function sendSignReminders() {
       const keys = signReminderTargetKeys();
       const resultBox = document.getElementById('signRemResult');
-      if (!keys.length) { alert('ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ລາຍການ'); return; }
+      if (!keys.length) { appAlert('ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ລາຍການ'); return; }
       const sendEmail = signRemKind === 'mde' && document.getElementById('signRemSendEmail').checked;
       const what = signRemKind === 'mde' ? `MDE ${keys.length} ຄົນ${sendEmail ? ' (ສົ່ງເຂົ້າອີເມວນຳ)' : ''}` : `DSM ${keys.length} Team (ສົ່ງອີເມວພ້ອມລິ້ງເຊັນ)`;
       if (!await appConfirm(`ສົ່ງແຈ້ງເຕືອນຫາ ${what}?`)) return;
@@ -11089,7 +11251,7 @@ body.dlv-popup-open { overflow: hidden; }
     }
     async function dsmOpenPdf(kind, id) {
       try { await fetchAndOpenPdf(`/api/dsm/contract-pdf?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`, `${kind}-${id}`); }
-      catch (e) { alert(e.message || 'ເປີດ PDF ບໍ່ສຳເລັດ'); }
+      catch (e) { appAlert(e.message || 'ເປີດ PDF ບໍ່ສຳເລັດ'); }
     }
     let dsmCv = null, dsmCtx = null, dsmDirty = false, dsmDrawing = false, dsmLast = null;
     function dsmSignOpen(kind, id) {
@@ -11120,8 +11282,8 @@ body.dlv-popup-open { overflow: hidden; }
     async function dsmSignSubmit() {
       if (!dsmSignTarget) return;
       const name = document.getElementById('dsmSignName').value.trim();
-      if (!name) return alert('ກະລຸນາໃສ່ຊື່ DSM');
-      if (!dsmDirty) return alert('ກະລຸນາເຊັນຊື່');
+      if (!name) return appAlert('ກະລຸນາໃສ່ຊື່ DSM');
+      if (!dsmDirty) return appAlert('ກະລຸນາເຊັນຊື່');
       const btn = document.getElementById('dsmSignSubmitBtn'); btn.disabled = true;
       try {
         const res = await fetch('/api/dsm/sign', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -11129,7 +11291,7 @@ body.dlv-popup-open { overflow: hidden; }
         const d = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(d.error || 'ບັນທຶກບໍ່ສຳເລັດ');
         dsmSignClose(); showAlert(d.message || 'ບັນທຶກລາຍເຊັນແລ້ວ'); loadDsmSign();
-      } catch (e) { alert(e.message || 'ບັນທຶກບໍ່ສຳເລັດ'); }
+      } catch (e) { appAlert(e.message || 'ບັນທຶກບໍ່ສຳເລັດ'); }
       finally { btn.disabled = false; }
     }
 
@@ -11597,10 +11759,10 @@ body.dlv-popup-open { overflow: hidden; }
       const target = allUsersData.find(u => u.id === userId);
       const label = target ? target.email : `ID ${userId}`;
 
-      const newPassword = prompt(`ຕັ້ງລະຫັດຜ່ານໃໝ່ໃຫ້ ${label}\n(ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ)`);
+      const newPassword = await appPrompt(`ຕັ້ງລະຫັດຜ່ານໃໝ່ໃຫ້ ${label}\n(ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ)`, { title: 'ຕັ້ງລະຫັດຜ່ານໃໝ່', placeholder: 'ລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 8 ຕົວ)' });
       if (newPassword === null) return; // ຍົກເລີກ
       if (newPassword.length < 8) {
-        alert('ລະຫັດຜ່ານໃໝ່ຕ້ອງຍາວຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ');
+        appAlert('ລະຫັດຜ່ານໃໝ່ຕ້ອງຍາວຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ');
         return;
       }
       if (!await appConfirm(`ຢືນຢັນຕັ້ງລະຫັດຜ່ານໃໝ່ໃຫ້ ${label}? ຜູ້ໃຊ້ງານຈະຕ້ອງເຂົ້າສູ່ລະບົບໃໝ່ດ້ວຍລະຫັດຜ່ານນີ້`)) return;
@@ -11612,9 +11774,9 @@ body.dlv-popup-open { overflow: hidden; }
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message);
+        appAlert(data.message);
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການຕັ້ງລະຫັດຜ່ານໃໝ່');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການຕັ້ງລະຫັດຜ່ານໃໝ່');
       }
     }
 
@@ -11631,7 +11793,7 @@ body.dlv-popup-open { overflow: hidden; }
       if (res.ok) {
         loadAdminUsers();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -11653,7 +11815,7 @@ body.dlv-popup-open { overflow: hidden; }
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສິດການໃຊ້ງານ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນສິດການໃຊ້ງານ');
       }
       loadAdminUsers();
     }
@@ -11738,7 +11900,7 @@ body.dlv-popup-open { overflow: hidden; }
       const phone = document.getElementById('editMdePhone').value.trim();
 
       if (!team || !mde_code || !mde_name) {
-        alert('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບທຸກຊ່ອງ');
+        appAlert('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບທຸກຊ່ອງ');
         return;
       }
 
@@ -11753,10 +11915,10 @@ body.dlv-popup-open { overflow: hidden; }
         closeMdeModal();
         loadAdminMdeTable();
         if (data.revokedUser) {
-          alert(data.message || 'ຊື່ MDE ປ່ຽນ - ບັນຊີຜູ້ໃຊ້ງານເດີມຖືກລຶບອອກແລ້ວ, ຕ້ອງສະໝັກໃໝ່');
+          appAlert(data.message || 'ຊື່ MDE ປ່ຽນ - ບັນຊີຜູ້ໃຊ້ງານເດີມຖືກລຶບອອກແລ້ວ, ຕ້ອງສະໝັກໃໝ່');
         }
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -11827,7 +11989,7 @@ body.dlv-popup-open { overflow: hidden; }
           const rows = XLSX.utils.sheet_to_json(sheet);
 
           if (!rows.length) {
-            alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
+            appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
             return;
           }
 
@@ -11887,11 +12049,11 @@ body.dlv-popup-open { overflow: hidden; }
           if (errorRows.length) {
             msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${fmtImportErrs(errorRows)}`;
           }
-          alert(msg);
+          appAlert(msg);
           loadAdminMdeTable();
         } catch (err) {
           hideImportProgress();
-          alert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຮອງຮັບ .xlsx, .xls, .csv ໂດຍມີຄໍລຳ Team / MDE Code / MDE Name / Phone (ບໍ່ບັງຄັບ))');
+          appAlert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຮອງຮັບ .xlsx, .xls, .csv ໂດຍມີຄໍລຳ Team / MDE Code / MDE Name / Phone (ບໍ່ບັງຄັບ))');
         } finally {
           event.target.value = '';
         }
@@ -11902,7 +12064,7 @@ body.dlv-popup-open { overflow: hidden; }
     /* Export MDE List ທັງໝົດທີ່ໂຫລດໄວ້ (dbMdeList) ເປັນໄຟລ໌ .xlsx */
     function exportMdeListToExcel() {
       if (!dbMdeList.length) {
-        alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
+        appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
         return;
       }
 
@@ -11932,10 +12094,10 @@ body.dlv-popup-open { overflow: hidden; }
       if (res.ok) {
         loadAdminMdeTable();
         if (data.revokedUser) {
-          alert(data.message || 'ບັນຊີຜູ້ໃຊ້ງານເດີມຂອງ MDE Code ນີ້ຖືກລຶບອອກແລ້ວ');
+          appAlert(data.message || 'ບັນຊີຜູ້ໃຊ້ງານເດີມຂອງ MDE Code ນີ້ຖືກລຶບອອກແລ້ວ');
         }
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12024,7 +12186,7 @@ body.dlv-popup-open { overflow: hidden; }
       const email = document.getElementById('editDsmEmail').value.trim();
 
       if (!team || !dsm_name) {
-        alert('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບທຸກຊ່ອງ');
+        appAlert('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບທຸກຊ່ອງ');
         return;
       }
 
@@ -12039,13 +12201,13 @@ body.dlv-popup-open { overflow: hidden; }
         closeDsmModal();
         loadAdminDsmTable();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
     async function createDsmUsers() {
       const withEmail = (dbDsmList || []).filter(d => d.email);
-      if (!withEmail.length) { alert('ຍັງບໍ່ມີ DSM ທີ່ມີອີເມວໃນ DSM List'); return; }
+      if (!withEmail.length) { appAlert('ຍັງບໍ່ມີ DSM ທີ່ມີອີເມວໃນ DSM List'); return; }
       const pending = withEmail.filter(d => !d.user_id).length;
       if (!await appConfirm(`ສ້າງບັນຊີ DSM ຕາມ DSM List?\n\n- DSM ທີ່ມີອີເມວ: ${withEmail.length} ຄົນ (ຍັງບໍ່ມີບັນຊີ: ${pending})\n- ບັນຊີໃໝ່ຈະເປັນ role DSM ແລະ ອະນຸມັດທັນທີ\n- ລະບົບສົ່ງອີເມວບອກ DSM ໃຫ້ກົດ "ລືມລະຫັດຜ່ານ" ເພື່ອຕັ້ງລະຫັດຜ່ານເອງ`)) return;
 
@@ -12055,13 +12217,13 @@ body.dlv-popup-open { overflow: hidden; }
         body: JSON.stringify({})
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(d.error || 'ສ້າງບັນຊີ DSM ບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(d.error || 'ສ້າງບັນຊີ DSM ບໍ່ສຳເລັດ'); return; }
 
       let detail = d.message || '';
       if ((d.skipped || []).length) {
         detail += '\n\nຂ້າມ:\n' + d.skipped.map(x => `- ${x.team} (${x.dsm_name}${x.email ? ', ' + x.email : ''}): ${x.reason}`).join('\n');
       }
-      alert(detail);
+      appAlert(detail);
       loadAdminDsmTable();
     }
 
@@ -12078,7 +12240,7 @@ body.dlv-popup-open { overflow: hidden; }
       if (res.ok) {
         loadAdminDsmTable();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12245,7 +12407,7 @@ body.dlv-popup-open { overflow: hidden; }
       const id = document.getElementById('editDocTypeId').value;
       const name = document.getElementById('editDocTypeName').value;
       if (!name) {
-        alert('ກະລຸນາປ້ອນຊື່ Doc Type');
+        appAlert('ກະລຸນາປ້ອນຊື່ Doc Type');
         return;
       }
 
@@ -12261,7 +12423,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12278,7 +12440,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12305,7 +12467,7 @@ body.dlv-popup-open { overflow: hidden; }
       const id = document.getElementById('editSpecialBrandId').value;
       const name = document.getElementById('editSpecialBrandName').value;
       if (!name) {
-        alert('ກະລຸນາປ້ອນຊື່ Brand ພິເສດ');
+        appAlert('ກະລຸນາປ້ອນຊື່ Brand ພິເສດ');
         return;
       }
 
@@ -12321,7 +12483,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12338,7 +12500,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12365,7 +12527,7 @@ body.dlv-popup-open { overflow: hidden; }
       const id = document.getElementById('editBrandId').value;
       const name = document.getElementById('editBrandName').value;
       if (!name) {
-        alert('ກະລຸນາປ້ອນຊື່ Cooler Brand');
+        appAlert('ກະລຸນາປ້ອນຊື່ Cooler Brand');
         return;
       }
 
@@ -12381,7 +12543,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12398,7 +12560,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12425,7 +12587,7 @@ body.dlv-popup-open { overflow: hidden; }
       const id = document.getElementById('editTypeId').value;
       const name = document.getElementById('editTypeName').value;
       if (!name) {
-        alert('ກະລຸນາປ້ອນຊື່ Cooler Type');
+        appAlert('ກະລຸນາປ້ອນຊື່ Cooler Type');
         return;
       }
 
@@ -12441,7 +12603,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12458,7 +12620,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12485,7 +12647,7 @@ body.dlv-popup-open { overflow: hidden; }
       const id = document.getElementById('editModelId').value;
       const name = document.getElementById('editModelName').value;
       if (!name) {
-        alert('ກະລຸນາປ້ອນຊື່ Model');
+        appAlert('ກະລຸນາປ້ອນຊື່ Model');
         return;
       }
 
@@ -12501,7 +12663,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12518,7 +12680,7 @@ body.dlv-popup-open { overflow: hidden; }
         await loadAdminCatalogTables();
         await fetchCatalog();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12602,7 +12764,7 @@ body.dlv-popup-open { overflow: hidden; }
       const is_main = document.getElementById('editWarehouseIsMain').checked;
       const active = document.getElementById('editWarehouseActive').checked;
       if (!code || !name) {
-        alert('ກະລຸນາປ້ອນລະຫັດ ແລະ ຊື່ສາງ');
+        appAlert('ກະລຸນາປ້ອນລະຫັດ ແລະ ຊື່ສາງ');
         return;
       }
 
@@ -12617,7 +12779,7 @@ body.dlv-popup-open { overflow: hidden; }
         closeWarehouseModal();
         await loadAdminWarehouseTable();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12633,7 +12795,7 @@ body.dlv-popup-open { overflow: hidden; }
       if (res.ok) {
         await loadAdminWarehouseTable();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12811,13 +12973,13 @@ body.dlv-popup-open { overflow: hidden; }
       const lngRaw = document.getElementById('editOutletMdLng').value.trim();
       const active = document.getElementById('editOutletMdActive').checked;
       if (!code || !name) {
-        alert('ກະລຸນາປ້ອນ Outlet Code ແລະ ຊື່ຮ້ານ');
+        appAlert('ກະລຸນາປ້ອນ Outlet Code ແລະ ຊື່ຮ້ານ');
         return;
       }
       const latitude = latRaw === '' ? null : parseFloat(latRaw);
       const longitude = lngRaw === '' ? null : parseFloat(lngRaw);
       if ((latRaw !== '' && isNaN(latitude)) || (lngRaw !== '' && isNaN(longitude))) {
-        alert('ພິກັດ Latitude/Longitude ຕ້ອງເປັນຕົວເລກ');
+        appAlert('ພິກັດ Latitude/Longitude ຕ້ອງເປັນຕົວເລກ');
         return;
       }
 
@@ -12833,7 +12995,7 @@ body.dlv-popup-open { overflow: hidden; }
         await searchOutletTable();
         await fetchOutletsLookup(true);
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -12850,7 +13012,7 @@ body.dlv-popup-open { overflow: hidden; }
         await searchOutletTable();
         await fetchOutletsLookup(true);
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -12865,7 +13027,7 @@ body.dlv-popup-open { overflow: hidden; }
         allOutlets = [];
       }
       if (!allOutlets.length) {
-        alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
+        appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
         return;
       }
 
@@ -12903,7 +13065,7 @@ body.dlv-popup-open { overflow: hidden; }
           const rows = XLSX.utils.sheet_to_json(sheet);
 
           if (!rows.length) {
-            alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
+            appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
             return;
           }
 
@@ -12983,12 +13145,12 @@ body.dlv-popup-open { overflow: hidden; }
           if (errorRows.length) {
             msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${fmtImportErrs(errorRows)}`;
           }
-          alert(msg);
+          appAlert(msg);
           await searchOutletTable();
           await fetchOutletsLookup(true);
         } catch (err) {
           hideImportProgress();
-          alert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຮອງຮັບ .xlsx, .xls, .csv ໂດຍມີຄໍລຳ Outlet Code / Outlet Name)');
+          appAlert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຮອງຮັບ .xlsx, .xls, .csv ໂດຍມີຄໍລຳ Outlet Code / Outlet Name)');
         } finally {
           event.target.value = '';
         }
@@ -13600,7 +13762,7 @@ body.dlv-popup-open { overflow: hidden; }
       const notes = document.getElementById('editStockNotes').value.trim();
 
       if (!warehouse_id || !cooler_brand || !cooler_type) {
-        alert('ກະລຸນາເລືອກສາງ, Brand ແລະ Type');
+        appAlert('ກະລຸນາເລືອກສາງ, Brand ແລະ Type');
         return;
       }
 
@@ -13617,12 +13779,12 @@ body.dlv-popup-open { overflow: hidden; }
       if (res.ok) {
         // ຖ້າ backend ອັດຕະໂນມັດປ່ຽນ status ເປັນ "ອອກຮ້ານແລ້ວ" (ພົບ QR/Serial ຊ້ຳກັບ Asset ທີ່ຈັດສົ່ງແລ້ວ) ໃຫ້ແຈ້ງ Admin ໃຫ້ຮູ້
         if (data.message && data.message.includes('ອັດຕະໂນມັດ')) {
-          alert(data.message);
+          appAlert(data.message);
         }
         closeStockModal();
         await loadWarehouseStockList();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -13638,7 +13800,7 @@ body.dlv-popup-open { overflow: hidden; }
       if (res.ok) {
         await loadWarehouseStockList();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -13647,7 +13809,7 @@ body.dlv-popup-open { overflow: hidden; }
       const rowsData = getFilteredWarehouseStock();
 
       if (!rowsData.length) {
-        alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
+        appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
         return;
       }
 
@@ -13687,7 +13849,7 @@ body.dlv-popup-open { overflow: hidden; }
           const rows = XLSX.utils.sheet_to_json(sheet);
 
           if (!rows.length) {
-            alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
+            appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
             return;
           }
 
@@ -13774,11 +13936,11 @@ body.dlv-popup-open { overflow: hidden; }
           if (errorRows.length) {
             msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${errorRows.join('\n')}`;
           }
-          alert(msg);
+          appAlert(msg);
           await loadWarehouseStockList();
         } catch (err) {
           hideImportProgress();
-          alert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຕ້ອງມີຄໍລຳ Warehouse Code/Name, Cooler Brand, Cooler Type)');
+          appAlert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຕ້ອງມີຄໍລຳ Warehouse Code/Name, Cooler Brand, Cooler Type)');
         } finally {
           event.target.value = '';
         }
@@ -14551,7 +14713,7 @@ body.dlv-popup-open { overflow: hidden; }
       try {
         r = await fetch('/api/admin/new-cooler-fill-round/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
         d = await r.json().catch(() => ({}));
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້ ກະລຸນາລອງໃໝ່'); return; }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້ ກະລຸນາລອງໃໝ່'); return; }
       ncFillCloseRoundModal();
       const m = document.getElementById('ncFillMsg');
       if (!r.ok) {
@@ -15309,7 +15471,7 @@ body.dlv-popup-open { overflow: hidden; }
         await ncLoadList({ ids: [id] });
         ncSetMsg('info', data.message || 'ຍົກເລີກການຢືນຢັນແລ້ວ');
       } else {
-        alert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ');
+        appAlert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ');
       }
     }
 
@@ -15412,11 +15574,11 @@ body.dlv-popup-open { overflow: hidden; }
           body: JSON.stringify({ lot_no: lot.lot_no, container_units: lot.units, warehouse_id: Number(whId) })
         });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok || !d.id) { alert(d.error || 'ບັນທຶກລ໋ອດບໍ່ສຳເລັດ — ຍັງບໍ່ໄດ້ຮັບຕູ້ເຂົ້າສາງ'); return false; }
+        if (!res.ok || !d.id) { appAlert(d.error || 'ບັນທຶກລ໋ອດບໍ່ສຳເລັດ — ຍັງບໍ່ໄດ້ຮັບຕູ້ເຂົ້າສາງ'); return false; }
         ncActiveReceipt = { key, id: d.id };
         return d.id;
       } catch (e) {
-        alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້ — ຍັງບໍ່ໄດ້ຮັບຕູ້ເຂົ້າສາງ');
+        appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້ — ຍັງບໍ່ໄດ້ຮັບຕູ້ເຂົ້າສາງ');
         return false;
       }
     }
@@ -15438,8 +15600,8 @@ body.dlv-popup-open { overflow: hidden; }
       const ids = [...ncLotSel];
       if (!ids.length) return;
       const lot = ncReadLot();
-      if (!lot) { alert('ກະລຸນາລະບຸເລກລ໋ອດ (ແລະຈຳນວນຄອນເທນເນີ ຖ້າມີ) ກ່ອນ'); document.getElementById('ncLotNo').focus(); return; }
-      if (lot.error) { alert(lot.error); return; }
+      if (!lot) { appAlert('ກະລຸນາລະບຸເລກລ໋ອດ (ແລະຈຳນວນຄອນເທນເນີ ຖ້າມີ) ກ່ອນ'); document.getElementById('ncLotNo').focus(); return; }
+      if (lot.error) { appAlert(lot.error); return; }
       if (!await appConfirm(`ໃສ່ລ໋ອດ "${lot.lot_no}" ໃຫ້ຕູ້ທີ່ຮັບເຂົ້າສາງແລ້ວ ${ids.length} ໜ່ວຍ ຫຼືບໍ?`)) return;
       const btn = document.getElementById('ncLotAssignBtn');
       btn.disabled = true;
@@ -15475,11 +15637,11 @@ body.dlv-popup-open { overflow: hidden; }
           body: JSON.stringify({ lot_no: lotNo })
         });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(d.error || 'ປິດລ໋ອດບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(d.error || 'ປິດລ໋ອດບໍ່ສຳເລັດ'); return; }
         ncActiveReceipt = null;
         ncSetMsg('ok', d.message || `ປິດລ໋ອດ "${lotNo}" ແລ້ວ`);
         ncLoadReceipts();
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
     }
 
     async function ncToggleReceipts() {
@@ -15527,10 +15689,10 @@ async function ncExportLots(lot) {
   try {
     const res = await fetch('/api/admin/new-cooler-receipts/export' + (lot ? '?lot=' + encodeURIComponent(lot) : ''));
     data = await res.json().catch(() => ({}));
-    if (!res.ok) { alert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
-  } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
+    if (!res.ok) { appAlert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
+  } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
   const receipts = data.receipts || [], coolers = data.coolers || [];
-  if (!receipts.length && !coolers.length) { alert('ຍັງບໍ່ມີຂໍ້ມູນລ໋ອດໃຫ້ Export'); return; }
+  if (!receipts.length && !coolers.length) { appAlert('ຍັງບໍ່ມີຂໍ້ມູນລ໋ອດໃຫ້ Export'); return; }
   const statusLabel = { received: 'ຮັບເຂົ້າສາງແລ້ວ', confirmed: 'ຢືນຢັນແລ້ວ (ລໍຖ້າຮັບເຂົ້າສາງ)', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', pending: 'ຍັງບໍ່ໄດ້ສະແກນ' };
   const stockLabel = { in_warehouse: 'ຢູ່ໃນສາງ', reserved: 'ຈອງແລ້ວ ລໍຖ້າຈັດສົ່ງ', on_truck: 'ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ', outlet: 'ອອກໄປຮ້ານແລ້ວ', event: 'ກຳລັງໃຊ້ງານ Event', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ', write_off: 'ສະສາງ' };
   const lotRows = [], contRows = [];
@@ -15570,10 +15732,10 @@ async function ncExportLots(lot) {
       if (!ids.length) return;
       const sel = document.getElementById('ncWarehouse');
       const whId = sel.value;
-      if (!whId) { alert('ກະລຸນາເລືອກສາງທີ່ຈະຮັບເຂົ້າ'); return; }
+      if (!whId) { appAlert('ກະລຸນາເລືອກສາງທີ່ຈະຮັບເຂົ້າ'); return; }
       const whName = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
       const lot = ncReadLot();
-      if (lot && lot.error) { alert(lot.error); return; }
+      if (lot && lot.error) { appAlert(lot.error); return; }
       const lotText = lot ? ` (ລ໋ອດ ${lot.lot_no}${lot.units.length ? ` · ${lot.units.length} ຄອນ` : ''})` : '';
       if (!await appConfirm(`ຮັບຕູ້ ${ids.length} ລາຍການ ເຂົ້າສາງ "${whName}"${lotText} ຫຼືບໍ?`)) return;
 
@@ -15624,7 +15786,7 @@ async function ncExportLots(lot) {
       // ແຂວງທີ່ປ້ອນດ້ານເທິງ ໃຊ້ກັບທຸກລາຍການ; ຖ້າບໍ່ປ້ອນ ໃຊ້ແຂວງທີ່ບັນທຶກໄວ້ໃນແຕ່ລະລາຍການ (ຕອນຕິກສົ່ງອອກຢູ່ຂັ້ນ 1)
       const missing = ids.filter(id => { const it = ncList.find(x => x.id === id); return !(it && (it.ship_province || '').trim()); });
       if (!province && missing.length) {
-        alert('ກະລຸນາລະບຸແຂວງປາຍທາງ (ຊ່ອງ "ແຂວງປາຍທາງ" ດ້ານເທິງ) ກ່ອນສົ່ງອອກ — ມີ ' + missing.length + ' ລາຍການທີ່ຍັງບໍ່ໄດ້ລະບຸແຂວງ');
+        appAlert('ກະລຸນາລະບຸແຂວງປາຍທາງ (ຊ່ອງ "ແຂວງປາຍທາງ" ດ້ານເທິງ) ກ່ອນສົ່ງອອກ — ມີ ' + missing.length + ' ລາຍການທີ່ຍັງບໍ່ໄດ້ລະບຸແຂວງ');
         provInput.focus();
         return;
       }
@@ -16179,24 +16341,24 @@ async function ncExportLots(lot) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) { await ncLoadList({ ids: [id] }); ncSetMsg('info', data.message || 'ເອົາຕູ້ອອກຈາກຖ້ຽວແລ້ວ'); }
-      else alert(data.error || 'ເອົາຕູ້ອອກບໍ່ສຳເລັດ');
+      else appAlert(data.error || 'ເອົາຕູ້ອອກບໍ່ສຳເລັດ');
     }
 
     // ---------- ເພີ່ມ / ເອົາອອກ ----------
     async function ncAddSelectedToTrip() {
       const tripId = Number(document.getElementById('ncTripSelect').value);
       const ids = [...ncSelected];
-      if (!tripId) { alert('ກະລຸນາເລືອກຖ້ຽວ ຫຼື ສ້າງຖ້ຽວໃໝ່ກ່ອນ'); return; }
+      if (!tripId) { appAlert('ກະລຸນາເລືອກຖ້ຽວ ຫຼື ສ້າງຖ້ຽວໃໝ່ກ່ອນ'); return; }
       if (!ids.length) return;
       const province = document.getElementById('ncShipProvince').value.trim();
       const missing = ids.filter(id => { const it = ncList.find(x => x.id === id); return !(it && (it.ship_province || '').trim()); });
       if (!province && missing.length) {
-        alert('ມີ ' + missing.length + ' ລາຍການທີ່ຍັງບໍ່ໄດ້ລະບຸແຂວງ — ກະລຸນາປ້ອນ "ແຂວງປາຍທາງ" ໃນຊ່ອງດ້ານລຸ່ມກ່ອນເພີ່ມເຂົ້າຖ້ຽວ');
+        appAlert('ມີ ' + missing.length + ' ລາຍການທີ່ຍັງບໍ່ໄດ້ລະບຸແຂວງ — ກະລຸນາປ້ອນ "ແຂວງປາຍທາງ" ໃນຊ່ອງດ້ານລຸ່ມກ່ອນເພີ່ມເຂົ້າຖ້ຽວ');
         document.getElementById('ncShipProvince').focus();
         return;
       }
       if (province && (ncProvWh[province] || []).length && !ncWhVal('ncShipWh')) {
-        alert('ແຂວງ "' + province + '" ມີສາງສະເພາະແຂວງ — ກະລຸນາເລືອກ "ສາງສະເພາະແຂວງ" ກ່ອນເພີ່ມເຂົ້າຖ້ຽວ (ງົບຕັດຕໍ່ສາງ)');
+        appAlert('ແຂວງ "' + province + '" ມີສາງສະເພາະແຂວງ — ກະລຸນາເລືອກ "ສາງສະເພາະແຂວງ" ກ່ອນເພີ່ມເຂົ້າຖ້ຽວ (ງົບຕັດຕໍ່ສາງ)');
         document.getElementById('ncShipWh').focus();
         return;
       }
@@ -16231,13 +16393,13 @@ async function ncExportLots(lot) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) { await ncLoadList({ ids: [id] }); ncSetMsg('info', data.message || 'ເອົາຕູ້ອອກຈາກຖ້ຽວແລ້ວ'); }
-      else alert(data.error || 'ເອົາຕູ້ອອກບໍ່ສຳເລັດ');
+      else appAlert(data.error || 'ເອົາຕູ້ອອກບໍ່ສຳເລັດ');
     }
 
     async function ncTripAction(url, id, okMsg, failMsg) {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || failMsg); return false; }
+      if (!res.ok) { appAlert(data.error || failMsg); return false; }
       await ncLoadList();
       ncSetMsg('ok', data.message || okMsg);
       return true;
@@ -16267,9 +16429,9 @@ async function ncExportLots(lot) {
       const t = ncTrips.find(x => Number(x.id) === Number(id));
       if (!t) return;
       const rows = ncTripItems(id);
-      if (!rows.length) { alert('ຖ້ຽວນີ້ຍັງບໍ່ມີຕູ້ — ສ້າງໃບສົ່ງບໍ່ໄດ້'); return; }
+      if (!rows.length) { appAlert('ຖ້ຽວນີ້ຍັງບໍ່ມີຕູ້ — ສ້າງໃບສົ່ງບໍ່ໄດ້'); return; }
       const w = window.open('', '_blank');
-      if (!w) { alert('Browser ບລັອກ popup — ກະລຸນາອະນຸຍາດ popup ສຳລັບເວັບນີ້ ແລ້ວລອງໃໝ່'); return; }
+      if (!w) { appAlert('Browser ບລັອກ popup — ກະລຸນາອະນຸຍາດ popup ສຳລັບເວັບນີ້ ແລ້ວລອງໃໝ່'); return; }
       try { w.document.write('<p style="font-family:sans-serif;padding:20px;">ກຳລັງໂຫລດໃບສົ່ງ...</p>'); } catch (e) {}
 
       // ຮູບຖ່າຍຕອນລົດອອກ: <img src="/api/photo"> ໃນໜ້າຕ່າງໃໝ່ບໍ່ມີ token ຈຶ່ງ 401 -> ໂຫລດດ້ວຍ fetch (ມີ token) ແລ້ວຝັງເປັນ data URL
@@ -16794,8 +16956,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       try {
         res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         data = await res.json().catch(() => ({}));
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return false; }
-      if (!res.ok) { alert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return false; }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return false; }
+      if (!res.ok) { appAlert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return false; }
       return true;
     }
     async function stRouteRefresh() {
@@ -16855,7 +17017,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     // Export Excel: ຖ້ຽວ + ຕູ້ໃນແຕ່ລະຖ້ຽວ ຕາມລາຍການທີ່ກອງຢູ່ (ເລືອກລົດໃນ dropdown ເພື່ອ export ສະເພາະລົດນັ້ນ)
     function stExportExcel() {
       const trips = stFilteredTrips();
-      if (!trips.length) { alert('ບໍ່ມີຖ້ຽວໃຫ້ Export (ກວດແຖບສະຖານະ / ລົດ / ຄົ້ນຫາ)'); return; }
+      if (!trips.length) { appAlert('ບໍ່ມີຖ້ຽວໃຫ້ Export (ກວດແຖບສະຖານະ / ລົດ / ຄົ້ນຫາ)'); return; }
       const statusText = t => t.status === 'open' ? 'ກຳລັງຈັດຕູ້ຂຶ້ນລົດ' : (stTripDone(t) ? 'ສົ່ງສຳເລັດແລ້ວ' : 'ລົດອອກແລ້ວ');
       const tripRows = [], itemRows = [];
       trips.forEach(t => {
@@ -17186,11 +17348,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           body: JSON.stringify({ trip_id: stOpenId, kind, id })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ'); return; }
         stApplyScan(kind, id, null);
         stFeedback('info', 'ຍົກເລີກການສະແກນຂອງຕູ້ນັ້ນແລ້ວ');
         stRender();
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
     }
 
     // ---------- ຢືນຢັນລົດອອກ / ເປີດຄືນ / ລຶບ ----------
@@ -17286,8 +17448,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           body: JSON.stringify({ trip_id: id, province: prov, warehouse: wh, regenerate: !!regenerate })
         });
         data = await res.json().catch(() => ({}));
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
-      if (!res.ok) { alert(data.error || 'ສ້າງລິ້ງບໍ່ສຳເລັດ'); return; }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
+      if (!res.ok) { appAlert(data.error || 'ສ້າງລິ້ງບໍ່ສຳເລັດ'); return; }
       stRecvLast = { url: data.url, text: `ກະລຸນາກົດລິ້ງເພື່ອກວດ ແລະ ເຊັນຮັບຕູ້ແຊ່ (ຖ້ຽວ ${t ? t.trip_no : ''} · ແຂວງ ${lbl}): ${data.url}` };
       document.getElementById('stRecvLinkTitle').textContent = `ລິ້ງແຂວງ ${lbl} (${data.expected_count} ຕູ້)${data.reused ? ' · ລິ້ງເດີມ' : ' · ລິ້ງໃໝ່'}`;
       document.getElementById('stRecvLinkInput').value = data.url;
@@ -17302,9 +17464,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       } catch (e) {
         const el = document.getElementById('stRecvLinkInput');
         el.focus(); el.select();
-        try { document.execCommand('copy'); } catch (e2) { alert('ກັອບປີ້ບໍ່ໄດ້ — ກົດຄ້າງທີ່ຊ່ອງລິ້ງ ແລ້ວເລືອກ Copy'); return; }
+        try { document.execCommand('copy'); } catch (e2) { appAlert('ກັອບປີ້ບໍ່ໄດ້ — ກົດຄ້າງທີ່ຊ່ອງລິ້ງ ແລ້ວເລືອກ Copy'); return; }
       }
-      alert('ກັອບປີ້ລິ້ງແລ້ວ');
+      appAlert('ກັອບປີ້ລິ້ງແລ້ວ');
     }
     async function stRecvShare() {
       if (!stRecvLast) return;
@@ -17324,8 +17486,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: rid })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'ລ້າງບໍ່ສຳເລັດ'); return; }
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
+        if (!res.ok) { appAlert(data.error || 'ລ້າງບໍ່ສຳເລັດ'); return; }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
       document.getElementById('stRecvSigView').classList.add('hidden');
       await stRecvLoad();
       stRecvRender();
@@ -17399,15 +17561,15 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (typeof stFeedback === 'function' && stIsActive()) stFeedback('ok', '✍️ ບັນທຶກລາຍເຊັນແລ້ວ — ກົດ "ຢືນຢັນລົດອອກ" ໄດ້');
     }
 
-    function stDepartTrip(id) {
+    async function stDepartTrip(id) {
       const t = ncTrips.find(x => Number(x.id) === Number(id));
       const rows = ncTripItems(id);
-      if (!rows.length) { alert('ຖ້ຽວນີ້ຍັງບໍ່ມີຕູ້'); return; }
-      if (!t || !t.sig_sender || !t.sig_driver) { alert('ກະລຸນາເຊັນຊື່ (ຜູ້ຈັດສົ່ງ + ຄົນຂັບລົດ) ກ່ອນຢືນຢັນລົດອອກ'); stOpenSign(id); return; }
+      if (!rows.length) { appAlert('ຖ້ຽວນີ້ຍັງບໍ່ມີຕູ້'); return; }
+      if (!t || !t.sig_sender || !t.sig_driver) { appAlert('ກະລຸນາເຊັນຊື່ (ຜູ້ຈັດສົ່ງ + ຄົນຂັບລົດ) ກ່ອນຢືນຢັນລົດອອກ'); stOpenSign(id); return; }
       const provs = [...new Set(rows.map(n => ncProvLabel(ncProvKey(n))))];
       const missing = rows.filter(n => !stItemScanned(n)).length;
       const planTot = stPlanTotals(id);
-      if (planTot.has && planTot.loaded < planTot.qty && !confirm(`ຕູ້ຂຶ້ນລົດຍັງບໍ່ຄົບຕາມແຜນ (${planTot.loaded}/${planTot.qty}). ຕ້ອງການຢືນຢັນລົດອອກຕໍ່ບໍ?`)) return;
+      if (planTot.has && planTot.loaded < planTot.qty && !(await appConfirm(`ຕູ້ຂຶ້ນລົດຍັງບໍ່ຄົບຕາມແຜນ (${planTot.loaded}/${planTot.qty}). ຕ້ອງການຢືນຢັນລົດອອກຕໍ່ບໍ?`))) return;
       stDepartId = id;
       stDepartPhoto = null;
       document.getElementById('stDepartTripLabel').textContent = t ? ncTripLabel(t, true) : '';
@@ -17671,7 +17833,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         await ncLoadList({ ids: [id] });
         ncSetMsg('info', data.message || 'ຍົກເລີກລາຍການສົ່ງອອກແລ້ວ');
       } else {
-        alert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ');
+        appAlert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ');
       }
     }
 
@@ -17687,7 +17849,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         await ncLoadList({ ids: [id] });
         ncSetMsg('info', data.message || 'ຍົກເລີກການສົ່ງອອກແລ້ວ');
       } else {
-        alert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ');
+        appAlert(data.error || 'ຍົກເລີກບໍ່ສຳເລັດ');
       }
     }
 
@@ -17704,12 +17866,12 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         ncList = ncList.filter(n => n.id !== id);
         ncRender();
       } else {
-        alert(data.error || 'ລຶບບໍ່ສຳເລັດ');
+        appAlert(data.error || 'ລຶບບໍ່ສຳເລັດ');
       }
     }
 
     function exportNewCoolersToExcel() {
-      if (!ncList.length) { alert('ຍັງບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
+      if (!ncList.length) { appAlert('ຍັງບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
       const labels = { pending: 'ຍັງບໍ່ໄດ້ສະແກນ', confirmed: 'ຢືນຢັນແລ້ວ (ລໍຖ້າຮັບເຂົ້າສາງ)', ship_pending: 'ລໍຖ້າຢືນຢັນສົ່ງອອກຕ່າງແຂວງ', received: 'ຮັບເຂົ້າສາງແລ້ວ', shipped_out: 'ສົ່ງຕ່າງແຂວງແລ້ວ' };
       const rows = ncList.map(n => {
         return {
@@ -17763,7 +17925,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             notes: pick(r, 'Notes', 'notes')
           })).filter(r => Object.values(r).some(v => v));
 
-          if (!rows.length) { alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
+          if (!rows.length) { appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
 
           showImportProgress('ກຳລັງນຳເຂົ້າຕູ້ແຊ່ເຂົ້າໃຫມ່...');
           let inserted = 0, updated = 0, done = 0;
@@ -17801,11 +17963,11 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             const MAX = 30;
             msg += `\nຂ້າມ/ບໍ່ສຳເລັດ ${errors.length} ລາຍການ:\n${errors.slice(0, MAX).join('\n')}` + (errors.length > MAX ? `\n... ແລະອີກ ${errors.length - MAX} ລາຍການ` : '');
           }
-          alert(msg);
+          appAlert(msg);
           await ncLoadList();
         } catch (err) {
           hideImportProgress();
-          alert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຕ້ອງມີຄໍລຳ Cooler Brand, Cooler Type ແລະ QR Code / Serial Number / CapEx)');
+          appAlert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌ (ຕ້ອງມີຄໍລຳ Cooler Brand, Cooler Type ແລະ QR Code / Serial Number / CapEx)');
         } finally {
           event.target.value = '';
         }
@@ -17938,7 +18100,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     /* Export ປະຫວັດ Asset (ແບບລາຍລະອຽດ ບໍ່ຈັດກຸ່ມ) ເປັນໄຟລ໌ .xlsx */
     function exportStockHistoryToExcel() {
       if (!dbStockHistoryList.length) {
-        alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
+        appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
         return;
       }
       const ACTION_LABEL = { create: 'ເພີ່ມລາຍການ', update: 'ແກ້ໄຂ/ຍ້າຍສາງ', delete: 'ລຶບລາຍການ' };
@@ -18230,7 +18392,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
       cmLoadStats();
       cmSearch();
     }
@@ -18589,9 +18751,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!code) return;
       if (!await appConfirm('ແຈ້ງຕູ້ນີ້ເປັນຕູ້ສູນຫາຍ (ເພີ່ມເຂົ້າລາຍການ Manage Lost Cooler Master Data)?')) return;
       const { ok, data } = await lostPost('add', { codes: [code] });
-      if (!ok) { alert(data.error || 'ເພີ່ມບໍ່ສຳເລັດ'); return; }
-      if (data.added) { alert('ເພີ່ມເຂົ້າລາຍການຕູ້ສູນຫາຍແລ້ວ'); cmSearch(); }
-      else alert(data.duplicates && data.duplicates.length ? 'ຕູ້ນີ້ຢູ່ໃນລາຍການແລ້ວ' : (data.ambiguous && data.ambiguous.length ? 'ລະຫັດນີ້ກົງກັບ Master ຫຼາຍແຖວ ເພີ່ມບໍ່ໄດ້' : 'ບໍ່ພົບຕູ້ນີ້ໃນ Cooler Master'));
+      if (!ok) { appAlert(data.error || 'ເພີ່ມບໍ່ສຳເລັດ'); return; }
+      if (data.added) { appAlert('ເພີ່ມເຂົ້າລາຍການຕູ້ສູນຫາຍແລ້ວ'); cmSearch(); }
+      else appAlert(data.duplicates && data.duplicates.length ? 'ຕູ້ນີ້ຢູ່ໃນລາຍການແລ້ວ' : (data.ambiguous && data.ambiguous.length ? 'ລະຫັດນີ້ກົງກັບ Master ຫຼາຍແຖວ ເພີ່ມບໍ່ໄດ້' : 'ບໍ່ພົບຕູ້ນີ້ໃນ Cooler Master'));
     }
 
     /* ---------- ປ່ຽນສະຖານະ / ແກ້ໄຂ ---------- */
@@ -18662,14 +18824,14 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     async function lostRestore(id) {
       if (!await appConfirm('ກູ້ຄືນຕູ້ນີ້ເຂົ້າ Cooler Master ຕາມຂໍ້ມູນເດີມ? (ສະຖານະຈະກັບໄປເປັນ "Pending DSM ຢືນຢັນ")')) return;
       const { ok, data } = await lostPost('restore', { id });
-      if (!ok) { alert(data.error || 'ກູ້ຄືນບໍ່ສຳເລັດ'); return; }
+      if (!ok) { appAlert(data.error || 'ກູ້ຄືນບໍ່ສຳເລັດ'); return; }
       lostLoad();
     }
 
     async function lostDelete(id) {
       if (!await appConfirm('ລຶບຕູ້ນີ້ອອກຈາກລາຍການ Lost Cooler? (ບໍ່ລຶບຈາກ Cooler Master)')) return;
       const { ok, data } = await lostPost('delete', { id });
-      if (!ok) { alert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+      if (!ok) { appAlert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
       lostLoad();
     }
 
@@ -18703,7 +18865,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       try {
         const res = await fetch('/api/admin/lost-coolers/list?' + lostQuery({ all: 1 }));
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
         const rows = (data.items || []).map(it => ({
           'QR Code': it.qr_code || '', 'Brand': it.cooler_brand || '', 'Cooler type': it.cooler_type || '',
           'Serial Number': it.serial_number || '', 'CAPEX': it.capex || '',
@@ -18717,12 +18879,12 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           'ແຈ້ງໂດຍ': it.reported_by || '', 'ວັນທີແຈ້ງ': it.created_at || '', 'ກວດສອບໂດຍ': it.verified_by || '', 'ວັນທີກວດສອບ': it.verified_at || '',
           'ຄັດອອກໂດຍ': it.excluded_by || '', 'ວັນທີຄັດອອກ': it.excluded_at || ''
         }));
-        if (!rows.length) { alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
+        if (!rows.length) { appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
         const ws = XLSX.utils.json_to_sheet(rows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Lost Cooler');
         XLSX.writeFile(wb, 'lost-cooler-' + exportStamp() + '.xlsx');
-      } catch (e) { alert('Export ບໍ່ສຳເລັດ'); }
+      } catch (e) { appAlert('Export ບໍ່ສຳເລັດ'); }
     }
 
     /* ---------- Template + Import Excel (ຫົວຖັນຕາມທີມສົ່ງ) ---------- */
@@ -18760,14 +18922,14 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           const sheet = wb.Sheets[wb.SheetNames[0]];
           // raw:false -> ອ່ານເປັນຂໍ້ຄວາມຕາມທີ່ເຫັນ (ກັນ Serial/QR ຍາວໆ ກາຍເປັນ 1.2E+11); dateNF -> ຖັນວັນທີອອກເປັນ YYYY-MM-DD
           const raw = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false, dateNF: 'yyyy-mm-dd' });
-          if (!raw.length) { alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
+          if (!raw.length) { appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
 
           const headers = Object.keys(raw[0]);
           const mapping = {};
           headers.forEach(h => { const f = lostFieldForHeader(h); if (f && !Object.values(mapping).includes(f)) mapping[h] = f; });
           const mapped = Object.values(mapping);
           if (!mapped.some(f => f === 'qr_code' || f === 'serial_number' || f === 'capex')) {
-            alert('ບໍ່ພົບຫົວຖັນ QR Code / Serial Number / CAPEX ໃນໄຟລ໌ — ກະລຸນາກວດແຖວທຳອິດ ຫຼື ກົດ Template');
+            appAlert('ບໍ່ພົບຫົວຖັນ QR Code / Serial Number / CAPEX ໃນໄຟລ໌ — ກະລຸນາກວດແຖວທຳອິດ ຫຼື ກົດ Template');
             return;
           }
           const ok = await appConfirm(`ພົບ ${raw.length.toLocaleString()} ແຖວ\nຖັນທີ່ຈັບຄູ່ໄດ້: ${mapped.join(', ')}\n\nລະບົບຈະຈັບຄູ່ກັບ Cooler Master ດ້ວຍ QR / Serial / CAPEX ແລ້ວເພີ່ມເຂົ້າລາຍການ. ເລີ່ມນຳເຂົ້າ?`);
@@ -18823,7 +18985,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             ...failedRows
           ].sort((a, b) => a.row - b.row);
           if (skippedAll.length) msg += `\n\nລວມທີ່ບໍ່ເຂົ້າລາຍການ ${skippedAll.length} ແຖວ ຈາກ ${rows.length} ແຖວ`;
-          alert(msg);
+          appAlert(msg);
           lostState.offset = 0; lostLoad();
           // ໃຫ້ດາວໂຫລດລາຍການທີ່ບໍ່ເຂົ້າທັງໝົດ (ພ້ອມເຫດຜົນຂອງແຕ່ລະແຖວ) ເປັນ Excel - ແກ້ໄຂ ແລ້ວ Import ໃໝ່ໄດ້
           if (skippedAll.length && await appConfirm(`ດາວໂຫລດລາຍການທີ່ບໍ່ເຂົ້າ ${skippedAll.length} ແຖວ ພ້ອມເຫດຜົນ ເປັນ Excel?`)) {
@@ -18836,7 +18998,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         } catch (err) {
           hideImportProgress();
           console.error(err);
-          alert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດຮູບແບບໄຟລ໌');
+          appAlert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດຮູບແບບໄຟລ໌');
         }
       };
       reader.readAsArrayBuffer(file);
@@ -18861,7 +19023,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           const sheet = wb.Sheets[wb.SheetNames[0]];
           // raw:false -> ອ່ານເປັນຂໍ້ຄວາມຕາມທີ່ເຫັນໃນ Excel (ກັນເລກ Serial/QR ຍາວໆ ຖືກປ່ຽນເປັນ 1.2E+11)
           const raw = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
-          if (!raw.length) { alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
+          if (!raw.length) { appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
 
           const headers = Object.keys(raw[0]);
           const mapping = {};
@@ -18869,7 +19031,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           headers.forEach(h => { const f = cmFieldForHeader(h); if (f && !Object.values(mapping).includes(f)) mapping[h] = f; else extraCols.push(h); });
           const mapped = Object.values(mapping);
           if (!mapped.some(f => f === 'qr_code' || f === 'serial_number' || f === 'capex')) {
-            alert('ບໍ່ພົບຫົວຖັນ QR Code / Serial Number / CapEx ໃນໄຟລ໌ — ກະລຸນາກວດແຖວທຳອິດ ຫຼື ດາວໂຫລດ Template');
+            appAlert('ບໍ່ພົບຫົວຖັນ QR Code / Serial Number / CapEx ໃນໄຟລ໌ — ກະລຸນາກວດແຖວທຳອິດ ຫຼື ດາວໂຫລດ Template');
             return;
           }
           const ok = await appConfirm(`ພົບ ${raw.length.toLocaleString()} ແຖວ\nຖັນທີ່ຈັບຄູ່ໄດ້: ${mapped.join(', ')}\nຖັນທີ່ເກັບເປັນຂໍ້ມູນເພີ່ມເຕີມ: ${extraCols.length ? extraCols.join(', ') : '(ບໍ່ມີ)'}\n\nເລີ່ມນຳເຂົ້າ?`);
@@ -18916,12 +19078,12 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           let msg = `ນຳເຂົ້າສຳເລັດ: ເພີ່ມໃໝ່ ${inserted.toLocaleString()} · ອັບເດດ ${updated.toLocaleString()} · ຂ້າມ/ຜິດພາດ ${skipped.toLocaleString()}`;
           if (lostFound) msg += `\n\nຕູ້ສູນຫາຍທີ່ພົບແລ້ວ (ຢູ່ outlet ຈິງໃນ Master): ${lostFound.toLocaleString()} ໂຕ — ປ່ຽນເປັນ "ພົບຕູ້ແລ້ວ" ອັດຕະໂນມັດ`;
           if (sampleErrors.length) msg += `\n\nຕົວຢ່າງບັນຫາ:\n${sampleErrors.join('\n')}`;
-          alert(msg);
+          appAlert(msg);
           cmLoadStats();
         } catch (err) {
           hideImportProgress();
           console.error(err);
-          alert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດຮູບແບບໄຟລ໌');
+          appAlert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດຮູບແບບໄຟລ໌');
         }
       };
       reader.readAsArrayBuffer(file);
@@ -19013,7 +19175,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     async function scStart() {
       const warehouse_id = document.getElementById('scStartWarehouse').value;
       const period = document.getElementById('scStartPeriod').value;
-      if (!warehouse_id) { alert('ກະລຸນາເລືອກສາງ'); return; }
+      if (!warehouse_id) { appAlert('ກະລຸນາເລືອກສາງ'); return; }
       if (!await appConfirm(`ເລີ່ມກວດນັບສາງນີ້ ເດືອນ ${period || scCurrentPeriod}?\nລະບົບຈະຖ່າຍລາຍການທີ່ "ຢູ່ໃນສາງ" ໄວ້ເປັນເປົ້າໝາຍ`)) return;
       const res = await fetch('/api/stock-count/start', {
         method: 'POST',
@@ -19022,7 +19184,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(data.error || 'ເລີ່ມກວດນັບບໍ່ສຳເລັດ');
+        appAlert(data.error || 'ເລີ່ມກວດນັບບໍ່ສຳເລັດ');
         if (data.count_id) scOpen(data.count_id);
         return;
       }
@@ -19033,7 +19195,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     async function scOpen(countId) {
       const res = await fetch(`/api/stock-count/items?count_id=${encodeURIComponent(countId)}`);
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ'); return; }
       scCurrent = { count: data.count, items: data.items || [] };
       document.getElementById('sc-mode-list').classList.add('hidden');
       document.getElementById('sc-mode-detail').classList.remove('hidden');
@@ -19169,7 +19331,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         body: JSON.stringify({ item_id: itemId })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ບໍ່ສາມາດຍົກເລີກໄດ້'); return; }
+      if (!res.ok) { appAlert(data.error || 'ບໍ່ສາມາດຍົກເລີກໄດ້'); return; }
       await scOpen(scCurrent.count.id);
     }
 
@@ -19185,7 +19347,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         body: JSON.stringify({ count_id: scCurrent.count.id })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ປິດຮອບບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ປິດຮອບບໍ່ສຳເລັດ'); return; }
       await scOpen(scCurrent.count.id);
     }
 
@@ -19197,12 +19359,12 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         body: JSON.stringify({ count_id: scCurrent.count.id })
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
       scBackToList();
     }
 
     function scExport() {
-      if (!scCurrent || !scCurrent.items.length) { alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
+      if (!scCurrent || !scCurrent.items.length) { appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
       const { count, items } = scCurrent;
       const rows = items.map(i => ({
         'Warehouse': count.warehouse_name,
@@ -19878,9 +20040,9 @@ function assetStatusBadgeClass(status) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'ແຈ້ງເຕືອນລົ້ມເຫລວ');
-        alert(data.message || 'ສົ່ງແຈ້ງເຕືອນຮຽບຮ້ອຍແລ້ວ');
+        appAlert(data.message || 'ສົ່ງແຈ້ງເຕືອນຮຽບຮ້ອຍແລ້ວ');
       } catch (e) {
-        alert(e.message || 'ເກີດຂໍ້ຜິດພາດ');
+        appAlert(e.message || 'ເກີດຂໍ້ຜິດພາດ');
       }
       if (btn) btn.disabled = false;
     }
@@ -19941,7 +20103,7 @@ function assetStatusBadgeClass(status) {
         if (a) a.flagged = data.flagged ? 1 : 0;
         filterAssetTracking();
       } catch (e) {
-        alert(e.message || 'ເກີດຂໍ້ຜິດພາດ');
+        appAlert(e.message || 'ເກີດຂໍ້ຜິດພາດ');
       }
     }
 
@@ -19972,7 +20134,7 @@ function assetStatusBadgeClass(status) {
         if (typeof closeDetailModal === 'function') closeDetailModal();
         if (typeof showAssetDetail === 'function') showAssetDetail(id);
       } catch (e) {
-        alert(e.message || 'ເກີດຂໍ້ຜິດພາດ');
+        appAlert(e.message || 'ເກີດຂໍ້ຜິດພາດ');
       }
     }
 
@@ -20625,7 +20787,7 @@ function assetStatusBadgeClass(status) {
     /* Export ລາຍການປະຫວັດການຈັດສົ່ງທີ່ກຳລັງສະແດງຢູ່ (ຫຼັງກອງ Brand/Type/Doc Type/ວັນທີ/ຄົ້ນຫາ) ເປັນໄຟລ໌ .xlsx */
     function exportDeliveryHistoryToExcel() {
       if (!deliveryHistoryVisibleData.length) {
-        alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
+        appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
         return;
       }
 
@@ -20787,7 +20949,7 @@ function assetStatusBadgeClass(status) {
         if (w) w.location.href = href; else openPhotoLightbox(href);
       } catch (e) {
         if (w) w.close();
-        alert('ໂຫລດຮູບບໍ່ສຳເລັດ');
+        appAlert('ໂຫລດຮູບບໍ່ສຳເລັດ');
       }
     }
 
@@ -21203,7 +21365,7 @@ function assetStatusBadgeClass(status) {
       const id = document.getElementById('editStatusAssetId').value;
       const status = document.getElementById('editStatusOnly').value;
       if (!status) {
-        alert('ກະລຸນາເລືອກ Status');
+        appAlert('ກະລຸນາເລືອກ Status');
         return;
       }
 
@@ -21218,7 +21380,7 @@ function assetStatusBadgeClass(status) {
         closeStatusModal();
         refreshAssetViews();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ Status');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ Status');
       }
     }
 
@@ -21242,28 +21404,28 @@ function assetStatusBadgeClass(status) {
       const old_longitude = document.getElementById('editOldLongitude').value;
 
       if (!outlet_code || !outlet_name || !mde_code) {
-        alert('ກະລຸນາປ້ອນ Outlet Code, Outlet Name ແລະ MDE Code ໃຫ້ຄົບ');
+        appAlert('ກະລຸນາປ້ອນ Outlet Code, Outlet Name ແລະ MDE Code ໃຫ້ຄົບ');
         return;
       }
 
       if ((latitude && isNaN(Number(latitude))) || (longitude && isNaN(Number(longitude)))) {
-        alert('Latitude / Longitude ຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ');
+        appAlert('Latitude / Longitude ຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ');
         return;
       }
 
       if (doc_type === RELOCATION_DOC_TYPE) {
         if (!old_outlet_code || !old_outlet_name || !old_latitude || !old_longitude) {
-          alert('Doc Type "ຕູ້ເຄື່ອນຍ້າຍ" ຕ້ອງປ້ອນ Outlet Code, Outlet Name ແລະ Lat/Long ຂອງຮ້ານເດີມໃຫ້ຄົບ');
+          appAlert('Doc Type "ຕູ້ເຄື່ອນຍ້າຍ" ຕ້ອງປ້ອນ Outlet Code, Outlet Name ແລະ Lat/Long ຂອງຮ້ານເດີມໃຫ້ຄົບ');
           return;
         }
         if (isNaN(Number(old_latitude)) || isNaN(Number(old_longitude))) {
-          alert('Latitude / Longitude ຂອງຮ້ານເດີມຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ');
+          appAlert('Latitude / Longitude ຂອງຮ້ານເດີມຕ້ອງເປັນຕົວເລກເທົ່ານັ້ນ');
           return;
         }
       }
 
       if (STOCK_MASTER_DOC_TYPES.includes(doc_type) && !qr_code && !serial_number && !capex) {
-        alert(`Doc Type "${doc_type}" ຕ້ອງຄົ້ນຫາ ແລະ ເລືອກລາຍການຈາກສະຕ໋ອກສາງກ່ອນ`);
+        appAlert(`Doc Type "${doc_type}" ຕ້ອງຄົ້ນຫາ ແລະ ເລືອກລາຍການຈາກສະຕ໋ອກສາງກ່ອນ`);
         return;
       }
 
@@ -21278,14 +21440,14 @@ function assetStatusBadgeClass(status) {
         closeAssetModal();
         refreshAssetViews();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
     /* Export ตารางที่กำลังแสดงอยู่ (ตามสิทธิ์ที่มองเห็น) เป็นไฟล์ .xlsx */
     function exportAssetsToExcel() {
       if (!currentAssetsData.length) {
-        alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
+        appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export');
         return;
       }
 
@@ -21330,7 +21492,7 @@ function assetStatusBadgeClass(status) {
           const rows = XLSX.utils.sheet_to_json(sheet);
 
           if (!rows.length) {
-            alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
+            appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ');
             return;
           }
 
@@ -21393,11 +21555,11 @@ function assetStatusBadgeClass(status) {
           if (errorRows.length) {
             msg += `\nບໍ່ສຳເລັດ ${errorRows.length} ລາຍການ:\n${fmtImportErrs(errorRows)}`;
           }
-          alert(msg);
+          appAlert(msg);
           loadAssetTracking();
         } catch (err) {
           hideImportProgress();
-          alert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌');
+          appAlert('ບໍ່ສາມາດອ່ານໄຟລ໌ນີ້ໄດ້ ກະລຸນາກວດສອບຮູບແບບໄຟລ໌');
         } finally {
           event.target.value = '';
         }
@@ -21417,7 +21579,7 @@ function assetStatusBadgeClass(status) {
       if (res.ok) {
         refreshAssetViews();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -21557,7 +21719,7 @@ function assetStatusBadgeClass(status) {
 
     function budgetExportExcel() {
       const list = allBudgetsData || [];
-      if (!list.length) { alert('ບໍ່ມີຂໍ້ມູນງົບໃຫ້ Export'); return; }
+      if (!list.length) { appAlert('ບໍ່ມີຂໍ້ມູນງົບໃຫ້ Export'); return; }
       const rows = list.map(b => {
         const used = Number(b.used || 0), quota = Number(b.quota || 0);
         const row = {
@@ -21595,7 +21757,7 @@ function assetStatusBadgeClass(status) {
             quota: pick(r, ['ໂຄຕ້າ', 'ງົບ', 'quota', 'Quota']),
             period_label: String(pick(r, ['ຊື່ຮອບ', 'period_label', 'Period'])).trim()
           })).filter(r => r.team || r.cooler_brand || r.cooler_type || r.quota !== '');
-          if (!rows.length) { alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ (ຕ້ອງມີຄໍລຳ: ' + BUDGET_COLS.join(' / ') + ')'); return; }
+          if (!rows.length) { appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ (ຕ້ອງມີຄໍລຳ: ' + BUDGET_COLS.join(' / ') + ')'); return; }
           if (!await appConfirm(`ພົບ ${rows.length} ແຖວ — ງົບທີ່ໃຊ້ງານຢູ່ແລ້ວ (Team+Brand+Type ກົງກັນ) ຈະຖືກອັບເດດໂຄຕ້າ, ອັນໃໝ່ຈະຖືກເພີ່ມ (ບໍ່ສົ່ງແຈ້ງເຕືອນຫາທີມ). ຕ້ອງການນຳເຂົ້າຫຼືບໍ່?`)) return;
 
           showImportProgress('ກຳລັງນຳເຂົ້າງົບປະມານ...');
@@ -21620,11 +21782,11 @@ function assetStatusBadgeClass(status) {
           if (errors.length) {
             msg += `\nຂ້າມ ${errors.length} ແຖວ:\n` + errors.slice(0, 15).map(x => `• ແຖວ ${x.row}: ${x.reason}`).join('\n') + (errors.length > 15 ? `\n... ແລະ ອີກ ${errors.length - 15} ແຖວ` : '');
           }
-          alert(msg);
+          appAlert(msg);
           loadBudgetTable();
         } catch (err) {
           hideImportProgress();
-          alert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດວ່າເປັນໄຟລ໌ Excel/CSV ທີ່ຖືກຕ້ອງ');
+          appAlert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດວ່າເປັນໄຟລ໌ Excel/CSV ທີ່ຖືກຕ້ອງ');
         } finally {
           event.target.value = '';
         }
@@ -21767,7 +21929,7 @@ function assetStatusBadgeClass(status) {
     async function dispatchConfirm() {
       const id = document.getElementById('dispatchAssetId').value;
       if (!id && !dispatchStockId) return;
-      if (dispatchStockId && !confirm('ຕູ້ນີ້ບໍ່ມີເອກະສານ / ບໍ່ຜູກ Asset Tracking — ຢືນຢັນຂຶ້ນລົດແບບດ່ວນ?')) return;
+      if (dispatchStockId && !(await appConfirm('ຕູ້ນີ້ບໍ່ມີເອກະສານ / ບໍ່ຜູກ Asset Tracking — ຢືນຢັນຂຶ້ນລົດແບບດ່ວນ?'))) return;
       const btn = document.getElementById('dispatchConfirmBtn');
       btn.disabled = true;
       try {
@@ -21821,7 +21983,7 @@ function assetStatusBadgeClass(status) {
     }
 
     async function dispatchCancel(id, stockId) {
-      if (!confirm('ຍົກເລີກການຂຶ້ນລົດຂອງຕູ້ນີ້? (ຕູ້ຈະກັບຄືນສະຖານະກ່ອນຂຶ້ນລົດ)')) return;
+      if (!(await appConfirm('ຍົກເລີກການຂຶ້ນລົດຂອງຕູ້ນີ້? (ຕູ້ຈະກັບຄືນສະຖານະກ່ອນຂຶ້ນລົດ)'))) return;
       try {
         const res = await fetch('/api/asset-delivery/dispatch-cancel', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -21829,13 +21991,13 @@ function assetStatusBadgeClass(status) {
         });
         const data = await res.json();
         if (res.ok) { dispatchSetMsg('↩ ' + (data.message || 'ຍົກເລີກແລ້ວ'), '#d97706'); }
-        else alert(data.error || 'ບໍ່ສາມາດຍົກເລີກໄດ້');
+        else appAlert(data.error || 'ບໍ່ສາມາດຍົກເລີກໄດ້');
         dispatchLoadList();
-      } catch (e) { alert('ເກີດຂໍ້ຜິດພາດໃນການຍົກເລີກ'); }
+      } catch (e) { appAlert('ເກີດຂໍ້ຜິດພາດໃນການຍົກເລີກ'); }
     }
 
     async function dispatchCloseTruck() {
-      if (!confirm('ປິດລົດ? ຕູ້ທັງໝົດທີ່ຢູ່ເທິງລົດຈະຖືກລັອກ ແລະ ຍົກເລີກບໍ່ໄດ້ອີກ (ຍົກເວັ້ນ Admin)')) return;
+      if (!(await appConfirm('ປິດລົດ? ຕູ້ທັງໝົດທີ່ຢູ່ເທິງລົດຈະຖືກລັອກ ແລະ ຍົກເລີກບໍ່ໄດ້ອີກ (ຍົກເວັ້ນ Admin)'))) return;
       const btn = document.getElementById('dispatchCloseBtn');
       btn.disabled = true;
       try {
@@ -21845,8 +22007,8 @@ function assetStatusBadgeClass(status) {
         });
         const data = await res.json();
         if (res.ok) dispatchSetMsg('🔒 ' + (data.message || 'ປິດລົດແລ້ວ'), '#16a34a');
-        else alert(data.error || 'ບໍ່ສາມາດປິດລົດໄດ້');
-      } catch (e) { alert('ເກີດຂໍ້ຜິດພາດໃນການປິດລົດ'); }
+        else appAlert(data.error || 'ບໍ່ສາມາດປິດລົດໄດ້');
+      } catch (e) { appAlert('ເກີດຂໍ້ຜິດພາດໃນການປິດລົດ'); }
       dispatchLoadList();
     }
 
@@ -21892,19 +22054,19 @@ function assetStatusBadgeClass(status) {
 
     function deliverValidateStep(step) {
       if (step === 1 && !document.getElementById('deliverAssetId').value) {
-        alert('ກະລຸນາຄົ້ນຫາ ແລະ ເລືອກ Asset ໃຫ້ພົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        appAlert('ກະລຸນາຄົ້ນຫາ ແລະ ເລືອກ Asset ໃຫ້ພົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       if (step === 2 && (!deliverPhotos.qr || !deliverPhotos.serial)) {
-        alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບ QR Code ແລະ Serial Number ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບ QR Code ແລະ Serial Number ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       if (step === 3 && (!deliverPhotos.capex || !deliverPhotos.asset)) {
-        alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບ CapEx ແລະ Asset ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບ CapEx ແລະ Asset ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       if (step === 4 && !deliverPhotos.document) {
-        alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບເອກະສານກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບເອກະສານກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       return true;
@@ -22708,7 +22870,7 @@ function assetStatusBadgeClass(status) {
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(objUrl), 60000);
       } catch (err) {
-        alert(err.message || 'ບໍ່ສາມາດສ້າງ PDF ລວມໄດ້');
+        appAlert(err.message || 'ບໍ່ສາມາດສ້າງ PDF ລວມໄດ້');
       }
     }
     function dsmSharePack() {
@@ -22770,7 +22932,7 @@ function assetStatusBadgeClass(status) {
         if (!el) continue;
         const val = (el.value || '').trim();
         if (!val) {
-          alert(`ກະລຸນາປ້ອນ "${label}" ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ`);
+          appAlert(`ກະລຸນາປ້ອນ "${label}" ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ`);
           el.focus();
           return false;
         }
@@ -22823,14 +22985,14 @@ function assetStatusBadgeClass(status) {
       if (step === 3) return loanValidateSales();
       if (step === 4) {
         const lpErr = lpError('loan', document.getElementById('loanHandoverType').value);
-        if (lpErr) { alert(lpErr); return false; }
+        if (lpErr) { appAlert(lpErr); return false; }
         return true;
       }
       if (step === 5) {
         const ownerDocErr = ownerDocError('loan');
-        if (ownerDocErr) { alert(ownerDocErr); return false; }
+        if (ownerDocErr) { appAlert(ownerDocErr); return false; }
         if (!getSignatureDataUrl('loanSigMdeCanvas')) {
-          alert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນ');
+          appAlert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນ');
           return false;
         }
       }
@@ -22850,7 +23012,7 @@ function assetStatusBadgeClass(status) {
         const raw = (el.value || '').trim();
         const n = Number(raw);
         if (raw === '' || !Number.isFinite(n) || n < 0) {
-          alert(`ກະລຸນາປ້ອນຍອດຂາຍ Total ຂອງ \"${label}\" ໃຫ້ຖືກຕ້ອງ (ຕົວເລກ ≥ 0 — ຖ້າບໍ່ມີຍອດໃຫ້ໃສ່ 0)`);
+          appAlert(`ກະລຸນາປ້ອນຍອດຂາຍ Total ຂອງ \"${label}\" ໃຫ້ຖືກຕ້ອງ (ຕົວເລກ ≥ 0 — ຖ້າບໍ່ມີຍອດໃຫ້ໃສ່ 0)`);
           el.focus();
           return false;
         }
@@ -23337,14 +23499,14 @@ function assetStatusBadgeClass(status) {
     function cancelValidateStep(step) {
       if (step === 1) {
         const outlet = cancelFindOutlet(document.getElementById('cancelOutletInput').value);
-        if (!outlet) { alert('ກະລຸນາເລືອກຮ້ານຈາກລາຍການ Outlet Master Data ກ່ອນ'); return false; }
+        if (!outlet) { appAlert('ກະລຸນາເລືອກຮ້ານຈາກລາຍການ Outlet Master Data ກ່ອນ'); return false; }
         const mdeCode = document.getElementById('cancelMdeCode').value.trim();
-        if (!mdeCode) { alert('ກະລຸນາປ້ອນ MDE Code'); return false; }
+        if (!mdeCode) { appAlert('ກະລຸນາປ້ອນ MDE Code'); return false; }
         cancelCtx = { outlet, mde_code: mdeCode, mde_name: mdeNameFor(mdeCode) || '' };
       }
       if (step === 2) {
         if (!cancelSelectedReasons().length) {
-          alert('ກະລຸນາເລືອກເຫດຜົນຢ່າງໜ້ອຍ 1 ຂໍ້');
+          appAlert('ກະລຸນາເລືອກເຫດຜົນຢ່າງໜ້ອຍ 1 ຂໍ້');
           return false;
         }
         if (!loanRequireFields([
@@ -23355,9 +23517,9 @@ function assetStatusBadgeClass(status) {
       }
       if (step === 3) {
         const ownerDocErr = ownerDocError('cancel');
-        if (ownerDocErr) { alert(ownerDocErr); return false; }
+        if (ownerDocErr) { appAlert(ownerDocErr); return false; }
         if (!getSignatureDataUrl('cancelSigMdeCanvas')) {
-          alert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນ');
+          appAlert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນ');
           return false;
         }
       }
@@ -23456,11 +23618,11 @@ function assetStatusBadgeClass(status) {
       if (!cancelCtx) return;
       if (cancelSaving || cancelSaved) return; // ກຳລັງບັນທຶກ ຫຼື ບັນທຶກແລ້ວ -> ບໍ່ສ້າງຊ້ຳ
       const payload = cancelPayload();
-      if (!payload.reasons.length) { alert('ກະລຸນາເລືອກເຫດຜົນຢ່າງໜ້ອຍ 1 ຂໍ້'); return; }
-      if (!payload.qr_cd || !payload.serial_no || !payload.capx) { alert('ກະລຸນາຄີ QR Code, Serial Number ແລະ Cap-X Number ໃຫ້ຄົບ'); return; }
+      if (!payload.reasons.length) { appAlert('ກະລຸນາເລືອກເຫດຜົນຢ່າງໜ້ອຍ 1 ຂໍ້'); return; }
+      if (!payload.qr_cd || !payload.serial_no || !payload.capx) { appAlert('ກະລຸນາຄີ QR Code, Serial Number ແລະ Cap-X Number ໃຫ້ຄົບ'); return; }
       const cancelOwnerDocErr = ownerDocError('cancel');
-      if (cancelOwnerDocErr) { alert(cancelOwnerDocErr); cancelShowStep(3); return; }
-      if (!payload.sig_mde) { alert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນອອກໃບ'); return; }
+      if (cancelOwnerDocErr) { appAlert(cancelOwnerDocErr); cancelShowStep(3); return; }
+      if (!payload.sig_mde) { appAlert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນອອກໃບ'); return; }
       const btn = document.getElementById('cancelSubmitBtn');
       cancelSaving = true;
       btn.disabled = true;
@@ -23474,23 +23636,23 @@ function assetStatusBadgeClass(status) {
           body: JSON.stringify({ userId: currentUser.id, request_key: cancelRequestKey, ...payload, ...ownerDocPayload('cancel') }),
         });
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'ບໍ່ສາມາດບັນທຶກໃບ T- ໄດ້'); return; }
+        if (!res.ok) { appAlert(data.error || 'ບໍ່ສາມາດບັນທຶກໃບ T- ໄດ້'); return; }
         cancelSaved = true; // ລັອກປຸ່ມບັນທຶກ — ຕ້ອງການໃບໃໝ່ໃຫ້ກົດ "ອອກໃບໃໝ່"
         document.getElementById('cancelContractId').value = data.contract.id;
         const cancelAwaitingDsm = data.contract.status === 'awaiting_dsm';
         loanHistoryLoaded = false; loadLoanContractHistory(true);
         dsmWaitOpen('cancel', data.contract, cancelAwaitingDsm && !data.duplicate); // ສະເຕັບ 5: ສົ່ງລິ້ງໃຫ້ DSM (ກັບຄືນບໍ່ໄດ້)
         if (data.duplicate) {
-          alert(data.message || 'ໃບນີ້ຖືກບັນທຶກແລ້ວ - ບໍ່ສ້າງຊ້ຳ');
+          appAlert(data.message || 'ໃບນີ້ຖືກບັນທຶກແລ້ວ - ບໍ່ສ້າງຊ້ຳ');
         } else if (data.tracking_no) {
-          alert('ສ້າງ Asset Tracking ອັດຕະໂນມັດແລ້ວ (Tracking No: ' + data.tracking_no + ')');
+          appAlert('ສ້າງ Asset Tracking ອັດຕະໂນມັດແລ້ວ (Tracking No: ' + data.tracking_no + ')');
         } else if (data.self_moved_tracking_no) {
-          alert('ບັນທຶກເຂົ້າປະຫວັດການຈັດສົ່ງແລ້ວ (MDE ຍ້າຍເອງ) (Tracking No: ' + data.self_moved_tracking_no + ')');
+          appAlert('ບັນທຶກເຂົ້າປະຫວັດການຈັດສົ່ງແລ້ວ (MDE ຍ້າຍເອງ) (Tracking No: ' + data.self_moved_tracking_no + ')');
         } else if (data.warning) {
-          alert(data.warning);
+          appAlert(data.warning);
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດບັນທຶກໃບ T- ໄດ້');
+        appAlert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດບັນທຶກໃບ T- ໄດ້');
       } finally {
         cancelSaving = false;
         if (cancelSaved) {
@@ -23628,7 +23790,7 @@ function assetStatusBadgeClass(status) {
         const blobUrl = await fetchAndOpenPdf(`/api/cancel-contracts/pdf?id=${encodeURIComponent(id)}`, 'cancel-contract-' + id);
         if (!idParam && blobUrl) cancelPdfCache = { id, url: blobUrl };
       } catch (err) {
-        alert(err.message || 'ບໍ່ສາມາດເປີດ PDF ໄດ້');
+        appAlert(err.message || 'ບໍ່ສາມາດເປີດ PDF ໄດ້');
       }
     }
 
@@ -23637,11 +23799,11 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch(`/api/cancel-contracts?id=${id}`, { method: 'DELETE' });
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'ບໍ່ສາມາດລຶບໃບໄດ້'); return; }
+        if (!res.ok) { appAlert(data.error || 'ບໍ່ສາມາດລຶບໃບໄດ້'); return; }
         dbCancelHistory = dbCancelHistory.filter((c) => c.id !== id);
         filterLoanContractHistory();
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບໃບ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບໃບ');
       }
     }
 
@@ -24092,7 +24254,7 @@ function assetStatusBadgeClass(status) {
     function dsmWaitFinish() {
       const ctx = dsmWaitCtx;
       if (!ctx || ctx.busy) return;
-      if (!ctx.hasLink && ctx.contract.status !== 'completed') { alert('ກະລຸນາສ້າງລິ້ງ ແລະ ສົ່ງໃຫ້ DSM ກ່ອນກົດ "ສຳເລັດ"'); return; }
+      if (!ctx.hasLink && ctx.contract.status !== 'completed') { appAlert('ກະລຸນາສ້າງລິ້ງ ແລະ ສົ່ງໃຫ້ DSM ກ່ອນກົດ "ສຳເລັດ"'); return; }
       loanGoQueueAfterClose = true;
       dsmWaitHide();
       loanCloseSubpage();
@@ -24111,9 +24273,9 @@ function assetStatusBadgeClass(status) {
       } catch (e) {
         const el = document.getElementById((dsmLinkLast && dsmLinkLast.inputId) || 'dsmLinkInput');
         el.focus(); el.select();
-        try { document.execCommand('copy'); } catch (e2) { alert('ກັອບປີ້ບໍ່ໄດ້ — ກົດຄ້າງທີ່ຊ່ອງລິ້ງ ແລ້ວເລືອກ Copy'); return; }
+        try { document.execCommand('copy'); } catch (e2) { appAlert('ກັອບປີ້ບໍ່ໄດ້ — ກົດຄ້າງທີ່ຊ່ອງລິ້ງ ແລ້ວເລືອກ Copy'); return; }
       }
-      alert('ກັອບປີ້ລິ້ງແລ້ວ');
+      appAlert('ກັອບປີ້ລິ້ງແລ້ວ');
     }
 
     async function dsmLinkShare() {
@@ -24132,9 +24294,9 @@ function assetStatusBadgeClass(status) {
           body: JSON.stringify({ kind, id })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'ລ້າງລາຍເຊັນບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ລ້າງລາຍເຊັນບໍ່ສຳເລັດ'); return; }
         await loadLoanContractHistory(true);
-      } catch (err) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      } catch (err) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
     }
 
     /* ==================== ເຊັນຮັບໃບສັນຍາຢືມ (ຮ່າງ) — ໃຫ້ MDE ເຈົ້າຂອງໃບ (ຫຼື admin/warehouse/delivery) ເຊັນເອງໄດ້
@@ -24166,9 +24328,9 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch(`/api/loan-contracts?asset_id=${assetId}`);
         const data = await res.json();
-        if (!res.ok) { alert((data && data.error) || 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບສັນຍາໄດ້'); return; }
+        if (!res.ok) { appAlert((data && data.error) || 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບສັນຍາໄດ້'); return; }
         if (!data || !data.length) {
-          alert('ຍັງບໍ່ມີໃບສັນຍາຢືມສຳລັບ Asset ນີ້');
+          appAlert('ຍັງບໍ່ມີໃບສັນຍາຢືມສຳລັບ Asset ນີ້');
           return;
         }
         const contract = data[0]; // ລ້າສຸດ (ORDER BY id DESC)
@@ -24181,7 +24343,7 @@ function assetStatusBadgeClass(status) {
           openLoanSignModal(contract.id, contract);
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດດຶງຂໍ້ມູນໃບສັນຍາໄດ້');
+        appAlert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດດຶງຂໍ້ມູນໃບສັນຍາໄດ້');
       }
     }
 
@@ -24191,9 +24353,9 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch(`/api/cancel-contracts?asset_id=${assetId}`);
         const data = await res.json();
-        if (!res.ok) { alert((data && data.error) || 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບເກັບຕູ້ເຂົ້າສາງໄດ້'); return; }
+        if (!res.ok) { appAlert((data && data.error) || 'ບໍ່ສາມາດດຶງຂໍ້ມູນໃບເກັບຕູ້ເຂົ້າສາງໄດ້'); return; }
         if (!data || !data.length) {
-          alert('ຍັງບໍ່ມີໃບເກັບຕູ້ເຂົ້າສາງ (T-) ສຳລັບ Asset ນີ້');
+          appAlert('ຍັງບໍ່ມີໃບເກັບຕູ້ເຂົ້າສາງ (T-) ສຳລັບ Asset ນີ້');
           return;
         }
         const canSeeUnsigned = ['admin', 'warehouse', 'delivery'].includes(currentUser && currentUser.role);
@@ -24206,13 +24368,13 @@ function assetStatusBadgeClass(status) {
           return;
         }
         if (!done) {
-          alert('ມີໃບເກັບຕູ້ເຂົ້າສາງ' + (data[0].doc_no ? ' (' + data[0].doc_no + ')' : '') + ' ແຕ່ຍັງບໍ່ທັນເຊັນຮັບ - ຕ້ອງເຊັນຮັບກ່ອນຈຶ່ງຈະເປີດ PDF ໄດ້');
+          appAlert('ມີໃບເກັບຕູ້ເຂົ້າສາງ' + (data[0].doc_no ? ' (' + data[0].doc_no + ')' : '') + ' ແຕ່ຍັງບໍ່ທັນເຊັນຮັບ - ຕ້ອງເຊັນຮັບກ່ອນຈຶ່ງຈະເປີດ PDF ໄດ້');
           return;
         }
         closeDetailModal();
         openCancelContractPdf(done.id);
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດດຶງຂໍ້ມູນໃບເກັບຕູ້ເຂົ້າສາງໄດ້');
+        appAlert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດດຶງຂໍ້ມູນໃບເກັບຕູ້ເຂົ້າສາງໄດ້');
       }
     }
 
@@ -24288,13 +24450,13 @@ function assetStatusBadgeClass(status) {
         const res = await fetch(`/api/loan-contracts?id=${id}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok) {
-          alert(data.error || 'ບໍ່ສາມາດລຶບໃບສັນຍາໄດ້');
+          appAlert(data.error || 'ບໍ່ສາມາດລຶບໃບສັນຍາໄດ້');
           return;
         }
         dbLoanContractHistory = dbLoanContractHistory.filter((c) => c.id !== id);
         filterLoanContractHistory();
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບໃບສັນຍາ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບໃບສັນຍາ');
       }
     }
 
@@ -24422,12 +24584,12 @@ function assetStatusBadgeClass(status) {
       // ໃບຮ່າງ (ແກ້ໄຂໃບເດີມ) ບໍ່ຕ້ອງມີ Outlet Code: ຮ້ານທີ່ບໍ່ຢູ່ໃນ Outlet Master (ເຊັ່ນ Asset ດ່ວນ) ບໍ່ມີລະຫັດຮ້ານ -> ເມື່ອກ່ອນ return ງຽບໆ ເຮັດໃຫ້ປຸ່ມກົດແລ້ວບໍ່ມີຫຍັງເກີດຂຶ້ນ
       // ໃບໃໝ່ (ບໍ່ມີ Asset) ຍັງຕ້ອງເລືອກຮ້ານ — ແຈ້ງເຕືອນຊັດເຈນແທນການງຽບ
       if (!outletCode && !loanEditingContractId) {
-        alert('ກະລຸນາເລືອກຮ້ານກ່ອນບັນທຶກ');
+        appAlert('ກະລຸນາເລືອກຮ້ານກ່ອນບັນທຶກ');
         loanShowStep(1);
         return;
       }
       if (!document.getElementById('loanManualMde').value.trim()) {
-        alert('ກະລຸນາປ້ອນ MDE Code');
+        appAlert('ກະລຸນາປ້ອນ MDE Code');
         return;
       }
 
@@ -24436,11 +24598,11 @@ function assetStatusBadgeClass(status) {
 
       if (!loanValidateSales()) { loanShowStep(3); return; }
       const loanLayoutErr = lpError('loan', handoverType);
-      if (loanLayoutErr) { alert(loanLayoutErr); loanShowStep(4); return; }
+      if (loanLayoutErr) { appAlert(loanLayoutErr); loanShowStep(4); return; }
       const loanOwnerDocErr = ownerDocError('loan');
-      if (loanOwnerDocErr) { alert(loanOwnerDocErr); loanShowStep(5); return; }
+      if (loanOwnerDocErr) { appAlert(loanOwnerDocErr); loanShowStep(5); return; }
       if (!sigMde) {
-        alert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນອອກໃບ');
+        appAlert('ກະລຸນາເຊັນລາຍເຊັນ MDE ກ່ອນອອກໃບ');
         return;
       }
 
@@ -24499,7 +24661,7 @@ function assetStatusBadgeClass(status) {
         });
         const data = await res.json();
         if (!res.ok) {
-          alert(data.error || 'ບໍ່ສາມາດບັນທຶກໃບສັນຍາໄດ້');
+          appAlert(data.error || 'ບໍ່ສາມາດບັນທຶກໃບສັນຍາໄດ້');
           return;
         }
         loanSaved = true; // ລັອກປຸ່ມບັນທຶກ — ຕ້ອງການໃບໃໝ່ໃຫ້ກົດ "ອອກໃບໃໝ່"
@@ -24510,17 +24672,17 @@ function assetStatusBadgeClass(status) {
         dsmWaitOpen('loan', data.contract, loanAwaitingDsm && !data.duplicate); // ສະເຕັບ 5: ສົ່ງລິ້ງໃຫ້ DSM (ກັບຄືນບໍ່ໄດ້)
         /* ປະເພດ "ຕູ້ເຄື່ອນຍ້າຍ": ລະບົບສ້າງ Asset Tracking ໃຫ້ອັດຕະໂນມັດ -> ແຈ້ງ Tracking No ແລະ ໂຫລດລາຍການ Asset ຄືນ */
         if (data.duplicate) {
-          alert(data.message || 'ໃບນີ້ຖືກບັນທຶກແລ້ວ - ບໍ່ສ້າງຊ້ຳ');
+          appAlert(data.message || 'ໃບນີ້ຖືກບັນທຶກແລ້ວ - ບໍ່ສ້າງຊ້ຳ');
         } else if (data.tracking_no) {
           try { loadAssetTracking(); } catch (_) {}
-          alert('ສ້າງ Asset Tracking ອັດຕະໂນມັດແລ້ວ (Tracking No: ' + data.tracking_no + ')');
+          appAlert('ສ້າງ Asset Tracking ອັດຕະໂນມັດແລ້ວ (Tracking No: ' + data.tracking_no + ')');
         } else if (data.self_moved_tracking_no) {
-          alert('ບັນທຶກເຂົ້າປະຫວັດການຈັດສົ່ງແລ້ວ (MDE ຍ້າຍເອງ) (Tracking No: ' + data.self_moved_tracking_no + ')');
+          appAlert('ບັນທຶກເຂົ້າປະຫວັດການຈັດສົ່ງແລ້ວ (MDE ຍ້າຍເອງ) (Tracking No: ' + data.self_moved_tracking_no + ')');
         } else if (data.warning) {
-          alert(data.warning);
+          appAlert(data.warning);
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດບັນທຶກໃບສັນຍາໄດ້');
+        appAlert('ເກີດຂໍ້ຜິດພາດ ບໍ່ສາມາດບັນທຶກໃບສັນຍາໄດ້');
       } finally {
         loanSaving = false;
         if (loanSaved) {
@@ -24545,7 +24707,7 @@ function assetStatusBadgeClass(status) {
         const blobUrl = await fetchAndOpenPdf(`/api/loan-contracts/pdf?id=${encodeURIComponent(id)}`, 'loan-contract-' + id);
         if (!idParam && blobUrl) loanPdfCache = { id, url: blobUrl };
       } catch (err) {
-        alert(err.message || 'ບໍ່ສາມາດເປີດ PDF ໄດ້');
+        appAlert(err.message || 'ບໍ່ສາມາດເປີດ PDF ໄດ້');
       } finally {
         if (link) link.innerHTML = orig;
       }
@@ -24607,7 +24769,7 @@ function assetStatusBadgeClass(status) {
         preview.classList.add('hidden');
         preview.removeAttribute('src');
         onDone(null);
-        alert(err.message || 'ບໍ່ສາມາດອ່ານຮູບນີ້ໄດ້');
+        appAlert(err.message || 'ບໍ່ສາມາດອ່ານຮູບນີ້ໄດ້');
       }
     }
 
@@ -24623,14 +24785,14 @@ function assetStatusBadgeClass(status) {
       const id = document.getElementById('deliverAssetId').value;
       if (!id) return;
       if (!deliverPhotos.qr || !deliverPhotos.serial || !deliverPhotos.capex || !deliverPhotos.asset || !deliverPhotos.document) {
-        alert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)');
+        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)');
         return;
       }
       const needSig = deliverNeedsSignature();
       const sigName = needSig ? document.getElementById('deliverSigName').value.trim() : '';
       const sigData = needSig ? getSignatureDataUrl('deliverSigCanvas') : null;
-      if (needSig && !sigName) { alert('ກະລຸນາປ້ອນຊື່ລູກຄ້າທີ່ເຊັນຮັບ'); return; }
-      if (needSig && !sigData) { alert('ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນ'); return; }
+      if (needSig && !sigName) { appAlert('ກະລຸນາປ້ອນຊື່ລູກຄ້າທີ່ເຊັນຮັບ'); return; }
+      if (needSig && !sigData) { appAlert('ກະລຸນາໃຫ້ລູກຄ້າເຊັນຮັບກ່ອນຢືນຢັນ'); return; }
       if (!await appConfirm('ຢືນຢັນການຈັດສົ່ງ Asset ນີ້ສຳເລັດ?')) return;
 
       const btn = document.getElementById('deliverConfirmBtn');
@@ -24650,15 +24812,15 @@ function assetStatusBadgeClass(status) {
         });
         const data = await res.json();
         if (res.ok) {
-          alert(data.message);
+          appAlert(data.message);
           resetDeliveryConfirmForm();
           if (dlvPopupActive) dlvPopupClose();
         } else {
-          alert(data.error || 'ບໍ່ສາມາດຢືນຢັນການຈັດສົ່ງໄດ້');
+          appAlert(data.error || 'ບໍ່ສາມາດຢືນຢັນການຈັດສົ່ງໄດ້');
           btn.disabled = false;
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການຢືນຢັນການຈັດສົ່ງ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການຢືນຢັນການຈັດສົ່ງ');
         btn.disabled = false;
       }
     }
@@ -24721,7 +24883,7 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch(`/api/asset-tracking/lookup-by-qr?userId=${currentUser.id}&qr_code=${encodeURIComponent(qr)}`);
         const data = await res.json();
-        if (data.found && data.already_delivered) { alert(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ'); return; }
+        if (data.found && data.already_delivered) { appAlert(data.error || 'Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ'); return; }
         if (data.found) {
           // ມີ Asset Tracking -> wizard ລາຍງານການຈັດສົ່ງ
           dlvPopupOpen('confirm');
@@ -24730,7 +24892,7 @@ function assetStatusBadgeClass(status) {
           await lookupAssetForDelivery();
           return;
         }
-        if (data.ambiguous) { alert(data.error || 'ພົບຫຼາຍກວ່າ 1 ລາຍການ — ກະລຸນາສະແກນ QR ເຕັມ'); return; }
+        if (data.ambiguous) { appAlert(data.error || 'ພົບຫຼາຍກວ່າ 1 ລາຍການ — ກະລຸນາສະແກນ QR ເຕັມ'); return; }
 
         // ບໍ່ມີ Asset Tracking -> wizard ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ (ດຶງຂໍ້ມູນຕູ້ຈາກສະຕັອກຖ້າມີ)
         let st = null;
@@ -24749,7 +24911,7 @@ function assetStatusBadgeClass(status) {
         }
         noDocShowStep(1);
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset');
       }
     }
 
@@ -24785,7 +24947,7 @@ function assetStatusBadgeClass(status) {
         const team = document.getElementById('noDocTeam').value;
         const mdeCode = document.getElementById('noDocMdeCode').value;
         if (!outletCode || !outletName || !team || !mdeCode) {
-          alert('ກະລຸນາປ້ອນ ລະຫັດຮ້ານ, ຊື່ຮ້ານ, ເລືອກ Team ແລະ MDE Code ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+          appAlert('ກະລຸນາປ້ອນ ລະຫັດຮ້ານ, ຊື່ຮ້ານ, ເລືອກ Team ແລະ MDE Code ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
           return false;
         }
         const docType = document.getElementById('noDocDocType').value;
@@ -24793,7 +24955,7 @@ function assetStatusBadgeClass(status) {
           const oldCode = document.getElementById('noDocOldOutletCode').value.trim();
           const oldName = document.getElementById('noDocOldOutletName').value.trim();
           if (!oldCode || !oldName) {
-            alert('Doc Type "ຕູ້ເຄື່ອນຍ້າຍ" ຕ້ອງປ້ອນ Outlet Code ແລະ Outlet Name ຂອງຮ້ານເດີມໃຫ້ຄົບ');
+            appAlert('Doc Type "ຕູ້ເຄື່ອນຍ້າຍ" ຕ້ອງປ້ອນ Outlet Code ແລະ Outlet Name ຂອງຮ້ານເດີມໃຫ້ຄົບ');
             return false;
           }
         }
@@ -24801,7 +24963,7 @@ function assetStatusBadgeClass(status) {
       if (step === 2) {
         const docType = document.getElementById('noDocDocType').value;
         if (STOCK_MASTER_DOC_TYPES.includes(docType) && !noDocSelectedStock) {
-          alert(`Doc Type "${docType}" ຕ້ອງຄົ້ນຫາ ແລະ ເລືອກລາຍການຈາກສະຕ໋ອກສາງກ່ອນ`);
+          appAlert(`Doc Type "${docType}" ຕ້ອງຄົ້ນຫາ ແລະ ເລືອກລາຍການຈາກສະຕ໋ອກສາງກ່ອນ`);
           return false;
         }
       }
@@ -25168,7 +25330,7 @@ function assetStatusBadgeClass(status) {
           alertBox.textContent = data.message;
           alertBox.className = 'alert alert-success';
           alertBox.classList.remove('hidden');
-          if (dlvPopupActive) { alert(data.message); dlvPopupClose(); }
+          if (dlvPopupActive) { appAlert(data.message); dlvPopupClose(); }
         } else {
           alertBox.textContent = data.error || 'ບໍ່ສາມາດບັນທຶກຂໍ້ມູນໄດ້';
           alertBox.className = 'alert alert-error';
@@ -25286,10 +25448,10 @@ function assetStatusBadgeClass(status) {
         if (res.ok) {
           loadNoDocDeliveries();
         } else {
-          alert(data.error || 'ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້');
+          appAlert(data.error || 'ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້');
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -25328,13 +25490,13 @@ function assetStatusBadgeClass(status) {
 
     function woValidateStep(step) {
       if (step === 1) {
-        if (!woSelectedStock) { alert('ກະລຸນາຄົ້ນຫາ ແລະ ເລືອກຕູ້ຈາກສະຕັອກສາງ (QR / Serial / CapEx) ກ່ອນ'); return false; }
+        if (!woSelectedStock) { appAlert('ກະລຸນາຄົ້ນຫາ ແລະ ເລືອກຕູ້ຈາກສະຕັອກສາງ (QR / Serial / CapEx) ກ່ອນ'); return false; }
       }
       if (step === 2) {
-        if (!document.getElementById('woReason').value) { alert('ກະລຸນາເລືອກເຫດຜົນການສະສາງ'); return false; }
-        if (!document.getElementById('woDate').value) { alert('ກະລຸນາປ້ອນວັນທີ່ສະສາງ'); return false; }
+        if (!document.getElementById('woReason').value) { appAlert('ກະລຸນາເລືອກເຫດຜົນການສະສາງ'); return false; }
+        if (!document.getElementById('woDate').value) { appAlert('ກະລຸນາປ້ອນວັນທີ່ສະສາງ'); return false; }
         if (document.getElementById('woReason').value === 'other' && !document.getElementById('woNotes').value.trim()) {
-          alert('ເຫດຜົນ "ອື່ນໆ" ກະລຸນາລະບຸລາຍລະອຽດໃນໝາຍເຫດ'); return false;
+          appAlert('ເຫດຜົນ "ອື່ນໆ" ກະລຸນາລະບຸລາຍລະອຽດໃນໝາຍເຫດ'); return false;
         }
       }
       return true;
@@ -25719,7 +25881,7 @@ function assetStatusBadgeClass(status) {
     /* Export ລາຍງານສະສາງທີ່ກຳລັງສະແດງຢູ່ (ຫຼັງຄົ້ນຫາ) ເປັນ .xlsx */
     function exportCoolerWriteOffsToExcel() {
       const items = getFilteredCoolerWriteOffs();
-      if (!items.length) { alert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
+      if (!items.length) { appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
       const rows = items.map(w => ({
         'ວັນທີ່ສະສາງ': w.writeoff_date || '',
         'Cooler Brand': w.cooler_brand || '',
@@ -25768,11 +25930,11 @@ function assetStatusBadgeClass(status) {
 
     function ceValidateStep(step) {
       if (step === 1 && !document.getElementById('ceEventLocation').value.trim()) {
-        alert('ກະລຸນາປ້ອນສະຖານທີ່ (ເອົາໄປໃສ) ກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        appAlert('ກະລຸນາປ້ອນສະຖານທີ່ (ເອົາໄປໃສ) ກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       if (step === 2 && !document.getElementById('ceTakenDate').value) {
-        alert('ກະລຸນາປ້ອນວັນທີ່ເອົາໄປ ກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+        appAlert('ກະລຸນາປ້ອນວັນທີ່ເອົາໄປ ກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
       return true;
@@ -26123,10 +26285,10 @@ function assetStatusBadgeClass(status) {
         if (res.ok) {
           loadCoolerEvents();
         } else {
-          alert(data.error || 'ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້');
+          appAlert(data.error || 'ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້');
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -26667,7 +26829,7 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch('/api/admin/ship-plan');
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'ໂຫຼດແຜນສົ່ງຕູ້ບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ໂຫຼດແຜນສົ່ງຕູ້ບໍ່ສຳເລັດ'); return; }
         spData = data;
         await Promise.all([spLoadProvinces(), spLoadBrands(), spLoadBudgets()]);
         document.getElementById('spMigrationWarn').classList.toggle('hidden', !data.table_missing);
@@ -26678,7 +26840,7 @@ function assetStatusBadgeClass(status) {
         spRenderPlan();
         spRenderHub();
       } catch (e) {
-        alert('ໂຫຼດແຜນສົ່ງຕູ້ບໍ່ສຳເລັດ');
+        appAlert('ໂຫຼດແຜນສົ່ງຕູ້ບໍ່ສຳເລັດ');
       }
     }
 
@@ -26936,7 +27098,7 @@ function assetStatusBadgeClass(status) {
       const t = spTruck();
       if (!t || !spMixSel || !spMixItems[spMixSel]) return;
       const ch = spRotateChanges(spMixItems, spMixSel, t);
-      if (!ch) { alert('ໝຸນບໍ່ໄດ້ — ບໍ່ມີບ່ອນພໍໃນກະບະ (ຕູ້ອື່ນຖືກດັນບໍ່ໄດ້)'); return; }
+      if (!ch) { appAlert('ໝຸນບໍ່ໄດ້ — ບໍ່ມີບ່ອນພໍໃນກະບະ (ຕູ້ອື່ນຖືກດັນບໍ່ໄດ້)'); return; }
       Object.keys(ch).forEach(k => { spMixManual[k] = ch[k]; });
       spRenderMix();
     }
@@ -27379,7 +27541,7 @@ function assetStatusBadgeClass(status) {
       const t = spTruck(), b = spLastPlan && spLastPlan.bins[i];
       if (!t || !b || !b.selKey) return;
       const ch = spRotateChanges(spBinItemMap(b), b.selKey, t);
-      if (!ch) { alert('ໝຸນບໍ່ໄດ້ — ບໍ່ມີບ່ອນພໍໃນກະບະ (ຕູ້ອື່ນຖືກດັນບໍ່ໄດ້)'); return; }
+      if (!ch) { appAlert('ໝຸນບໍ່ໄດ້ — ບໍ່ມີບ່ອນພໍໃນກະບະ (ຕູ້ອື່ນຖືກດັນບໍ່ໄດ້)'); return; }
       spBinApply(b, ch);
       spRenderBinSvg(i);
     }
@@ -27488,9 +27650,9 @@ function assetStatusBadgeClass(status) {
       const t = spTruck();
       const bins = (spLastPlan && spLastPlan.bins) || [];
       const idx = [...spSelected].filter(i => bins[i]).sort((a, b) => a - b);
-      if (!t || !idx.length) { alert('ກະລຸນາໝາຍຖືກລົດຢ່າງໜ້ອຍ 1 ຄັນ'); return; }
+      if (!t || !idx.length) { appAlert('ກະລຸນາໝາຍຖືກລົດຢ່າງໜ້ອຍ 1 ຄັນ'); return; }
       const noProv = idx.filter(i => spBinItems(bins[i]).some(x => !x.province));
-      if (noProv.length) { alert('ລົດຄັນທີ ' + noProv.map(i => i + 1).join(', ') + ' ມີຕູ້ທີ່ຍັງບໍ່ໄດ້ເລືອກແຂວງ — ກະລຸນາເລືອກແຂວງໃນຕາຕະລາງຄິດແຜນກ່ອນ'); return; }
+      if (noProv.length) { appAlert('ລົດຄັນທີ ' + noProv.map(i => i + 1).join(', ') + ' ມີຕູ້ທີ່ຍັງບໍ່ໄດ້ເລືອກແຂວງ — ກະລຸນາເລືອກແຂວງໃນຕາຕະລາງຄິດແຜນກ່ອນ'); return; }
       document.getElementById('spTripDate').value = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
       document.getElementById('spTripMsg').innerHTML = '';
       document.getElementById('spTripDone').classList.add('hidden');
@@ -27658,10 +27820,10 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch('/api/admin/truck-types/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
         spCloseTruckModal();
         await loadShipPlanPage();
-      } catch (e) { alert('ບັນທຶກບໍ່ສຳເລັດ'); }
+      } catch (e) { appAlert('ບັນທຶກບໍ່ສຳເລັດ'); }
     }
 
     /* ===================== ງົບຕູ້ແຊ່ຕ່າງແຂວງ (view-prov-budget) ===================== */
@@ -27675,12 +27837,12 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch('/api/admin/prov-budgets');
         const data = await res.json();
-        if (!res.ok) { alert(data.error || 'ໂຫຼດງົບບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ໂຫຼດງົບບໍ່ສຳເລັດ'); return; }
         pbData = data;
         pbAnimate = true;
         pbRender();
       } catch (e) {
-        alert('ໂຫຼດງົບບໍ່ສຳເລັດ');
+        appAlert('ໂຫຼດງົບບໍ່ສຳເລັດ');
       }
     }
 
@@ -27991,17 +28153,17 @@ function assetStatusBadgeClass(status) {
         note: document.getElementById('pbNote').value
       };
       if (!payload.province || !payload.cooler_brand || !payload.cooler_type || payload.quota === '') {
-        alert('ກະລຸນາເລືອກແຂວງ, Brand, Type ແລະ ປ້ອນໂຄຕ້າໃຫ້ຄົບ');
+        appAlert('ກະລຸນາເລືອກແຂວງ, Brand, Type ແລະ ປ້ອນໂຄຕ້າໃຫ້ຄົບ');
         return;
       }
       if (!document.getElementById('pbWarehouseGroup').classList.contains('hidden') && !payload.warehouse && document.getElementById('pbWarehouse').dataset.legacy !== '1') {
-        alert('ແຂວງນີ້ມີສາງສະເພາະແຂວງ — ກະລຸນາເລືອກສາງ');
+        appAlert('ແຂວງນີ້ມີສາງສະເພາະແຂວງ — ກະລຸນາເລືອກສາງ');
         return;
       }
       payload.quota = parseInt(payload.quota, 10);
       const res = await fetch('/api/admin/prov-budgets/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) { pbCloseModal(); loadProvBudgetPage(); } else { alert(data.error || 'ບັນທຶກງົບບໍ່ສຳເລັດ'); }
+      if (res.ok) { pbCloseModal(); loadProvBudgetPage(); } else { appAlert(data.error || 'ບັນທຶກງົບບໍ່ສຳເລັດ'); }
     }
 
     /* ===================== Import / Export Excel ງົບຕູ້ແຊ່ຕ່າງແຂວງ =====================
@@ -28028,7 +28190,7 @@ function assetStatusBadgeClass(status) {
 
     function pbExportExcel() {
       const list = (pbData && pbData.budgets) || [];
-      if (!list.length) { alert('ບໍ່ມີຂໍ້ມູນງົບໃຫ້ Export'); return; }
+      if (!list.length) { appAlert('ບໍ່ມີຂໍ້ມູນງົບໃຫ້ Export'); return; }
       const rows = list.map(b => ({
         'ພາກ': pbRegionOf(b.province), 'ແຂວງ': b.province || '', 'ສາງສະເພາະແຂວງ': b.warehouse || '', 'Brand': b.cooler_brand || '', 'Type': b.cooler_type || '',
         'ໂຄຕ້າ': b.quota ?? 0, 'ໝາຍເຫດ': b.note || '', 'ໃຊ້ແລ້ວ': b.used || 0, 'ຈອງໃນຖ້ຽວ': b.reserved || 0, 'ຈອງໃນແຜນ': b.planned || 0
@@ -28057,7 +28219,7 @@ function assetStatusBadgeClass(status) {
             quota: pick(r, ['ໂຄຕ້າ', 'ງົບ', 'quota', 'Quota']),
             note: String(pick(r, ['ໝາຍເຫດ', 'note', 'Note'])).trim()
           })).filter(r => r.province || r.cooler_brand || r.cooler_type || r.quota !== '');
-          if (!rows.length) { alert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ (ຕ້ອງມີຄໍລຳ: ' + PB_COLS.join(' / ') + ')'); return; }
+          if (!rows.length) { appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ (ຕ້ອງມີຄໍລຳ: ' + PB_COLS.join(' / ') + ')'); return; }
           if (!await appConfirm(`ພົບ ${rows.length} ແຖວ — ງົບທີ່ມີຢູ່ແລ້ວ (ແຂວງ+ສາງ+Brand+Type ກົງກັນ) ຈະຖືກອັບເດດໂຄຕ້າ, ອັນໃໝ່ຈະຖືກເພີ່ມ. ຕ້ອງການນຳເຂົ້າຫຼືບໍ່?`)) return;
 
           showImportProgress('ກຳລັງນຳເຂົ້າງົບຕູ້ແຊ່ຕ່າງແຂວງ...');
@@ -28082,11 +28244,11 @@ function assetStatusBadgeClass(status) {
           if (errors.length) {
             msg += `\nຂ້າມ ${errors.length} ແຖວ:\n` + errors.slice(0, 15).map(x => `• ແຖວ ${x.row}: ${x.reason}`).join('\n') + (errors.length > 15 ? `\n... ແລະ ອີກ ${errors.length - 15} ແຖວ` : '');
           }
-          alert(msg);
+          appAlert(msg);
           loadProvBudgetPage();
         } catch (err) {
           hideImportProgress();
-          alert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດວ່າເປັນໄຟລ໌ Excel/CSV ທີ່ຖືກຕ້ອງ');
+          appAlert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດວ່າເປັນໄຟລ໌ Excel/CSV ທີ່ຖືກຕ້ອງ');
         } finally {
           event.target.value = '';
         }
@@ -28097,7 +28259,7 @@ function assetStatusBadgeClass(status) {
     async function pbDelete(id) {
       if (!await appConfirm('ລຶບງົບແຖວນີ້ບໍ? (ຕູ້ທີ່ສົ່ງໄປແລ້ວບໍ່ໄດ້ຖືກລຶບ ແຕ່ແຂວງ/ສາງ/Brand/Type ນີ້ຈະບໍ່ມີການຈຳກັດງົບ)')) return;
       const res = await fetch('/api/admin/prov-budgets/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-      if (res.ok) loadProvBudgetPage(); else alert('ລຶບງົບບໍ່ສຳເລັດ');
+      if (res.ok) loadProvBudgetPage(); else appAlert('ລຶບງົບບໍ່ສຳເລັດ');
     }
 
     /* ===================== ຈັດການແຂວງ (ເພີ່ມ / ແກ້ໄຂ / ລຶບ + ສາງຂອງແຂວງ) ===================== */
@@ -28106,7 +28268,7 @@ function assetStatusBadgeClass(status) {
     async function pvLoad() {
       const res = await fetch('/api/admin/provinces');
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ໂຫຼດລາຍການແຂວງບໍ່ສຳເລັດ'); return false; }
+      if (!res.ok) { appAlert(data.error || 'ໂຫຼດລາຍການແຂວງບໍ່ສຳເລັດ'); return false; }
       pvData = data;
       return true;
     }
@@ -28147,14 +28309,14 @@ function assetStatusBadgeClass(status) {
 
     async function pvSave() {
       const name = document.getElementById('pvName').value.trim();
-      if (!name) { alert('ກະລຸນາປ້ອນຊື່ແຂວງ'); return; }
+      if (!name) { appAlert('ກະລຸນາປ້ອນຊື່ແຂວງ'); return; }
       const id = document.getElementById('pvEditId').value || null;
       const old = id ? pvData.provinces.find(x => Number(x.id) === Number(id)) : null;
       if (old && old.name !== name && !await appConfirm(`ປ່ຽນຊື່ແຂວງ "${old.name}" ເປັນ "${name}"? ລະບົບຈະປ່ຽນຊື່ໃນງົບ, ຕູ້ ແລະ ຖ້ຽວລົດ ໃຫ້ທັງໝົດ`)) return;
       const warehouses = document.getElementById('pvWhList').value.split('\n').map(x => x.trim()).filter(Boolean);
       const res = await fetch('/api/admin/provinces/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, name, note: document.getElementById('pvNote').value, warehouses }) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ບັນທຶກແຂວງບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ບັນທຶກແຂວງບໍ່ສຳເລັດ'); return; }
       pvCloseEdit();
       await pvLoad();
       pvRenderList();
@@ -28166,7 +28328,7 @@ function assetStatusBadgeClass(status) {
       if (!p || !await appConfirm(`ລຶບແຂວງ "${p.name}" ບໍ?`)) return;
       const res = await fetch('/api/admin/provinces/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data.error || 'ລຶບແຂວງບໍ່ສຳເລັດ'); return; }
+      if (!res.ok) { appAlert(data.error || 'ລຶບແຂວງບໍ່ສຳເລັດ'); return; }
       await pvLoad();
       pvRenderList();
       loadProvBudgetPage();
@@ -28206,7 +28368,7 @@ function assetStatusBadgeClass(status) {
       const quota = document.getElementById('editBudgetQuota').value;
 
       if (!team || quota === '') {
-        alert('ກະລຸນາປ້ອນ Team ແລະ ໂຄຕ້າໃຫ້ຄົບ');
+        appAlert('ກະລຸນາປ້ອນ Team ແລະ ໂຄຕ້າໃຫ້ຄົບ');
         return;
       }
 
@@ -28221,7 +28383,7 @@ function assetStatusBadgeClass(status) {
         closeBudgetModal();
         loadBudgetTable();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ');
       }
     }
 
@@ -28251,16 +28413,16 @@ function assetStatusBadgeClass(status) {
     async function confirmSpareTransfer() {
       const to_team = document.getElementById('spareTransferTeam').value;
       const quantity = parseInt(document.getElementById('spareTransferQty').value, 10);
-      if (!to_team || !(quantity > 0)) { alert('ກະລຸນາເລືອກທີມ ແລະ ປ້ອນຈຳນວນທີ່ໂອນ'); return; }
+      if (!to_team || !(quantity > 0)) { appAlert('ກະລຸນາເລືອກທີມ ແລະ ປ້ອນຈຳນວນທີ່ໂອນ'); return; }
       const btn = document.getElementById('spareTransferSaveBtn'); btn.disabled = true;
       try {
         const res = await fetch('/api/admin/transfer-spare', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ spare_id: Number(document.getElementById('spareTransferId').value), to_team, quantity, note: document.getElementById('spareTransferNote').value }) });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(d.error || 'ໂອນບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(d.error || 'ໂອນບໍ່ສຳເລັດ'); return; }
         document.getElementById('spareTransferModal').classList.add('hidden');
         loadBudgetTable();
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
       finally { btn.disabled = false; }
     }
     function openArchiveBudgetModal(id, team, brand, type, quota, used, periodLabel) {
@@ -28275,10 +28437,10 @@ function assetStatusBadgeClass(status) {
         const res = await fetch('/api/admin/archive-budget', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: Number(document.getElementById('budgetArchiveId').value), label: document.getElementById('budgetArchiveLabel').value }) });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(d.error || 'Archive ບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(d.error || 'Archive ບໍ່ສຳເລັດ'); return; }
         document.getElementById('budgetArchiveModal').classList.add('hidden');
         loadBudgetTable();
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
       finally { btn.disabled = false; }
     }
     async function deleteBudget(id) {
@@ -28293,7 +28455,7 @@ function assetStatusBadgeClass(status) {
       if (res.ok) {
         loadBudgetTable();
       } else {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ');
       }
     }
 
@@ -28713,7 +28875,7 @@ function assetStatusBadgeClass(status) {
 
       if (noOutletCode) {
         if (!outlet_name) {
-          alert('ກະລຸນາພິມຊື່ຮ້ານຄ້າ');
+          appAlert('ກະລຸນາພິມຊື່ຮ້ານຄ້າ');
           return;
         }
         const manualFields = [
@@ -28722,40 +28884,40 @@ function assetStatusBadgeClass(status) {
         ];
         for (const [id, label] of manualFields) {
           if (!document.getElementById(id).value.trim()) {
-            alert('ກະລຸນາຕື່ມ ' + label);
+            appAlert('ກະລຸນາຕື່ມ ' + label);
             document.getElementById(id).focus();
             return;
           }
         }
       } else {
         if (!outlet_code) {
-          alert('ກະລຸນາປ້ອນ Outlet Code (ຫຼືຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວພິມຊື່ຮ້ານ)');
+          appAlert('ກະລຸນາປ້ອນ Outlet Code (ຫຼືຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວພິມຊື່ຮ້ານ)');
           return;
         }
         if (!outlet_name) {
-          alert('ບໍ່ພົບ Outlet Code ນີ້ໃນ Master Data - ກວດລະຫັດອີກຄັ້ງ ຫຼືຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວພິມຊື່ຮ້ານ');
+          appAlert('ບໍ່ພົບ Outlet Code ນີ້ໃນ Master Data - ກວດລະຫັດອີກຄັ້ງ ຫຼືຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວພິມຊື່ຮ້ານ');
           return;
         }
       }
       if (!cooler_brand || !cooler_type) {
-        alert('ກະລຸນາເລືອກ Cooler Brand ແລະ Cooler Type ໃຫ້ຄົບ');
+        appAlert('ກະລຸນາເລືອກ Cooler Brand ແລະ Cooler Type ໃຫ້ຄົບ');
         return;
       }
       if (!doc_type) {
-        alert('ກະລຸນາເລືອກ Doc Type');
+        appAlert('ກະລຸນາເລືອກ Doc Type');
         return;
       }
       if (!contract_type) {
-        alert('ກະລຸນາເລືອກປະເພດສັນຍາ');
+        appAlert('ກະລຸນາເລືອກປະເພດສັນຍາ');
         return;
       }
       if (!reason.trim()) {
-        alert('ກະລຸນາລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset');
+        appAlert('ກະລຸນາລະບຸເຫດຜົນທີ່ຕ້ອງການເບີກ Asset');
         document.getElementById('reqReason').focus();
         return;
       }
       if (!reqShopPhoto) {
-        alert('ກະລຸນາຖ່າຍຮູບ / ເລືອກຮູບຮ້ານຄ້າ');
+        appAlert('ກະລຸນາຖ່າຍຮູບ / ເລືອກຮູບຮ້ານຄ້າ');
         return;
       }
 
@@ -28792,10 +28954,10 @@ function assetStatusBadgeClass(status) {
           closeRequestModal();
           loadAssetRequests();
         } else {
-          alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ');
+          appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ');
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງຄຳຂໍ');
       } finally {
         isSubmittingAssetRequest = false;
         if (submitBtn) {
@@ -28890,7 +29052,7 @@ function assetStatusBadgeClass(status) {
       const capex = document.getElementById('approveCapex').value;
 
       if (!qr_code || !serial_number || !capex) {
-        alert('ກະລຸນາປ້ອນ QR Code, Serial Number ແລະ CapEx ໃຫ້ຄົບກ່ອນອະນຸມັດ');
+        appAlert('ກະລຸນາປ້ອນ QR Code, Serial Number ແລະ CapEx ໃຫ້ຄົບກ່ອນອະນຸມັດ');
         return;
       }
 
@@ -28906,11 +29068,11 @@ function assetStatusBadgeClass(status) {
         return;
       }
       if (res.ok) {
-        alert(data.message);
+        appAlert(data.message);
         closeApproveModal();
         loadAssetRequests();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການອະນຸມັດ');
         // 409 = ມີຄົນອະນຸມັດ/ປະຕິເສດຄຳຂໍນີ້ໄປກ່ອນແລ້ວ -> ປິດປ່ອງ ແລ້ວໂຫລດລາຍການໃໝ່ ບໍ່ໃຫ້ເຫັນປຸ່ມທີ່ໃຊ້ບໍ່ໄດ້ແລ້ວຄ້າງຢູ່
         if (res.status === 409) { closeApproveModal(); loadAssetRequests(); }
       }
@@ -28939,7 +29101,7 @@ function assetStatusBadgeClass(status) {
     async function confirmEditRequestBrand(allowOver) {
       const cooler_brand = document.getElementById('editReqBrand').value;
       const cooler_type = document.getElementById('editReqType').value;
-      if (!cooler_brand || !cooler_type) { alert('ກະລຸນາເລືອກ Brand ແລະ Type ໃຫ້ຄົບ'); return; }
+      if (!cooler_brand || !cooler_type) { appAlert('ກະລຸນາເລືອກ Brand ແລະ Type ໃຫ້ຄົບ'); return; }
       const res = await fetch('/api/admin/edit-asset-request-brand', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28947,7 +29109,7 @@ function assetStatusBadgeClass(status) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        alert(data.message || 'ແກ້ໄຂຮຽບຮ້ອຍແລ້ວ');
+        appAlert(data.message || 'ແກ້ໄຂຮຽບຮ້ອຍແລ້ວ');
         closeEditRequestBrand();
         loadAssetRequests();
         return;
@@ -28956,7 +29118,7 @@ function assetStatusBadgeClass(status) {
         if (await appConfirm(data.error + '\n\nຢືນຢັນປ່ຽນເປັນ Brand ນີ້ ແລະ ເອົາໄປນອກງົບ?')) return confirmEditRequestBrand(true);
         return;
       }
-      alert(data.error || 'ແກ້ໄຂບໍ່ສຳເລັດ');
+      appAlert(data.error || 'ແກ້ໄຂບໍ່ສຳເລັດ');
       if (res.status === 409) { closeEditRequestBrand(); loadAssetRequests(); }
     }
 
@@ -28976,10 +29138,10 @@ function assetStatusBadgeClass(status) {
 
       const data = await res.json();
       if (res.ok) {
-        alert(data.message);
+        appAlert(data.message);
         loadAssetRequests();
       } else {
-        alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ');
+        appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການອັບເດດສະຖານະ');
         if (res.status === 409) loadAssetRequests();
       }
     }
@@ -29408,7 +29570,7 @@ function assetStatusBadgeClass(status) {
         if (c.status === 'awaiting_dsm') {
           promptDsmLinkAfterSign('loan', c);
         } else {
-          alert(c.status === 'completed'
+          appAlert(c.status === 'completed'
             ? `ອອກໃບ ແລະ ເຊັນໃບສັນຍາຢືມ ${c.doc_no || ''} ຮຽບຮ້ອຍແລ້ວ`
             : `ບັນທຶກໃບສັນຍາຢືມ ${c.doc_no || ''} ແລ້ວ ແຕ່ຍັງບໍ່ທັນເຊັນຄົບ`);
         }
@@ -29446,13 +29608,13 @@ function assetStatusBadgeClass(status) {
         });
         const data = await res.json();
         if (res.ok) {
-          alert(data.message);
+          appAlert(data.message);
           loadAssetHistory();
         } else {
-          alert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບ');
+          appAlert(data.error || 'ເກີດຂໍ້ຜິດພາດໃນການລຶບ');
         }
       } catch (err) {
-        alert('ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້');
+        appAlert('ບໍ່ສາມາດລຶບຂໍ້ມູນໄດ້');
       }
     }
 
@@ -29496,9 +29658,9 @@ function assetStatusBadgeClass(status) {
     function reqVoiceTest() {
       const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
       const th = reqVoicePickLao();
-      if (!('speechSynthesis' in window)) { alert('ບຣາວເຊີນີ້ບໍ່ຮອງຮັບການອ່ານສຽງ (speechSynthesis)'); reqVoiceChime(); return; }
+      if (!('speechSynthesis' in window)) { appAlert('ບຣາວເຊີນີ້ບໍ່ຮອງຮັບການອ່ານສຽງ (speechSynthesis)'); reqVoiceChime(); return; }
       if (!th) {
-        alert(`ເຄື່ອງນີ້ບໍ່ພົບສຽງພາສາໄທ (ພົບສຽງທັງໝົດ ${vs.length} ສຽງ). ຈະເຫຼີ້ນສຽງ \"ປິງ\" ແທນ — ຕິດຕັ້ງສຽງໄທໃນ Settings > Text-to-speech ຂອງເຄື່ອງ ຫຼືລອງ Chrome/Edge`);
+        appAlert(`ເຄື່ອງນີ້ບໍ່ພົບສຽງພາສາໄທ (ພົບສຽງທັງໝົດ ${vs.length} ສຽງ). ຈະເຫຼີ້ນສຽງ \"ປິງ\" ແທນ — ຕິດຕັ້ງສຽງໄທໃນ Settings > Text-to-speech ຂອງເຄື່ອງ ຫຼືລອງ Chrome/Edge`);
         reqVoiceChime();
         return;
       }
@@ -30003,10 +30165,10 @@ function assetStatusBadgeClass(status) {
           renderNotificationList(allNotificationsData);
           refreshNotificationBadge();
         } else {
-          alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບແຈ້ງເຕືອນ');
+          appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບແຈ້ງເຕືອນ');
         }
       } catch (err) {
-        alert('ເກີດຂໍ້ຜິດພາດໃນການລຶບແຈ້ງເຕືອນ');
+        appAlert('ເກີດຂໍ້ຜິດພາດໃນການລຶບແຈ້ງເຕືອນ');
       }
     }
 
@@ -30270,10 +30432,10 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch('/api/admin/save-special-alert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(d.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(d.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
         closeSpecialAlertModal();
         loadSpecialAlerts();
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
       finally { btn.disabled = false; }
     }
     async function deleteSpecialAlert(id) {
@@ -30281,8 +30443,8 @@ function assetStatusBadgeClass(status) {
       try {
         const res = await fetch('/api/admin/delete-special-alert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
-      } catch (e) { alert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
+        if (!res.ok) { appAlert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+      } catch (e) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); return; }
       loadSpecialAlerts();
     }
 
@@ -30454,7 +30616,7 @@ function assetStatusBadgeClass(status) {
 
     async function savePlaybookItem() {
       const name = document.getElementById('playbookName').value.trim();
-      if (!name) { alert('ກະລຸນາປ້ອນຊື່ປະເພດຕູ້'); return; }
+      if (!name) { appAlert('ກະລຸນາປ້ອນຊື່ປະເພດຕູ້'); return; }
       const btn = document.getElementById('playbookSaveBtn');
       if (btn.disabled) return;
       btn.disabled = true;
@@ -30479,11 +30641,11 @@ function assetStatusBadgeClass(status) {
           })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
         closePlaybookModal();
         await loadPlaybook();
       } catch (err) {
-        alert('ບັນທຶກບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່');
+        appAlert('ບັນທຶກບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່');
       } finally {
         btn.disabled = false;
       }
@@ -30498,10 +30660,10 @@ function assetStatusBadgeClass(status) {
           body: JSON.stringify({ id })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) { alert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+        if (!res.ok) { appAlert(data.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
         await loadPlaybook();
       } catch (err) {
-        alert('ລຶບບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່');
+        appAlert('ລຶບບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່');
       }
     }
 
@@ -30604,7 +30766,7 @@ function assetStatusBadgeClass(status) {
       const alwaysShow = document.getElementById('announcementAlwaysShowInput').checked;
       const expiresAt = document.getElementById('announcementExpiresInput').value || null;
 
-      if (!title || !content) { alert('ກະລຸນາປ້ອນຫົວຂໍ້ ແລະ ເນື້ອຫາປະກາດ'); return; }
+      if (!title || !content) { appAlert('ກະລຸນາປ້ອນຫົວຂໍ້ ແລະ ເນື້ອຫາປະກາດ'); return; }
 
       try {
         const res = await fetch('/api/admin/save-announcement', {
@@ -30618,7 +30780,7 @@ function assetStatusBadgeClass(status) {
         closeAnnouncementModal();
         loadAdminAnnouncements();
       } catch (err) {
-        alert(err.message || 'ບັນທຶກບໍ່ສຳເລັດ');
+        appAlert(err.message || 'ບັນທຶກບໍ່ສຳເລັດ');
       }
     }
 
@@ -30634,7 +30796,7 @@ function assetStatusBadgeClass(status) {
         if (!res.ok) throw new Error(data.error || 'ລຶບບໍ່ສຳເລັດ');
         loadAdminAnnouncements();
       } catch (err) {
-        alert(err.message || 'ລຶບບໍ່ສຳເລັດ');
+        appAlert(err.message || 'ລຶບບໍ່ສຳເລັດ');
       }
     }
   </script>
