@@ -4,6 +4,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
+  <script>try{var m=localStorage.getItem('lbcUiMode');if(m==='easy'||m==='expert')document.documentElement.setAttribute('data-ui-mode',m)}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cooler Tracking System LBC</title>
   <link rel="manifest" href="/manifest.json">
@@ -2479,6 +2480,87 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 body.dlv-popup-open { overflow: hidden; }
 @keyframes dlvPopIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 </style>
+<style id="ui-modes">
+/* ============================================================
+   UI Modes: ງ່າຍ (easy) · ປົກກະຕິ (normal = ໜ້າຕາເດີມ) · ຊ່ຽວຊານ (expert)
+   ຫຼັກການ (impeccable): Operate mode = scanability + ສອດຄ່ອງ + ຄວບຄຸມຄວາມໜາແໜ້ນດ້ວຍ type/spacing/density,
+   ບໍ່ປ່ຽນ layout/ການນຳທາງ; Easy = distill (progressive disclosure, ເປົ້າໝາຍກົດໃຫຍ່, ຕົວໜັງສືໃຫຍ່);
+   Expert = ຂໍ້ມູນຫຼາຍຕໍ່ໜ້າຈໍ, ຕົວເລກຖັນກົງກັນ, ບໍ່ມີ animation ຕອນສະຫຼັບໜ້າ
+   ============================================================ */
+.ui-mode-switch { padding: 6px 4px 8px; }
+.ui-mode-label { display: flex; align-items: center; gap: 8px; margin: 0 8px 6px; font-size: 11.5px; font-weight: 600; color: #7FA0AA; }
+.ui-mode-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.06); }
+.ui-mode-seg button { height: 34px; border: 0; border-radius: 9px; background: transparent; color: #8FB0B8; font: 600 12.5px var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s, color .15s; }
+.ui-mode-seg button:hover { color: #EAF4F6; }
+.ui-mode-seg button[aria-pressed="true"] { background: #6FE3D6; color: #06222B; }
+.ui-mode-seg button:focus-visible { outline: 2px solid #6FE3D6; outline-offset: 2px; }
+
+/* ---------- ງ່າຍ ---------- */
+html[data-ui-mode="easy"] { --ctl-h: 48px; --ctl-r: 12px; }
+html[data-ui-mode="easy"] body { font-size: 16px; line-height: 1.6; }
+html[data-ui-mode="easy"] :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+html[data-ui-mode="easy"] .page-header h1 { font-size: 24px; }
+html[data-ui-mode="easy"] .page-header p { font-size: 15px; line-height: 1.6; }
+html[data-ui-mode="easy"] .data-card { padding: 18px 18px 18px 16px; gap: 16px; border-radius: 16px; }
+html[data-ui-mode="easy"] .data-card-title { font-size: 16.5px; line-height: 1.45; }
+html[data-ui-mode="easy"] .data-card-sub { font-size: 14px; line-height: 1.65; gap: 6px 16px; margin-top: 7px; }
+html[data-ui-mode="easy"] .data-card-chevron { width: 34px; height: 34px; font-size: 13px; }
+html[data-ui-mode="easy"] .btn-add, html[data-ui-mode="easy"] .btn-submit { min-height: 48px; font-size: 15px; }
+html[data-ui-mode="easy"] .btn-act { min-height: 42px; padding: 10px 18px; font-size: 14px; }
+html[data-ui-mode="easy"] .at-btn { height: 48px; padding: 0 18px; font-size: 15px; }
+html[data-ui-mode="easy"] .at-btn-link { padding: 0 12px; }
+html[data-ui-mode="easy"] .at-pill { height: 42px; font-size: 14.5px; }
+html[data-ui-mode="easy"] .at-search input { height: 48px; font-size: 16px; }
+html[data-ui-mode="easy"] .at-select, html[data-ui-mode="easy"] .at-date { height: 48px; font-size: 15px; }
+html[data-ui-mode="easy"] .at-chip-toggle { height: 48px; font-size: 14.5px; }
+html[data-ui-mode="easy"] .at-result-count { font-size: 14px; }
+html[data-ui-mode="easy"] .form-control { min-height: 48px; font-size: 16px; }
+html[data-ui-mode="easy"] .form-group label { font-size: 14.5px; }
+html[data-ui-mode="easy"] .tab-btn { min-height: 44px; font-size: 14.5px; }
+html[data-ui-mode="easy"] .menu-item { min-height: 52px; font-size: 15.5px; }
+/* ຕົວກອງຫຍໍ້ໄວ້ໃນປຸ່ມ "ຕົວກອງ" ທຸກຂະໜາດໜ້າຈໍ (ປົກກະຕິມີສະເພາະມືຖື) */
+html[data-ui-mode="easy"] .flt-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 auto; height: 48px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--border-color); background: #fff; color: var(--text-main); font: 600 15px var(--font-ui); cursor: pointer; }
+html[data-ui-mode="easy"] .flt-toggle:active { background: #F1F8F9; }
+html[data-ui-mode="easy"] .flt-toggle .flt-caret { font-size: 11px; color: var(--text-muted); transition: transform .15s; }
+html[data-ui-mode="easy"] .flt-collapsible.flt-open > .flt-toggle .flt-caret { transform: rotate(180deg); }
+html[data-ui-mode="easy"] .flt-collapsible.flt-open > .flt-toggle, html[data-ui-mode="easy"] .flt-toggle.has-active { border-color: var(--primary); background: #F4FBFC; }
+html[data-ui-mode="easy"] .flt-badge { min-width: 22px; padding: 1px 8px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; line-height: 1.5; text-align: center; }
+html[data-ui-mode="easy"] .flt-collapsible:not(.flt-open) > :not(.flt-toggle):not(.flt-keep) { display: none !important; }
+html[data-ui-mode="easy"] .flt-collapsible.at-toolbar-filters { padding-top: 10px; }
+html[data-ui-mode="easy"] .flt-collapsible > .at-result-count { width: auto; margin-left: auto; }
+html[data-ui-mode="easy"] .flt-collapsible.flt-open > .flt-toggle { flex-basis: 100%; }
+
+/* ---------- ຊ່ຽວຊານ ---------- */
+html[data-ui-mode="expert"] { --ctl-h: 32px; --ctl-r: 8px; --sidebar-width: 236px; }
+html[data-ui-mode="expert"] body { font-size: 13px; font-variant-numeric: tabular-nums; }
+@media (min-width: 993px) { html[data-ui-mode="expert"] .main-content { padding: 20px 26px; } }
+html[data-ui-mode="expert"] .sidebar { --sb-ico: 28px; }
+html[data-ui-mode="expert"] .menu-item { font-size: 13px; }
+html[data-ui-mode="expert"] .page-header { padding: 10px 16px; margin-bottom: 12px; border-radius: 12px; box-shadow: none; }
+html[data-ui-mode="expert"] .page-header::before { flex-basis: 34px; width: 34px; height: 34px; font-size: 14px; border-radius: 10px; }
+html[data-ui-mode="expert"] .page-header h1 { font-size: 17px; }
+html[data-ui-mode="expert"] .page-header p { display: none; }
+html[data-ui-mode="expert"] .content-card { border-radius: 12px; }
+html[data-ui-mode="expert"] .data-card { padding: 8px 12px; gap: 10px; border-radius: 10px; box-shadow: none; }
+html[data-ui-mode="expert"] .data-card-title { font-size: 13.5px; line-height: 1.35; }
+html[data-ui-mode="expert"] .data-card-sub { font-size: 12px; line-height: 1.4; margin-top: 2px; gap: 2px 12px; }
+html[data-ui-mode="expert"] .data-card-chevron { width: 22px; height: 22px; font-size: 10px; }
+html[data-ui-mode="expert"] .at-btn { height: 32px; padding: 0 10px; font-size: 12.5px; }
+html[data-ui-mode="expert"] .at-pill { height: 28px; font-size: 12.5px; }
+html[data-ui-mode="expert"] .at-search input { height: 34px; font-size: 13px; }
+html[data-ui-mode="expert"] .at-select, html[data-ui-mode="expert"] .at-date { height: 32px; font-size: 12.5px; }
+html[data-ui-mode="expert"] .at-chip-toggle { height: 32px; font-size: 12.5px; }
+html[data-ui-mode="expert"] .form-control { font-size: 13px; }
+html[data-ui-mode="expert"] .form-group label { font-size: 12.5px; margin-bottom: 4px; }
+html[data-ui-mode="expert"] .tab-btn { font-size: 13px; }
+/* ຕົວກອງເປີດຄາໄວ້ສະເໝີ (JS ໃສ່ flt-open) ແລະບໍ່ມີປຸ່ມ "ຕົວກອງ" */
+html[data-ui-mode="expert"] .flt-toggle { display: none !important; }
+/* ບໍ່ມີ animation ຕອນສະຫຼັບໜ້າ / ເປີດ popup (ບໍ່ແຕະ spinner ແລະ animation ບອກສະຖານະ) */
+html[data-ui-mode="expert"] .main-content > div[id^="view-"]:not(.hidden),
+html[data-ui-mode="expert"] [id^="admin-sec-"]:not(.hidden),
+html[data-ui-mode="expert"] .modal-overlay:not(.hidden),
+html[data-ui-mode="expert"] .modal-overlay:not(.hidden) > .modal-card { animation: none; }
+</style>
 </head>
 <body>
 
@@ -2732,6 +2814,14 @@ body.dlv-popup-open { overflow: hidden; }
           <i class="fa-solid fa-bullhorn"></i> ປະກາດ
           <span id="announcementUnreadBadge" class="menu-badge hidden">0</span>
         </button>
+        <div class="ui-mode-switch" role="group" aria-label="ໂໝດການສະແດງຜົນ">
+          <div class="ui-mode-label"><i class="fa-solid fa-wand-magic-sparkles"></i> ໂໝດສະແດງຜົນ</div>
+          <div class="ui-mode-seg">
+            <button type="button" data-mode="easy" aria-pressed="false" onclick="setUiMode('easy')" title="ໂໝດງ່າຍ: ຕົວໜັງສືໃຫຍ່ ປຸ່ມໃຫຍ່ ຕົວກອງຫຍໍ້ໄວ້">ງ່າຍ</button>
+            <button type="button" data-mode="normal" aria-pressed="true" onclick="setUiMode('normal')" title="ໂໝດປົກກະຕິ">ປົກກະຕິ</button>
+            <button type="button" data-mode="expert" aria-pressed="false" onclick="setUiMode('expert')" title="ໂໝດຊ່ຽວຊານ: ຂໍ້ມູນແໜ້ນ ຕົວກອງເປີດຄາໄວ້">ຊ່ຽວຊານ</button>
+          </div>
+        </div>
         <div class="sidebar-profile-row">
           <button id="nav-profile" class="menu-item" onclick="switchView('profile')">
             <i class="fa-solid fa-user-gear"></i> ຂໍ້ມູນສ່ວນຕົວ (Profile)
@@ -27036,6 +27126,26 @@ function assetStatusBadgeClass(status) {
       });
     }
     document.addEventListener('DOMContentLoaded', setupMobileFilterToggles);
+
+    // ===== ໂໝດສະແດງຜົນ: easy / normal / expert (ເກັບໃນເຄື່ອງ, ໃຊ້ attribute data-ui-mode ເທິງ <html>) =====
+    const UI_MODES = ['easy', 'normal', 'expert'];
+    function getUiMode() {
+      try { const m = localStorage.getItem('lbcUiMode'); return UI_MODES.includes(m) ? m : 'normal'; } catch (e) { return 'normal'; }
+    }
+    function setUiMode(mode) {
+      if (!UI_MODES.includes(mode)) mode = 'normal';
+      document.documentElement.setAttribute('data-ui-mode', mode);
+      try { localStorage.setItem('lbcUiMode', mode); } catch (e) {}
+      document.querySelectorAll('.ui-mode-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === mode ? 'true' : 'false'));
+      // ຊ່ຽວຊານ: ຕົວກອງເປີດຄາໄວ້ທຸກໜ້າ; ໂໝດອື່ນ: ກັບໄປຫຍໍ້ໄວ້ (ປຸ່ມ "ຕົວກອງ" ຄວບຄຸມເອງ)
+      document.querySelectorAll('.flt-collapsible').forEach(el => {
+        const open = mode === 'expert';
+        el.classList.toggle('flt-open', open);
+        const t = el.querySelector(':scope > .flt-toggle');
+        if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => setUiMode(getUiMode()));
 
     // ມືຖື: ຖ້າໜ້າທີ່ເປີດຢູ່ມີແຖບ "ກັບຄືນ" ຂອງຕົນເອງແລ້ວ ໃຫ້ເຊື່ອງປຸ່ມ "ກັບຄືນເມນູ" ເທິງສຸດ (ກັນມີປຸ່ມກັບຄືນຊ້ຳກັນ)
     function syncOwnBackBar() {
