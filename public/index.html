@@ -8387,7 +8387,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
 
       // ໂໝດປິດລະບົບ: server ຕອບ 503 + code MAINTENANCE -> ສະແດງໜ້າ "ກຳລັງປັບປຸງ" (login ໃຊ້ຂໍ້ຄວາມໃນຟອມຂອງມັນເອງ)
-      if (res.status === 503 && target.startsWith('/api/') && !target.startsWith('/api/login')) {
+      // (ຕ້ອງມີ token ແລະ ບໍ່ແມ່ນ admin/ADMIN TEAM — ບໍ່ດັ່ງນັ້ນ API ສາທາລະນະທີ່ເອີ້ນຕອນເປີດໜ້າ (catalog, mde-list) ຈະບັງໜ້າ login ແລະ admin ເຂົ້າບໍ່ໄດ້)
+      if (res.status === 503 && authToken && !isMaintBypassUser(currentUser) && target.startsWith('/api/') && !target.startsWith('/api/login')) {
         res.clone().json().then(d => {
           if (d && d.code === 'MAINTENANCE') showMaintenanceScreen(d.message || d.error);
         }).catch(() => {});
@@ -8442,6 +8443,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       const screenOpen = document.getElementById('maintenanceScreen').classList.contains('show');
       if (!on && screenOpen) { location.reload(); return; }
       if (on && currentUser && !isMaintBypassUser(currentUser)) showMaintenanceScreen(st.message);
+      if (screenOpen && isMaintBypassUser(currentUser)) hideMaintenanceScreen();
     }
     async function retryMaintenance() {
       await refreshMaintenanceStatus();
@@ -9109,11 +9111,10 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
     window.onload = async () => {
       readDeepLinkFromUrl();
+      // ກູ້ Session ເກົ່າ (ຖ້າຍັງບໍ່ເກີນ 7 ວັນ) ກ່ອນ ເພື່ອໃຫ້ການເອີ້ນ API ດ້ານລຸ່ມແນບ token (admin ຜ່ານໂໝດປັບປຸງໄດ້)
+      const savedUser = loadSession();
       await fetchMdeList();
       await fetchCatalog();
-
-      // ກູ້ Session ເກົ່າ (ຖ້າຍັງບໍ່ເກີນ 7 ວັນ) ເພື່ອບໍ່ໃຫ້ຕ້ອງ login ໃໝ່ທຸກຄັ້ງທີ່ເປີດແອັບ
-      const savedUser = loadSession();
       if (savedUser) {
         enterApp(savedUser);
       }
@@ -9122,6 +9123,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     async function fetchCatalog() {
       try {
         const res = await fetch('/api/catalog');
+        if (!res.ok) return;
         appCatalog = await res.json();
         if (!appCatalog.docTypes) appCatalog.docTypes = [];
         if (!appCatalog.specialBrands) appCatalog.specialBrands = [];
@@ -9185,6 +9187,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     async function fetchMdeList() {
       try {
         const res = await fetch('/api/mde-list');
+        if (!res.ok) return; // ເຊັ່ນ ໂໝດປັບປຸງ (503) — ຢ່າທັບລາຍຊື່ດ້ວຍ error, ຈະໂຫຼດໃໝ່ຫຼັງ login
         dbMdeList = await res.json();
 
         const teams = [...new Set(dbMdeList.map(item => item.team))];
@@ -11549,6 +11552,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         user = Object.assign({}, user, { role: 'admin', isAssistantAdmin: true });
       }
       currentUser = user;
+      if (isMaintBypassUser(user)) hideMaintenanceScreen(); // admin / ADMIN TEAM ຜ່ານໂໝດປັບປຸງໄດ້ສະເໝີ
+      if (!Array.isArray(dbMdeList) || !dbMdeList.length) fetchMdeList();
+      if (!appCatalog || !appCatalog.docTypes || !appCatalog.docTypes.length) fetchCatalog();
       document.body.classList.toggle('is-assistant-admin', !!(user && user.isAssistantAdmin));
       if (window.appHistoryGuardInit) window.appHistoryGuardInit();
       initPageTourHooks();
