@@ -602,6 +602,37 @@
     }
     .prompt-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(12, 140, 166, 0.18); }
 
+
+    /* ============================================================
+       Page polish (Impeccable pass 1)
+       - Admin Dashboard: ປຸ່ມເສີມໃນ header ໃຊ້ແບບດຽວກັນ (ghost) ແທນ gradient ຫຼາກສີ; ການ໌ດ ປິດລະບົບ/Back up ຢູ່ລຸ່ມສຸດ
+       - ແຖວ pill (.at-pills): ມີເງົາຈາງທີ່ຂອບ ເມື່ອຍັງເລື່ອນເບິ່ງຕໍ່ໄດ້
+       ============================================================ */
+    #view-admin-dashboard:not(.hidden) { display: flex; flex-direction: column; }
+    #view-admin-dashboard > * { min-width: 0; }
+    #view-admin-dashboard > #maintenanceCard { order: 98; margin-top: 18px; }
+    #view-admin-dashboard > #backupCard { order: 99; }
+
+    .page-header #btnUploadMde, .page-header #btnCreateDsmUsers, .page-header #btnUploadOutlet,
+    .page-header #btnExportMde, .page-header #btnExportOutlet,
+    .page-header #btnRunNotificationCheck, .page-header #btnMdeReminder, .page-header #btnMdeSignReminder,
+    .page-header #btnDsmSignReminder, .page-header #btnRunSignReminderAuto {
+      background: rgba(255, 255, 255, 0.10) !important; color: #EAF4F6 !important;
+      border: 1px solid rgba(255, 255, 255, 0.28) !important; box-shadow: none !important;
+    }
+    @media (hover: hover) {
+      .page-header #btnUploadMde:hover, .page-header #btnCreateDsmUsers:hover, .page-header #btnUploadOutlet:hover,
+      .page-header #btnExportMde:hover, .page-header #btnExportOutlet:hover,
+      .page-header #btnRunNotificationCheck:hover, .page-header #btnMdeReminder:hover, .page-header #btnMdeSignReminder:hover,
+      .page-header #btnDsmSignReminder:hover, .page-header #btnRunSignReminderAuto:hover {
+        background: rgba(255, 255, 255, 0.20) !important;
+      }
+    }
+
+    .at-pills.has-more-r { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+    .at-pills.has-more-l { -webkit-mask-image: linear-gradient(270deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(270deg, #000 calc(100% - 36px), transparent); }
+    .at-pills.has-more-l.has-more-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
+
     /* ແຖບຄວາມຄືບໜ້າ Import (ໃຊ້ຮ່ວມກັນ MDE / Outlet / Stock / Asset) */
     .import-progress-track {
       width: 100%; height: 10px; border-radius: 999px; background: #E2ECEF;
@@ -8058,6 +8089,27 @@ body.dlv-popup-open { overflow: hidden; }
       modal.addEventListener('mousedown', e => { if (e.target === modal) _promptClose(null); });
     })();
 
+
+
+    // ແຖວ pill ທີ່ເລື່ອນຂ້າງໄດ້: ໃສ່ class ເພື່ອສະແດງເງົາຈາງທີ່ຂອບ ເມື່ອຍັງມີລາຍການຢູ່ອີກດ້ານ
+    (function initPillScrollHints() {
+      function update(el) {
+        const max = el.scrollWidth - el.clientWidth;
+        const x = Math.abs(el.scrollLeft);
+        el.classList.toggle('has-more-r', max > 4 && x < max - 4);
+        el.classList.toggle('has-more-l', max > 4 && x > 4);
+      }
+      function bind(el) {
+        if (el._pillHint) return; el._pillHint = true;
+        el.addEventListener('scroll', () => update(el), { passive: true });
+        if (window.ResizeObserver) new ResizeObserver(() => update(el)).observe(el);
+        if (window.MutationObserver) new MutationObserver(() => update(el)).observe(el, { childList: true, subtree: true });
+        update(el);
+      }
+      function scan() { document.querySelectorAll('.at-pills').forEach(bind); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+      window.addEventListener('resize', () => document.querySelectorAll('.at-pills').forEach(update));
+    })();
 
     let dbMdeList = [];
     let dbDsmList = [];
