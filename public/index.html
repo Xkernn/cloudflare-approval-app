@@ -5,7 +5,9 @@
 <head>
   <meta charset="UTF-8">
   <script>try{var m=localStorage.getItem('lbcUiMode');if(m==='easy')document.documentElement.setAttribute('data-ui-mode',m)}catch(e){}</script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
+
   <title>Cooler Tracking System LBC</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0A7890">
@@ -31574,5 +31576,16 @@ function assetStatusBadgeClass(status) {
 })();
 </script>
 
+<script>
+/* ກັນຊູມເທິງ iOS (Safari ບໍ່ເຄົາລົບ user-scalable=no): pinch + gesture + double-tap */
+(function () {
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener('touchmove', function (e) {
+    if (e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+})();
+</script>
 </body>
 </html>
