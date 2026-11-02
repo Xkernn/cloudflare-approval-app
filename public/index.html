@@ -2530,6 +2530,12 @@ html[data-ui-mode="easy"] .flt-collapsible > .at-result-count { width: auto; mar
 html[data-ui-mode="easy"] .flt-collapsible.flt-open > .flt-toggle { flex-basis: 100%; }
 
 /* ---------- ງ່າຍ = Lite (ແບບ Binance Lite): ສະແດງສະເພາະເມນູທີ່ຈຳເປັນ, "ເບິ່ງເມນູທັງໝົດ" ເພື່ອເປີດຄົບ ---------- */
+.mm-page .ui-mode-switch { padding: 2px 0 12px; }
+.mm-page .ui-mode-label { margin: 0 2px 6px; font-size: 12.5px; color: var(--text-muted); }
+.mm-page .ui-mode-seg { background: #E3ECEE; }
+.mm-page .ui-mode-seg button { height: 42px; font-size: 14px; color: var(--text-muted); }
+.mm-page .ui-mode-seg button:hover { color: var(--text-main); }
+.mm-page .ui-mode-seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
 .lite-more-btn { display: none; }
 html[data-ui-mode="easy"] .lite-more-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 6px; border: 1px dashed rgba(255,255,255,.22); border-radius: 12px; background: transparent; color: #8FB0B8; font: 600 14px var(--font-ui); cursor: pointer; }
 html[data-ui-mode="easy"] .lite-more-btn:hover { color: #EAF4F6; border-color: rgba(255,255,255,.4); }
@@ -2835,6 +2841,13 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       </div>
       <div class="mm-body" id="mmBody">
         <div id="mmHint" class="mm-hint hidden">ກົດ + / − ທີ່ມຸມໄອຄອນ ເພື່ອປັກໝຸດ ຫຼືເອົາອອກ (ເມນູ ແລະ ເມນູຍ່ອຍ) · ກົດຄ້າງແລ້ວລາກເພື່ອຈັດລຽງ</div>
+        <div class="ui-mode-switch" role="group" aria-label="ໂໝດການສະແດງຜົນ">
+          <div class="ui-mode-label"><i class="fa-solid fa-wand-magic-sparkles"></i> ໂໝດສະແດງຜົນ</div>
+          <div class="ui-mode-seg">
+            <button type="button" data-mode="easy" aria-pressed="false" onclick="setUiMode('easy')">ງ່າຍ</button>
+            <button type="button" data-mode="normal" aria-pressed="true" onclick="setUiMode('normal')">ທຳມະດາ</button>
+          </div>
+        </div>
         <div class="mm-sec-title">ລາຍການທີ່ມັກ <span id="mmFavCount" class="mm-count">0</span></div>
         <div class="mm-fav-panel" id="mmFavPanel"><div id="mmFavGrid" class="mm-grid"></div></div>
         <div class="mm-sec-title">ເມນູທັງໝົດ <span id="mmAllCount" class="mm-count">0</span></div>
