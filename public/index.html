@@ -2486,13 +2486,14 @@ body.dlv-popup-open { overflow: hidden; }
    ຫຼັກການ (impeccable): Operate mode = scanability + ສອດຄ່ອງ + ຄວບຄຸມຄວາມໜາແໜ້ນດ້ວຍ type/spacing/density,
    ບໍ່ປ່ຽນ layout/ການນຳທາງ; Easy = distill (progressive disclosure, ເປົ້າໝາຍກົດໃຫຍ່, ຕົວໜັງສືໃຫຍ່);
    ============================================================ */
-.ui-mode-switch { padding: 6px 4px 8px; }
-.ui-mode-label { display: flex; align-items: center; gap: 8px; margin: 0 8px 6px; font-size: 11.5px; font-weight: 600; color: #7FA0AA; }
-.ui-mode-seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,.06); }
-.ui-mode-seg button { height: 34px; border: 0; border-radius: 9px; background: transparent; color: #8FB0B8; font: 600 12.5px var(--font-ui); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s, color .15s; }
-.ui-mode-seg button:hover { color: #EAF4F6; }
-.ui-mode-seg button[aria-pressed="true"] { background: #6FE3D6; color: #06222B; }
-.ui-mode-seg button:focus-visible { outline: 2px solid #6FE3D6; outline-offset: 2px; }
+.ui-mode-seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.ui-mode-seg button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 64px; padding: 12px 14px; border: 1.5px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-main); font-family: var(--font-ui); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color .15s, background .15s; }
+.ui-mode-seg button b { font-size: 15px; font-weight: 700; }
+.ui-mode-seg button small { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
+.ui-mode-seg button:hover { border-color: var(--primary); }
+.ui-mode-seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(12,140,166,.16); }
+.ui-mode-seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+@media (max-width: 480px) { .ui-mode-seg { grid-template-columns: 1fr; } }
 
 /* ---------- ງ່າຍ ---------- */
 html[data-ui-mode="easy"] { --ctl-h: 48px; --ctl-r: 12px; }
@@ -2530,12 +2531,6 @@ html[data-ui-mode="easy"] .flt-collapsible > .at-result-count { width: auto; mar
 html[data-ui-mode="easy"] .flt-collapsible.flt-open > .flt-toggle { flex-basis: 100%; }
 
 /* ---------- ງ່າຍ = Lite (ແບບ Binance Lite): ສະແດງສະເພາະເມນູທີ່ຈຳເປັນ, "ເບິ່ງເມນູທັງໝົດ" ເພື່ອເປີດຄົບ ---------- */
-.mm-page .ui-mode-switch { padding: 2px 0 12px; }
-.mm-page .ui-mode-label { margin: 0 2px 6px; font-size: 12.5px; color: var(--text-muted); }
-.mm-page .ui-mode-seg { background: #E3ECEE; }
-.mm-page .ui-mode-seg button { height: 42px; font-size: 14px; color: var(--text-muted); }
-.mm-page .ui-mode-seg button:hover { color: var(--text-main); }
-.mm-page .ui-mode-seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
 .lite-more-btn { display: none; }
 html[data-ui-mode="easy"] .lite-more-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 6px; border: 1px dashed rgba(255,255,255,.22); border-radius: 12px; background: transparent; color: #8FB0B8; font: 600 14px var(--font-ui); cursor: pointer; }
 html[data-ui-mode="easy"] .lite-more-btn:hover { color: #EAF4F6; border-color: rgba(255,255,255,.4); }
@@ -2797,13 +2792,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <i class="fa-solid fa-bullhorn"></i> ປະກາດ
           <span id="announcementUnreadBadge" class="menu-badge hidden">0</span>
         </button>
-        <div class="ui-mode-switch" role="group" aria-label="ໂໝດການສະແດງຜົນ">
-          <div class="ui-mode-label"><i class="fa-solid fa-wand-magic-sparkles"></i> ໂໝດສະແດງຜົນ</div>
-          <div class="ui-mode-seg">
-            <button type="button" data-mode="easy" aria-pressed="false" onclick="setUiMode('easy')" title="ໂໝດງ່າຍ: ສະແດງສະເພາະເມນູທີ່ຈຳເປັນ ຕົວໜັງສື ແລະ ປຸ່ມໃຫຍ່">ງ່າຍ</button>
-            <button type="button" data-mode="normal" aria-pressed="true" onclick="setUiMode('normal')" title="ໂໝດທຳມະດາ: ເມນູ ແລະ ຟັງຊັນຄົບ">ທຳມະດາ</button>
-          </div>
-        </div>
         <div class="sidebar-profile-row">
           <button id="nav-profile" class="menu-item" onclick="switchView('profile')">
             <i class="fa-solid fa-user-gear"></i> ຂໍ້ມູນສ່ວນຕົວ (Profile)
@@ -2841,13 +2829,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       </div>
       <div class="mm-body" id="mmBody">
         <div id="mmHint" class="mm-hint hidden">ກົດ + / − ທີ່ມຸມໄອຄອນ ເພື່ອປັກໝຸດ ຫຼືເອົາອອກ (ເມນູ ແລະ ເມນູຍ່ອຍ) · ກົດຄ້າງແລ້ວລາກເພື່ອຈັດລຽງ</div>
-        <div class="ui-mode-switch" role="group" aria-label="ໂໝດການສະແດງຜົນ">
-          <div class="ui-mode-label"><i class="fa-solid fa-wand-magic-sparkles"></i> ໂໝດສະແດງຜົນ</div>
-          <div class="ui-mode-seg">
-            <button type="button" data-mode="easy" aria-pressed="false" onclick="setUiMode('easy')">ງ່າຍ</button>
-            <button type="button" data-mode="normal" aria-pressed="true" onclick="setUiMode('normal')">ທຳມະດາ</button>
-          </div>
-        </div>
         <div class="mm-sec-title">ລາຍການທີ່ມັກ <span id="mmFavCount" class="mm-count">0</span></div>
         <div class="mm-fav-panel" id="mmFavPanel"><div id="mmFavGrid" class="mm-grid"></div></div>
         <div class="mm-sec-title">ເມນູທັງໝົດ <span id="mmAllCount" class="mm-count">0</span></div>
@@ -6318,6 +6299,17 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         </div>
 
         <div class="profile-grid">
+          <div class="content-card" id="uiModeCard">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary); margin-right: 8px;"></i> ໂໝດສະແດງຜົນ
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ເລືອກໜ້າຕາທີ່ເໝາະກັບການໃຊ້ງານ (ຈື່ໄວ້ໃນເຄື່ອງນີ້)</p>
+            <div class="ui-mode-seg" role="group" aria-label="ໂໝດການສະແດງຜົນ">
+              <button type="button" data-mode="easy" aria-pressed="false" onclick="setUiMode('easy')"><b>ງ່າຍ</b><small>ສະແດງສະເພາະເມນູທີ່ຈຳເປັນ ຕົວໜັງສື ແລະ ປຸ່ມໃຫຍ່</small></button>
+              <button type="button" data-mode="normal" aria-pressed="true" onclick="setUiMode('normal')"><b>ທຳມະດາ</b><small>ເມນູ ແລະ ຟັງຊັນຄົບທຸກຢ່າງ</small></button>
+            </div>
+          </div>
+
           <div class="content-card">
             <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-id-card" style="color: var(--primary); margin-right: 8px;"></i> ຂໍ້ມູນບັນຊີຜູ້ໃຊ້
@@ -10337,7 +10329,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('nav-dsm-sign').classList.toggle('hidden', role !== 'dsm');
       if (role === 'dsm') { navRequest.classList.add('hidden'); navDeliveryHub.classList.add('hidden'); document.getElementById('nav-loan-contract').classList.add('hidden'); }
       renderMobileTabbar(role);
-      if (typeof refreshLiteMenus === 'function') refreshLiteMenus(); // ໂໝດງ່າຍ: ກັ່ນເມນູຕາມ role (currentUser ຖືກຕັ້ງແລ້ວ)
+      if (typeof refreshLiteMenus === 'function') refreshLiteMenus(); // ໂໝດງ່າຍ: ກັ່ນເມນູຕາມ role
     }
 
     /* ===================== ແຖບລຸ່ມ 5 ປຸ່ມ + ໜ້າເມນູ (ມືຖື) =====================
