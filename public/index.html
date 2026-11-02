@@ -6470,6 +6470,21 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <strong>"Add to Home Screen" (ເພີ່ມໃສ່ໜ້າຈໍຫຼັກ)</strong>
             </div>
           </div>
+
+          <div class="content-card" id="appUpdateCard">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
+              <i class="fa-solid fa-arrows-rotate" style="color: var(--primary); margin-right: 8px;"></i> ອັບເດດແອັບ
+            </h3>
+            <div class="profile-info-list" style="margin-bottom: 16px;">
+              <div class="profile-info-item"><span>ເວີຊັນໃນເຄື່ອງນີ້</span><span id="appVerText">-</span></div>
+            </div>
+            <button type="button" id="btnCheckUpdate" onclick="appCheckUpdate(this)" class="btn-submit" style="background: linear-gradient(135deg, #0A7890 0%, #075C70 100%);">
+              <i class="fa-solid fa-arrows-rotate mr-2"></i> ກວດການອັບເດດ / ເບິ່ງວ່າມີຫຍັງໃໝ່
+            </button>
+            <a id="btnDownloadApk" href="/app/lbc.apk" download class="btn-submit hidden" style="display:none; margin-top: 10px; text-align:center; text-decoration:none; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
+              <i class="fa-brands fa-android mr-2"></i> ດາວໂຫຼດແອັບ Android (APK)
+            </a>
+          </div>
         </div>
       </div>
 
@@ -31448,6 +31463,83 @@ function assetStatusBadgeClass(status) {
     const o = $('gsOverlay');
     if (o && !o.classList.contains('hidden') && gs.step === GS_TOTAL) setTimeout(gsRender, 0);
   });
+})();
+</script>
+
+<!-- ===================== ອັບເດດແອັບ + ດາວໂຫຼດ APK (ໜ້າ ຕັ້ງຄ່າ) =====================
+     ທຸກຄັ້ງທີ່ອອກເວີຊັນໃໝ່: ເພີ່ມ APP_BUILD ຂ້າງລຸ່ມ ແລະ ແກ້ public/version.json (build/version/date/notes) ໃຫ້ກົງກັນ
+     APK: ເອົາໄຟລ໌ໄປວາງທີ່ public/app/lbc.apk — ປຸ່ມດາວໂຫຼດຈະປາກົດເອງເມື່ອມີໄຟລ໌ -->
+<div id="upOverlay" class="gs-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="upTitle" onclick="if(event.target===this) upClose()">
+  <div class="gs-card">
+    <div class="gs-head">
+      <div class="gs-head-ic"><i id="upIcon" class="fa-solid fa-circle-check"></i></div>
+      <div><h2 id="upTitle"></h2><p id="upSub"></p></div>
+    </div>
+    <div class="gs-body" id="upBody"></div>
+    <div class="gs-foot" id="upFoot"></div>
+  </div>
+</div>
+<script>
+(function () {
+  const APP_BUILD = 2;
+  const APP_VERSION_FALLBACK = '1.1.0';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  window.upClose = function () { $('upOverlay').classList.add('hidden'); };
+
+  window.appUpdateNow = async function (btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'ກຳລັງອັບເດດ...'; }
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.update().catch(() => {})));
+      }
+      if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); }
+      await fetch(location.pathname, { cache: 'reload' });
+    } catch (e) {}
+    location.reload();
+  };
+
+  window.appCheckUpdate = async function (btn) {
+    const label = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> ກຳລັງກວດສອບ...'; }
+    try {
+      const res = await fetch('/version.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('http ' + res.status);
+      const v = await res.json();
+      const hasNew = Number(v.build) > APP_BUILD;
+      const notes = Array.isArray(v.notes) ? v.notes : [];
+      $('upIcon').className = hasNew ? 'fa-solid fa-circle-arrow-up' : 'fa-solid fa-circle-check';
+      $('upTitle').textContent = hasNew ? 'ມີເວີຊັນໃໝ່!' : 'ເປັນເວີຊັນຫຼ້າສຸດແລ້ວ';
+      $('upSub').textContent = 'ເວີຊັນ ' + (v.version || '-') + (v.date ? ' · ' + v.date : '');
+      $('upBody').innerHTML = (notes.length
+        ? '<div style="font-weight:700;font-size:14px;margin-bottom:8px;">ມີຫຍັງໃໝ່</div><ul style="margin:0;padding-left:20px;font-size:13.5px;line-height:1.7;">' + notes.map((n) => '<li>' + esc(n) + '</li>').join('') + '</ul>'
+        : '<div class="gs-note">ບໍ່ມີລາຍລະອຽດການອັບເດດ</div>');
+      $('upFoot').innerHTML = hasNew
+        ? '<button type="button" class="gs-btn" onclick="upClose()">ພາຍຫຼັງ</button><button type="button" class="gs-btn primary" onclick="appUpdateNow(this)">ອັບເດດດຽວນີ້</button>'
+        : '<button type="button" class="gs-btn primary" onclick="upClose()">ປິດ</button>';
+      $('upOverlay').classList.remove('hidden');
+    } catch (e) {
+      if (typeof appAlert === 'function') appAlert('ກວດການອັບເດດບໍ່ສຳເລັດ ກະລຸນາກວດອິນເຕີເນັດ ແລ້ວລອງໃໝ່'); else alert('ກວດການອັບເດດບໍ່ສຳເລັດ');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = label; }
+    }
+  };
+
+  // ສະແດງເວີຊັນໃນເຄື່ອງ ແລະ ເປີດປຸ່ມດາວໂຫຼດ APK ຖ້າມີໄຟລ໌ຢູ່ server ແທ້ (ບໍ່ສະແດງໃນ iOS / ຕອນເປີດຜ່ານແອັບຕິດຕັ້ງແລ້ວ)
+  async function init() {
+    const t = $('appVerText'); if (t) t.textContent = APP_VERSION_FALLBACK + ' (build ' + APP_BUILD + ')';
+    const a = $('btnDownloadApk'); if (!a) return;
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) return;
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return;
+    try {
+      const r = await fetch('/app/lbc.apk', { method: 'HEAD', cache: 'no-store' });
+      const ct = (r.headers.get('content-type') || '').toLowerCase();
+      if (r.ok && !ct.includes('text/html')) { a.classList.remove('hidden'); a.style.display = 'block'; }
+    } catch (e) {}
+  }
+  document.addEventListener('DOMContentLoaded', init);
 })();
 </script>
 
