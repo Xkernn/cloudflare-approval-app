@@ -11563,7 +11563,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       const defaultView = currentUser.role === 'dsm' || currentUser.role === 'user' ? 'dashboard' : ((currentUser.role === 'admin' || currentUser.role === 'warehouse') ? 'home' : 'notifications');
       switchView(consumePendingDeepLink() || defaultView);
       // ຜູ້ໃຊ້ໃໝ່ (ຍັງບໍ່ເຄີຍເບິ່ງ): ເປີດທົວແນະນຳການໃຊ້ງານອັດຕະໂນມັດ
-      setTimeout(() => startOnboardingTour(false), 900);
+      setTimeout(() => { if (!(typeof startGetStarted === 'function' && startGetStarted(false))) startOnboardingTour(false); }, 900);
     }
 
     /* ຂໍ OTP ຢືນຢັນອີເມວຕອນລົງທະບຽນ: cooldown 60 ວິນາທີ (ກັນກົດຊ້ຳ) */
@@ -31266,5 +31266,190 @@ function assetStatusBadgeClass(status) {
   });
 })();
 </script>
+<!-- ===================== GET STARTED (ປ໊ອບອັບເລີ່ມຕົ້ນ ຄັ້ງທຳອິດ) =====================
+     ຂັ້ນຕອນ: 1 ໂໝດ → 2 Theme → 3 ເມນູທີ່ມັກ → 4 ຕິດຕັ້ງແອັບ / ຂ້າມ · ຈົບແລ້ວຈຶ່ງເລີ່ມທົວແນະນຳ
+     ເກັບສະຖານະໃນ localStorage ຕໍ່ຜູ້ໃຊ້: lbc_getstarted_v1_<id> -->
+<style>
+  .gs-overlay { position: fixed; inset: 0; z-index: 99000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 22, 30, .62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: gsFade .2s ease; }
+  .gs-overlay.hidden { display: none; }
+  @keyframes gsFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes gsPop { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+  .gs-card { width: min(460px, 100%); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; background: #fff; color: var(--text-main); border-radius: 20px; box-shadow: 0 24px 60px rgba(0,0,0,.35); overflow: hidden; animation: gsPop .24s ease; font-family: inherit; }
+  .gs-head { padding: 18px 20px 6px; display: flex; align-items: flex-start; gap: 12px; }
+  .gs-head-ic { flex: none; width: 42px; height: 42px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .gs-head h2 { margin: 0; font-size: 18px; font-weight: 800; line-height: 1.3; }
+  .gs-head p { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .gs-skipall { margin-left: auto; flex: none; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 12.5px; padding: 4px 2px; cursor: pointer; text-decoration: underline; }
+  .gs-dots { display: flex; gap: 6px; padding: 8px 20px 4px; }
+  .gs-dots i { flex: 1; height: 4px; border-radius: 4px; background: var(--border-color); transition: background .2s; }
+  .gs-dots i.on { background: var(--primary); }
+  .gs-body { padding: 12px 20px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .gs-opts { display: grid; gap: 10px; }
+  .gs-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; padding: 13px 14px; border: 1.5px solid var(--border-color); border-radius: 14px; background: #fff; color: var(--text-main); font: inherit; text-align: left; cursor: pointer; }
+  .gs-opt b { font-size: 15px; font-weight: 700; }
+  .gs-opt small { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
+  .gs-opt:hover { border-color: var(--primary); }
+  .gs-opt[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(12,140,166,.16); }
+  .gs-opt:focus-visible, .gs-chip:focus-visible, .gs-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .gs-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .gs-chip { display: flex; align-items: center; gap: 9px; min-height: 48px; padding: 8px 10px; border: 1.5px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-main); font: inherit; font-size: 13px; line-height: 1.3; text-align: left; cursor: pointer; }
+  .gs-chip i { flex: none; width: 22px; text-align: center; color: var(--primary); font-size: 15px; }
+  .gs-chip span { flex: 1; min-width: 0; }
+  .gs-chip em { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; font-style: normal; }
+  .gs-chip[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); }
+  .gs-chip[aria-pressed="true"] em { background: var(--primary); border-color: var(--primary); }
+  .gs-note { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #f1f7f8; color: var(--text-muted); font-size: 12.5px; line-height: 1.55; }
+  .gs-note.info { background: #eff6ff; color: #1e3a8a; border: 1px solid #bfdbfe; }
+  .gs-install-ic { width: 64px; height: 64px; margin: 6px auto 10px; border-radius: 18px; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .gs-center { text-align: center; font-size: 14px; line-height: 1.6; }
+  .gs-foot { display: flex; gap: 10px; padding: 12px 20px 18px; }
+  .gs-btn { flex: 1; min-height: 46px; border-radius: 12px; border: 1.5px solid var(--border-color); background: #fff; color: var(--text-main); font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; }
+  .gs-btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .gs-btn:disabled { opacity: .6; cursor: default; }
+  @media (max-width: 380px) { .gs-chips { grid-template-columns: 1fr; } }
+</style>
+
+<div id="gsOverlay" class="gs-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gsTitle">
+  <div class="gs-card">
+    <div class="gs-head">
+      <div class="gs-head-ic"><i id="gsIcon" class="fa-solid fa-rocket"></i></div>
+      <div><h2 id="gsTitle"></h2><p id="gsSub"></p></div>
+      <button type="button" class="gs-skipall" onclick="gsFinish(false)">ຂ້າມທັງໝົດ</button>
+    </div>
+    <div class="gs-dots" id="gsDots"></div>
+    <div class="gs-body" id="gsBody"></div>
+    <div class="gs-foot" id="gsFoot"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const GS_KEY_PREFIX = 'lbc_getstarted_v1_';
+  const GS_TOTAL = 4;
+  let gs = { step: 1, favs: [] };
+
+  function gsKey() { return GS_KEY_PREFIX + ((typeof currentUser !== 'undefined' && currentUser && (currentUser.id || currentUser.email)) || 'anon'); }
+  function gsDone() { try { return !!localStorage.getItem(gsKey()); } catch (e) { return false; } }
+  function gsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function $(id) { return document.getElementById(id); }
+
+  // ເປີດ pop up (ຄືນຄ່າ true ຖ້າເປີດ ເພື່ອໃຫ້ຜູ້ເອີ້ນຮູ້ວ່າຢ່າເພິ່ນເລີ່ມທົວ)
+  window.startGetStarted = function (force) {
+    if (typeof currentUser === 'undefined' || !currentUser) return false;
+    if (!force && gsDone()) return false;
+    gs = { step: 1, favs: (typeof mmCurrentFavs === 'function' ? mmCurrentFavs() : []).slice() };
+    $('gsOverlay').classList.remove('hidden');
+    gsRender();
+    return true;
+  };
+
+  window.gsFinish = function (completed) {
+    try { localStorage.setItem(gsKey(), '1'); } catch (e) {}
+    $('gsOverlay').classList.add('hidden');
+    if (typeof refreshLiteMenus === 'function') refreshLiteMenus();
+    // ຈົບ Get Started ແລ້ວ ຈຶ່ງເລີ່ມທົວແນະນຳ (ຖ້າຍັງບໍ່ເຄີຍເບິ່ງ)
+    setTimeout(() => { if (typeof startOnboardingTour === 'function') startOnboardingTour(false); }, 350);
+  };
+
+  window.gsGo = function (d) {
+    if (d > 0 && gs.step === 3) gsSaveFavs();
+    gs.step = Math.min(GS_TOTAL, Math.max(1, gs.step + d));
+    gsRender();
+  };
+
+  window.gsPickMode = function (m) { if (typeof setUiMode === 'function') setUiMode(m); gsRender(); };
+  window.gsPickStyle = function (s) { if (typeof mmSetStyle === 'function') mmSetStyle(s); gsRender(); };
+  window.gsToggleFav = function (key) {
+    const i = gs.favs.indexOf(key);
+    if (i >= 0) gs.favs.splice(i, 1); else gs.favs.push(key);
+    gsRender();
+  };
+  function gsSaveFavs() {
+    if (typeof mmSaveFavs !== 'function') return;
+    mmSaveFavs(gs.favs.slice());
+    if (typeof mmRender === 'function') mmRender();
+  }
+
+  window.gsInstall = async function (btn) {
+    if (btn) btn.disabled = true;
+    try { if (typeof handleInstallApp === 'function') await handleInstallApp(); } catch (e) {}
+    gsFinish(true);
+  };
+
+  function gsCurMode() { return (typeof getUiMode === 'function') ? getUiMode() : 'normal'; }
+  function gsCurStyle() { return document.documentElement.getAttribute('data-mm-style') === 'classic' ? 'classic' : 'clean'; }
+
+  function gsRender() {
+    const s = gs.step;
+    $('gsDots').innerHTML = Array.from({ length: GS_TOTAL }, (_, i) => '<i class="' + (i < s ? 'on' : '') + '"></i>').join('');
+    const body = $('gsBody'), foot = $('gsFoot');
+    const nextBtn = '<button type="button" class="gs-btn primary" onclick="gsGo(1)">ຕໍ່ໄປ</button>';
+    const backBtn = '<button type="button" class="gs-btn" onclick="gsGo(-1)">ກັບຄືນ</button>';
+
+    if (s === 1) {
+      $('gsIcon').className = 'fa-solid fa-wand-magic-sparkles';
+      $('gsTitle').textContent = 'ຍິນດີຕ້ອນຮັບ! ເລືອກໂໝດ';
+      $('gsSub').textContent = 'ເລືອກໜ້າຕາທີ່ເໝາະກັບການໃຊ້ງານຂອງທ່ານ (ປ່ຽນພາຍຫຼັງໄດ້ໃນໜ້າ ຕັ້ງຄ່າ)';
+      const m = gsCurMode();
+      body.innerHTML = '<div class="gs-opts">'
+        + '<button type="button" class="gs-opt" aria-pressed="' + (m === 'easy') + '" onclick="gsPickMode(\'easy\')"><b>ງ່າຍ</b><small>ສະແດງສະເພາະເມນູທີ່ຈຳເປັນ ຕົວໜັງສື ແລະ ປຸ່ມໃຫຍ່</small></button>'
+        + '<button type="button" class="gs-opt" aria-pressed="' + (m === 'normal') + '" onclick="gsPickMode(\'normal\')"><b>ທຳມະດາ</b><small>ເມນູ ແລະ ຟັງຊັນຄົບທຸກຢ່າງ</small></button>'
+        + '</div>';
+      foot.innerHTML = nextBtn;
+    } else if (s === 2) {
+      $('gsIcon').className = 'fa-solid fa-palette';
+      $('gsTitle').textContent = 'ເລືອກ Theme';
+      $('gsSub').textContent = 'ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື (ເຫັນຜົນທັນທີ)';
+      const t = gsCurStyle();
+      body.innerHTML = '<div class="gs-opts">'
+        + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'clean') + '" onclick="gsPickStyle(\'clean\')"><b>ໃໝ່</b><small>ໄອຄອນເສັ້ນ ສີດຽວ ແຖບລຸ່ມແບບແບນ</small></button>'
+        + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'classic') + '" onclick="gsPickStyle(\'classic\')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small></button>'
+        + '</div>';
+      foot.innerHTML = backBtn + nextBtn;
+    } else if (s === 3) {
+      $('gsIcon').className = 'fa-solid fa-star';
+      $('gsTitle').textContent = 'ເລືອກເມນູທີ່ມັກ';
+      $('gsSub').textContent = 'ເມນູທີ່ເລືອກຈະຢູ່ໃນ "ລາຍການທີ່ມັກ" ຂອງໜ້າເມນູ (ເພີ່ມ/ລຶບພາຍຫຼັງໄດ້)';
+      const items = (typeof mmVisibleItems === 'function') ? mmVisibleItems().filter((it) => it.action !== 'tour') : [];
+      body.innerHTML = items.length
+        ? '<div class="gs-chips">' + items.map((it) => {
+            const on = gs.favs.includes(it.key);
+            return '<button type="button" class="gs-chip" aria-pressed="' + on + '" onclick="gsToggleFav(\'' + it.key + '\')"><i class="fa-solid ' + gsEsc(it.icon) + '"></i><span>' + gsEsc(it.label) + '</span><em>' + (on ? '<i class="fa-solid fa-check" style="width:auto;color:#fff;font-size:10px"></i>' : '') + '</em></button>';
+          }).join('') + '</div>'
+        : '<div class="gs-note">ຍັງບໍ່ມີເມນູໃຫ້ເລືອກ</div>';
+      foot.innerHTML = backBtn + nextBtn;
+    } else {
+      $('gsIcon').className = 'fa-solid fa-mobile-screen-button';
+      $('gsTitle').textContent = 'ຕິດຕັ້ງແອັບ';
+      $('gsSub').textContent = 'ເປີດໃຊ້ໄດ້ໄວຈາກໜ້າຈໍຫຼັກ ແລະ ຮັບການແຈ້ງເຕືອນໄດ້ດີຂຶ້ນ';
+      const standalone = (typeof isRunningStandalone === 'function') && isRunningStandalone();
+      const canPrompt = (typeof deferredInstallPrompt !== 'undefined') && !!deferredInstallPrompt;
+      const ios = (typeof isIosDevice === 'function') && isIosDevice();
+      let html = '<div class="gs-install-ic"><i class="fa-solid fa-download"></i></div>';
+      if (standalone) {
+        html += '<div class="gs-center">ແອັບຖືກຕິດຕັ້ງແລ້ວ ✓</div>';
+        foot.innerHTML = backBtn + '<button type="button" class="gs-btn primary" onclick="gsFinish(true)">ສຳເລັດ</button>';
+      } else if (canPrompt) {
+        html += '<div class="gs-center">ຕ້ອງການຕິດຕັ້ງແອັບໄວ້ໃນເຄື່ອງນີ້ບໍ?</div>';
+        foot.innerHTML = '<button type="button" class="gs-btn" onclick="gsFinish(true)">ຂ້າມ</button><button type="button" class="gs-btn primary" onclick="gsInstall(this)">ຕິດຕັ້ງແອັບ</button>';
+      } else if (ios) {
+        html += '<div class="gs-center">ເທິງ iPhone / iPad ຕິດຕັ້ງໄດ້ເອງ:</div><div class="gs-note info">1) ກົດປຸ່ມ <b>Share</b> (ສີ່ຫຼ່ຽມມີລູກສອນຂຶ້ນ) ໃນ Safari<br>2) ເລືອກ <b>Add to Home Screen</b><br>3) ກົດ <b>Add</b></div>';
+        foot.innerHTML = '<button type="button" class="gs-btn" onclick="gsFinish(true)">ຂ້າມ</button><button type="button" class="gs-btn primary" onclick="gsFinish(true)">ເຂົ້າໃຈແລ້ວ</button>';
+      } else {
+        html += '<div class="gs-center">ອຸປະກອນ ຫຼື Browser ນີ້ຍັງຕິດຕັ້ງຈາກບ່ອນນີ້ບໍ່ໄດ້<br><small style="color:var(--text-muted)">ສາມາດລອງຕິດຕັ້ງພາຍຫຼັງໄດ້ໃນໜ້າ ຕັ້ງຄ່າ</small></div>';
+        foot.innerHTML = backBtn + '<button type="button" class="gs-btn primary" onclick="gsFinish(true)">ສຳເລັດ</button>';
+      }
+      body.innerHTML = html;
+    }
+  }
+
+  // ຖ້າ browser ຍິງ beforeinstallprompt ຊ້າ ຕອນຢູ່ຂັ້ນຕອນສຸດທ້າຍ ໃຫ້ແສດງປຸ່ມຕິດຕັ້ງທັນທີ
+  window.addEventListener('beforeinstallprompt', () => {
+    const o = $('gsOverlay');
+    if (o && !o.classList.contains('hidden') && gs.step === GS_TOTAL) setTimeout(gsRender, 0);
+  });
+})();
+</script>
+
 </body>
 </html>
