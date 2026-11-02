@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cooler Tracking System LBC</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0C8CA6">
+  <meta name="theme-color" content="#0A7890">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,10 +25,10 @@
     :root {
       --ink: #0A1F2B;
       --ink-soft: #12303F;
-      --primary: #0C8CA6;
-      --primary-hover: #086F84;
+      --primary: #0A7890;
+      --primary-hover: #065F73;
       --primary-soft: #E3F3F5;
-      --amber: #C4780F;
+      --amber: #A8630A;
       --amber-soft: #FBF0DE;
       --success: #15803d;
       --success-soft: #E4F5EA;
@@ -42,7 +42,7 @@
       --sidebar-bg: #0A1F2B;
       --card-bg: #ffffff;
       --text-main: #0E2530;
-      --text-muted: #5B7680;
+      --text-muted: #4F6B75;
       --border-color: #D9E6E8;
       --sidebar-width: 264px;
       --font-ui: 'Noto Sans', 'Noto Sans Thai', 'Noto Sans Lao', sans-serif;
@@ -343,7 +343,7 @@
     .menu-item.active { background: rgba(111, 227, 214, 0.1); color: #6FE3D6; border-left-color: #6FE3D6; }
     .menu-item.active i { color: #6FE3D6; }
     .menu-badge {
-      margin-left: auto; background: #ef4444; color: #fff; font-size: 11px; font-weight: 700;
+      margin-left: auto; background: #DC2626; color: #fff; font-size: 11px; font-weight: 700;
       border-radius: 10px; padding: 1px 7px; line-height: 1.5;
     }
     .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; }
@@ -495,7 +495,7 @@
     .btn-back:active { transform: translateY(0); box-shadow: none; }
     @media (max-width: 480px) {
       .loan-step { width: 56px; }
-      .loan-step-label { font-size: 10px; }
+      .loan-step-label { font-size: 11px; }
     }
 
     /* Modal Pop-up */
@@ -606,7 +606,7 @@
       overflow: hidden; margin: 16px 0 10px;
     }
     .import-progress-fill {
-      height: 100%; border-radius: 999px; background: var(--primary, #0C8CA6);
+      height: 100%; border-radius: 999px; background: var(--primary, #0A7890);
       width: 0%; transition: width 0.2s ease-out;
     }
     .import-progress-text {
@@ -643,7 +643,7 @@
     .data-card-loan { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .data-card-loan .btn-act { margin-right: 0; padding: 5px 12px; }
     .card-list-empty, .card-list-error { text-align: center; color: var(--text-muted); padding: 28px 16px; }
-    .card-list-error { color: #ef4444; }
+    .card-list-error { color: #DC2626; }
     .card-list-loading { text-align: center; color: var(--text-muted); padding: 20px 16px; }
 
     /* ===== Asset Tracking: Modern Enterprise Dashboard (Search + Status Pills + Action Toolbar) ===== */
@@ -695,7 +695,7 @@
     .at-chip-toggle:has(input:checked) i { color: #e0a800; }
     .at-daterange { display: inline-flex; align-items: center; gap: 6px; }
     .at-daterange-label { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
-    .at-daterange-sep { color: #8FA6AB; }
+    .at-daterange-sep { color: #5E7983; }
     .at-result-count { margin-left: auto; font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
     .at-result-count b { color: var(--text-main); }
     .at-list-card { padding: 12px; }
@@ -850,7 +850,7 @@
       .mobile-tab-indicator {
         position: absolute; left: 0; top: calc(var(--lift) * -1 - 4px); width: var(--ind); height: var(--ind);
         border-radius: 50%; box-sizing: border-box; pointer-events: none; z-index: 0;
-        background: linear-gradient(135deg, #22D3BF, #0C8CA6);
+        background: linear-gradient(135deg, #22D3BF, #0A7890);
         border: 5px solid var(--ink);
         box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
         transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
@@ -870,7 +870,7 @@
         transition: transform .5s cubic-bezier(0.34, 1.56, 0.64, 1), color .2s;
       }
       .mobile-tab-label {
-        font-size: 9.5px; font-weight: 600; line-height: 1.2; text-align: center; max-width: 100%; height: 23px;
+        font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: center; max-width: 100%; height: 26px;
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         overflow-wrap: anywhere; word-break: break-word; transition: color .2s;
       }
@@ -887,7 +887,7 @@
         .mobile-tabbar { --tab-h: 64px; --ind: 46px; padding: 0 3px; left: calc(8px + env(safe-area-inset-left, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); }
         .mobile-tab { padding: 10px 0 6px; }
         .mobile-tab-icon { font-size: 16px; }
-        .mobile-tab-label { font-size: 9px; }
+        .mobile-tab-label { font-size: 10px; }
         .mobile-tab .menu-badge { left: 50%; margin-left: 2px; font-size: 9px; min-width: 14px; line-height: 14px; padding: 0 4px; }
       }
       @media (prefers-reduced-motion: reduce) {
@@ -918,7 +918,7 @@
       .mm-head {
         position: relative; flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; min-height: 56px;
         padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 16px;
-        background: linear-gradient(135deg, #0C8CA6 0%, #22B8A5 100%);
+        background: linear-gradient(135deg, #0A7890 0%, #22B8A5 100%);
         border-radius: 0 0 30px 30px; box-shadow: 0 10px 24px -14px rgba(12, 140, 166, 0.7);
       }
       .mm-head h2 {
@@ -977,7 +977,7 @@
       .mm-t-green  { --tbg: linear-gradient(145deg, #E0F7E2, #BEEBC4); --tfg: #2E9E48; }
       .mm-t-amber  { --tbg: linear-gradient(145deg, #FFF3CF, #FFE190); --tfg: #C48A06; }
       .mm-t-pink   { --tbg: linear-gradient(145deg, #FFE3E9, #FFC6D2); --tfg: #D6455F; }
-      .mm-t-sky    { --tbg: linear-gradient(145deg, #DAF4FC, #B3E7F6); --tfg: #0C8CA6; }
+      .mm-t-sky    { --tbg: linear-gradient(145deg, #DAF4FC, #B3E7F6); --tfg: #0A7890; }
       .mm-t-red    { --tbg: linear-gradient(145deg, #FFE4DF, #FFC7BE); --tfg: #D9483B; }
       .mm-t-slate  { --tbg: linear-gradient(145deg, #E6ECEF, #CDD8DE); --tfg: #44606E; }
 
@@ -985,7 +985,7 @@
       .mm-pin { display: none; position: absolute; top: -7px; left: -7px; width: 24px; height: 24px; border-radius: 50%;
         align-items: center; justify-content: center; font-size: 11px; color: #fff; background: #22B8A5;
         border: 2px solid #fff; box-shadow: 0 3px 8px rgba(6, 20, 27, .3); z-index: 2; }
-      .mm-pin.rm { background: #ef4444; }
+      .mm-pin.rm { background: #DC2626; }
       .mm-pin.on { background: #7B929B; }
       .mm-page.editing .mm-pin { display: flex; }
       .mm-page.editing .mm-ic { animation: mmWiggle .34s ease-in-out infinite alternate; }
@@ -997,14 +997,14 @@
       @keyframes mmWiggle { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
 
       .mm-logout { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 26px; padding: 13px;
-        border-radius: 16px; border: 1.5px solid rgba(239, 68, 68, .35); background: rgba(255,255,255,.6); color: #ef4444;
+        border-radius: 16px; border: 1.5px solid rgba(239, 68, 68, .35); background: rgba(255,255,255,.6); color: #DC2626;
         font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
       .mm-page.editing .mm-logout { display: none; }
 
       /* ຈຸດແດງເທິງປຸ່ມ "ເມນູ" ເມື່ອໃນເມນູມີລາຍການຄ້າງ */
       .mobile-tab.has-dot:not(.active) .mobile-tab-icon::after { content: ''; position: absolute; top: -3px; right: -6px; width: 9px; height: 9px;
-        border-radius: 50%; background: #ef4444; border: 2px solid #0A1F2B; box-sizing: border-box; }
-      @media (max-width: 360px) { .mm-grid { gap: 14px 2px; } .mm-lbl { font-size: 10.5px; } .mm-ic { font-size: 22px; border-radius: 17px; } }
+        border-radius: 50%; background: #DC2626; border: 2px solid #0A1F2B; box-sizing: border-box; }
+      @media (max-width: 360px) { .mm-grid { gap: 14px 2px; } .mm-lbl { font-size: 11px; } .mm-ic { font-size: 22px; border-radius: 17px; } }
       @media (prefers-reduced-motion: reduce) { .mm-page, .mm-ic { transition: none; } .mm-page.editing .mm-ic { animation: none; } }
     }
 
@@ -1014,7 +1014,7 @@
       .notif-fab {
         display: flex; align-items: center; justify-content: center;
         position: fixed; left: 0; top: 0; width: 52px; height: 52px; border-radius: 50%;
-        border: none; background: var(--primary, #0C8CA6); color: #fff; font-size: 20px;
+        border: none; background: var(--primary, #0A7890); color: #fff; font-size: 20px;
         box-shadow: 0 6px 18px rgba(6, 20, 27, 0.35); z-index: 225; cursor: grab;
         touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
         transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, left 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1028,7 +1028,7 @@
       .notif-fab:has(.menu-badge:not(.hidden)) > i { animation-duration: 2.6s; animation-delay: .4s; }
       .notif-fab::before {
         content: ''; position: absolute; inset: 0; border-radius: 50%; z-index: -1; pointer-events: none;
-        border: 2px solid var(--primary, #0C8CA6); opacity: 0; transform: scale(1);
+        border: 2px solid var(--primary, #0A7890); opacity: 0; transform: scale(1);
       }
       .notif-fab:has(.menu-badge:not(.hidden))::before { animation: notifRipple 2.6s ease-out .4s infinite; }
       .notif-fab:has(.menu-badge:not(.hidden)) .menu-badge { animation: notifBadgePop 2.6s ease-in-out .4s infinite; }
@@ -1091,7 +1091,7 @@
       100% { transform: scale(3.6); opacity: 0; }
     }
     .marker-outlet-label-urgent {
-      background: #ef4444 !important; color: #ffffff !important; border-color: #b91c1c !important;
+      background: #DC2626 !important; color: #ffffff !important; border-color: #b91c1c !important;
     }
     /* ===== Mini map ໃນ popup Asset Tracking (ລົດບັນທຸກ) ===== */
     .am-wrap { margin: 4px 0 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; overflow: hidden; background: #f8fafc; }
@@ -1290,9 +1290,9 @@
     @keyframes saBlink { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(1.18); } }
     @keyframes saBell { 0%,60%,100% { transform: rotate(0); } 10%,30%,50% { transform: rotate(-14deg); } 20%,40% { transform: rotate(14deg); } }
     @keyframes saStripe { from { background-position: 0 0; } to { background-position: 28px 0; } }
-    #saOvCard { animation: csRise .35s var(--ease-out) backwards, saGlow 1.6s ease-out infinite .35s; border-top: 6px solid #ef4444; position: relative; }
+    #saOvCard { animation: csRise .35s var(--ease-out) backwards, saGlow 1.6s ease-out infinite .35s; border-top: 6px solid #DC2626; position: relative; }
     #saOvCard::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; height: 6px; border-radius: 18px 18px 0 0;
-      background: repeating-linear-gradient(135deg, #ef4444 0 14px, #f59e0b 14px 28px); background-size: 28px 6px; animation: saStripe .8s linear infinite; }
+      background: repeating-linear-gradient(135deg, #DC2626 0 14px, #f59e0b 14px 28px); background-size: 28px 6px; animation: saStripe .8s linear infinite; }
     #saOvIcon { display: inline-block; animation: saBlink 1s ease-in-out infinite, saBell 2.4s ease-in-out infinite; color: #dc2626; transform-origin: 50% 20%; }
     @media (prefers-reduced-motion: reduce) { #saOvCard, #saOvCard::before, #saOvIcon { animation: none !important; } }
     @keyframes csRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -1668,7 +1668,7 @@
     /* active = ວົງກົມ gradient ດຽວກັບ indicator ຂອງແຖບລຸ່ມ (ມີວົງຂອບ ink + glow) */
     .menu-item.active { background: rgba(111, 227, 214, 0.08); color: #6FE3D6; border: none; }
     .menu-item.active i {
-      background: linear-gradient(135deg, #22D3BF, #0C8CA6); color: #fff;
+      background: linear-gradient(135deg, #22D3BF, #0A7890); color: #fff;
       box-shadow: 0 0 0 3px var(--ink), 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: scale(1);
     }
@@ -1681,7 +1681,7 @@
     .sidebar-profile-row { gap: 4px; }
     .sidebar-profile-row .sidebar-icon-btn { width: calc(var(--sb-ico) + 10px); flex: 0 0 calc(var(--sb-ico) + 10px); padding: 5px 0; }
     .sidebar-profile-row .sidebar-icon-btn i { flex: 0 0 var(--sb-ico); width: var(--sb-ico); font-size: 15px; }
-    .sidebar-footer .menu-item-danger i { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+    .sidebar-footer .menu-item-danger i { background: rgba(239, 68, 68, 0.12); color: #DC2626; }
     .sidebar-footer .menu-item-danger:hover { background: rgba(192, 49, 26, 0.15); }
     .sidebar-footer .menu-item-danger:hover i { background: rgba(239, 68, 68, 0.2); color: #ff6b57; }
 
@@ -1862,7 +1862,7 @@
       --ctl-bd: #D5E3E6;
       --ctl-bd-hover: #B3CACE;
       --ctl-ring: 0 0 0 3px rgba(12, 140, 166, 0.16);
-      --ctl-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%235B7680' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      --ctl-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%234F6B75' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
     /* ---- Search box ---- */
@@ -1876,7 +1876,7 @@
     .tb-search input { width: 240px; }
     .at-search input::placeholder,
     .tb-search input::placeholder,
-    .input-wrapper.fl-search .form-control::placeholder { color: #8FA6AB; }
+    .input-wrapper.fl-search .form-control::placeholder { color: #5E7983; }
     .at-search input:hover,
     .tb-search input:hover,
     .input-wrapper.fl-search .form-control:hover { border-color: var(--ctl-bd-hover); }
@@ -2156,7 +2156,7 @@
     .pb-img img { width:100%; height:100%; object-fit:contain; background:#f8fafc; }
     .pb-body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
     .pb-title { font-size:16px; font-weight:700; color:#0f172a; line-height:1.3; }
-    .pb-cat { font-size:12px; font-weight:600; color:#0C8CA6; background:#e6f6f9; padding:2px 10px; border-radius:999px; align-self:flex-start; }
+    .pb-cat { font-size:12px; font-weight:600; color:#0A7890; background:#e6f6f9; padding:2px 10px; border-radius:999px; align-self:flex-start; }
     .pb-specs { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:13px; }
     .pb-specs div { background:#f8fafc; border-radius:10px; padding:6px 10px; }
     .pb-specs span { display:block; font-size:11px; color:#64748b; }
@@ -2301,7 +2301,7 @@
       display: block; position: absolute; left: 0; top: calc(var(--lift) * -1 - 4px);
       width: var(--ind); height: var(--ind); border-radius: 50%; box-sizing: border-box;
       pointer-events: none; z-index: 0;
-      background: linear-gradient(135deg, #22D3BF, #0C8CA6); border: 5px solid var(--bg-body);
+      background: linear-gradient(135deg, #22D3BF, #0A7890); border: 5px solid var(--bg-body);
       box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
       transition: transform .55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
@@ -2315,7 +2315,7 @@
       flex: 1 1 0; min-width: 0; height: 100%; box-sizing: border-box; position: relative; z-index: 1;
       flex-direction: column; justify-content: flex-start; align-items: center; gap: 4px;
       padding: 10px 2px 6px; border: none; border-radius: 0; background: transparent; box-shadow: none;
-      color: #8FB0B8; font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center;
+      color: #A9C6CD; font-size: 11px; font-weight: 600; line-height: 1.25; text-align: center;
       white-space: normal; overflow-wrap: anywhere; -webkit-tap-highlight-color: transparent;
     }
     #loanChips .loan-chip:active { transform: none; }
@@ -2338,7 +2338,7 @@
     #loanChips .loan-chip:focus-visible { outline: 2px solid #6FE3D6; outline-offset: -4px; border-radius: 20px; }
     @media (max-width: 380px) {
       #loanChips { --tab-h: 62px; --ind: 44px; padding: 0 3px; }
-      #loanChips .loan-chip { font-size: 9.5px; }
+      #loanChips .loan-chip { font-size: 10.5px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .loan-chip-indicator, #loanChips .loan-chip i, #loanChips .loan-chip-count { transition: none; }
@@ -2366,12 +2366,12 @@
 
     /* ===== stepper 7 ຂັ້ນ (ໃບສັນຍາຢືມ: ມີສະເຕັບ ແຜນຜັງ ແຍກ) ===== */
     .loan-stepper.loan-stepper-7 .loan-step { width: 62px; }
-    .loan-stepper.loan-stepper-7 .loan-step-label { font-size: 10px; }
+    .loan-stepper.loan-stepper-7 .loan-step-label { font-size: 11px; }
     @media (max-width: 480px) {
       .loan-stepper.loan-stepper-7 .loan-step { width: 40px; }
       .loan-stepper.loan-stepper-7 .loan-step-dot { width: 28px; height: 28px; font-size: 12px; }
       .loan-stepper.loan-stepper-7 .loan-step-line { margin-top: 13px; min-width: 4px; }
-      .loan-stepper.loan-stepper-7 .loan-step-label { font-size: 8.5px; }
+      .loan-stepper.loan-stepper-7 .loan-step-label { font-size: 10px; }
     }
     /* ແຜນຜັງຈຸດວາງຕູ້ແຊ່ (ແຕ້ມລົງໃບສັນຍາຢືມ) */
     .lp-box { min-width: 0; max-width: 100%; box-sizing: border-box; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 12px; margin-bottom: 14px; background: #f8fafc; }
@@ -2481,7 +2481,7 @@ body.dlv-popup-open { overflow: hidden; }
             <circle cx="8" cy="96" r="5" fill="#0A1F2B" stroke="#6FE3D6" stroke-width="2"/>
             <circle cx="120" cy="30" r="4" fill="#6FE3D6"/>
             <circle cx="240" cy="60" r="4" fill="#6FE3D6"/>
-            <circle cx="312" cy="20" r="6" fill="#C4780F" stroke="#EAF4F6" stroke-width="2"/>
+            <circle cx="312" cy="20" r="6" fill="#A8630A" stroke="#EAF4F6" stroke-width="2"/>
           </svg>
         </div>
         <div class="route-stats">
@@ -2713,7 +2713,7 @@ body.dlv-popup-open { overflow: hidden; }
             <i class="fa-solid fa-book-open"></i>
           </button>
         </div>
-        <button onclick="logout()" class="menu-item menu-item-danger" style="color: #ef4444;">
+        <button onclick="logout()" class="menu-item menu-item-danger" style="color: #DC2626;">
           <i class="fa-solid fa-right-from-bracket"></i> ອອກຈາກລະບົບ
         </button>
       </div>
@@ -2827,7 +2827,7 @@ body.dlv-popup-open { overflow: hidden; }
           <button id="btnAddMde" class="btn-add hidden" onclick="openAddMdeModal()">
             <i class="fa-solid fa-plus mr-1"></i> ເພີ່ມ MDE Code
           </button>
-          <button id="btnUploadMde" class="btn-add hidden" onclick="document.getElementById('mdeImportInput').click()" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
+          <button id="btnUploadMde" class="btn-add hidden" onclick="document.getElementById('mdeImportInput').click()" style="background: linear-gradient(135deg, #0f766e 0%, #0f766e 100%);">
             <i class="fa-solid fa-file-arrow-up mr-1"></i> ອັບໂຫລດ MDE List
           </button>
           <button id="btnExportMde" class="btn-add hidden" style="background: #ffffff; color: var(--text-main); border: 1px solid var(--border-color);" onclick="exportMdeListToExcel()">
@@ -2837,7 +2837,7 @@ body.dlv-popup-open { overflow: hidden; }
           <button id="btnAddDsm" class="btn-add hidden" onclick="openAddDsmModal()">
             <i class="fa-solid fa-plus mr-1"></i> ເພີ່ມ DSM
           </button>
-          <button id="btnCreateDsmUsers" class="btn-add hidden" onclick="createDsmUsers()" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
+          <button id="btnCreateDsmUsers" class="btn-add hidden" onclick="createDsmUsers()" style="background: linear-gradient(135deg, #0f766e 0%, #0f766e 100%);">
             <i class="fa-solid fa-user-plus mr-1"></i> ສ້າງ User DSM ຕາມ DSM List
           </button>
           <button id="btnAddBudget" class="btn-add hidden" onclick="openAddBudgetModal()">
@@ -2864,7 +2864,7 @@ body.dlv-popup-open { overflow: hidden; }
           <button id="btnAddOutlet" class="btn-add hidden" onclick="openAddOutletModal()">
             <i class="fa-solid fa-plus mr-1"></i> ເພີ່ມ Outlet
           </button>
-          <button id="btnUploadOutlet" class="btn-add hidden" onclick="document.getElementById('outletImportInput').click()" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
+          <button id="btnUploadOutlet" class="btn-add hidden" onclick="document.getElementById('outletImportInput').click()" style="background: linear-gradient(135deg, #0f766e 0%, #0f766e 100%);">
             <i class="fa-solid fa-file-arrow-up mr-1"></i> ອັບໂຫລດ Outlet List
           </button>
           <button id="btnExportOutlet" class="btn-add hidden" style="background: #ffffff; color: var(--text-main); border: 1px solid var(--border-color);" onclick="exportOutletListToExcel()">
@@ -3967,7 +3967,7 @@ body.dlv-popup-open { overflow: hidden; }
             <div id="dsmDoneReview"></div>
             <div class="loan-nav-btns">
               <button type="button" class="btn-submit" style="margin-left:0;" onclick="dsmOpenPdf()"><i class="fa-solid fa-file-pdf mr-1"></i> ເປີດ/ດາວໂຫຼດ PDF</button>
-              <button type="button" class="btn-submit" style="margin-left:0; background:#0C8CA6;" onclick="dsmSharePack()"><i class="fa-solid fa-share-nodes mr-1"></i> PDF ລວມເອກະສານ (ສົ່ງ Power App)</button>
+              <button type="button" class="btn-submit" style="margin-left:0; background:#0A7890;" onclick="dsmSharePack()"><i class="fa-solid fa-share-nodes mr-1"></i> PDF ລວມເອກະສານ (ສົ່ງ Power App)</button>
               <button type="button" class="btn-back" onclick="dsmWaitFinish()"><i class="fa-solid fa-check mr-1"></i> ປິດ</button>
             </div>
           </div>
@@ -4016,12 +4016,12 @@ body.dlv-popup-open { overflow: hidden; }
           <!-- STEP 1: ຂໍ້ມູນຮ້ານ ແລະ MDE -->
           <div id="noDocStep1" class="loan-step-panel">
             <div class="form-group">
-              <label>ລະຫັດຮ້ານ <span style="color:#ef4444;">*</span></label>
+              <label>ລະຫັດຮ້ານ <span style="color:#DC2626;">*</span></label>
               <input type="text" id="noDocOutletCode" class="form-control" placeholder="ເຊັ່ນ CD-VTE-0000">
             </div>
 
             <div class="form-group">
-              <label>ຊື່ຮ້ານ <span style="color:#ef4444;">*</span></label>
+              <label>ຊື່ຮ້ານ <span style="color:#DC2626;">*</span></label>
               <input type="text" id="noDocOutletName" class="form-control" placeholder="ຊື່ຮ້ານ">
             </div>
 
@@ -4036,12 +4036,12 @@ body.dlv-popup-open { overflow: hidden; }
             </div>
 
             <div class="form-group">
-              <label>MDE ທີມ <span style="color:#ef4444;">*</span></label>
+              <label>MDE ທີມ <span style="color:#DC2626;">*</span></label>
               <select id="noDocTeam" class="form-control" onchange="onNoDocTeamChange()"></select>
             </div>
 
             <div class="form-group">
-              <label>MDE Code <span style="color:#ef4444;">*</span></label>
+              <label>MDE Code <span style="color:#DC2626;">*</span></label>
               <select id="noDocMdeCode" class="form-control" disabled></select>
             </div>
 
@@ -4243,7 +4243,7 @@ body.dlv-popup-open { overflow: hidden; }
             </div>
 
             <div class="form-group">
-              <label>ເອົາໄປໃສ (ສະຖານທີ່) <span style="color:#ef4444;">*</span></label>
+              <label>ເອົາໄປໃສ (ສະຖານທີ່) <span style="color:#DC2626;">*</span></label>
               <input type="text" id="ceEventLocation" class="form-control" placeholder="ຊື່ສະຖານທີ່/ຮ້ານ/ບ້ານ...">
             </div>
 
@@ -4294,7 +4294,7 @@ body.dlv-popup-open { overflow: hidden; }
             </div>
 
             <div class="form-group">
-              <label>ວັນທີ່ເອົາໄປ <span style="color:#ef4444;">*</span></label>
+              <label>ວັນທີ່ເອົາໄປ <span style="color:#DC2626;">*</span></label>
               <input type="date" id="ceTakenDate" class="form-control">
             </div>
 
@@ -4432,7 +4432,7 @@ body.dlv-popup-open { overflow: hidden; }
           <!-- STEP 2: ເຫດຜົນ / ວັນທີ່ / ໝາຍເຫດ -->
           <div id="woStep2" class="loan-step-panel hidden">
             <div class="form-group">
-              <label>ເຫດຜົນການສະສາງ <span style="color:#ef4444;">*</span></label>
+              <label>ເຫດຜົນການສະສາງ <span style="color:#DC2626;">*</span></label>
               <select id="woReason" class="form-control" onchange="woReasonChanged()">
                 <option value="">-- ເລືອກເຫດຜົນ --</option>
                 <option value="broken">ຊຳລຸດເສຍຫາຍ</option>
@@ -4442,11 +4442,11 @@ body.dlv-popup-open { overflow: hidden; }
               </select>
             </div>
             <div class="form-group">
-              <label>ວັນທີ່ສະສາງ <span style="color:#ef4444;">*</span></label>
+              <label>ວັນທີ່ສະສາງ <span style="color:#DC2626;">*</span></label>
               <input type="date" id="woDate" class="form-control">
             </div>
             <div class="form-group">
-              <label>ໝາຍເຫດ <span id="woNotesRequired" class="hidden" style="color:#ef4444;">* (ຈຳເປັນເມື່ອເລືອກ "ອື່ນໆ")</span></label>
+              <label>ໝາຍເຫດ <span id="woNotesRequired" class="hidden" style="color:#DC2626;">* (ຈຳເປັນເມື່ອເລືອກ "ອື່ນໆ")</span></label>
               <textarea id="woNotes" class="form-control" rows="3" placeholder="ລາຍລະອຽດເພີ່ມເຕີມ (ຖ້າມີ)"></textarea>
             </div>
             <div class="loan-nav-btns">
@@ -4536,7 +4536,7 @@ body.dlv-popup-open { overflow: hidden; }
             </label>
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <span id="woSelectedCount" style="font-size:13px; color:var(--text-muted);"></span>
-              <button type="button" id="woBulkConfirmBtn" class="btn-act btn-edit" style="background:#16a34a; color:#fff; padding:8px 14px;" onclick="confirmSelectedCoolerWriteOffs()" disabled><i class="fa-solid fa-circle-check mr-1"></i> ຢືນຢັນທີ່ເລືອກ</button>
+              <button type="button" id="woBulkConfirmBtn" class="btn-act btn-edit" style="background:#15803d; color:#fff; padding:8px 14px;" onclick="confirmSelectedCoolerWriteOffs()" disabled><i class="fa-solid fa-circle-check mr-1"></i> ຢືນຢັນທີ່ເລືອກ</button>
             </div>
           </div>
           <div class="mgmt-card-list" id="coolerWriteOffList"></div>
@@ -5088,7 +5088,7 @@ body.dlv-popup-open { overflow: hidden; }
             <div class="input-wrapper fl-search" style="flex:1; min-width:200px; max-width:360px;"><i class="fa-solid fa-magnifying-glass"></i>
               <input type="text" id="stSearchInput" class="form-control" placeholder="ຄົ້ນຫາ ເລກຖ້ຽວ, ເລກທະບຽນລົດ, ຄົນຂັບ, ແຂວງ" autocomplete="off" oninput="stRenderList()">
             </div>
-            <button type="button" class="btn-add" style="background:#0d9488;" onclick="stExportExcel()" title="Export Excel ຕາມລາຍການທີ່ກອງຢູ່ (ແຖບ + ລົດ + ຄົ້ນຫາ)"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel</button>
+            <button type="button" class="btn-add" style="background:#0f766e;" onclick="stExportExcel()" title="Export Excel ຕາມລາຍການທີ່ກອງຢູ່ (ແຖບ + ລົດ + ຄົ້ນຫາ)"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel</button>
           </div>
           <div id="stList" style="display:flex; flex-direction:column; gap:10px;"></div>
         </div>
@@ -5412,11 +5412,11 @@ body.dlv-popup-open { overflow: hidden; }
                     <button type="button" class="btn-act btn-edit" onclick="openQrScanner('ncEditQr')"><i class="fa-solid fa-camera"></i> ກ້ອງ</button>
                   </div>
                 </div>
-                <button type="button" class="btn-submit" style="margin-top:0; background:#0ea5e9;" onclick="ncQrSave(false)"><i class="fa-solid fa-qrcode mr-1"></i> ບັນທຶກ QR</button>
+                <button type="button" class="btn-submit" style="margin-top:0; background:#0369A1;" onclick="ncQrSave(false)"><i class="fa-solid fa-qrcode mr-1"></i> ບັນທຶກ QR</button>
               </div>
               <div style="height:12px;"></div>
               <div style="display:flex; gap:10px;">
-                <button type="button" id="ncEditSaveConfirmBtn" class="btn-submit" style="margin-top:0; background:#16a34a;" onclick="ncEditSave(false, true)"><i class="fa-solid fa-check mr-1"></i> ບັນທຶກ + ຢືນຢັນ</button>
+                <button type="button" id="ncEditSaveConfirmBtn" class="btn-submit" style="margin-top:0; background:#15803d;" onclick="ncEditSave(false, true)"><i class="fa-solid fa-check mr-1"></i> ບັນທຶກ + ຢືນຢັນ</button>
                 <button type="button" class="btn-submit" style="margin-top:0;" onclick="ncEditSave()"><i class="fa-solid fa-floppy-disk mr-1"></i> ບັນທຶກ</button>
                 <button type="button" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:0;" onclick="ncEditToggle(false)">ຍົກເລີກ</button>
               </div>
@@ -6264,7 +6264,7 @@ body.dlv-popup-open { overflow: hidden; }
             <div class="profile-info-list" style="margin-bottom: 16px;">
               <div class="profile-info-item"><span>ສະຖານະ</span><span id="installStatusText">ກຳລັງກວດສອບ...</span></div>
             </div>
-            <button id="btnInstallApp" onclick="handleInstallApp()" class="btn-submit hidden" style="background: linear-gradient(135deg, #0C8CA6 0%, #075C70 100%);">
+            <button id="btnInstallApp" onclick="handleInstallApp()" class="btn-submit hidden" style="background: linear-gradient(135deg, #0A7890 0%, #075C70 100%);">
               <i class="fa-solid fa-download mr-2"></i> ຕິດຕັ້ງແອັບໃສ່ໜ້າຈໍຫຼັກ
             </button>
             <div id="installIosHint" class="alert hidden" style="margin-top: 6px; background:#eff6ff; color:#1e3a8a; border:1px solid #bfdbfe;">
@@ -8229,7 +8229,7 @@ body.dlv-popup-open { overflow: hidden; }
       btn.innerHTML = d.enabled
         ? '<i class="fa-solid fa-lock-open mr-1"></i> ປິດໂໝດປັບປຸງ (ເປີດລະບົບ)'
         : '<i class="fa-solid fa-lock mr-1"></i> ເປີດໂໝດປິດລະບົບ';
-      btn.style.background = d.enabled ? '#16a34a' : '#dc2626';
+      btn.style.background = d.enabled ? '#15803d' : '#dc2626';
       const ta = document.getElementById('maintMessageInput');
       if (document.activeElement !== ta) ta.value = d.message && d.message !== 'ລະບົບກຳລັງປັບປຸງ ກະລຸນາກັບມາໃໝ່ພາຍຫຼັງ' ? d.message : '';
     }
@@ -11630,9 +11630,9 @@ body.dlv-popup-open { overflow: hidden; }
         <div style="font-size:20px; font-weight:700; color:${color};">${value}</div></div>`;
       document.getElementById('userStatusSummary').innerHTML =
         card('ຜູ້ໃຊ້ທັງໝົດ', all.length, 'var(--text-main)') +
-        card('ເປີດແຈ້ງເຕືອນແລ້ວ', all.length - noPush, '#16a34a') +
+        card('ເປີດແຈ້ງເຕືອນແລ້ວ', all.length - noPush, '#15803d') +
         card('ຍັງບໍ່ເປີດແຈ້ງເຕືອນ', noPush, '#d97706') +
-        card('ຕິດຕັ້ງແອັບແລ້ວ', all.length - noApp, '#16a34a') +
+        card('ຕິດຕັ້ງແອັບແລ້ວ', all.length - noApp, '#15803d') +
         card('ຍັງບໍ່ໄດ້ຕິດຕັ້ງແອັບ', noApp, '#d97706');
 
       const q = document.getElementById('userStatusSearch').value.trim().toLowerCase();
@@ -12128,7 +12128,7 @@ body.dlv-popup-open { overflow: hidden; }
             ${item.email ? `<span><i class="fa-solid fa-envelope"></i>${esc(item.email)}</span>` : '<span style="color:#d97706;"><i class="fa-solid fa-envelope"></i>ຍັງບໍ່ມີອີເມວ</span>'}
             ${!item.email ? '' : (item.user_id
               ? (item.user_role === 'dsm'
-                  ? `<span style="color:#16a34a;"><i class="fa-solid fa-circle-check"></i>ມີບັນຊີ login ແລ້ວ${item.user_status && item.user_status !== 'approved' ? ' (' + esc(item.user_status) + ')' : ''}</span>`
+                  ? `<span style="color:#15803d;"><i class="fa-solid fa-circle-check"></i>ມີບັນຊີ login ແລ້ວ${item.user_status && item.user_status !== 'approved' ? ' (' + esc(item.user_status) + ')' : ''}</span>`
                   : `<span style="color:#d97706;"><i class="fa-solid fa-triangle-exclamation"></i>ອີເມວນີ້ເປັນບັນຊີ role "${esc(item.user_role)}"</span>`)
               : '<span style="color:#6b7280;"><i class="fa-solid fa-user-slash"></i>ຍັງບໍ່ມີບັນຊີ login</span>')}
           </div>
@@ -13459,7 +13459,7 @@ body.dlv-popup-open { overflow: hidden; }
 
     /* ===================== Dashboard ພາບລວມສະຕັອກສາງ ===================== */
     const STOCK_STATUS_COLOR_HEX = {
-      in_warehouse: '#16a34a', reserved: '#f59e0b', on_truck: '#2563EB', outlet: '#0C8CA6',
+      in_warehouse: '#15803d', reserved: '#f59e0b', on_truck: '#2563EB', outlet: '#0A7890',
       event: '#8b5cf6', shipped_out: '#6d28d9', pending_write_off: '#f97316', write_off: '#dc2626'
     };
     const STOCK_STATUS_ORDER = ['in_warehouse', 'reserved', 'on_truck', 'outlet', 'event', 'shipped_out', 'pending_write_off', 'write_off'];
@@ -13511,8 +13511,8 @@ body.dlv-popup-open { overflow: hidden; }
       wh: s => String(s.warehouse_id), status: s => s.status || '', cond: s => s.cooler_status || '',
       brand: s => sdNone(s.cooler_brand), type: s => sdNone(s.cooler_type), model: s => sdNone(s.cooler_model)
     };
-    const SD_COND_COLOR = { new: '#16a34a', second_hand: '#f59e0b', broken: '#dc2626' };
-    const SD_PALETTE = ['#0C8CA6', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6', '#94a3b8'];
+    const SD_COND_COLOR = { new: '#15803d', second_hand: '#f59e0b', broken: '#dc2626' };
+    const SD_PALETTE = ['#0A7890', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6', '#94a3b8'];
     function sdFilter(list, skip) {
       return list.filter(s => Object.keys(sdSl).every(k => k === skip || !sdSl[k].size || sdSl[k].has(SD_KEY[k](s))));
     }
@@ -14455,7 +14455,7 @@ body.dlv-popup-open { overflow: hidden; }
         }
         const title = [n.cooler_brand, n.cooler_type, n.cooler_model].filter(Boolean).join(' / ') || 'ຕູ້ແຊ່';
         return `
-        <div class="mgmt-card" style="${ncDelSel.has(n.id) ? 'outline:2px solid #dc2626;' : ((ncSelected.has(n.id) || ncBulkSel.has(n.id)) ? 'outline:2px solid #16a34a;' : (ncLotSel.has(n.id) ? 'outline:2px solid #7c3aed;' : ''))}">
+        <div class="mgmt-card" style="${ncDelSel.has(n.id) ? 'outline:2px solid #dc2626;' : ((ncSelected.has(n.id) || ncBulkSel.has(n.id)) ? 'outline:2px solid #15803d;' : (ncLotSel.has(n.id) ? 'outline:2px solid #7c3aed;' : ''))}">
           <div class="mgmt-card-top">
             <div class="mgmt-card-title" style="display:flex; align-items:center; gap:10px;">
               ${checkbox}${bulkBox}${delBox}${lotBox}
@@ -15899,7 +15899,7 @@ async function ncExportLots(lot) {
       const unKeys = Object.keys(plan.unplaced || {}).filter(k => plan.unplaced[k] > 0);
       if (unKeys.length) html += `<div style="background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:13px;"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ຕູ້ໃຫຍ່ກວ່າກະບະລົດ ຈັດບໍ່ໄດ້: ${unKeys.map(k => `${esc(sizeMap[k] ? sizeMap[k].label : 'ຂະໜາດ #' + k)} (${plan.unplaced[k]} ໜ່ວຍ)`).join(', ')}</div>`;
       if (!plan.bins.length) { body.innerHTML = html + '<div style="color:var(--text-muted);">ບໍ່ມີຕູ້ໃຫ້ຈຳລອງ</div>'; return; }
-      if (plan.bins.length > 1) html += `<div style="background:#fef2f2; border:1px solid #ef4444; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:13px; color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ຕູ້ຕາມແຜນບໍ່ພໍດີລົດຄັນດຽວ — ຕ້ອງໃຊ້ລົດ ${plan.bins.length} ຄັນ</div>`;
+      if (plan.bins.length > 1) html += `<div style="background:#fef2f2; border:1px solid #DC2626; border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:13px; color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ຕູ້ຕາມແຜນບໍ່ພໍດີລົດຄັນດຽວ — ຕ້ອງໃຊ້ລົດ ${plan.bins.length} ຄັນ</div>`;
       html += spLegend(truck);
       html += plan.bins.map((b, i) => {
         const byLabel = {};
@@ -16190,7 +16190,7 @@ async function ncExportLots(lot) {
         box.innerHTML = shown.map(x => {
           const title = [x.cooler_brand, x.cooler_type, x.cooler_model].filter(Boolean).join(' / ') || 'ຕູ້ແຊ່';
           return `
-          <label class="mgmt-card" style="cursor:pointer; ${ncPickSel.has(x.id) ? 'outline:2px solid #16a34a;' : ''}">
+          <label class="mgmt-card" style="cursor:pointer; ${ncPickSel.has(x.id) ? 'outline:2px solid #15803d;' : ''}">
             <div class="mgmt-card-top">
               <div class="mgmt-card-title" style="display:flex; align-items:center; gap:10px;">
                 <input type="checkbox" ${ncPickSel.has(x.id) ? 'checked' : ''} onchange="ncPickToggle(${x.id}, this.checked)" style="width:18px; height:18px; flex:none;">
@@ -16545,7 +16545,7 @@ td.c { text-align: center; }
       position: absolute; left: 0; top: calc(var(--lift) * -1 - 4px);
       width: var(--ind); height: var(--ind); border-radius: 50%; box-sizing: border-box;
       pointer-events: none; z-index: 0;
-      background: linear-gradient(135deg, #22D3BF, #0C8CA6); border: 5px solid var(--pt-bg, var(--bg-body));
+      background: linear-gradient(135deg, #22D3BF, #0A7890); border: 5px solid var(--pt-bg, var(--bg-body));
       box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
       transition: transform .55s cubic-bezier(0.34, 1.56, 0.64, 1), opacity .2s ease;
@@ -16558,7 +16558,7 @@ td.c { text-align: center; }
       flex: 1 1 0; min-width: 0; height: 100%; box-sizing: border-box; position: relative; z-index: 1;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px;
       padding: 10px 4px 6px; border: none; border-radius: 0; background: transparent; box-shadow: none;
-      color: #8FB0B8; font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center;
+      color: #A9C6CD; font-size: 11px; font-weight: 600; line-height: 1.25; text-align: center;
       -webkit-tap-highlight-color: transparent;
     }
     .pt-bar.pt-scroll .tab-btn { flex: 1 0 104px; }
@@ -16580,7 +16580,7 @@ td.c { text-align: center; }
     .pt-bar .tab-btn:focus-visible { outline: 2px solid #6FE3D6; outline-offset: -4px; border-radius: 20px; }
     @media (max-width: 380px) {
       .pt-wrap { --tab-h: 62px; --ind: 44px; }
-      .pt-bar .tab-btn { font-size: 9.5px; }
+      .pt-bar .tab-btn { font-size: 10.5px; }
       .pt-bar.pt-scroll .tab-btn { flex-basis: 92px; }
     }
     @media (prefers-reduced-motion: reduce) { .pt-ind, .pt-bar .tab-btn i { transition: none; } }
@@ -16609,7 +16609,7 @@ td.c { text-align: center; }
       box-shadow: none; transform: none;
     }
     .loan-stepper .loan-step.active .loan-step-dot {
-      background: linear-gradient(135deg, #22D3BF, #0C8CA6); border-color: transparent; color: #fff;
+      background: linear-gradient(135deg, #22D3BF, #0A7890); border-color: transparent; color: #fff;
       transform: scale(1.1); animation: none !important;
       box-shadow: 0 0 0 4px rgba(34, 211, 191, 0.2), 0 8px 18px -6px rgba(34, 211, 191, 0.65) !important;
     }
@@ -16621,22 +16621,22 @@ td.c { text-align: center; }
     .loan-stepper .loan-step.active .loan-step-label { color: #6FE3D6; font-weight: 700; }
     .loan-stepper .loan-step.done .loan-step-label { color: #C5DDE2; }
     .loan-stepper .loan-step-line { height: 3px; margin-top: 15px; background: rgba(255,255,255,0.12); }
-    .loan-stepper .loan-step-line::after { background: linear-gradient(90deg, #22D3BF, #0C8CA6); }
+    .loan-stepper .loan-step-line::after { background: linear-gradient(90deg, #22D3BF, #0A7890); }
     @media (max-width: 480px) {
       .loan-stepper { padding: 12px 8px 10px !important; border-radius: 22px; }
       .loan-stepper .loan-step { width: 58px; }
       .loan-stepper .loan-step-dot { width: 30px; height: 30px; }
       .loan-stepper .loan-step-line { margin-top: 14px; }
-      .loan-stepper .loan-step-label { font-size: 10px; }
+      .loan-stepper .loan-step-label { font-size: 11px; }
     }
   
     /* ===== ສະເຕັບ 5 "ລາຍເຊັນ DSM" — stepper 5 ຂັ້ນ + ລັອກປຸ່ມກັບຄືນ + ແຖບສະເຕັບຍ່ອຍໃນຄິວເຊັນ ===== */
     #loanSubBar.dsm-locked .btn-back { display: none; }
     @media (max-width: 480px) {
       .loan-stepper.loan-stepper-5 .loan-step { width: 52px; }
-      .loan-stepper.loan-stepper-5 .loan-step-label { font-size: 9.5px; }
+      .loan-stepper.loan-stepper-5 .loan-step-label { font-size: 10.5px; }
       .loan-stepper.loan-stepper-6 .loan-step { width: 44px; }
-      .loan-stepper.loan-stepper-6 .loan-step-label { font-size: 9px; }
+      .loan-stepper.loan-stepper-6 .loan-step-label { font-size: 10px; }
     }
     .data-card.dsm-clickable { cursor: pointer; transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
     .data-card.dsm-clickable:hover { border-color: var(--primary); box-shadow: 0 6px 16px -8px rgba(12, 140, 166, .45); transform: translateY(-1px); }
@@ -16822,7 +16822,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
     function stProgress(done, total) {
       const pct = total ? Math.round(done * 100 / total) : 0;
-      const color = total && done === total ? '#16a34a' : '#f59e0b';
+      const color = total && done === total ? '#15803d' : '#f59e0b';
       return `<div style="height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden;"><div style="width:${pct}%; height:100%; background:${color}; transition:width .3s;"></div></div>`;
     }
     function stCountBadge(c) {
@@ -17231,7 +17231,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               + ` <button type="button" class="btn-act btn-edit" onclick="${n.kind === 'stock' ? `ncTripRemoveStock(${n.link_id})` : `ncTripRemoveCooler(${n.id})`}"><i class="fa-solid fa-xmark"></i> ເອົາອອກ</button>`
             : '';
           return whHead + `
-          <div class="mgmt-card" style="${sc ? 'border-left:4px solid #16a34a;' : ''}">
+          <div class="mgmt-card" style="${sc ? 'border-left:4px solid #15803d;' : ''}">
             <div class="mgmt-card-top">
               <div class="mgmt-card-title">${esc(title)} ${n.kind === 'stock' ? '<span class="badge badge-default" style="margin-left:6px;">ຈາກສາງ</span>' : ''}${status}</div>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">${acts}</div>
@@ -17251,7 +17251,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     // ---------- ສະແກນ / ໝາຍ / ຍົກເລີກ ----------
     function stFeedback(kind, text) {
       stFeedbackText = text;
-      const colors = { ok: ['#dcfce7', '#166534', '#16a34a'], warn: ['#fef3c7', '#92400e', '#f59e0b'], err: ['#fee2e2', '#991b1b', '#dc2626'] }[kind] || ['#e0f2fe', '#075985', '#0ea5e9'];
+      const colors = { ok: ['#dcfce7', '#166534', '#15803d'], warn: ['#fef3c7', '#92400e', '#f59e0b'], err: ['#fee2e2', '#991b1b', '#dc2626'] }[kind] || ['#e0f2fe', '#075985', '#0ea5e9'];
       const box = document.getElementById('stScanFeedback');
       if (box) box.innerHTML = `<div style="background:${colors[0]}; color:${colors[1]}; border-left:4px solid ${colors[2]}; border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:14px; font-weight:600;">${esc(text)}</div>`;
       const sm = document.getElementById('qrScannerModal');
@@ -20192,7 +20192,7 @@ function assetStatusBadgeClass(status) {
       'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ': '#2563EB',
       'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ': '#7C3AED',
       'ຍັງບໍ່ທັນເຊັນເອກະສານ': '#C0311A',
-      'ຍັງບໍ່ຊັບມິດ PowerApp': '#C4780F'
+      'ຍັງບໍ່ຊັບມິດ PowerApp': '#A8630A'
     };
     function assetStatusColor(status) { return ASSET_STATUS_COLOR[status] || '#B9CBCE'; }
 
@@ -20612,7 +20612,7 @@ function assetStatusBadgeClass(status) {
 
       const canSelect = currentUser.role === 'admin';
       list.innerHTML = assets.map(a => `
-        <div class="data-card${deliverySelectedIds.has(a.id) ? ' dh-selected' : ''}" style="--st:${a.self_moved ? '#7C3AED' : (a.admin_verified ? '#15803d' : '#C4780F')}${a.self_moved ? '; background:#F5F0FF' : ''}" onclick="showDeliveryDetail(${a.id})">
+        <div class="data-card${deliverySelectedIds.has(a.id) ? ' dh-selected' : ''}" style="--st:${a.self_moved ? '#7C3AED' : (a.admin_verified ? '#15803d' : '#A8630A')}${a.self_moved ? '; background:#F5F0FF' : ''}" onclick="showDeliveryDetail(${a.id})">
           ${canSelect ? `<label class="dh-check${a.admin_verified ? ' disabled' : ''}" onclick="event.stopPropagation()" title="ເລືອກເພື່ອຢືນຢັນ"><input type="checkbox" ${deliverySelectedIds.has(a.id) ? 'checked' : ''} ${a.admin_verified ? 'disabled' : ''} onchange="toggleDeliverySelect(${a.id}, this.checked)"></label>` : ''}
           <div class="data-card-main">
             <div class="data-card-title">
@@ -20678,7 +20678,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('deliveryHistoryVerifiedPills').innerHTML = atPillsHtml([
         { value: '', label: 'ທັງໝົດ', color: '', count: base.length },
         { value: 'verified', label: 'ຢືນຢັນຄວາມຖືກຕ້ອງແລ້ວ', color: '#15803d', count: verifiedCount },
-        { value: 'unverified', label: 'ຍັງບໍ່ທັນຢືນຢັນ', color: '#C4780F', count: base.length - verifiedCount }
+        { value: 'unverified', label: 'ຍັງບໍ່ທັນຢືນຢັນ', color: '#A8630A', count: base.length - verifiedCount }
       ], verifiedFilter, 'setDeliveryVerifiedPill');
 
       const filtered = verifiedFilter === 'verified' ? base.filter(a => a.admin_verified)
@@ -21015,7 +21015,7 @@ function assetStatusBadgeClass(status) {
     // ສະແດງເທິງແຜນທີ່ສະເພາะ Asset ที่กำลัง "เคลื่อนย้าย" หรือ "กำลังจัดส่ง" เท่านั้น (ตรงกับ SHIPPING_NOTIFY_STATUSES ฝั่ง backend)
     const MAP_VISIBLE_STATUSES = ["ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ", "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ", "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ", "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"]; // ລໍຖ້າ + ຢູ່ເທິງລົດ (ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ເກັບໄວ້ສຳລັບຂໍ້ມູນເກົ່າ)
     // ຊຸດສີສຳລັບແຍກ Doc Type ເທິງແຜນທີ່ (ວົນຊ້ຳຖ້າ Doc Type ມີຫຼາຍກວ່າສີ)
-    // ສີຄົງທີ່ຂອງ Doc Type ຫຼັກ (ເລືອກສີທີ່ຕ່າງກັນຊັດ ແລະ ບໍ່ຊ້ຳກັບສີ "ດ່ວນ" ສີແດງ #ef4444 ແລະ "ຢູ່ເທິງລົດ" ສີນ້ຳເງິນ #1d4ed8)
+    // ສີຄົງທີ່ຂອງ Doc Type ຫຼັກ (ເລືອກສີທີ່ຕ່າງກັນຊັດ ແລະ ບໍ່ຊ້ຳກັບສີ "ດ່ວນ" ສີແດງ #DC2626 ແລະ "ຢູ່ເທິງລົດ" ສີນ້ຳເງິນ #1d4ed8)
     const MAP_DOCTYPE_FIXED = {
       'ຕູ້ເຄື່ອນຍ້າຍ': '#f97316',      // ສີສົ້ມ
       'ຕູ້ປ່ຽນແທນ': '#7c3aed',         // ສີມ່ວງ
@@ -21025,7 +21025,7 @@ function assetStatusBadgeClass(status) {
       'ບໍ່ລະບຸ': '#64748b'              // ສີເທົາ
     };
     // ຊຸດສີສຳລັບ Doc Type ອື່ນໆ (ຕັດສີແດງ/ນ້ຳເງິນ/ສີທີ່ໃຊ້ຂ້າງເທິງອອກ ເພື່ອບໍ່ໃຫ້ຊ້ຳ/ຄ້າຍກັນ)
-    const MAP_DOCTYPE_PALETTE = ['#db2777', '#ca8a04', '#65a30d', '#0d9488', '#9333ea', '#be123c', '#4d7c0f', '#b45309'];
+    const MAP_DOCTYPE_PALETTE = ['#db2777', '#ca8a04', '#65a30d', '#0f766e', '#9333ea', '#be123c', '#4d7c0f', '#b45309'];
     const mapDoctypeColorCache = {};
     function colorForDocType(docType) {
       const key = String(docType || '').trim() || 'ບໍ່ລະບຸ';
@@ -21057,8 +21057,8 @@ function assetStatusBadgeClass(status) {
         className: '',
         html: `<div class="marker-label-wrap">
                  <div class="pulse-marker-wrap">
-                   <div class="pulse-marker-ring${urgent ? ' pulse-marker-ring-urgent' : ''}" style="background:${urgent ? '#ef4444' : color};"></div>
-                   <div class="pulse-marker-dot" style="background:${urgent ? '#ef4444' : color};"></div>
+                   <div class="pulse-marker-ring${urgent ? ' pulse-marker-ring-urgent' : ''}" style="background:${urgent ? '#DC2626' : color};"></div>
+                   <div class="pulse-marker-dot" style="background:${urgent ? '#DC2626' : color};"></div>
                  </div>
                  ${label}
                </div>`,
@@ -21136,7 +21136,7 @@ function assetStatusBadgeClass(status) {
           const waBtn = (phone) => {
             const ph = String(phone || '').trim();
             if (!ph) return '';
-            return ` <a href="https://wa.me/${esc(dsmPhoneDigits(ph))}" target="_blank" rel="noopener" title="WhatsApp ${esc(ph)}" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:1px 8px; margin-left:4px; font-size:11.5px; font-weight:700; line-height:1.6; color:#fff; background:#16a34a; border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
+            return ` <a href="https://wa.me/${esc(dsmPhoneDigits(ph))}" target="_blank" rel="noopener" title="WhatsApp ${esc(ph)}" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:1px 8px; margin-left:4px; font-size:11.5px; font-weight:700; line-height:1.6; color:#fff; background:#15803d; border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
           };
           const lbl = (text) => `<span style="color:#0f172a; font-weight:700;">${esc(text)}:</span>`;
           marker.bindPopup(`
@@ -21180,7 +21180,7 @@ function assetStatusBadgeClass(status) {
         legend.className = 'map-doctype-legend';
         legend.innerHTML =
           (points.some(a => a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.dispatched_at) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#1d4ed8;"></span><b style="color:#1d4ed8;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</b></div>` : '') +
-          (points.some(a => a.flagged) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#ef4444;"></span><b style="color:#ef4444;">🚩 ດ່ວນ (ຕິດທຸງ)</b></div>` : '') +
+          (points.some(a => a.flagged) ? `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:#DC2626;"></span><b style="color:#DC2626;">🚩 ດ່ວນ (ຕິດທຸງ)</b></div>` : '') +
           [...docTypesSeen].sort().map(dt =>
           `<div class="map-doctype-legend-item"><span class="map-doctype-legend-dot" style="background:${colorForDocType(dt === 'ບໍ່ລະບຸ' ? '' : dt)};"></span>${esc(dt)}</div>`
         ).join('');
@@ -21658,7 +21658,7 @@ function assetStatusBadgeClass(status) {
         document.getElementById('budgetSearchInput').value = '';
         renderBudgetTable(allBudgetsData);
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444; padding:24px;">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#DC2626; padding:24px;">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</td></tr>`;
       }
     }
 
@@ -21940,7 +21940,7 @@ function assetStatusBadgeClass(status) {
         const data = await res.json();
         if (res.ok) {
           dispatchReset();
-          dispatchSetMsg('✔ ' + (data.message || 'ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ') + ' — ສະແກນຕູ້ຕໍ່ໄປໄດ້ເລີຍ', '#16a34a');
+          dispatchSetMsg('✔ ' + (data.message || 'ຂຶ້ນລົດຮຽບຮ້ອຍແລ້ວ') + ' — ສະແກນຕູ້ຕໍ່ໄປໄດ້ເລີຍ', '#15803d');
           dispatchLoadList();
           // ມືຖື: ເປີດກ້ອງຕໍ່ເພື່ອສະແກນຕູ້ຖັດໄປ
           if (mmIsMobile()) setTimeout(() => { if (!document.getElementById('view-dispatch-out').classList.contains('hidden')) openQrScanner('dispatchQrInput'); }, 700);
@@ -22006,7 +22006,7 @@ function assetStatusBadgeClass(status) {
           body: JSON.stringify({ userId: currentUser.id })
         });
         const data = await res.json();
-        if (res.ok) dispatchSetMsg('🔒 ' + (data.message || 'ປິດລົດແລ້ວ'), '#16a34a');
+        if (res.ok) dispatchSetMsg('🔒 ' + (data.message || 'ປິດລົດແລ້ວ'), '#15803d');
         else appAlert(data.error || 'ບໍ່ສາມາດປິດລົດໄດ້');
       } catch (e) { appAlert('ເກີດຂໍ້ຜິດພາດໃນການປິດລົດ'); }
       dispatchLoadList();
@@ -22137,7 +22137,7 @@ function assetStatusBadgeClass(status) {
 
         const a = data.item;
         // ຕູ້ທີ່ສະແກນຂຶ້ນລົດແລ້ວ = ກຳລັງສົ່ງ; ຖ້າຍັງບໍ່ສະແກນ ກໍຍັງຈັດສົ່ງໄດ້ (ເຕືອນເທົ່ານັ້ນ)
-        if (a.dispatched_at && a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ') { msgEl.textContent = 'ຕູ້ຢູ່ເທິງລົດ ກຳລັງສົ່ງ — ຮອດຮ້ານແລ້ວ ກະລຸນາຖ່າຍຮູບ ແລະ ໃຫ້ລູກຄ້າເຊັນຮັບ'; msgEl.style.color = '#16a34a'; msgEl.classList.remove('hidden'); }
+        if (a.dispatched_at && a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ') { msgEl.textContent = 'ຕູ້ຢູ່ເທິງລົດ ກຳລັງສົ່ງ — ຮອດຮ້ານແລ້ວ ກະລຸນາຖ່າຍຮູບ ແລະ ໃຫ້ລູກຄ້າເຊັນຮັບ'; msgEl.style.color = '#15803d'; msgEl.classList.remove('hidden'); }
         else { msgEl.textContent = 'ໝາຍເຫດ: ຕູ້ນີ້ຍັງບໍ່ໄດ້ສະແກນຂຶ້ນລົດ (ໃຊ້ເມນູ ສະແກນຕູ້ຂຶ້ນລົດ)'; msgEl.style.color = '#d97706'; msgEl.classList.remove('hidden'); }
         document.getElementById('deliverAssetId').value = a.id;
         deliverLoanContract = data.loan_contract || null;
@@ -22293,7 +22293,7 @@ function assetStatusBadgeClass(status) {
       const code = document.getElementById('loanOldOutletCode').value.trim();
       if (d && d.outlet_found) {
         nameEl.value = d.old_outlet_name || '';
-        loanSetOldHint('loanOldOutletHint', 'ຊື່ຮ້ານດຶງຈາກ Outlet Master Data', '#16a34a');
+        loanSetOldHint('loanOldOutletHint', 'ຊື່ຮ້ານດຶງຈາກ Outlet Master Data', '#15803d');
       } else {
         nameEl.value = '';
         loanSetOldHint('loanOldOutletHint', code ? 'ບໍ່ພົບລະຫັດຮ້ານນີ້ໃນ Outlet Master Data' : '', '#dc2626');
@@ -25740,7 +25740,7 @@ function assetStatusBadgeClass(status) {
     function toggleWoSelect(id, checked) {
       if (checked) woSelectedIds.add(id); else woSelectedIds.delete(id);
       const card = document.getElementById('woCard-' + id);
-      if (card) card.style.outline = checked ? '2px solid #16a34a' : '';
+      if (card) card.style.outline = checked ? '2px solid #15803d' : '';
       updateWoBulkBar();
     }
 
@@ -25749,7 +25749,7 @@ function assetStatusBadgeClass(status) {
       woSelectedIds = checked ? new Set(ids) : new Set();
       ids.forEach(id => {
         const cb = document.getElementById('woCheck-' + id); if (cb) cb.checked = checked;
-        const card = document.getElementById('woCard-' + id); if (card) card.style.outline = checked ? '2px solid #16a34a' : '';
+        const card = document.getElementById('woCard-' + id); if (card) card.style.outline = checked ? '2px solid #15803d' : '';
       });
       updateWoBulkBar();
     }
@@ -25804,7 +25804,7 @@ function assetStatusBadgeClass(status) {
       }
       const isAdmin = currentUser.role === 'admin';
       list.innerHTML = items.map(w => `
-        <div class="mgmt-card" id="woCard-${w.id}" style="${woSelectedIds.has(w.id) ? 'outline:2px solid #16a34a;' : ''}">
+        <div class="mgmt-card" id="woCard-${w.id}" style="${woSelectedIds.has(w.id) ? 'outline:2px solid #15803d;' : ''}">
           <div class="mgmt-card-top">
             <div class="mgmt-card-title" style="display:flex; align-items:center; gap:10px;">
               ${isAdmin && w.status === 'pending' ? `<input type="checkbox" id="woCheck-${w.id}" ${woSelectedIds.has(w.id) ? 'checked' : ''} onchange="toggleWoSelect(${w.id}, this.checked)" style="width:18px; height:18px; flex:none;">` : ''}
@@ -26736,8 +26736,8 @@ function assetStatusBadgeClass(status) {
       g += `<rect x="${-rl}" y="${-rl}" width="${L + rl}" height="${H}" rx="${rl * 0.6}" fill="#334155"/>`;
       g += `<rect x="0" y="0" width="${L}" height="${W}" fill="#e5e7eb"/>`;
       for (let k = 1; k < 8; k++) g += `<line x1="0" y1="${W * k / 8}" x2="${L}" y2="${W * k / 8}" stroke="#d1d5db" stroke-width="1.5"/>`;
-      g += `<rect x="${-rl * 1.5}" y="${-rl}" width="${rl * 0.5}" height="${W * 0.08}" rx="2" fill="#ef4444"/>`;
-      g += `<rect x="${-rl * 1.5}" y="${W + rl - W * 0.08}" width="${rl * 0.5}" height="${W * 0.08}" rx="2" fill="#ef4444"/>`;
+      g += `<rect x="${-rl * 1.5}" y="${-rl}" width="${rl * 0.5}" height="${W * 0.08}" rx="2" fill="#DC2626"/>`;
+      g += `<rect x="${-rl * 1.5}" y="${W + rl - W * 0.08}" width="${rl * 0.5}" height="${W * 0.08}" rx="2" fill="#DC2626"/>`;
       // ຫ້ອງຄົນຂັບ + ໜ້າລົດ (hood)
       const hy = -rl + H * 0.08, hh = H * 0.84;
       g += `<rect x="${L}" y="${-rl}" width="${cabL}" height="${H}" rx="${W * 0.08}" fill="#f8fafc" stroke="#475569" stroke-width="3"/>`;
@@ -26763,7 +26763,7 @@ function assetStatusBadgeClass(status) {
           `<circle cx="${rx + p.along / 2}" cy="${ry + p.across / 2}" r="${br}" fill="#fff" stroke="${z.color}" stroke-width="2"/>` +
           `<text x="${rx + p.along / 2}" y="${ry + p.across / 2}" fill="${z.color}" font-size="${Math.round(br * 1.3)}" font-weight="800" text-anchor="middle" dominant-baseline="central">${z.doors}</text>` +
           (p.sel ? `<rect x="${rx}" y="${ry}" width="${p.along}" height="${p.across}" rx="${br * 0.5}" fill="none" stroke="#2563eb" stroke-width="${Math.max(3, f * 0.3)}" pointer-events="none"/>` : '') +
-          (p.bad ? `<rect x="${rx}" y="${ry}" width="${p.along}" height="${p.across}" rx="${br * 0.5}" fill="#ef4444" fill-opacity=".2" stroke="#dc2626" stroke-width="${Math.max(3, f * 0.3)}" stroke-dasharray="${f} ${f * 0.5}" pointer-events="none"/>` : '') +
+          (p.bad ? `<rect x="${rx}" y="${ry}" width="${p.along}" height="${p.across}" rx="${br * 0.5}" fill="#DC2626" fill-opacity=".2" stroke="#dc2626" stroke-width="${Math.max(3, f * 0.3)}" stroke-dasharray="${f} ${f * 0.5}" pointer-events="none"/>` : '') +
           `</g>`;
       });
       const bottom = W + rl + wt;
@@ -27072,7 +27072,7 @@ function assetStatusBadgeClass(status) {
       if (!total) msg = '<span style="color:var(--text-muted);">ຍັງບໍ່ໄດ້ໃສ່ຈຳນວນຕູ້</span>';
       else if (failed) msg = `<b style="color:#dc2626;"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ໃສ່ບໍ່ໝົດ — ເກີນ ${t.sizes.filter(z => fail[z.id]).map(z => `${esc(z.label)} ${fail[z.id]} ໜ່ວຍ`).join(', ')} (ໃສ່ໄດ້ ${total - failed} ຈາກ ${total} ໜ່ວຍ)</b>`;
       else {
-        msg = `<b style="color:#16a34a;"><i class="fa-solid fa-circle-check mr-1"></i>ໃສ່ໄດ້ ${total} ໜ່ວຍ</b>`;
+        msg = `<b style="color:#15803d;"><i class="fa-solid fa-circle-check mr-1"></i>ໃສ່ໄດ້ ${total} ໜ່ວຍ</b>`;
         if (!manual) {
           const room = t.sizes.map(z => ({ z, n: spRoom(bin, t, z.id) }));
           msg += (room.some(r => r.n > 0) ? ` <span style="color:var(--text-muted);">· ຍັງເພີ່ມໄດ້ອີກ (ຊະນິດດຽວ): ${room.map(r => `${esc(r.z.label)} +${r.n}`).join(' | ')}</span>` : ' <span style="color:var(--text-muted);">· ເຕັມແລ້ວ</span>');
@@ -27594,7 +27594,7 @@ function assetStatusBadgeClass(status) {
         return `<div id="spBin${i}" class="content-card" style="margin-top:12px; padding:14px 16px;">
           <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
             <label style="font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="sp-sel" data-i="${i}" style="width:18px; height:18px;" onchange="spToggleBin(${i}, this.checked)"><span><i class="fa-solid fa-truck mr-2"></i>ລົດຄັນທີ ${i + 1} <span style="font-weight:400; color:var(--text-muted);">· ${b.placed.length} ໜ່ວຍ (${t.sizes.filter(z => cnt[z.id]).map(z => `${esc(z.label)} ${cnt[z.id]}`).join(' · ')})</span></span></label>
-            <div style="font-weight:700;">${isFull ? '<span style="color:#16a34a;">ເຕັມ</span> · ' : ''}${Math.round(spLoad(b, t) * 100)}%</div>
+            <div style="font-weight:700;">${isFull ? '<span style="color:#15803d;">ເຕັມ</span> · ' : ''}${Math.round(spLoad(b, t) * 100)}%</div>
           </div>
           <div id="spBinSvg${i}" style="margin:8px 0;">${spBedSvg(t, b, { drag: true })}</div>
           <div id="spBinWarn${i}" style="font-size:13px; margin-bottom:6px;"></div>
@@ -27620,7 +27620,7 @@ function assetStatusBadgeClass(status) {
       if (btn) { btn.disabled = !spSelected.size; btn.style.opacity = spSelected.size ? '1' : '.5'; }
       bins.forEach((_, i) => {
         const el = document.getElementById('spBin' + i);
-        if (el) el.style.outline = spSelected.has(i) ? '2px solid #16a34a' : '';
+        if (el) el.style.outline = spSelected.has(i) ? '2px solid #15803d' : '';
       });
     }
     function spToggleBin(i, on) {
@@ -27688,7 +27688,7 @@ function assetStatusBadgeClass(status) {
       spBudgetProblems = problems || [];
       let html = '';
       if (spBudgetProblems.length) {
-        html += `<div style="background:#fef2f2; border:1px solid #ef4444; border-radius:10px; padding:10px 14px; font-size:13px;">
+        html += `<div style="background:#fef2f2; border:1px solid #DC2626; border-radius:10px; padding:10px 14px; font-size:13px;">
           <div style="font-weight:700; color:#b91c1c; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation mr-2"></i>ງົບຕູ້ແຊ່ຕ່າງແຂວງບໍ່ພໍ ຫຼື ຍັງບໍ່ໄດ້ກຳນົດງົບ</div>
           ${spBudgetProblems.map(p => `<div style="margin-bottom:2px;">• ${esc(p.text)}</div>`).join('')}
           <label style="display:flex; gap:8px; align-items:flex-start; margin-top:10px; font-weight:600; cursor:pointer;">
@@ -27751,7 +27751,7 @@ function assetStatusBadgeClass(status) {
         }
         document.getElementById('spTripForm').classList.add('hidden');
         document.getElementById('spTripDone').classList.remove('hidden');
-        document.getElementById('spTripResult').innerHTML = (data.trips || []).map(x => `<div style="margin-bottom:4px;"><i class="fa-solid fa-circle-check mr-1" style="color:#16a34a;"></i><b>${esc(x.trip_no)}</b> · ເລກທະບຽນລົດ ${esc(x.truck_plate || 'ຍັງບໍ່ລະບຸ')} · ແຜນ ${x.planned} ໜ່ວຍ <span class="badge badge-pending" style="margin-left:4px;">ລໍຖ້າຈັດຕູ້ຂຶ້ນລົດ</span></div>`).join('');
+        document.getElementById('spTripResult').innerHTML = (data.trips || []).map(x => `<div style="margin-bottom:4px;"><i class="fa-solid fa-circle-check mr-1" style="color:#15803d;"></i><b>${esc(x.trip_no)}</b> · ເລກທະບຽນລົດ ${esc(x.truck_plate || 'ຍັງບໍ່ລະບຸ')} · ແຜນ ${x.planned} ໜ່ວຍ <span class="badge badge-pending" style="margin-left:4px;">ລໍຖ້າຈັດຕູ້ຂຶ້ນລົດ</span></div>`).join('');
         loadShipPlanPage(); // ຕູ້ເຂົ້າຖ້ຽວແລ້ວ -> ອັບເດດລາຍການລໍຖ້າຈັດຖ້ຽວ ແລະ ແຜນ
         try { await ncLoadTrips(); } catch (e) { /* ບໍ່ເປັນຫຍັງ — ໜ້າຖ້ຽວຈະໂຫຼດໃໝ່ຕອນເປີດ */ }
       } catch (e) {
@@ -27870,7 +27870,7 @@ function assetStatusBadgeClass(status) {
       { key: 'Upper North', color: '#6366F1', provs: ['ຜົ້ງສາລີ', 'ບໍ່ແກ້ວ', 'ຫຼວງນ້ຳທາ', 'ອຸດົມໄຊ'] },
       { key: 'Middle North', color: '#0EA5E9', provs: ['ຫຼວງພະບາງ', 'ໄຊຍະບູລີ'] },
       { key: 'Lower North', color: '#8B5CF6', provs: ['ໄຊສົມບູນ', 'ຫົວພັນ', 'ຊຽງຂວາງ'] },
-      { key: 'Vientiane Pro', color: '#0C8CA6', provs: ['ວຽງຈັນ'] },
+      { key: 'Vientiane Pro', color: '#0A7890', provs: ['ວຽງຈັນ'] },
       { key: 'Central', color: '#12915D', provs: ['ບໍລິຄຳໄຊ', 'ຄຳມ່ວນ', 'ສະຫວັນນະເຂດ'] },
       { key: 'South', color: '#F97316', provs: ['ຈຳປາສັກ', 'ສາລະວັນ', 'ເຊກອງ', 'ອັດຕະປື'] }
     ];
@@ -27882,7 +27882,7 @@ function assetStatusBadgeClass(status) {
     }
     function pbRegionIdx(key) { const i = PB_REGIONS.findIndex(x => x.key === key); return i < 0 ? 99 : i; }
     function pbRegionColor(key) { const r = PB_REGIONS.find(x => x.key === key); return r ? r.color : '#94A3B8'; }
-    const PB_COLORS = ['#0C8CA6', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6'];
+    const PB_COLORS = ['#0A7890', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6'];
     let pbAnimate = true;
 
     function pbSlFilter(list, skip) {
@@ -28496,7 +28496,7 @@ function assetStatusBadgeClass(status) {
     let requestStageFilter = ''; // '' / 'admin' (ລໍຖ້າ Admin ກວດສອບ) / 'wh' (ລໍຖ້າສາງອະນຸມັດ)
     const REQUEST_STAGE_COLOR = { admin: '#d97706', wh: '#2563eb' };
     const requestStageKey = r => (r.admin_checked_at ? 'wh' : 'admin');
-    const REQUEST_CONDITION_COLOR = { new: '#15803d', used: '#C4780F' };
+    const REQUEST_CONDITION_COLOR = { new: '#15803d', used: '#A8630A' };
 
     async function loadAssetRequests() {
       const canManage = currentUser.role === 'admin' || currentUser.role === 'warehouse';
@@ -29032,7 +29032,7 @@ function assetStatusBadgeClass(status) {
             <div style="font-size:13px; font-weight:600;">${esc(s.cooler_brand || '-')} - ${esc(s.cooler_type || '-')}${s.cooler_model ? ' (' + esc(s.cooler_model) + ')' : ''}</div>
             <div style="font-size:12px; color: var(--text-muted); margin-top:2px;">
               <i class="fa-solid fa-warehouse"></i> ${esc(s.warehouse_name || '-')} &nbsp;
-              <span style="color: ${inStock ? '#16a34a' : '#ea580c'}; font-weight:600;">${inStock ? '' : '<i class=\"fa-solid fa-triangle-exclamation\"></i> '}${esc(statusText)}</span>
+              <span style="color: ${inStock ? '#15803d' : '#ea580c'}; font-weight:600;">${inStock ? '' : '<i class=\"fa-solid fa-triangle-exclamation\"></i> '}${esc(statusText)}</span>
             </div>
             <div style="font-size:11.5px; color: var(--text-muted); margin-top:2px;">QR: ${esc(s.qr_code || '-')} · SN: ${esc(s.serial_number || '-')} · CapEx: ${esc(s.capex || '-')}</div>
           </div>`;
@@ -30203,7 +30203,7 @@ function assetStatusBadgeClass(status) {
         document.getElementById('announcementPopupBody').innerHTML = unread.map(a => `
           <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
             <div style="font-weight:700; font-size:14px;">
-              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0C8CA6;"></i>' : ''}${esc(a.title)}
+              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0A7890;"></i>' : ''}${esc(a.title)}
             </div>
             <div style="font-size:13px; color:var(--text-muted); margin-top:6px; white-space:pre-line;">${esc(a.content)}</div>
             ${announcementImageHtml(a)}
@@ -30253,11 +30253,11 @@ function assetStatusBadgeClass(status) {
       }
 
       list.innerHTML = items.map(a => `
-        <div class="mgmt-card" style="${a.is_read ? '' : 'border-left: 3px solid #0C8CA6;'}" onclick="handleAnnouncementClick(${a.id})">
+        <div class="mgmt-card" style="${a.is_read ? '' : 'border-left: 3px solid #0A7890;'}" onclick="handleAnnouncementClick(${a.id})">
           <div class="mgmt-card-top">
             <div class="mgmt-card-title">
-              ${!a.is_read ? '<i class="fa-solid fa-circle" style="font-size:7px; color:#0C8CA6; margin-right:6px;"></i>' : ''}
-              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0C8CA6;"></i>' : ''}
+              ${!a.is_read ? '<i class="fa-solid fa-circle" style="font-size:7px; color:#0A7890; margin-right:6px;"></i>' : ''}
+              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0A7890;"></i>' : ''}
               ${esc(a.title)}
             </div>
             <span class="badge badge-default">${esc(fmtLaoTs(a.created_at) || '')}</span>
@@ -30476,7 +30476,7 @@ function assetStatusBadgeClass(status) {
         <div class="mgmt-card">
           <div class="mgmt-card-top">
             <div class="mgmt-card-title">
-              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0C8CA6;"></i>' : ''}
+              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0A7890;"></i>' : ''}
               ${esc(a.title)}
               ${a.always_show ? '<span class="badge badge-pending" style="margin-left:6px;" title="ຂຶ້ນ Popup ທຸກຄັ້ງທີ່ເຂົ້າແອັບ"><i class="fa-solid fa-repeat mr-1"></i>ຂຶ້ນຊ້ຳ</span>' : ''}
             </div>
