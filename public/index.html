@@ -31291,7 +31291,7 @@ function assetStatusBadgeClass(status) {
 </script>
 <!-- ===================== GET STARTED (ປ໊ອບອັບເລີ່ມຕົ້ນ ຄັ້ງທຳອິດ) =====================
      ສະແດງສະເພາະ: ມືຖື (ຈໍ ≤ 992px) + ເປີດຜ່ານແອັບທີ່ຕິດຕັ້ງແລ້ວ (standalone / APK) · ບໍ່ມີປຸ່ມຂ້າມ ຕ້ອງເຮັດໃຫ້ຄົບ
-     ຂັ້ນຕອນ: 1 ໂໝດ → 2 Theme → 3 ເມນູທີ່ມັກ (ທຸກຂັ້ນມີ Preview) · ຈົບແລ້ວຈຶ່ງເລີ່ມທົວແນະນຳ
+     ຂັ້ນຕອນ: 1 ໂໝດ → 2 Theme → 3 ເມນູທີ່ມັກ (ມີ Preview) → 4 ຖາມ: ເບິ່ງວິທີການນຳໃຊ້ (ທົວແນະນຳ) ຫຼື ເລີ່ມໃຊ້ງານເລີຍ
      ເກັບສະຖານະໃນ localStorage ຕໍ່ຜູ້ໃຊ້: lbc_getstarted_v1_<id> -->
 <style>
   .gs-overlay { position: fixed; inset: 0; z-index: 99000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 22, 30, .62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: gsFade .2s ease; }
@@ -31369,11 +31369,11 @@ function assetStatusBadgeClass(status) {
 <script>
 (function () {
   const GS_KEY_PREFIX = 'lbc_getstarted_v1_';
-  const GS_TOTAL = 3;
   const MINI_ICONS = ['fa-clipboard-list', 'fa-file-medical', 'fa-clock-rotate-left', 'fa-warehouse', 'fa-truck-ramp-box', 'fa-file-circle-plus', 'fa-chart-pie', 'fa-book-open'];
-  let gs = { step: 1, favs: [] };
+  let gs = { step: 1, favs: [], total: 4, tourOnly: false };
 
   function gsKey() { return GS_KEY_PREFIX + ((typeof currentUser !== 'undefined' && currentUser && (currentUser.id || currentUser.email)) || 'anon'); }
+  function gsTourSeen() { try { return typeof tourStorageKey === 'function' && !!localStorage.getItem(tourStorageKey()); } catch (e) { return false; } }
   function gsDone() { try { return !!localStorage.getItem(gsKey()); } catch (e) { return false; } }
   function gsEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
   function $(id) { return document.getElementById(id); }
@@ -31389,23 +31389,40 @@ function assetStatusBadgeClass(status) {
   // ຄືນຄ່າ true ຖ້າເປີດ pop up (ຜູ້ເອີ້ນຈະບໍ່ເລີ່ມທົວ ຈົນກວ່າຈະຈົບ) · force=true ໃຊ້ທົດສອບ (ຂ້າມເງື່ອນໄຂ)
   window.startGetStarted = function (force) {
     if (typeof currentUser === 'undefined' || !currentUser) return false;
-    if (!force && (gsDone() || !gsEligible())) return false;
-    gs = { step: 1, favs: (typeof mmCurrentFavs === 'function' ? mmCurrentFavs() : []).slice() };
+    const favs = (typeof mmCurrentFavs === 'function' ? mmCurrentFavs() : []).slice();
+    if (force) {
+      gs = { step: 1, favs, total: 4, tourOnly: false };
+    } else if (gsEligible()) {
+      // ມືຖື + ຕິດຕັ້ງແອັບແລ້ວ: ຖາມຄົບ ໂໝດ → Theme → ເມນູທີ່ມັກ → (ເບິ່ງວິທີການນຳໃຊ້ ຖ້າຍັງບໍ່ເຄີຍຕອບ)
+      if (gsDone()) return false;
+      gs = { step: 1, favs, total: gsTourSeen() ? 3 : 4, tourOnly: false };
+    } else {
+      // browser / ຄອມ: ຖາມສະເພາະ "ເບິ່ງວິທີການນຳໃຊ້ບໍ?" (ຖ້າຍັງບໍ່ເຄີຍເບິ່ງທົວ)
+      if (gsTourSeen()) return false;
+      gs = { step: 4, favs, total: 1, tourOnly: true };
+    }
     $('gsOverlay').classList.remove('hidden');
     gsRender();
     return true;
   };
 
-  window.gsFinish = function () {
-    gsSaveFavs();
-    try { localStorage.setItem(gsKey(), '1'); } catch (e) {}
+  // withTour = true → ເປີດທົວແນະນຳການນຳໃຊ້ · false → ເລີ່ມໃຊ້ງານເລີຍ (ໝາຍວ່າທົວຫຼັກເບິ່ງແລ້ວ ຈະບໍ່ເດັ້ງຂຶ້ນເອງ; ເບິ່ງຄືນໄດ້ຈາກເມນູ "ແນະນຳການໃຊ້")
+  window.gsFinish = function (withTour) {
+    if (!gs.tourOnly) { // ໂໝດຖາມທົວຢ່າງດຽວ: ຢ່າທັບ favorites ແລະ ຍັງບໍ່ໝາຍວ່າ Get Started ຈົບ (ຖ້າຕິດຕັ້ງແອັບພາຍຫຼັງ ຈະໄດ້ເຫັນຄົບ)
+      gsSaveFavs();
+      try { localStorage.setItem(gsKey(), '1'); } catch (e) {}
+    }
     $('gsOverlay').classList.add('hidden');
     if (typeof refreshLiteMenus === 'function') refreshLiteMenus();
-    setTimeout(() => { if (typeof startOnboardingTour === 'function') startOnboardingTour(false); }, 350);
+    if (withTour) {
+      setTimeout(() => { if (typeof startOnboardingTour === 'function') startOnboardingTour(true); }, 350);
+    } else {
+      try { if (typeof tourStorageKey === 'function') localStorage.setItem(tourStorageKey(), '1'); } catch (e) {}
+    }
   };
 
   window.gsGo = function (d) {
-    gs.step = Math.min(GS_TOTAL, Math.max(1, gs.step + d));
+    gs.step = Math.min(gs.total, Math.max(1, gs.step + d));
     gsRender();
   };
   window.gsPickMode = function (m) { if (typeof setUiMode === 'function') setUiMode(m); gsRender(); };
@@ -31446,8 +31463,8 @@ function assetStatusBadgeClass(status) {
 
   function gsRender() {
     const s = gs.step;
-    $('gsStepTxt').textContent = s + '/' + GS_TOTAL;
-    $('gsDots').innerHTML = Array.from({ length: GS_TOTAL }, (_, i) => '<i class="' + (i < s ? 'on' : '') + '"></i>').join('');
+    $('gsStepTxt').textContent = gs.tourOnly ? '' : s + '/' + gs.total;
+    $('gsDots').innerHTML = gs.tourOnly ? '' : Array.from({ length: gs.total }, (_, i) => '<i class="' + (i < s ? 'on' : '') + '"></i>').join('');
     const body = $('gsBody'), foot = $('gsFoot');
     const nextBtn = '<button type="button" class="gs-btn primary" onclick="gsGo(1)">ຕໍ່ໄປ</button>';
     const backBtn = '<button type="button" class="gs-btn" onclick="gsGo(-1)">ກັບຄືນ</button>';
@@ -31472,7 +31489,7 @@ function assetStatusBadgeClass(status) {
         + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'classic') + '" onclick="gsPickStyle(\'classic\')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small>' + miniStyle('classic') + '</button>'
         + '</div>';
       foot.innerHTML = backBtn + nextBtn;
-    } else {
+    } else if (s === 3) {
       $('gsIcon').className = 'fa-solid fa-star';
       $('gsTitle').textContent = 'ເລືອກເມນູທີ່ມັກ';
       $('gsSub').textContent = 'ເລືອກຢ່າງໜ້ອຍ 1 ເມນູ — ຈະຢູ່ໃນ "ລາຍການທີ່ມັກ" ຂອງໜ້າເມນູ (ເພີ່ມ/ລຶບພາຍຫຼັງໄດ້)';
@@ -31493,7 +31510,16 @@ function assetStatusBadgeClass(status) {
           }).join('') + '</div>'
         : '<div class="gs-note">ຍັງບໍ່ມີເມນູໃຫ້ເລືອກ</div>');
       const canFinish = !items.length || gs.favs.length > 0;
-      foot.innerHTML = backBtn + '<button type="button" class="gs-btn primary"' + (canFinish ? '' : ' disabled') + ' onclick="gsFinish()">ສຳເລັດ</button>';
+      foot.innerHTML = backBtn + '<button type="button" class="gs-btn primary"' + (canFinish ? '' : ' disabled') + ' onclick="' + (gs.total === 3 ? 'gsFinish(false)' : 'gsGo(1)') + '">' + (gs.total === 3 ? 'ສຳເລັດ' : 'ຕໍ່ໄປ') + '</button>';
+    } else {
+      $('gsIcon').className = 'fa-solid fa-circle-question';
+      $('gsTitle').textContent = 'ເບິ່ງວິທີການນຳໃຊ້ບໍ?';
+      $('gsSub').textContent = 'ແນະນຳສັ້ນໆ ບໍ່ຮອດ 1 ນາທີ — ເບິ່ງຄືນໄດ້ທຸກເວລາຈາກເມນູ "ແນະນຳການໃຊ້"';
+      body.innerHTML = '<div class="gs-opts">'
+        + '<button type="button" class="gs-opt" onclick="gsFinish(true)"><b><i class="fa-solid fa-route" style="color:var(--primary);margin-right:8px;"></i>ເບິ່ງວິທີການນຳໃຊ້</b><small>ພາທ່ອງເມນູຫຼັກ ແລະ ຂັ້ນຕອນການເຮັດວຽກຂອງລະບົບ ຫຼັງຈາກນັ້ນກໍເລີ່ມໃຊ້ງານໄດ້</small></button>'
+        + '<button type="button" class="gs-opt" onclick="gsFinish(false)"><b><i class="fa-solid fa-play" style="color:var(--primary);margin-right:8px;"></i>ເລີ່ມໃຊ້ງານເລີຍ</b><small>ຂ້າມການແນະນຳ ແລະ ເຂົ້າໃຊ້ແອັບທັນທີ</small></button>'
+        + '</div>';
+      foot.innerHTML = gs.tourOnly ? '' : backBtn;
     }
   }
 })();
