@@ -4949,7 +4949,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <div style="font-weight:700; margin-bottom:10px;">ສະແກນ / ຄົ້ນຫາ</div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <div class="input-wrapper" style="flex:1; min-width:220px;"><i class="fa-solid fa-qrcode"></i>
-              <input type="text" id="cmScanInput" class="form-control" placeholder="QR, Serial ຫຼື CapEx (ກົດ Enter)" autocomplete="off"
+              <input type="text" id="cmScanInput" class="form-control" placeholder="QR, Serial, CapEx, ລະຫັດຮ້ານ ຫຼື ຊື່ຮ້ານ (ກົດ Enter)" autocomplete="off"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();cmSearch();}">
             </div>
             <button class="btn-add" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="openQrScanner('cmScanInput')"><i class="fa-solid fa-camera mr-1"></i> ກ້ອງ</button>
@@ -18510,7 +18510,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       if (!q && !province) { box.innerHTML = ''; return; }
       box.innerHTML = `<div class="card-list-loading">ກຳລັງຄົ້ນຫາ...</div>`;
       try {
-        const res = await fetch(`/api/cooler-master/search?q=${encodeURIComponent(q)}&province=${encodeURIComponent(province)}`);
+        const res = await fetch(`/api/cooler-master/search?outlet=1&q=${encodeURIComponent(q)}&province=${encodeURIComponent(province)}`);
         const data = await res.json().catch(() => ({}));
         if (!res.ok) { box.innerHTML = `<div class="card-list-error">${esc(data.error || 'ຄົ້ນຫາບໍ່ສຳເລັດ')}</div>`; return; }
         cmLastResult = data;

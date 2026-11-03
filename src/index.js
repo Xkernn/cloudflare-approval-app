@@ -3582,7 +3582,7 @@ export default {
       }
     }
 
-    // ຄົ້ນຫາ/ສະແກນ: q = QR/Serial/CapEx (ກົງເປ໊ະ ກ່ອນ) ຖ້າບໍ່ພົບຈຶ່ງຄົ້ນແບບບາງສ່ວນ (ລວມ Outlet Code/ຊື່ຮ້ານ)
+    // ຄົ້ນຫາ/ສະແກນ: q = QR/Serial/CapEx (ກົງເປ໊ະ ກ່ອນ) ຖ້າບໍ່ພົບຈຶ່ງຄົ້ນ Outlet Code / ຊື່ຮ້ານ (outlet=1) ແລ້ວຄ່ອຍແບບບາງສ່ວນ
     if (url.pathname === "/api/cooler-master/search" && request.method === "GET") {
       try {
         const qRaw = (url.searchParams.get("q") || "").trim().slice(0, 100);
@@ -3617,6 +3617,14 @@ export default {
               ).bind(ocUp, ohi, ...(province ? [province] : []), limit).all();
               matches = opr.results || [];
             }
+            if (!matches.length && oc.length >= 2) {
+              // ຍັງບໍ່ພົບ -> ລອງ "ຊື່ຮ້ານ" ຂຶ້ນຕົ້ນດ້ວຍ (range ເທິງ expression index idx_cooler_master_outlet_name_up ບໍ່ scan ທັງຕາຕະລາງ)
+              const nhi = ocUp + "\uffff";
+              const npr = await env.DB.prepare(
+                `SELECT * FROM cooler_master WHERE (UPPER(outlet_name) >= ? AND UPPER(outlet_name) < ?)${provCond} ORDER BY UPPER(outlet_name), id LIMIT ?`
+              ).bind(ocUp, nhi, ...(province ? [province] : []), limit).all();
+              matches = npr.results || [];
+            }
           }
           if (!exact && !matches.length && q.length >= 3) {
             // ບໍ່ພົບກົງເປ໊ະ -> ຄົ້ນແບບ "ຂຶ້ນຕົ້ນດ້ວຍ" ສະເພາະ QR/Serial/CapEx (ໃຊ້ range ເທິງ index ແທນ LIKE '%..%' ທີ່ scan ທັງຕາຕະລາງ)
@@ -3634,9 +3642,9 @@ export default {
             const lk = "%" + cmLikeEscape(q) + "%";
             const cr = await env.DB.prepare(
               `SELECT * FROM cooler_master
-                WHERE (qr_norm LIKE ? ESCAPE '\\' OR serial_norm LIKE ? ESCAPE '\\' OR capex_norm LIKE ? ESCAPE '\\' OR UPPER(COALESCE(outlet_code,'')) LIKE ? ESCAPE '\\')${provCond}
+                WHERE (qr_norm LIKE ? ESCAPE '\\' OR serial_norm LIKE ? ESCAPE '\\' OR capex_norm LIKE ? ESCAPE '\\' OR UPPER(COALESCE(outlet_code,'')) LIKE ? ESCAPE '\\' OR UPPER(COALESCE(outlet_name,'')) LIKE ? ESCAPE '\\')${provCond}
                 ORDER BY id LIMIT ?`
-            ).bind(lk, lk, lk, lk, ...(province ? [province] : []), limit).all();
+            ).bind(lk, lk, lk, lk, lk, ...(province ? [province] : []), limit).all();
             matches = cr.results || [];
           }
         } else {
