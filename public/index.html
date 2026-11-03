@@ -10199,13 +10199,26 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <div style="font-weight:600; font-size:14px;">${title}</div>
               <div style="font-size:12px; color:#64748b;">${badges.join(' · ')}${note}</div>
             </div>
+            ${signRemKind === 'mde' ? `<button type="button" class="btn-act" style="background:#dcfce7; color:#15803d; flex:0 0 auto;" title="ເປີດ WhatsApp ພ້ອມຂໍ້ຄວາມ ແລ້ວເລືອກຜູ້ຮັບເອງ" onclick="event.preventDefault(); event.stopPropagation(); signRemOpenWhatsApp('${esc(it.key)}')"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</button>` : ''}
           </label>`;
         }).join('');
       }
       updateSignReminderSummary();
     }
 
-    function toggleSignReminderRow(cb) {
+    // ກົດເອງ: ເປີດ WhatsApp ພ້ອມຂໍ້ຄວາມເຕືອນ MDE ຄົນນັ້ນ (ຍັງບໍ່ມີເບີ MDE ໃນລະບົບ -> admin ເລືອກຜູ້ຮັບໃນ WhatsApp ເອງ)
+    function signRemOpenWhatsApp(key) {
+      const it = signRemItems.find(x => x.key === key);
+      if (!it) return;
+      const parts = [];
+      if (it.loan_cnt > 0) parts.push(`ໃບສັນຍາຢືມ ${it.loan_cnt} ໃບ`);
+      if (it.cancel_cnt > 0) parts.push(`ໃບເກັບຕູ້ (T-) ${it.cancel_cnt} ໃບ`);
+      const name = (it.mde_name ? it.mde_name + ' ' : '') + '(' + it.mde_code + ')';
+      const text = `ສະບາຍດີ MDE ${name}\nເອກະສານຂອງທ່ານຍັງຄ້າງເຊັນ: ${parts.join(', ') || '-'}\nກະລຸນາເຂົ້າລະບົບ ເມນູ "ອອກໃບສັນຍາຢືມ" > ແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" ແລ້ວເຊັນໃຫ້ຄົບ. ຂອບໃຈ`;
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
+
+        function toggleSignReminderRow(cb) {
       const key = cb.dataset.key;
       if (cb.checked) signRemSelected.add(key); else signRemSelected.delete(key);
       updateSignReminderSummary();
