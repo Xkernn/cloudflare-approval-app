@@ -119,6 +119,24 @@ const MAX_BULK_MDE_EMAIL = 100;
 const escMailHtml = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;");
 // ສະຖານະ Asset Tracking ທີ່ Admin ສາມາດກົດ "ແຈ້ງເຕືອນ MDE" ດ້ວຍຕົນເອງໄດ້ (ຄ້າງເອກະສານ / ຄ້າງ PowerApp)
 const NOTIFY_PENDING_STATUSES = ["ຍັງບໍ່ທັນເຊັນເອກະສານ", "ຍັງບໍ່ຊັບມິດ PowerApp"];
+// ສະຖານະກ່ອນຈັດສົ່ງທີ່ ຖືວ່າ "ຂ້າມຂັ້ນຕອນ PowerApp" (ຍັງບໍ່ຖືກ Admin ຕັ້ງເປັນ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ")
+const POWERAPP_SKIP_STATUSES = ["ຍັງບໍ່ທັນເຊັນເອກະສານ", "ຍັງບໍ່ຊັບມິດ PowerApp"];
+// ສະຖານະກ່ອນຈັດສົ່ງຂອງແຖວ Asset (ຖ້າສະແກນຂຶ້ນລົດແລ້ວ ໃຊ້ dispatch_prev_status)
+function powerappPreStatus(row) {
+  if (!row) return "";
+  return (row.status === "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" && row.dispatch_prev_status) ? row.dispatch_prev_status : (row.status || "");
+}
+// ໝາຍ Asset ວ່າ "ຂ້າມຂັ້ນຕອນ PowerApp" ເພື່ອໃຫ້ Admin ກວດໃນແທັບ "ລໍຖ້າຢືນຢັນ PowerApp" — ບໍ່ throw (ຖ້າຍັງບໍ່ຮັນ migration ຈະບໍ່ກະທົບການບັນທຶກຈັດສົ່ງ)
+async function markPowerappSkipped(env, assetId, fromLabel) {
+  try {
+    if (!assetId) return;
+    await env.DB.prepare(
+      "UPDATE assets SET powerapp_skipped = 1, powerapp_skipped_from = ?, powerapp_confirmed = 0, powerapp_confirmed_at = NULL, powerapp_confirmed_by = NULL WHERE id = ?"
+    ).bind(fromLabel || null, assetId).run();
+  } catch (e) {
+    console.error("markPowerappSkipped (ຕ້ອງຮັນ migration_add_powerapp_skip_review.sql)", e && e.message);
+  }
+}
 
 // ສ້າງອີເມວແຈ້ງເຕືອນ MDE ທີ່ມີ Asset ຄ້າງ (ເອກະສານ / PowerApp)
 function buildPendingMdeEmail({ mdeCode, mdeName, lines, trackingList, appUrl }) {
@@ -439,7 +457,7 @@ async function recordSelfMovedAsset(env, contract, table, docType, actorEmail, c
     }
     if (!pending && (qr || sn)) {
       pending = await env.DB.prepare(
-        `SELECT id, tracking_no FROM assets
+        `SELECT id, tracking_no, status FROM assets
          WHERE IFNULL(status,'') != ? AND ((? != '' AND qr_code = ?) OR (? != '' AND serial_number = ?))
          ORDER BY id DESC LIMIT 1`
       ).bind(DELIVERED_STATUS, qr, qr, sn, sn).first();
@@ -449,6 +467,8 @@ async function recordSelfMovedAsset(env, contract, table, docType, actorEmail, c
         `UPDATE assets SET status = ?, self_moved = 1, delivered_at = CURRENT_TIMESTAMP, delivered_by = ?, last_update = CURRENT_TIMESTAMP WHERE id = ?`
       ).bind(DELIVERED_STATUS, actorEmail || null, pending.id).run();
       await env.DB.prepare(linkSql).bind(...linkBinds(pending.id, pending.tracking_no || null)).run();
+      // MDE ຍ້າຍເອງ: ຖ້າ Asset ເດີມຍັງຢູ່ຂັ້ນກ່ອນ PowerApp -> ໝາຍໃຫ້ Admin ກວດ
+      if (POWERAPP_SKIP_STATUSES.includes(pending.status || "")) await markPowerappSkipped(env, pending.id, pending.status);
       return { trackingNo: pending.tracking_no || null, warning: null };
     }
 
@@ -484,6 +504,7 @@ async function recordSelfMovedAsset(env, contract, table, docType, actorEmail, c
       env.DB.prepare("UPDATE assets SET tracking_no = ? WHERE id = ?").bind(trackingNo, assetId),
       env.DB.prepare(linkSql).bind(...linkBinds(assetId, trackingNo)),
     ]);
+    await markPowerappSkipped(env, assetId, "MDE ຍ້າຍເອງ"); // ບໍ່ມີ Asset ເດີມ -> ບໍ່ເຄີຍຜ່ານ PowerApp
     return { trackingNo, warning: null };
   } catch (e) {
     console.error("line 364", e);
@@ -8768,6 +8789,53 @@ export default {
       }
     }
 
+    // 6d2c. Admin ຢືນຢັນວ່າ "ຊັບມິດ PowerApp ແລ້ວ" ສຳລັບລາຍງານຈັດສົ່ງທີ່ຂ້າມຂັ້ນຕອນ PowerApp (ແທັບ "ລໍຖ້າຢືນຢັນ PowerApp" ໃນປະຫວັດການຈັດສົ່ງ)
+    //       ແຍກຕ່າງຫາກຈາກ "ຢືນຢັນຄວາມຖືກຕ້ອງ" (admin_verified) — ບໍ່ແຕະ admin_verified
+    if (url.pathname === "/api/asset-delivery-history/powerapp-confirm" && request.method === "POST") {
+      try {
+        const { userId, ids } = await request.json();
+        if (!userId || !Array.isArray(ids) || !ids.length) return Response.json({ error: "ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ລາຍການ" }, { status: 400 });
+
+        const requester = await env.DB.prepare("SELECT role, email FROM users WHERE id = ?").bind(userId).first();
+        if (!requester || !isAdminLike(requester.role)) {
+          return Response.json({ error: "ມີສະເພາະ Admin ເທົ່ານັ້ນທີ່ຢືນຢັນລາຍການໄດ້" }, { status: 403 });
+        }
+
+        const cleanIds = [...new Set(ids.map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+        if (!cleanIds.length) return Response.json({ error: "ຂໍ້ມູນບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+        if (cleanIds.length > 500) return Response.json({ error: "ເລືອກໄດ້ສູງສຸດ 500 ລາຍການຕໍ່ຄັ້ງ" }, { status: 400 });
+
+        const stmts = [];
+        for (let i = 0; i < cleanIds.length; i += 80) {
+          const chunk = cleanIds.slice(i, i + 80);
+          const ph = chunk.map(() => "?").join(",");
+          stmts.push(
+            env.DB.prepare(
+              `UPDATE assets SET powerapp_confirmed = 1, powerapp_confirmed_at = CURRENT_TIMESTAMP, powerapp_confirmed_by = ?
+               WHERE status = 'ສຳເລັດ' AND IFNULL(powerapp_skipped, 0) = 1 AND IFNULL(powerapp_confirmed, 0) = 0 AND id IN (${ph})`
+            ).bind(requester.email, ...chunk)
+          );
+        }
+        let results;
+        try {
+          results = await env.DB.batch(stmts);
+        } catch (e) {
+          return Response.json({ error: `ຢືນຢັນບໍ່ສຳເລັດ: ${e.message || e} (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration_add_powerapp_skip_review.sql ໃຫ້ຮັນກ່ອນ)` }, { status: 500 });
+        }
+        const confirmed = results.reduce((sum, r) => sum + ((r && r.meta && r.meta.changes) || 0), 0);
+        const skipped = cleanIds.length - confirmed;
+        return Response.json({
+          message: skipped > 0
+            ? `ຢືນຢັນຊັບມິດ PowerApp ແລ້ວ ${confirmed} ລາຍການ (ຂ້າມ ${skipped} ລາຍການທີ່ຢືນຢັນແລ້ວ ຫຼືບໍ່ພົບ)`
+            : `ຢືນຢັນຊັບມິດ PowerApp ແລ້ວ ${confirmed} ລາຍການ`,
+          confirmed, skipped, ids: cleanIds, confirmed_by: requester.email
+        });
+      } catch (err) {
+        console.error("/api/asset-delivery-history/powerapp-confirm", err);
+        return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ: " + err.message }, { status: 500 });
+      }
+    }
+
     // 6d3. Toggle Flag (star) API ໃນໜ້າ Asset Tracking (ຄືກັນກັບ flag ອີເມວ) - Admin ເທົ່ານັ້ນ
     if (url.pathname === "/api/assets/toggle-flag" && request.method === "POST") {
       try {
@@ -10204,6 +10272,15 @@ export default {
           return Response.json({ error: "Asset ນີ້ຈັດສົ່ງສຳເລັດໄປແລ້ວ" }, { status: 400 });
         }
 
+        // ຈັດສົ່ງຂ້າມຂັ້ນຕອນ PowerApp: ສະຖານະກ່ອນຈັດສົ່ງຍັງຢູ່ "ຍັງບໍ່ທັນເຊັນເອກະສານ" / "ຍັງບໍ່ຊັບມິດ PowerApp" (ຍັງບໍ່ເຄີຍຜ່ານ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ")
+        // -> ໝາຍໄວ້ໃຫ້ Admin ກວດ ແລະ ຢືນຢັນວ່າຊັບມິດ PowerApp ແລ້ວ ໃນແທັບໃໝ່ຂອງປະຫວັດການຈັດສົ່ງ. ແຍກ statement + try/catch: ຖ້າຍັງບໍ່ໄດ້ຮັນ migration ຈະບໍ່ກະທົບການຈັດສົ່ງ
+        try {
+          const preStatus = powerappPreStatus(assetRow);
+          if (POWERAPP_SKIP_STATUSES.includes(preStatus)) await markPowerappSkipped(env, id, preStatus);
+        } catch (skipErr) {
+          console.error("/api/asset-delivery/confirm powerapp_skipped (ຕ້ອງຮັນ migration_add_powerapp_skip_review.sql)", skipErr && skipErr.message);
+        }
+
         // ມີໃບສັນຍາຢືມ -> ໃສ່ລາຍເຊັນລູກຄ້າລົງໃບສັນຍາ (ບໍ່ປ່ຽນ status ຂອງໃບ — MDE/DSM ເຊັນແຍກຕາມຂັ້ນຕອນເດີມ)
         let sigWarning = null;
         if (loanForSig) {
@@ -11031,6 +11108,7 @@ export default {
             throw stepErr;
           }
           await runSideEffects(prev.tracking_no);
+          { const preSt = powerappPreStatus(prev); if (POWERAPP_SKIP_STATUSES.includes(preSt)) await markPowerappSkipped(env, prev.id, preSt); }
           return Response.json({ message: `ບັນທຶກລາຍງານຮຽບຮ້ອຍແລ້ວ - ພົບ Asset ນີ້ໃນ Asset Tracking ຢູ່ແລ້ວ (Tracking No: ${prev.tracking_no}) ຈຶ່ງອັບເດດສະຖານະເປັນ "ສຳເລັດ" ແທນການສ້າງແຖວໃໝ່` });
         }
 
@@ -11076,6 +11154,7 @@ export default {
         }
 
         await runSideEffects(trackingNo);
+        await markPowerappSkipped(env, newAssetId, "ບໍ່ມີເອກະສານ"); // ລາຍງານບໍ່ມີເອກະສານ -> ບໍ່ເຄີຍຜ່ານ PowerApp
 
         runInBackground(ctx, sendWebPushToRoles(env, ["admin", "assistant_admin"], {
           title: "ການຈັດສົ່ງແບບບໍ່ມີເອກະສານສຳເລັດແລ້ວ",

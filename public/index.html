@@ -3424,6 +3424,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </div>
         </div>
 
+        <!-- ແທັບ (admin): ປະຫວັດການຈັດສົ່ງ / ລໍຖ້າຢືນຢັນ PowerApp (ລາຍງານຈັດສົ່ງທີ່ຂ້າມຂັ້ນຕອນ ຊັບມິດ PowerApp) -->
+        <div id="deliveryHistoryTabPills" class="at-pills hidden" role="tablist" aria-label="ແທັບປະຫວັດການຈັດສົ່ງ" style="margin-bottom: 10px;"></div>
+
         <div class="at-toolbar">
           <div class="at-toolbar-top">
             <div class="at-search">
@@ -3478,6 +3481,13 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <span class="dh-bulk-spacer"></span>
             <button type="button" id="deliveryBulkClearBtn" class="at-btn at-btn-ghost" onclick="clearDeliverySelection()"><i class="fa-solid fa-xmark"></i> <span>ຍົກເລີກການເລືອກ</span></button>
             <button type="button" id="deliveryBulkVerifyBtn" class="at-btn at-btn-primary" onclick="verifyDeliverySelected()" disabled><i class="fa-solid fa-check-double"></i> <span>ຢືນຢັນທີ່ເລືອກ</span></button>
+          </div>
+          <div id="paBulkBar" class="dh-bulkbar">
+            <label><input type="checkbox" id="paBulkSelectAll" onchange="togglePaSelectAll(this.checked)" style="width:18px;height:18px;accent-color:var(--primary);"> ເລືອກທັງໝົດ</label>
+            <span id="paBulkCount" class="dh-bulk-count"></span>
+            <span class="dh-bulk-spacer"></span>
+            <button type="button" id="paBulkClearBtn" class="at-btn at-btn-ghost" onclick="togglePaSelectAll(false)"><i class="fa-solid fa-xmark"></i> <span>ຍົກເລີກການເລືອກ</span></button>
+            <button type="button" id="paBulkConfirmBtn" class="at-btn at-btn-primary" onclick="confirmPaSelected()" disabled><i class="fa-solid fa-paper-plane"></i> <span>ຢືນຢັນຊັບມິດ PowerApp ແລ້ວ</span></button>
           </div>
           <div id="deliveryHistoryCardList" class="card-list"></div>
         </div>
@@ -20842,6 +20852,8 @@ function assetStatusBadgeClass(status) {
     let deliveryHistoryData = [];
     let deliverySelectedIds = new Set(); // ລາຍການທີ່ Admin ເລືອກໄວ້ເພື່ອຢືນຢັນຫຼາຍອັນພ້ອມກັນ
     let deliveryHistoryVisibleData = []; // รายการที่กำลังแสดงอยู่จริง (หลังกรอง) ใช้สำหรับ Export
+    let deliveryHistoryTab = 'main'; // 'main' = ປະຫວັດການຈັດສົ່ງ | 'powerapp' = ລໍຖ້າຢືນຢັນ PowerApp (admin)
+    let paSelectedIds = new Set();   // ລາຍການທີ່ admin ເລືອກໄວ້ເພື່ອຢືນຢັນ PowerApp
     async function loadAssetDeliveryHistory() {
       const isAdmin = currentUser.role === 'admin';
       const isWarehouse = currentUser.role === 'warehouse';
@@ -20861,6 +20873,8 @@ function assetStatusBadgeClass(status) {
       document.getElementById('deliveryHistoryDateFrom').value = '';
       document.getElementById('deliveryHistoryDateTo').value = '';
       deliverySelectedIds = new Set();
+      deliveryHistoryTab = 'main';
+      paSelectedIds = new Set();
       document.getElementById('deliveryBulkBar').classList.toggle('show', isAdmin);
       populateDeliveryHistoryFilterOptions();
       // Role "user" เห็นສະເພາະ Asset ຂອງ MDE ตัวเอง (ปกติมีไม่กี่รายการ) จึงไม่จำเป็นต้องกรอง Brand/Type/Doc Type
@@ -20945,7 +20959,24 @@ function assetStatusBadgeClass(status) {
       const verifiedFilter = document.getElementById('deliveryHistoryVerifiedFilter').value; // '' / 'verified' / 'unverified'
       const dateFrom = document.getElementById('deliveryHistoryDateFrom').value; // 'YYYY-MM-DD' ຫຼືຫວ່າງ
       const dateTo = document.getElementById('deliveryHistoryDateTo').value;
-      const all = deliveryHistoryData || [];
+      // ແທັບ (admin): ລາຍງານຈັດສົ່ງທີ່ຂ້າມຂັ້ນຕອນ PowerApp ແລະ ຍັງບໍ່ຢືນຢັນ -> ຍ້າຍໄປແທັບ "ລໍຖ້າຢືນຢັນ PowerApp" (ບໍ່ສະແດງໃນລາຍການປົກກະຕິ ຈົນກວ່າຈະຢືນຢັນ)
+      const allData = deliveryHistoryData || [];
+      const isAdminView = currentUser.role === 'admin';
+      const isPaPending = (a) => !!a.powerapp_skipped && !a.powerapp_confirmed;
+      const paAll = isAdminView ? allData.filter(isPaPending) : [];
+      const onPaTab = isAdminView && deliveryHistoryTab === 'powerapp';
+      const all = !isAdminView ? allData : (onPaTab ? paAll : allData.filter(a => !isPaPending(a)));
+      const tabPills = document.getElementById('deliveryHistoryTabPills');
+      tabPills.classList.toggle('hidden', !isAdminView);
+      if (isAdminView) {
+        tabPills.innerHTML = atPillsHtml([
+          { value: 'main', label: 'ປະຫວັດການຈັດສົ່ງ', color: '', count: allData.length - paAll.length },
+          { value: 'powerapp', label: 'ລໍຖ້າຢືນຢັນ PowerApp', color: '#A8630A', count: paAll.length }
+        ], deliveryHistoryTab, 'setDeliveryHistoryTab');
+      }
+      document.getElementById('deliveryHistoryVerifiedPills').style.display = onPaTab ? 'none' : '';
+      document.getElementById('deliveryBulkBar').style.display = onPaTab ? 'none' : '';
+      document.getElementById('paBulkBar').classList.toggle('show', onPaTab);
       const mdeFilter = syncMdeFilter('deliveryHistoryMdeFilter', all);
       document.getElementById('deliveryHistorySearchClear').classList.toggle('hidden', !qRaw);
 
@@ -20970,6 +21001,16 @@ function assetStatusBadgeClass(status) {
         return haystack.includes(q);
       });
 
+      if (onPaTab) {
+        document.getElementById('deliveryHistoryResultCount').innerHTML = `ສະແດງ <b>${base.length}</b> / ${paAll.length} ລາຍການ`;
+        deliveryHistoryVisibleData = base;
+        const paSel = new Set(base.map(a => a.id));
+        paSelectedIds = new Set([...paSelectedIds].filter(id => paSel.has(id)));
+        renderPaCardList(base);
+        updatePaBulkBar();
+        return;
+      }
+
       const verifiedCount = base.filter(a => a.admin_verified).length;
       document.getElementById('deliveryHistoryVerifiedPills').innerHTML = atPillsHtml([
         { value: '', label: 'ທັງໝົດ', color: '', count: base.length },
@@ -20987,6 +21028,99 @@ function assetStatusBadgeClass(status) {
       deliverySelectedIds = new Set([...deliverySelectedIds].filter(id => selectable.has(id)));
       renderDeliveryHistoryCardList(filtered);
       updateDeliveryBulkBar();
+    }
+
+    /* ---------- ແທັບ "ລໍຖ້າຢືນຢັນ PowerApp" (Admin) — ລາຍງານຈັດສົ່ງທີ່ຂ້າມຂັ້ນຕອນ ຊັບມິດ PowerApp ---------- */
+    function setDeliveryHistoryTab(v) {
+      deliveryHistoryTab = v === 'powerapp' ? 'powerapp' : 'main';
+      paSelectedIds = new Set();
+      filterDeliveryHistory();
+    }
+
+    function renderPaCardList(items) {
+      const list = document.getElementById('deliveryHistoryCardList');
+      if (!items.length) {
+        list.innerHTML = `<div class="card-list-empty">ບໍ່ມີລາຍການທີ່ລໍຖ້າຢືນຢັນ PowerApp</div>`;
+        return;
+      }
+      list.innerHTML = items.map(a => `
+        <div class="data-card${paSelectedIds.has(a.id) ? ' dh-selected' : ''}" style="--st:#A8630A" onclick="showDeliveryDetail(${a.id})">
+          <label class="dh-check" onclick="event.stopPropagation()" title="ເລືອກເພື່ອຢືນຢັນ"><input type="checkbox" ${paSelectedIds.has(a.id) ? 'checked' : ''} onchange="togglePaSelect(${a.id}, this.checked)"></label>
+          <div class="data-card-main">
+            <div class="data-card-title">
+              <span style="color:var(--primary); font-size:15.5px;"><i class="fa-solid fa-shop" style="margin-right:6px;"></i>${esc(a.outlet_name || '-')}</span>
+              ${a.outlet_code ? `<span class="badge badge-default" style="font-weight:600;">${esc(a.outlet_code)}</span>` : ''}
+              ${a.flagged ? '<span class="badge badge-rejected"><i class="fa-solid fa-bolt mr-1"></i>ດ່ວນ</span>' : ''}
+            </div>
+            <div class="data-card-sub">
+              <span><span class="badge badge-pending"><i class="fa-solid fa-forward mr-1"></i>ຂ້າມ PowerApp${a.powerapp_skipped_from ? (['ບໍ່ມີເອກະສານ', 'MDE ຍ້າຍເອງ'].includes(a.powerapp_skipped_from) ? ' (' + esc(a.powerapp_skipped_from) + ')' : ' (ກ່ອນຈັດສົ່ງ: ' + esc(a.powerapp_skipped_from) + ')') : ''}</span></span>
+              <span>${docTypeBadgeHtml(a.doc_type)}</span>
+              <span><i class="fa-solid fa-user"></i>${esc(a.mde_code || '-')}${mdeNameFor(a.mde_code) ? ' - ' + esc(mdeNameFor(a.mde_code)) : ''}</span>
+              <span><i class="fa-solid fa-hashtag"></i>${esc(a.tracking_no || '-')}</span>
+              <span><i class="fa-solid fa-calendar-check"></i>${esc(fmtLaoTs(a.delivered_at) || '-')}</span>
+              <span>${assetDocBadgesHtml(a)}</span>
+            </div>
+          </div>
+          <div class="data-card-side" onclick="event.stopPropagation()">
+            <button type="button" class="btn-act btn-edit" onclick="confirmPaIds([${a.id}])"><i class="fa-solid fa-paper-plane mr-1"></i> ຢືນຢັນຊັບມິດແລ້ວ</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updatePaBulkBar() {
+      const items = deliveryHistoryVisibleData || [];
+      const n = paSelectedIds.size;
+      const all = document.getElementById('paBulkSelectAll');
+      all.checked = items.length > 0 && n === items.length;
+      all.indeterminate = n > 0 && n < items.length;
+      all.disabled = items.length === 0;
+      document.getElementById('paBulkCount').textContent = n > 0
+        ? `ເລືອກແລ້ວ ${n} / ${items.length} ລາຍການ`
+        : (items.length ? `ມີ ${items.length} ລາຍການລໍຖ້າຢືນຢັນ PowerApp` : 'ບໍ່ມີລາຍການທີ່ຕ້ອງຢືນຢັນ');
+      document.getElementById('paBulkConfirmBtn').disabled = n === 0;
+      document.getElementById('paBulkConfirmBtn').querySelector('span').textContent = n > 0 ? `ຢືນຢັນຊັບມິດ PowerApp ແລ້ວ (${n})` : 'ຢືນຢັນຊັບມິດ PowerApp ແລ້ວ';
+      document.getElementById('paBulkClearBtn').style.display = n > 0 ? '' : 'none';
+    }
+
+    function togglePaSelect(id, checked) {
+      if (checked) paSelectedIds.add(id); else paSelectedIds.delete(id);
+      renderPaCardList(deliveryHistoryVisibleData);
+      updatePaBulkBar();
+    }
+
+    function togglePaSelectAll(checked) {
+      paSelectedIds = checked ? new Set((deliveryHistoryVisibleData || []).map(a => a.id)) : new Set();
+      renderPaCardList(deliveryHistoryVisibleData);
+      updatePaBulkBar();
+    }
+
+    function confirmPaSelected() { confirmPaIds([...paSelectedIds]); }
+
+    async function confirmPaIds(ids) {
+      if (!ids.length) return;
+      if (!await appConfirm(`ຢືນຢັນວ່າ ${ids.length} ລາຍການນີ້ ໄດ້ຊັບມິດ PowerApp ແລ້ວ?\n(ລາຍການຈະກັບໄປຢູ່ໃນແທັບ "ປະຫວັດການຈັດສົ່ງ" ຕາມປົກກະຕິ)`, { title: 'ຢືນຢັນຊັບມິດ PowerApp', confirmText: `ຢືນຢັນ ${ids.length} ລາຍການ`, danger: false })) return;
+      try {
+        const res = await fetch('/api/asset-delivery-history/powerapp-confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, ids })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'ຢືນຢັນບໍ່ສຳເລັດ');
+        const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+        const done = new Set(data.ids || ids);
+        (deliveryHistoryData || []).forEach(a => {
+          if (done.has(a.id) && a.powerapp_skipped && !a.powerapp_confirmed) {
+            a.powerapp_confirmed = 1; a.powerapp_confirmed_by = data.confirmed_by || null; a.powerapp_confirmed_at = now;
+          }
+        });
+        paSelectedIds = new Set();
+        showAlert(data.message || 'ຢືນຢັນຊັບມິດ PowerApp ແລ້ວ');
+        filterDeliveryHistory();
+      } catch (err) {
+        showAlert(err.message || 'ຢືນຢັນບໍ່ສຳເລັດ', true);
+      }
     }
 
     /* ---------- ເລືອກຫຼາຍລາຍການ ແລ້ວຢືນຢັນຄັ້ງດຽວ (Admin) ---------- */
