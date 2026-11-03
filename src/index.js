@@ -6,6 +6,7 @@ import { buildLoanPdf } from "./lib/clpdf.js";
 import { buildCancelPdf } from "./lib/cancelpdf.js";
 import { buildTripDocPdf } from "./lib/tripdocpdf.js";
 import { sendEmail } from "./lib/mailer.js";
+import { officeOverview } from "./lib/office.js";
 
 // ອອກໃບສັນຍາຢືມ — ເດົາ handover_type ຈາກ assets.doc_type ອັດຕະໂນມັດ (ແກ້ໄຂໄດ້ຢູ່ໜ້າຟອມກ່ອນອອກໃບ)
 // "ເກັບຄືນສາງ" ບໍ່ແມ່ນການມອບຕູ້ອອກ ຈຶ່ງບໍ່ມີ checkbox ໃຫ້ (null = ບໍ່ກາເຄື່ອງໝາຍໃດ)
@@ -2974,6 +2975,17 @@ export default {
 
     // บทบาทที่เห็นข้อมูลทุก MDE ได้เหมือน Admin: admin (สิทธิ์เต็ม) และ warehouse (พนักงานคลัง - แก้ได้แค่ Status + ອະນຸມັດคำขอ)
     const canViewAll = (role) => isAdminLike(role) || role === 'warehouse' || role === 'delivery';
+
+    // ===================== Office Overview (ອ່ານຢ່າງດຽວ) — ສະຖິຕິຈິງຂອງແຕ່ລະຫ້ອງ ສຳລັບ /office.html ແລະ Virtual Company 3D =====================
+    // ສິດ admin ຖືກບັງຄັບແລ້ວໂດຍ gate ດ້ານເທິງ (ທຸກ /api/admin/*) · ບໍ່ມີການຂຽນ DB · ຜົນຖືກ cache ໃນ isolate 60 ວິ (ເບິ່ງ src/lib/office.js)
+    if (url.pathname === "/api/admin/office-overview" && request.method === "GET") {
+      try {
+        return Response.json(await officeOverview(env), { headers: { "Cache-Control": "no-store" } });
+      } catch (e) {
+        console.error("/api/admin/office-overview", e);
+        return Response.json({ error: "ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
 
     // API ดึง MDE List Dynamic จาก DB D1
     // ເພີ່ມ has_user = 1 ຖ້າ MDE Code ນັ້ນມີຜູ້ໃຊ້ງານສະໝັກໄປແລ້ວ (ໃຊ້ເພື່ອເຊື່ອງອອກຈາກໜ້າລົງທະບຽນ

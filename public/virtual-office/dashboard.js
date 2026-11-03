@@ -149,11 +149,21 @@
   }
 
   // ເນື້ອຫາເພີ່ມໃນ Department Panel (ui.js ເອີ້ນ) — ສະຖານະ + ງົບ + ກິດຈະກຳ
+  // ສະຖິຕິຈິງຈາກ /api/admin/office-overview (ມີສະເພາະເມື່ອ VO_CONFIG.mode = 'office') — ສະແດງໃນ panel ຂອງຫ້ອງ
+  function liveBlock(l) {
+    if (!l) return '';
+    if (l.error) return secT('Live data') + '<div class="empty">Live data unavailable</div>';
+    return secT('Live data · ' + num(l.attention) + ' waiting · ' + num(l.new24) + ' new in 24h') +
+      '<div class="fields">' + (l.stats || []).map(function (x) { return '<div><span>' + esc(x.label) + '</span><b>' + num(x.value) + '</b></div>'; }).join('') + '</div>';
+  }
+  function extraOf(id) { var m = model(); if (!m) return null; for (var i = 0; i < m.extraAreas.length; i++) if (m.extraAreas[i].id === id) return m.extraAreas[i]; return null; }
   function deptExtra(id) {
-    var d = deptOf(id); if (!d) return '';
+    var d = deptOf(id);
+    if (!d) { var x = extraOf(id); return x && x.live ? '<div class="row2">' + badge(x.live.status) + '</div>' + liveBlock(x.live) : ''; }
     var p = d.budget.total ? Math.round(d.budget.spent / d.budget.total * 100) : 0, o = OPS[d.status];
     return '<div class="row2">' + badge(d.status) + '<span class="chip" style="background:#475569">' + d.inProgress + ' in progress</span></div>' +
-      bar('Budget used · ' + money(d.budget.spent) + ' / ' + money(d.budget.total), p, p > 85 ? '#ef4444' : p > 70 ? '#f59e0b' : '#22c55e', p + '%') +
+      bar('Budget used' + (d.live ? ' (sample ₭)' : '') + ' · ' + money(d.budget.spent) + ' / ' + money(d.budget.total), p, p > 85 ? '#ef4444' : p > 70 ? '#f59e0b' : '#22c55e', p + '%') +
+      liveBlock(d.live) +
       secT('Activities · ' + d.activities.length) + d.activities.slice(0, 8).map(function (a) {
         var s = OPS[a.status]; return '<div class="mini ro"><span class="avatar" style="width:26px;height:26px;background:' + s.color + '"><i class="fa-solid ' + s.icon + '" style="font-size:11px"></i></span><span class="tx"><b>' + esc(a.title) + '</b></span></div>';
       }).join('');

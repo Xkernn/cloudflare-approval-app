@@ -3,19 +3,21 @@
      1) VO_API     — Service: ດຶງ snapshot + ເປີດ stream (mock | http · SSE | WebSocket)
      2) VO_ADAPTER — Centralized Data Adapter: raw ຈາກລະບົບເດີມ → ໂມເດລກາງ (VO_ADAPTER.build)
      3) VO_STORE   — State: loading/ready/error, lastSync, refresh(), subscribe(), events, ຕິດຕາມສະຖານະລົດຈາກສາກ 3D
-   ບໍ່ມີ Database / Workflow ໃໝ່ — ເປັນ Visualization Layer ເທົ່ານັ້ນ. ເບິ່ງຮູບແບບຂໍ້ມູນໃນ README.txt */
+   ບໍ່ມີ Database / Workflow ໃໝ່ — ເປັນ Visualization Layer ເທົ່ານັ້ນ. ເບິ່ງຮູບແບບຂໍ້ມູນໃນ README.txt
+   Phase 7: mode 'office' (ຄ່າເລີ່ມຕົ້ນ) ດຶງສະຖິຕິຈິງຈາກ GET /api/admin/office-overview · ?dash=mock ກັບໄປໃຊ້ mock ທັງໝົດ */
 (function () {
   'use strict';
 
   // ================= Config =================
   var URLQ = (function () { try { return new URLSearchParams(location.search); } catch (e) { return { get: function () { return null; } }; } })();
   var CFG = window.VO_CONFIG = (function (base, user) { for (var k in user) base[k] = user[k]; return base; })({
-    mode: 'mock',                       // 'mock' | 'http'
+    mode: URLQ.get('dash') === 'mock' ? 'mock' : 'office',   // 'office' = ດຶງສະຖິຕິຈິງຈາກ officeUrl · 'http' = 5 endpoints ຕາມ README · 'mock' = ?dash=mock
+    officeUrl: '/api/admin/office-overview',   // GET (admin, Bearer token ຈາກ localStorage app_session_v1) — ເບິ່ງ src/lib/office.js
     baseUrl: '',                        // ຕົວຢ່າງ '/api'
     endpoints: { departments: '/company/departments', activities: '/company/activities', assets: '/company/assets', metrics: '/company/metrics', events: '/company/events' },
     headers: null,                      // function(){ return {Authorization:'Bearer …'} }
     realtime: { type: null, url: null },// type: 'sse' | 'ws'  (ເປີດໃຊ້ເມື່ອລະບົບເດີມຮອງຮັບ)
-    refreshMs: 30000,                   // polling refresh (ສຳຮອງເມື່ອບໍ່ມີ realtime)
+    refreshMs: 60000,                   // polling refresh (ສຳຮອງເມື່ອບໍ່ມີ realtime) · 60 ວິ = ຕົງກັບ cache ຂອງ endpoint, ບໍ່ເພີ່ມ D1 rows read
     latencyMs: 350,                     // ຈຳລອງ latency (mock)
     streamMs: 7000,                     // ຄວາມຖີ່ event ຈຳລອງ (mock)
     maxEvents: 60,
@@ -27,13 +29,20 @@
   function timeout(p, ms) {
     return new Promise(function (res, rej) { var t = setTimeout(function () { rej(new Error('Request timed out')); }, ms); p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); }); });
   }
+  function sessionToken() { try { var s = JSON.parse(localStorage.getItem('app_session_v1') || 'null'); return (s && s.token) || ''; } catch (e) { return ''; } }
+  function sessionHeaders() { var t = sessionToken(); return t ? { Authorization: 'Bearer ' + t } : {}; }
   function getJson(path) {
-    var h = { Accept: 'application/json' }; if (typeof CFG.headers === 'function') { var x = CFG.headers() || {}; for (var k in x) h[k] = x[k]; }
+    var hf = typeof CFG.headers === 'function' ? CFG.headers : (CFG.mode === 'office' ? sessionHeaders : null);
+    var h = { Accept: 'application/json' }; if (hf) { var x = hf() || {}; for (var k in x) h[k] = x[k]; }
     return timeout(fetch(CFG.baseUrl + path, { headers: h, credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + path); return r.json(); }), CFG.timeoutMs);
   }
   var API = {
     simulate: SIM,
     fetchSnapshot: function () {
+      if (CFG.mode === 'office') {
+        if (SIM.fail) return new Promise(function (res, rej) { setTimeout(function () { rej(new Error('Source system unavailable (simulated)')); }, CFG.latencyMs); });
+        return getJson(CFG.officeUrl).then(function (ov) { return SIM.slow ? new Promise(function (res) { setTimeout(function () { res(ov); }, 2500); }) : ov; }).then(fromOffice);
+      }
       if (CFG.mode === 'http') {
         var E = CFG.endpoints;
         return Promise.all([getJson(E.departments), getJson(E.activities), getJson(E.assets), getJson(E.metrics), getJson(E.events)]).then(function (r) {
@@ -76,6 +85,27 @@
     }
   };
 
+  // ---- Live source: GET /api/admin/office-overview → raw snapshot ຮູບແບບເດີມຂອງ adapter ----
+  // ຈິງ (ຈາກ D1): ສະຖານະ + ກິດຈະກຳຫ້ອງ asset_request · contract · delivery · asset_tracking · budget · announce, ສະຖິຕິຫ້ອງ admin, Live feed
+  // ຍັງ mock: ພະນັກງານ (data.js) · ຄັງ/ລົດ (logistics-data.js) · ງົບ ₭ · assets · metrics · ແຜນກ logistics (dashboard-data.js)
+  function utcMs(s) { var t = Date.parse(String(s || '').replace(' ', 'T') + (/[zZ+]/.test(String(s || '')) ? '' : 'Z')); return isNaN(t) ? Date.now() : t; }
+  function fromOffice(ov) {
+    var base = window.VO_MOCK ? window.VO_MOCK.snapshot() : { departments: [], activities: [], assets: [], metrics: { onTimePct: [], deliveries: [] }, events: [] };
+    var live = {}, acts = [], evs = [];
+    ((ov && ov.rooms3d) || []).forEach(function (r) {
+      live[r.id] = { title: r.title, status: opStatus(r.status), attention: r.attention || 0, new24: r.new24 || 0, stats: r.stats || [], error: !!r.error };
+      if (r.error) return;
+      (r.items || []).forEach(function (it, i) {
+        if (r.id !== 'admin') acts.push({ id: 'lv-' + r.id + '-' + i, dept: r.id, title: it.text + ' · ' + it.sub, status: opStatus(it.state), owner: null });   // admin ບໍ່ແມ່ນ 1 ໃນ 7 ແຜນກຂອງ adapter
+        evs.push({ id: 'of-' + r.id + ':' + it.at + ':' + it.text, ts: utcMs(it.at), type: it.state === 'completed' ? 'activity_completed' : 'dept_status', text: r.title + ': ' + it.text + ' · ' + it.sub, source: 'Office API', ref: { type: 'dept', id: r.id } });
+      });
+    });
+    base.departments.forEach(function (d) { var l = live[d.id]; if (l && !l.error) d.status = l.status; });   // budget ₭ ຍັງເປັນ mock — DB ບໍ່ມີງົບເປັນເງິນ
+    base.activities = base.activities.filter(function (a) { return !live[a.dept]; }).concat(acts);
+    base.events = evs; base.live = live;
+    return base;
+  }
+
   // ================= 2) Centralized Data Adapter =================
   var OP_STATUS = {   // ສະຖານະເພື່ອສະແດງຜົນ — ສີ + ສັນຍາລັກ (icon) ແຕກຕ່າງກັນທຸກຄ່າ
     working:   { label: 'Working',   lao: 'ກຳລັງເຮັດວຽກ', color: '#16a34a', icon: 'fa-gears' },
@@ -115,11 +145,11 @@
         status: st, staff: staff, working: working,
         inProgress: acts.filter(function (a) { return IN_PROGRESS[a.status]; }).length, activities: acts,
         counts: STATUS_ORDER.reduce(function (o, k) { o[k] = acts.filter(function (a) { return a.status === k; }).length; return o; }, {}),
-        budget: { total: rd.budget.total, spent: rd.budget.spent } };
+        budget: { total: rd.budget.total, spent: rd.budget.spent }, live: (raw.live || {})[id] || null };
     }
     var metaById = {}; D.departments.forEach(function (d) { metaById[d.id] = d; });
     var departments = DEPT_ORDER.map(function (id) { return mk(id === 'logistics' ? LOGISTICS_META : metaById[id]); });
-    var extras = EXTRA_AREAS.map(function (id) { var m = metaById[id], l = empByDept[id] || []; return { id: id, name: m.name, short: m.short, icon: m.icon, accent: m.accent, staff: l.length, working: l.filter(function (e) { return STATUS[e.activity].active; }).length }; });
+    var extras = EXTRA_AREAS.map(function (id) { var m = metaById[id], l = empByDept[id] || []; return { id: id, name: m.name, short: m.short, icon: m.icon, accent: m.accent, staff: l.length, working: l.filter(function (e) { return STATUS[e.activity].active; }).length, live: (raw.live || {})[id] || null }; });
 
     var wh = LD ? LD.warehouses.map(function (w) { return { id: w.id, name: w.name, short: w.short, location: w.location, accent: w.accent, status: w.status, totalItems: w.totalItems, inbound: w.inbound, outbound: w.outbound, updated: w.updated }; }) : [];
     var whActive = wh.filter(function (w) { return LD.WH_STATUS[w.status] && LD.WH_STATUS[w.status].active; }).length;

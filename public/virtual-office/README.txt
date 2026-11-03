@@ -62,3 +62,19 @@ Phase 6 — ຫ້ອງການ: ແຕ່ລະຫ້ອງ = ຫ້ອງທ
 - data.js: departments ມີ field ໃໝ່ lao (ຊື່ລາວ) + style (ໂຄງເຟີນີເຈີພື້ນຖານຂອງຫ້ອງ) · ພະນັກງານ/ໜ້າທີ່/ວຽກ ປັບໃຫ້ຕົງກັບຫ້ອງ (ຈຳນວນໂຕະເທົ່າເດີມ)
 - office3d.js: furnish ໃຊ້ d.style · furnishExtra ເພີ່ມຂອງບົ່ງບອກໜ້າທີ່ແຕ່ລະຫ້ອງ (ຕູ້ແຊ່/ໝຸດ/ໃບສັນຍາ/ໂທລະໂຄ່ງ/ກຣາບງົບ/ກ່ອງສົ່ງ)
 - dashboard-data.js + data-adapter.js: ໃຊ້ id ໃໝ່ · 7 ແຜນກໃນ Dashboard = Asset Tracking, Asset Request, Delivery, Contract, Budget, Announce, Logistics · Admin + Reception = Other areas
+
+Phase 7 — ຕໍ່ສະຖິຕິຈິງ (ອ່ານຢ່າງດຽວ) ຈາກ GET /api/admin/office-overview
+- Endpoint: src/index.js (admin ເທົ່ານັ້ນ ຜ່ານ gate /api/admin/*) → src/lib/office.js. ບໍ່ຂຽນ DB · ຜົນ cache ໃນ isolate 60 ວິ (ກັນ D1 rows read ເພີ່ມ)
+- ຮູບແບບຕອບ: { generated_at, rooms:[7 ຫ້ອງເດີມຂອງ /office.html — ບໍ່ປ່ຽນ], rooms3d:[7 ຫ້ອງຂອງ 3D] }
+  rooms3d[i] = { id, title, status, attention, new24, stats:[{label,value}], items:[{text,sub,at,state}] }  (error:true ຖ້າຫ້ອງນັ້ນ query ບໍ່ໄດ້)
+- 7 ຫ້ອງ → ຕາຕະລາງຕົ້ນທາງ:
+    asset_request  ← asset_requests            contract  ← loan_contracts          delivery ← assets (ສະຖານະຈັດສົ່ງ)
+    asset_tracking ← assets (ຍັງບໍ່ເຊັນເອກະສານ / ບໍ່ຊັບມິດ PowerApp / ຕິດທຸງ)
+    budget         ← budgets + asset_requests (ໂຄຕ້າຕູ້ ບໍ່ແມ່ນເງິນ ₭) + budget_transfers
+    announce       ← announcements + announcement_reads
+    admin          ← users (ລໍຖ້າອະນຸມັດ) + password_reset_requests  (ບໍ່ສົ່ງ email)
+- status (ຄຳນວນທີ່ server): ມີຂອງໃໝ່ 24 ຊມ = working · ມີງານຄ້າງແຕ່ບໍ່ມີຄວາມເຄື່ອນໄຫວ = pending · ບໍ່ມີທັງສອງ = available  (ຍັງບໍ່ມີ delayed — ຍັງບໍ່ມີ SLA ກຳນົດ)
+- data-adapter.js: VO_CONFIG.mode ຄ່າເລີ່ມຕົ້ນ = 'office' (ແນບ Bearer token ຈາກ localStorage app_session_v1, poll ທຸກ 60 ວິ) · ?dash=mock = ກັບໄປໃຊ້ mock ທັງໝົດ · ?dash=fail / ?dash=slow ຍັງໃຊ້ທົດສອບໄດ້
+  ຖ້າ endpoint ຕອບ 401/403/5xx ແລະ ຍັງບໍ່ມີຂໍ້ມູນ → ສະແດງ error (ບໍ່ fallback ໄປ mock ແບບງຽບໆ)
+- ຈິງ: ສະຖານະແຜນກ · ກິດຈະກຳ (ລາຍການລ່າສຸດ 6 ລາຍການ/ຫ້ອງ) · Live feed · ແຜງ "Live data" ໃນ panel ແຕ່ລະຫ້ອງ (dashboard.js, ລວມ Admin)
+- ຍັງ mock: ພະນັກງານ (data.js) · ຄັງ/ລົດ/ເສັ້ນທາງ (logistics-data.js) · ງົບເປັນເງິນ ₭ (ແຖບ "Budget used (sample ₭)") · assets · metrics · ແຜນກ Logistics (dashboard-data.js)
