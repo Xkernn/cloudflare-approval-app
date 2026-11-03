@@ -4172,6 +4172,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
         <!-- TAB: ຄິວເຊັນ (ໃບທີ່ຍັງເປັນຮ່າງ ລໍຖ້າເຊັນຮັບ) -->
         <div id="loanTabQueue" class="hidden" style="max-width: 640px;">
+          <select id="loanQueueMdeFilter" class="form-control hidden" style="margin-bottom: 12px;" onchange="filterLoanContractHistory()" title="ກອງຕາມ MDE (admin)"></select>
           <div id="loanQueueCardList" class="card-list"><div class="card-list-empty">ກຳລັງໂຫລດ...</div></div>
         </div>
 
@@ -20413,7 +20414,7 @@ function assetStatusBadgeClass(status) {
       }
     }
 
-    /* ===== Filter MDE (ສະເພາະ admin) — ໃຊ້ຮ່ວມກັນ: Asset Tracking / ປະຫວັດການຈັດສົ່ງ / ເອກະສານສຳເລັດແລ້ວ =====
+    /* ===== Filter MDE (ສະເພາະ admin) — ໃຊ້ຮ່ວມກັນ: Asset Tracking / ປະຫວັດການຈັດສົ່ງ / ເອກະສານສຳເລັດແລ້ວ / ເອກະສານຍັງບໍ່ເຊັນ =====
        ສ້າງຕົວເລືອກຈາກ MDE Code ທີ່ມີຢູ່ໃນຂໍ້ມູນຂອງໜ້ານັ້ນ, ເຊື່ອງສຳລັບ role ອື່ນ, ຮັກສາຄ່າທີ່ເລືອກໄວ້ເມື່ອຕົວເລືອກບໍ່ປ່ຽນ */
     function syncMdeFilter(selId, items) {
       const el = document.getElementById(selId);
@@ -24130,7 +24131,10 @@ function assetStatusBadgeClass(status) {
       renderLoanContractHistory(filtered, 'loanHistoryCardList', (q || mdeFilter) ? 'ບໍ່ພົບໃບສັນຍາຢືມ' : 'ຍັງບໍ່ມີເອກະສານທີ່ເຊັນສຳເລັດແລ້ວ');
       // ຄິວເຊັນ = ໃບທີ່ຍັງເປັນຮ່າງ (ຍັງບໍ່ທັນເຊັນຮັບ) — ໃບ DOC- ແລະ ໃບ T- (ຖ້າຍັງບໍ່ completed) ເພື່ອບໍ່ໃຫ້ໃບຮ່າງຫາຍໄປຈາກທັງສອງແຖບ
       const queue = all.filter((c) => !isDone(c));
-      renderLoanContractHistory(queue, 'loanQueueCardList', 'ບໍ່ມີໃບທີ່ລໍຖ້າເຊັນ');
+      // Filter MDE (admin) ຂອງແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" — ຕົວເລກ badge ຍັງນັບທັງໝົດ (ບໍ່ຂຶ້ນກັບ filter)
+      const queueMde = syncMdeFilter('loanQueueMdeFilter', queue);
+      const queueShown = queueMde ? queue.filter((c) => c.mde_code === queueMde) : queue;
+      renderLoanContractHistory(queueShown, 'loanQueueCardList', queueMde ? 'MDE ນີ້ບໍ່ມີໃບທີ່ລໍຖ້າເຊັນ' : 'ບໍ່ມີໃບທີ່ລໍຖ້າເຊັນ');
       const cnt = document.getElementById('loanQueueCount');
       cnt.textContent = queue.length;
       cnt.classList.toggle('hidden', !queue.length);

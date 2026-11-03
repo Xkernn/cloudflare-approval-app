@@ -468,10 +468,8 @@ CREATE TABLE stock_count_items (
 CREATE INDEX idx_stock_counts_wh ON stock_counts(warehouse_id, period);
 CREATE INDEX idx_sci_count ON stock_count_items(count_id, result);
 
--- ບັນຊີ Admin ເລີ່ມຕົ້ນ: ບໍ່ມີລະຫັດຜ່ານຕາຍຕົວໃນໄຟລ໌ນີ້ອີກຕໍ່ໄປ (ເຄີຍເປັນ Admin@123 ຊຶ່ງໃຜກໍເດົາໄດ້)
--- ສ້າງ admin ດ້ວຍ:  node create-admin.js admin@yourcompany.com 'ລະຫັດຜ່ານຂອງທ່ານ'
--- ແລ້ວເອົາຄຳສັ່ງ SQL ທີ່ໄດ້ ໄປຮັນ:  npx wrangler d1 execute user-approval-db --remote --command "<SQL>"
--- (ຖ້າ DB ເກົ່າຍັງມີ admin@example.com / Admin@123 ຢູ່ ໃຫ້ປ່ຽນລະຫັດ ຫຼື ລຶບທັນທີ)
+
+
 
 -- ຟັງຊັນ "ອອກໃບສັນຍາຢືມ" (ເບິ່ງລາຍລະອຽດຄໍລຳໃນ migration_add_loan_contracts.sql)
 
