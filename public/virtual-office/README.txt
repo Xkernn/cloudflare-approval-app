@@ -29,3 +29,17 @@ Phase 3 — Company Overview & Live Dashboard (Visualization Layer ເທົ່�
   Realtime message → {kind:'event', event:{…}, patch:{activity:{id,status}|department:{id,status}}} ຫຼື {kind:'refresh'}
   ພະນັກງານ/ຄັງ/ລົດ ຍັງມາຈາກ data.js / logistics-data.js (Phase 1–2) — ແທນດ້ວຍຂໍ້ມູນຈິງຕາມເດີມ
 - ທົດສອບ: ເພີ່ມ ?dash=fail (ຈຳລອງ error) ຫຼື ?dash=slow (ຈຳລອງ loading) ທ້າຍ URL
+
+Phase 4 — Shop Town (ເມືອງຮ້ານຄ້າ 1 ຈຸດ + ລົດວິ່ງເຂົ້າເມືອງແລ້ວຫາຍຕົວ)
+- ເມນູໃໝ່: "Shop Town" (ກ້ອງເຄື່ອນໄປເມືອງແບບ Smooth) · ເມືອງຢູ່ທິດໃຕ້-ຕາເວັນຕົກຂອງຫ້ອງການ, ຕໍ່ຖະໜົນແຍກຈາກທາງຫຼວງສາຍຫຼັກ (x=30)
+- ໄຟລ໌ໃໝ່: shops-data.js (Mock Data ຮ້ານຄ້າ, ແຍກຈາກ 3D) · town3d.js (ເມືອງ + ຮ້ານ + ລົດ + ລະບົບຈະລາຈອນ)
+- ໄຟລ໌ທີ່ແກ້: index.html (ປຸ່ມເມນູ + script) · ui.js (ແຖບ Shop Town, ລາຍການຮ້ານ, panel ຮ້ານ, ຄລິກຕຶກໃນສາກ 3D)
+- ເມືອງມີ 14 ຕຶກ: ຮ້ານຄ້າ 11 ຮ້ານ + ຈຸດໝາຍປາຍທາງຂອງລົດ 3 ຈຸດ (Fresh Market, Auto Service, Parking Hall) · ປະຕູເມືອງ + ປ້າຍລອຍສະແດງຈຳນວນລົດສົດ
+- ລົດ 10 ຄັນ (sedan/hatch/suv/pickup/van/ຕຸກຕຸກ) ໃຊ້ຊ້ຳ: ເກີດທີ່ປາຍທາງຫຼວງ 3 ຈຸດ (ເໜືອ / Central DC / South Hub) → ເລນຂວາ → ເຂົ້າເມືອງ → ຂັບເຂົ້າປະຕູຕຶກ → ຫາຍຕົວ → ເກີດໃໝ່ (ຫຼັງ 1.5–4 ວິນາທີ)
+  · ເວລາເກີດຈະຂະຫຍາຍຂະໜາດຈາກນ້ອຍ → ປົກກະຕິ · ຂັບຕາມຫຼັງຄັນໜ້າ ຫ່າງ ≥ ~5 ຫົວໜ່ວຍ · ຢັບຢັ້ງກັນທີ່ແຍກ x=30 ແລະ z=12 (ບໍ່ຊົນກັນ, ບໍ່ຕິດ)
+- ປັບແຕ່ງ (ໃນ town3d.js / shops-data.js):
+  · ຈຳນວນລົດສູງສຸດທີ່ແລ່ນພ້ອມກັນ → shops-data.js: town.maxCars (ຕອນນີ້ 8) · ຈຳນວນລົດໃນ pool → KINDS ໃນ town3d.js (10)
+  · ຄວາມໄວ: c.maxV = 11 + random*5 (spawn) · ຊ້າລົງໃນເມືອງ ×0.62 · ຄວາມຖີ່ເກີດ: spawnT = 1.8 + random*2.6 ວິນາທີ
+  · ໂອກາດໄປແຕ່ລະປາຍທາງ → TAIL[..].w · ໂອກາດມາຈາກແຕ່ລະທາງ → ENTRY[..].w
+  · ຕຳແໜ່ງ/ສີ/ຊື່ປ້າຍຂອງຕຶກ → LAYOUT (ອ້າງ id ດຽວກັບ shops-data.js) · ຍ້າຍເມືອງທັງໝົດ → TX, TZ ເທິງສຸດຂອງ town3d.js (ຕ້ອງແກ້ ENTRY/TAIL ໃຫ້ສອດຄ່ອງ)
+- ຄລິກຕຶກ/ປ້າຍປະຕູ → Information Panel (ສະຖານະ, ເວລາເປີດ, ຜູ້ເຂົ້າ, ລາຍຮັບ, ຈຳນວນລົດທີ່ເຂົ້າຈຸດນັ້ນ) · ຖ້າ town3d.js ໂຫຼດບໍ່ໄດ້ ສ່ວນອື່ນຍັງໃຊ້ງານໄດ້ປົກກະຕິ
