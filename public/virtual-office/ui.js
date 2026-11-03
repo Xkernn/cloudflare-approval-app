@@ -23,7 +23,7 @@
   }
 
   var view = { tab: 'office', emp: null, dept: null, wh: null, truck: null, route: null, shop: null, filter: '', status: 'all' };
-  var api = null, logi = null, town = null, LD = window.VO_LOGISTICS || null, SD = window.VO_SHOPS || null, WORLD_TABS = { warehouses: 1, logistics: 1, overview: 1, shops: 1 };
+  var api = null, logi = null, town = null, at = null, ADT = window.VO_ASSETS || null, LD = window.VO_LOGISTICS || null, SD = window.VO_SHOPS || null, WORLD_TABS = { warehouses: 1, logistics: 1, overview: 1, shops: 1 };
   var DASH = null;   // Phase 3: window.VODash (ໂຫຼດແບບ lazy — ຖ້າໂຫຼດບໍ່ໄດ້ ແຖບ Company Overview ຈະກັບໄປໃຊ້ແບບ Phase 2)
   // ຂຽນ #stats ສະເພາະເມື່ອເນື້ອຫາປ່ຽນ (ບໍ່ວາດຊ້ຳທຸກວິນາທີ)
   function setStats(cls, html) { var el = $('stats'); el.__kh = null; if (el.className !== cls) el.className = cls; if (el.__h !== html) { el.innerHTML = html; el.__h = html; } }
@@ -144,7 +144,7 @@
       }).join('') + '</div>';
     $('info').classList.add('open');
   }
-  function closeInfo() { $('info').classList.remove('open'); view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null; if (api) api.clearSelection(); if (logi) logi.clearSelection(); if (town) town.clearSelection(); renderSide(); }
+  function closeInfo() { $('info').classList.remove('open'); view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null; view.at = false; if (at) at.select(false); if (api) api.clearSelection(); if (logi) logi.clearSelection(); if (town) town.clearSelection(); renderSide(); }
 
   // ---------- ເລືອກ ----------
   function chooseEmp(id, focus) {
@@ -191,6 +191,7 @@
     function card(ic, lb, v, sm) { return '<div class="stat"><div class="lb"><i class="fa-solid ' + ic + '"></i>' + lb + '</div><div class="vl">' + v + (sm ? '<small>' + sm + '</small>' : '') + '</div></div>'; }
     if (view.tab === 'shops' && town) {   // Phase 4: Shop Town
       var q = town.stats();
+      if (at) { var a5 = at.stats(); setStats('stats wide', card('fa-store', 'Total Shops', q.shops) + card('fa-door-open', 'Open Now', q.open, '/ ' + q.shops) + card('fa-box-open', 'Assets Delivered', a5.delivered, '/ ' + a5.total) + card('fa-location-dot', 'Delivery Stop', a5.stopNo, '/ ' + a5.stops) + card('fa-truck-ramp-box', 'Trip', a5.trip)); return; }
       setStats('stats wide', card('fa-store', 'Total Shops', q.shops) + card('fa-door-open', 'Open Now', q.open, '/ ' + q.shops) +
         card('fa-car-side', 'Cars in Town', q.carsInTown, '+' + q.carsOnRoad + ' on road') + card('fa-flag-checkered', 'Cars Arrived', q.arrived, 'session') + card('fa-people-group', 'Visitors Today', num(q.visitors)));
       return;
@@ -228,6 +229,7 @@
       h += '<div class="co-card"><h3>' + esc(SD.town.name) + ' · ' + esc(SD.town.lao) + '</h3><p>ລົດວິ່ງເຂົ້າເມືອງ → ຂັບເຂົ້າຕຶກ → ຫາຍຕົວ</p><div class="kv">' +
         '<div><b data-live-town="inTown">' + q.carsInTown + '</b><span>Cars in town</span></div><div><b data-live-town="arrived">' + q.arrived + '</b><span>Arrived</span></div>' +
         '<div><b>' + q.open + '</b><span>Open shops</span></div><div><b data-live-town="visitors">' + num(q.visitors) + '</b><span>Visitors</span></div></div></div>';
+      if (at) h += '<div id="atCard">' + atCardHtml() + '</div>';
       [['retail', 'Shops · ຄລິກເພື່ອຊູມ'], ['dest', 'Destinations · ຈຸດທີ່ລົດເຂົ້າ']].forEach(function (g) {
         h += '<div class="sec-title">' + g[1] + '</div>';
         SD.shops.filter(function (x) { return x.kind === g[0]; }).forEach(function (x) {
@@ -277,6 +279,44 @@
       meter('Load', d.load, d.load > 85 ? '#f59e0b' : '#22c55e') +
       '<div class="btns"><button class="btn" data-focus-truck="' + d.id + '"><i class="fa-solid fa-crosshairs"></i> Follow</button><button class="btn sec" data-close>Close</button></div></div>');
   }
+  // =====================================================================
+  // Phase 5 — Asset Tracking: ລົດສົ່ງ Asset ຄັນດຽວ (asset-data.js → asset-delivery.js)
+  // =====================================================================
+  var AT_STATE = { depot: ['At Depot · ຈອດສາງ', '#2563eb'], onroute: ['On Route · ກຳລັງສົ່ງ', '#16a34a'], unloading: ['Unloading · ກຳລັງຖອກ', '#f59e0b'], returning: ['Returning · ກັບສາງ', '#7c3aed'] };
+  function shopName(id) { var x = SD && SD.shops.filter(function (z) { return z.id === id; })[0]; return x ? x.name : id; }
+  function stopStatus(st) { return ADT.STATUS[st === 'done' ? 'delivered' : st]; }
+  function itemsTx(items) { return items.map(function (i) { return esc(i.asset) + ' ×' + (i.qty || 1); }).join(', '); }
+  function atCardHtml() {
+    var q = at.stats(), stt = AT_STATE[q.state], h = '<div class="co-card"><h3>Asset Delivery · ລົດສົ່ງ Asset</h3><p>' + esc(ADT.truck.id) + ' · ' + stt[0] + '</p><div class="kv">' +
+      '<div><b>' + q.delivered + ' / ' + q.total + '</b><span>Delivered</span></div><div><b>' + q.pending + '</b><span>Pending</span></div>' +
+      '<div><b>' + q.stopNo + ' / ' + q.stops + '</b><span>Stop</span></div><div><b>' + q.trip + '</b><span>Trip</span></div></div>' +
+      '<div class="btns" style="margin-top:10px"><button class="btn" data-focus-at><i class="fa-solid fa-crosshairs"></i> Follow ' + esc(ADT.truck.id) + '</button></div></div>';
+    h += '<div class="sec-title">Delivery list · ລຳດັບແວ່ (Asset Tracking)</div>';
+    at.stops().forEach(function (x, i) {
+      var st = stopStatus(x.state);
+      h += '<button class="list-item" data-shop="' + x.shop + '"><span class="ic" style="background:' + st.color + '">' + (i + 1) + '</span><span class="tx"><b>' + esc(shopName(x.shop)) + '</b><span>' + itemsTx(x.items) + ' · ' + st.lao + '</span></span><span class="dot" style="background:' + st.color + '"></span></button>';
+    });
+    return h;
+  }
+  function renderAssetPanel() {
+    var q = at.stats(), stt = AT_STATE[q.state], T = ADT.truck;
+    var rows = at.stops().map(function (x, i) {
+      var st = stopStatus(x.state);
+      return '<div style="grid-column:1/-1"><span>' + (i + 1) + ' · ' + esc(shopName(x.shop)) + ' — ' + st.label + '</span><b>' + x.items.map(function (z) { return esc(z.asset) + ' ×' + (z.qty || 1) + ' (' + esc(z.serial) + ')'; }).join('<br>') + '</b></div>';
+    }).join('');
+    openInfo('<div class="hd" style="background:linear-gradient(135deg,#2563eb,#2563ebcc)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
+      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.28)"><i class="fa-solid fa-truck-ramp-box"></i></span><div><h2>' + esc(T.id) + '</h2><p>' + esc(T.plate) + ' · ' + esc(T.driver) + '</p></div></div></div>' +
+      '<div class="bd"><div class="row2"><span class="chip" style="background:' + stt[1] + '">' + stt[0] + '</span></div>' +
+      '<div class="fields" style="margin-top:12px"><div><span>Delivered</span><b>' + q.delivered + ' / ' + q.total + '</b></div><div><span>Pending</span><b>' + q.pending + '</b></div>' +
+      '<div><span>Current stop</span><b>' + (q.current ? esc(shopName(q.current)) : '—') + '</b></div><div><span>Trip</span><b>' + q.trip + '</b></div>' + rows + '</div>' +
+      '<div class="btns"><button class="btn" data-focus-at><i class="fa-solid fa-crosshairs"></i> Follow</button><button class="btn sec" data-close>Close</button></div></div>');
+  }
+  var atSig = '';
+  function atTick() {
+    if (!at) return;
+    if (view.tab === 'shops') { var el = $('atCard'), html = atCardHtml(); if (el && el.__h !== html) { el.innerHTML = html; el.__h = html; } }
+    if (view.at) { var sg = JSON.stringify(at.stats()); if (sg !== atSig) { atSig = sg; renderAssetPanel(); } }
+  }
   function renderShopPanel(id) {   // Phase 4: Shop Town
     var tw = id === 'town', d = tw ? null : SD.shops.filter(function (x) { return x.id === id; })[0];
     if (!tw && !d) return;
@@ -296,8 +336,14 @@
   }
   function chooseWorld(type, id, focus) {
     if (!logi) return;
+    if (at && type === 'truck' && id === ADT.truck.id) {   // Phase 5: ລົດສົ່ງ Asset
+      if (api) api.clearSelection(); view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null;
+      logi.clearSelection(); if (town) town.clearSelection(); view.at = true; at.select(true); atSig = JSON.stringify(at.stats());
+      if (focus !== false) { var e5 = api.ext; e5.focusOn(at.truckPos(), 34, e5.HOME_DIR); }
+      renderAssetPanel(); renderSide(); closeSide(); return;
+    }
     if (api) api.clearSelection();
-    view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null;
+    view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null; view.at = false; if (at) at.select(false);
     logi.select(type, id);
     if (town) town.select(type === 'shop' ? id : null);
     var ex = api.ext, V = ex.THREE.Vector3;
@@ -320,7 +366,7 @@
     var v = VIEWS[name]; if (!api || !api.ext || !v) return;
     var ex = api.ext; ex.focusOn(new ex.THREE.Vector3(v[0], 0, v[1]), v[2], ex.HOME_DIR);
   }
-  function resetSelection() { view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null; if (api) api.clearSelection(); if (logi) logi.clearSelection(); if (town) town.clearSelection(); }
+  function resetSelection() { view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null; view.at = false; if (at) at.select(false); if (api) api.clearSelection(); if (logi) logi.clearSelection(); if (town) town.clearSelection(); }
   function dashHooks() {
     return { D: D, stage: $('stage'), view: function () { return view; }, getLogi: function () { return logi; }, avatar: avatar,
       chooseEmp: chooseEmp, chooseDept: chooseDept, chooseWorld: chooseWorld, focusView: focusView, resetSelection: resetSelection,
@@ -347,6 +393,7 @@
       var s = logi.truckState(view.truck), a = document.querySelector('[data-live="st"]'), b = document.querySelector('[data-live="pct"]');
       if (a) { a.textContent = tsLabel(s.status); a.style.background = LD.TRUCK_STATUS[s.status].color; } if (b) b.textContent = s.pct + '%';
     } else if (view.wh) { var c = document.querySelector('[data-live="docks"]'); if (c) c.textContent = dockedAt(view.wh).length + ' / 4'; }
+    atTick();
     if (town && view.tab === 'shops') {   // Phase 4: ຄ່າສົດຂອງເມືອງ (ລົດ/ຜູ້ເຂົ້າ) ໂດຍບໍ່ວາດ panel ໃໝ່
       var q = town.stats(), set = function (sel, v) { var e = document.querySelector(sel); if (e) e.textContent = v; };
       set('[data-live-town="inTown"]', q.carsInTown); set('[data-live-town="arrived"]', q.arrived); set('[data-live-town="visitors"]', num(q.visitors));
@@ -358,12 +405,13 @@
   // ---------- events ----------
   document.addEventListener('click', function (ev) {
     var t = ev.target;
-    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop]');
+    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at]');
     if (!el) return;
     if (el.hasAttribute('data-close')) { closeInfo(); return; }
     if (el.hasAttribute('data-focus-emp')) { if (api) api.selectEmployee(el.getAttribute('data-focus-emp'), true); return; }
     if (el.hasAttribute('data-focus-wh')) { chooseWorld('warehouse', el.getAttribute('data-focus-wh'), true); return; }
     if (el.hasAttribute('data-focus-truck')) { chooseWorld('truck', el.getAttribute('data-focus-truck'), true); return; }
+    if (el.hasAttribute('data-focus-at')) { chooseWorld('truck', ADT.truck.id, true); return; }
     if (el.hasAttribute('data-focus-shop')) { chooseWorld('shop', el.getAttribute('data-focus-shop'), true); return; }
     if (el.hasAttribute('data-shop')) { chooseWorld('shop', el.getAttribute('data-shop'), true); return; }
     if (el.hasAttribute('data-tab')) {
@@ -468,6 +516,7 @@
           .then(function () { return loadScript(['./truck3d.js?v=1'], function () { return !!(window.VOX && VOX.Truck); }); })
           .then(function () { return loadScript(['./route3d.js?v=1'], function () { return !!(window.VOX && VOX.Logistics); }); })
           .then(function () { return loadScript(['./town3d.js?v=1'], function () { return !!(window.VOX && VOX.Town); }); })   // Phase 4: Shop Town
+          .then(function () { return loadScript(['./asset-delivery.js?v=1'], function () { return !!(window.VOX && VOX.AssetDelivery); }); })   // Phase 5: Asset Delivery
           .catch(function (e) { console.warn('Phase 2 modules not loaded', e); });
       })
       .then(function () {
@@ -483,6 +532,7 @@
             api.ext.setWorld({ bounds: { x0: -60, x1: 125, z0: -85, z1: 100 }, maxDistance: 260 });
             logi = VOX.Logistics.create(api.ext, LD);
             if (SD && window.VOX && VOX.Town) { try { town = VOX.Town.create(api.ext, SD); } catch (e) { console.error('Shop Town init failed', e); town = null; } }
+            if (ADT && town && window.VOX && VOX.AssetDelivery) { try { at = VOX.AssetDelivery.create(api.ext, ADT, logi, town); } catch (e) { console.error('Asset Delivery init failed', e); at = null; } }   // Phase 5
             renderStats(); renderSide();
           } catch (e) { console.error('Phase 2 init failed', e); logi = null; }
         }

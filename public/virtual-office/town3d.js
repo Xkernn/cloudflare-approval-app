@@ -266,6 +266,7 @@
 
     function nearSpawn(p) { for (var i = 0; i < cars.length; i++) { var c = cars[i]; if (c.active && Math.hypot(c.x - p[0], c.z - p[1]) < 8) return true; } return false; }
     function spawn() {
+      if (window.VO_ASSETS && window.VO_ASSETS.config && window.VO_ASSETS.config.ambientTraffic === false) return;   // Phase 5: ມີແຕ່ລົດສົ່ງ Asset ຄັນດຽວ
       var free = cars.filter(function (c) { return !c.active && c.cool <= 0; });
       if (!free.length || cars.filter(function (c) { return c.active; }).length >= SD.town.maxCars) return;
       var ek = pickW(ENTRY_KEYS.map(function (k) { return { k: k, w: ENTRY[k].w }; })).k;
@@ -319,7 +320,7 @@
     var lastSub = '';
     function update(dt) {
       dt = Math.min(dt, 0.05); step(dt);
-      var k = counts(), sub = k.inTown + ' cars · ' + SD.shops.length + ' shops';
+      var k = counts(), sub = (window.VO_ASSETS && window.VO_ASSETS.config && window.VO_ASSETS.config.ambientTraffic === false) ? SD.shops.length + ' shops' : k.inTown + ' cars · ' + SD.shops.length + ' shops';
       if (sub !== lastSub) { lastSub = sub; setLabel(sub); }
     }
     setLabel(SD.shops.length + ' shops');
@@ -333,7 +334,7 @@
       SD.shops.forEach(function (s) { if (s.status !== 'closed') open++; vis += s.visitors + (visits[s.id] || 0); });
       return { shops: SD.shops.length, open: open, carsInTown: k.inTown, carsOnRoad: k.onRoad, arrived: arrived, visitors: vis };
     }
-    return { root: root, shops: shopById, stats: stats, select: select, clearSelection: clearSelection, visitsOf: function (id) { return (visits[id] || 0); },
+    return { root: root, geom: { TX: TX, TZ: TZ, LAYOUT: LAYOUT, ROW_Z: ROW_Z }, shops: shopById, stats: stats, select: select, clearSelection: clearSelection, visitsOf: function (id) { return (visits[id] || 0); },
       focusPos: function (id) { var L = LAYOUT[id]; if (!L) return new T.Vector3(TX, 0, TZ); var z = L.dest ? L.z : ROW_Z[L.row]; return new T.Vector3(TX + L.x, 0, TZ + z); }, update: update };
   }
   VOX.Town = { create: create, TX: TX, TZ: TZ };

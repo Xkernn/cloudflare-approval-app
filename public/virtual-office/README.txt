@@ -43,3 +43,13 @@ Phase 4 — Shop Town (ເມືອງຮ້ານຄ້າ 1 ຈຸດ + ລົ
   · ໂອກາດໄປແຕ່ລະປາຍທາງ → TAIL[..].w · ໂອກາດມາຈາກແຕ່ລະທາງ → ENTRY[..].w
   · ຕຳແໜ່ງ/ສີ/ຊື່ປ້າຍຂອງຕຶກ → LAYOUT (ອ້າງ id ດຽວກັບ shops-data.js) · ຍ້າຍເມືອງທັງໝົດ → TX, TZ ເທິງສຸດຂອງ town3d.js (ຕ້ອງແກ້ ENTRY/TAIL ໃຫ້ສອດຄ່ອງ)
 - ຄລິກຕຶກ/ປ້າຍປະຕູ → Information Panel (ສະຖານະ, ເວລາເປີດ, ຜູ້ເຂົ້າ, ລາຍຮັບ, ຈຳນວນລົດທີ່ເຂົ້າຈຸດນັ້ນ) · ຖ້າ town3d.js ໂຫຼດບໍ່ໄດ້ ສ່ວນອື່ນຍັງໃຊ້ງານໄດ້ປົກກະຕິ
+
+Phase 5 — Asset Tracking (ລົດສົ່ງ Asset ຄັນດຽວ ວິ່ງເຂົ້າ Shop Town ຕາມລາຍການ)
+- ແທັບ Shop Town: ການ໌ "Asset Delivery" (ຄວາມຄືບໜ້າ + ປຸ່ມ Follow) + ລາຍການແວ່ຕາມລຳດັບ · ຄລິກລົດ DLV-01 → Information Panel (ຮ້ານປັດຈຸບັນ, Asset/Serial ແຕ່ລະຮ້ານ)
+- ໄຟລ໌ໃໝ່: asset-data.js (Mock Asset Tracking ແຍກຈາກ 3D) · asset-delivery.js (ລົດ + ເສັ້ນທາງ + ລັງ Asset + Pin ສະຖານະເທິງຫຼັງຄາຮ້ານ)
+- ໄຟລ໌ທີ່ແກ້: index.html (script) · ui.js (ການ໌/panel/ຄ່າສົດ) · town3d.js (ສົ່ງ geom ອອກ + ປິດລົດສຸ່ມເມື່ອ ambientTraffic=false)
+- ວົງຈອນ: ຈອດຮັບທີ່ Central DC → ທາງຫຼວງ → ເຂົ້າເມືອງ ເລນເໜືອ (ຮ້ານແຖວເໜືອ) → ກັບລົດທີ່ປາຍຖະໜົນ → ເລນໃຕ້ (ຮ້ານແຖວໃຕ້) → ກັບສາງ
+  · ແວ່ສະເພາະຮ້ານທີ່ມີ Asset ສະຖານະ pending · ລຳດັບແວ່ຮຽງຕາມເສັ້ນທາງວົນ (ບໍ່ຕ້ອງກັບລົດຊ້ຳ)
+  · Pin ເທິງຮ້ານ: ເຫຼືອງ=ລໍຖ້າສົ່ງ · ຟ້າ=ກຳລັງສົ່ງ · ຂຽວ=ສົ່ງແລ້ວ
+- ປັບແຕ່ງທີ່ asset-data.js: config.ambientTraffic (false = ມີແຕ່ລົດສົ່ງຄັນດຽວ) · speed · depotWaitSec · crateSec · demoLoop · list (id, shop, asset, serial, qty, status)
+- ຕໍ່ລະບົບຈິງ: ແທນ VO_ASSETS.list ດ້ວຍລາຍການ Asset Tracking ຈິງ (ຮັກສາ field ເດີມ) ແລ້ວຕັ້ງ demoLoop=false
