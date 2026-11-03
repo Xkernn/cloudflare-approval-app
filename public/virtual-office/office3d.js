@@ -251,7 +251,7 @@
     function furnish(d, r) {
       var g = r.group, acc = d.accent;
       var Z0 = -CELL_D / 2;
-      switch (d.id) {
+      switch (d.style || d.id) {
         case 'ceo': {
           r.desks.push(deskSet(g, 1.2, -1.3, 0, { w: 2.2, monitors: 2, top: '#8b5e3c', chair: '#7c2d12', screen: '#fcd34d' }));
           r.desks.push(deskSet(g, -3.4, 1.7, Math.PI, { monitors: 1, chair: '#475569' }));
@@ -378,7 +378,29 @@
       }
     }
 
-    data.departments.forEach(function (d) { furnish(d, buildRoom(d)); });
+    // Phase 6: ของตกແຕ່ງສະເພາະຫ້ອງ (ແຕ່ລະຫ້ອງ = ຫ້ອງທຳງານຂອງໜ້າທີ່ໜຶ່ງ) — ໃຊ້ style ເດີມເປັນພື້ນ ແລ້ວເພີ່ມຂອງບົ່ງບອກໜ້າທີ່
+    function furnishExtra(d, r) {
+      var g = r.group, Z0 = -CELL_D / 2;
+      switch (d.id) {
+        case 'admin':           // ແຜງຄວບຄຸມ Admin: ຈໍສິດຜູ້ໃຊ້ + ກຸນແຈ
+          box(g, 1.5, 0.9, 0.06, -4.4, 0.9, 0.6, '#1f2937'); box(g, 1.4, 0.8, 0.02, -4.4, 0.95, 0.64, '#fde68a', true);
+          cyl(g, 0.14, 0.14, 0.05, -4.4, 1.75, 0.62, '#c58b2a', 14).rotation.x = Math.PI / 2; break;
+        case 'asset_request':   // ຕູ້ແຊ່ທີ່ຖືກຂໍ (Asset) ຕັ້ງລໍຖ້າ
+          box(g, 0.9, 1.3, 0.8, 4.2, 0.1, 2.3, '#e0f2fe'); box(g, 0.7, 0.8, 0.02, 4.2, 0.45, 2.71, '#7dd3fc', true); box(g, 0.95, 0.1, 0.85, 4.2, 1.4, 2.3, '#2563eb'); break;
+        case 'contract':        // ເອກະສານໃບສັນຍາ + ປາກກາເທິງໂຕະເຊັນ
+          box(g, 0.5, 0.03, 0.4, 3.4, 0.77, 2.3, '#ffffff'); box(g, 0.3, 0.02, 0.04, 3.4, 0.8, 2.25, '#2563eb', true); box(g, 0.16, 0.16, 0.02, 3.55, 0.8, 2.4, '#ef4444', true); break;
+        case 'announce':        // ໂທລະໂຄ່ງ + ປ້າຍແຈ້ງເຕືອນ
+          cyl(g, 0.1, 0.34, 0.55, 3.9, 1.0, -2.6, '#f43f5e', 14).rotation.z = Math.PI / 2; box(g, 0.2, 0.3, 0.2, 3.5, 0.9, -2.6, '#1f2937');
+          cyl(g, 0.03, 0.03, 0.9, 3.5, 0, -2.6, '#475569', 6); sph(g, 0.16, 2.6, 1.85, Z0 + 0.3, '#facc15'); break;
+        case 'asset_tracking':  // ໝຸດຕຳແໜ່ງ Asset + ວົງ radar
+          cyl(g, 0.04, 0.04, 1.0, -3.6, 0, 2.4, '#94a3b8', 6); sph(g, 0.3, -3.6, 1.25, 2.4, '#ef4444'); cyl(g, 0.7, 0.7, 0.03, -3.6, 0.02, 2.4, '#c7d2fe', 24).castShadow = false; break;
+        case 'budget':          // ກຣາບງົບ ແລະ ເຄື່ອງຄິດເລກຢູ່ກຳແພງຂ້າງ
+          box(g, 0.06, 1.0, 1.8, -5.3, 0.5, 0.2, '#f0fdf4'); [0.4, 0.6, 0.5, 0.85].forEach(function (v, i) { box(g, 0.04, 0.8 * v, 0.28, -5.25, 0.6, -0.5 + i * 0.4, '#22c55e', true); }); break;
+        case 'delivery':        // ກ່ອງຂະໜານສົ່ງ + ປ້າຍເສັ້ນທາງ
+          box(g, 0.5, 0.35, 0.9, -2.2, 0.76, -2.7, '#f8fafc'); box(g, 0.45, 0.3, 0.35, -2.2, 0.76, -2.0, '#2563eb'); break;
+      }
+    }
+    data.departments.forEach(function (d) { var rm = buildRoom(d); furnish(d, rm); furnishExtra(d, rm); });
 
     // ໝາຍ deptId ໃສ່ທຸກ mesh ໃນຫ້ອງ (ໃຊ້ຕອນຄລິກ)
     roomGroups.forEach(function (rg, i) {

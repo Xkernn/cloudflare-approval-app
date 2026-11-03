@@ -53,3 +53,12 @@ Phase 5 — Asset Tracking (ລົດສົ່ງ Asset ຄັນດຽວ ວ�
   · Pin ເທິງຮ້ານ: ເຫຼືອງ=ລໍຖ້າສົ່ງ · ຟ້າ=ກຳລັງສົ່ງ · ຂຽວ=ສົ່ງແລ້ວ
 - ປັບແຕ່ງທີ່ asset-data.js: config.ambientTraffic (false = ມີແຕ່ລົດສົ່ງຄັນດຽວ) · speed · depotWaitSec · crateSec · demoLoop · list (id, shop, asset, serial, qty, status)
 - ຕໍ່ລະບົບຈິງ: ແທນ VO_ASSETS.list ດ້ວຍລາຍການ Asset Tracking ຈິງ (ຮັກສາ field ເດີມ) ແລ້ວຕັ້ງ demoLoop=false
+
+Phase 6 — ຫ້ອງການ: ແຕ່ລະຫ້ອງ = ຫ້ອງທຳງານຂອງໜ້າທີ່ດຽວ (ແທນແຜນກເກົ່າ)
+- ຜັງ 3×3 (ແຖວຫຼັງ → ໜ້າ):  Admin Management | Meeting Room | Budget Management
+                            Asset Request    | Contract     | Announcements
+                            Asset Tracking   | Reception    | Delivery Report
+- ແປງ id: ceo→admin · finance→budget · sales→asset_request · hr→contract · marketing→announce · it→asset_tracking · operations→delivery
+- data.js: departments ມີ field ໃໝ່ lao (ຊື່ລາວ) + style (ໂຄງເຟີນີເຈີພື້ນຖານຂອງຫ້ອງ) · ພະນັກງານ/ໜ້າທີ່/ວຽກ ປັບໃຫ້ຕົງກັບຫ້ອງ (ຈຳນວນໂຕະເທົ່າເດີມ)
+- office3d.js: furnish ໃຊ້ d.style · furnishExtra ເພີ່ມຂອງບົ່ງບອກໜ້າທີ່ແຕ່ລະຫ້ອງ (ຕູ້ແຊ່/ໝຸດ/ໃບສັນຍາ/ໂທລະໂຄ່ງ/ກຣາບງົບ/ກ່ອງສົ່ງ)
+- dashboard-data.js + data-adapter.js: ໃຊ້ id ໃໝ່ · 7 ແຜນກໃນ Dashboard = Asset Tracking, Asset Request, Delivery, Contract, Budget, Announce, Logistics · Admin + Reception = Other areas

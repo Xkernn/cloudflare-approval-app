@@ -88,8 +88,8 @@
   };
   var STATUS_ORDER = ['working', 'available', 'meeting', 'pending', 'reviewing', 'completed', 'delayed'];
   var IN_PROGRESS = { working: 1, reviewing: 1, meeting: 1 };
-  var DEPT_ORDER = ['sales', 'marketing', 'finance', 'hr', 'it', 'operations', 'logistics'];
-  var EXTRA_AREAS = ['ceo', 'reception'];   // ພື້ນທີ່ໃນຫ້ອງການທີ່ບໍ່ຢູ່ໃນ 7 ແຜນກ (ເພື່ອໃຫ້ຍອດພະນັກງານຕົງກັບ Phase 1)
+  var DEPT_ORDER = ['asset_tracking', 'asset_request', 'delivery', 'contract', 'budget', 'announce', 'logistics'];
+  var EXTRA_AREAS = ['admin', 'reception'];   // ພື້ນທີ່ໃນຫ້ອງການທີ່ບໍ່ຢູ່ໃນ 7 ແຜນກ (ເພື່ອໃຫ້ຍອດພະນັກງານຕົງກັບ Phase 1)
   var LOGISTICS_META = { id: 'logistics', name: 'Logistics Department', short: 'Logistics', icon: 'fa-truck-fast', accent: '#0ea5e9', head: null };
 
   function opStatus(k) { return OP_STATUS[k] ? k : 'pending'; }
