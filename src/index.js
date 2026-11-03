@@ -9068,7 +9068,7 @@ export default {
         const kind = url.searchParams.get("kind");
         if (kind === "mde") {
           const agg = await env.DB.prepare(
-            `SELECT x.mde_code AS mde_code, m.mde_name AS mde_name, m.team AS team,
+            `SELECT x.mde_code AS mde_code, m.mde_name AS mde_name, m.team AS team, m.phone AS phone,
                SUM(CASE WHEN x.kind = 'loan' THEN 1 ELSE 0 END) AS loan_cnt,
                SUM(CASE WHEN x.kind = 'cancel' THEN 1 ELSE 0 END) AS cancel_cnt
              FROM (SELECT mde_code, 'loan' AS kind FROM loan_contracts WHERE status = 'draft' AND IFNULL(mde_code, '') != ''
@@ -9085,9 +9085,26 @@ export default {
           const pushBy = new Map((pushRes.results || []).map((r) => [r.user_id, r.c]));
           const userBy = new Map();
           for (const u of (users.results || [])) if (!userBy.has(u.mde_code)) userBy.set(u.mde_code, u);
+          // ຮ້ານ (ລະຫັດ - ຊື່) ຂອງໃບທີ່ຍັງຄ້າງເຊັນ ແຍກຕາມ MDE — ໃຊ້ແນບໃນຂໍ້ຄວາມ WhatsApp
+          const docRows = await env.DB.prepare(
+            `SELECT mde_code, outlet_code, outlet_name, 'loan' AS kind, id FROM loan_contracts WHERE status = 'draft' AND IFNULL(mde_code, '') != ''
+             UNION ALL
+             SELECT mde_code, outlet_code, outlet_name, 'cancel' AS kind, id FROM cancel_contracts WHERE status = 'draft' AND IFNULL(mde_code, '') != ''
+             ORDER BY id`
+          ).all();
+          const outletsBy = new Map();
+          for (const d of (docRows.results || [])) {
+            const label = [d.outlet_code, d.outlet_name].filter((v) => v && String(v).trim()).join(" - ");
+            if (!label) continue;
+            const list = outletsBy.get(d.mde_code) || [];
+            if (!list.includes(label)) list.push(label);
+            outletsBy.set(d.mde_code, list);
+          }
           const items = (agg.results || []).map((r) => {
             const u = userBy.get(r.mde_code);
             return { key: r.mde_code, mde_code: r.mde_code, mde_name: r.mde_name, team: r.team, loan_cnt: r.loan_cnt, cancel_cnt: r.cancel_cnt,
+              outlets: outletsBy.get(r.mde_code) || [],
+              phone: r.phone || "",
               user_id: u ? u.id : null, has_email: u && String(u.email || "").trim() ? 1 : 0, push_devices: u ? (pushBy.get(u.id) || 0) : 0 };
           });
           return Response.json({ kind, items });
