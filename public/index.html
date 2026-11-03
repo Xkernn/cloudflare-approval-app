@@ -4,7 +4,10 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <script>try{var m=localStorage.getItem('lbcUiMode');if(m==='easy')document.documentElement.setAttribute('data-ui-mode',m)}catch(e){}</script>
+  <script>try{var m=localStorage.getItem('lbcUiMode');if(m==='easy')document.documentElement.setAttribute('data-ui-mode',m)}catch(e){}
+/* ເປີດຜ່ານເວັບ (ບໍ່ແມ່ນແອັບທີ່ຕິດຕັ້ງ): ຄ່າເລີ່ມຕົ້ນ = ໂໝດທຳມະດາ + Theme ແບບເກົ່າ (classic) ທັງມືຖື/ຄອມ — ຖ້າຜູ້ໃຊ້ເລືອກເອງ (lbc_mm_style_set) ໃຊ້ຕາມທີ່ເລືອກ */
+window.__lbcInstalled=(function(){try{return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true||(document.referrer||'').indexOf('android-app://')===0}catch(e){return false}})();
+try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='clean')?u:(window.__lbcInstalled?'clean':'classic');if(st==='classic')document.documentElement.setAttribute('data-mm-style','classic')}catch(e){if(!window.__lbcInstalled)document.documentElement.setAttribute('data-mm-style','classic')}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
 
@@ -226,6 +229,9 @@
     }
     /* role warehouse: ບໍ່ມີສິດ Export / Import Excel */
     body.role-warehouse .xl-io { display: none !important; }
+    /* role user: ບໍ່ສະແດງຕົວກອງ (Filter) ໃນໜ້າ Asset Tracking ແລະ Asset Request — ຍັງເຫັນຊ່ອງຄົ້ນຫາ, ແຖບສະຖານະ ແລະ ຈຳນວນຜົນລັບ */
+    body.role-user #view-asset-tracking .at-toolbar-filters > :not(.at-result-count),
+    body.role-user #view-asset-request .at-toolbar-filters > :not(.at-result-count) { display: none !important; }
     /* role warehouse: ຊ່ອນແຖບ History Stock Cooler (ໜ້າສະຕັອກສາງ) ແລະ ປຸ່ມ ຮັບເຂົ້າສາງ (ໜ້າຕູ້ໃໝ່) */
     body.role-warehouse #stock-tab-history, body.role-warehouse #stock-sec-history, body.role-warehouse #ncCardReceive { display: none !important; }
     .flt-toggle { display: none; }
@@ -10372,6 +10378,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
        - ป้าย Admin Management -> User Dashboard สำหรับ role ที่ไม่ใช่ admin */
     function applyRoleMenu() {
       document.body.classList.toggle('role-warehouse', currentUser && currentUser.role === 'warehouse');
+      document.body.classList.toggle('role-user', !!currentUser && currentUser.role === 'user');
       const role = currentUser.role;
       const navDashboard = document.getElementById('nav-dashboard');
       const navAsset = document.getElementById('nav-asset');
@@ -10457,15 +10464,15 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     /* ชุดไอคอน SVG (sprite #ic-*) + สลับรูปแบบเมนูมือถือ: ใหม่ (ค่าเริ่มต้น) / เก่า (classic) */
     const MM_IC = {"asset": "cube", "request": "file-plus", "history": "history", "delivery": "handoff", "dispatch": "truck", "dlvscan": "scan", "loan": "file-sign", "stock": "warehouse", "count": "count", "cmaster": "locate", "lostcooler": "alert", "vo": "city", "newcooler": "snowflake", "prov": "wallet", "adminmgmt": "shield-user", "dsmsign": "sign", "teambudget": "pie", "vte": "city", "ann": "megaphone", "playbook": "book", "guide": "book-open", "tour": "help", "stock:dashboard": "bars", "stock:history": "archive", "stock:scan": "scan", "cm:scan": "scan", "loan:issue": "file-up", "loan:return": "file-down", "loan:survey": "search", "loan:queue": "file-sign", "loan:docs": "file-check", "hist:request": "list", "hist:delivery": "truck", "dlv:event": "calendar", "dlv:writeoff": "trash", "nc:imported": "tray-in", "nc:receive": "inbox", "nc:fill": "qr", "sp:plan": "calculator", "sp:trip": "route"};
     function icSvg(name) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ic-' + name + '"/></svg>'; }
-    (function () { try { if (localStorage.getItem('lbc_mm_style') === 'classic') document.documentElement.setAttribute('data-mm-style', 'classic'); } catch (e) {} })();
-    function mmSetStyle(mode) {
+    /* ຄ່າເລີ່ມຕົ້ນຂອງ Theme ຕັ້ງຢູ່ <head> ແລ້ວ (ເວັບ=classic, ແອັບຕິດຕັ້ງ=clean) */
+    function mmSetStyle(mode, auto) {
       const r = document.documentElement;
       if (mode === 'classic') r.setAttribute('data-mm-style', 'classic'); else { mode = 'clean'; r.removeAttribute('data-mm-style'); }
-      try { localStorage.setItem('lbc_mm_style', mode); } catch (e) {}
+      if (!auto) { try { localStorage.setItem('lbc_mm_style_set', mode); } catch (e) {} } // ເກັບສະເພາະຕອນຜູ້ໃຊ້ເລືອກເອງ
       document.querySelectorAll('.mm-theme-seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.style === mode ? 'true' : 'false'));
       setTimeout(() => { if (typeof syncMobileTabbar === 'function') syncMobileTabbar(); }, 60);
     }
-    document.addEventListener('DOMContentLoaded', () => mmSetStyle(document.documentElement.getAttribute('data-mm-style') === 'classic' ? 'classic' : 'clean'));
+    document.addEventListener('DOMContentLoaded', () => mmSetStyle(document.documentElement.getAttribute('data-mm-style') === 'classic' ? 'classic' : 'clean', true));
     const MM_ITEMS = [
       { key: 'asset',     nav: 'nav-asset',          view: 'asset',          icon: 'fa-solid fa-clipboard-list',     label: 'ຕິດຕາມສະຖານະຕູ້ແຊ່',      badge: 'assetTrackingBadge',    tone: 'teal' },
       { key: 'request',   nav: 'nav-request',        view: 'request',        icon: 'fa-solid fa-file-medical',    label: 'ຂໍລະຫັດຕູ້ແຊ່',       badge: 'assetRequestBadge',     tone: 'orange' },
@@ -27294,15 +27301,15 @@ function assetStatusBadgeClass(status) {
       if (d.hasAttribute('data-lite-more')) d.removeAttribute('data-lite-more'); else d.setAttribute('data-lite-more', '1');
       refreshLiteMenus();
     }
-    function setUiMode(mode) {
+    function setUiMode(mode, auto) {
       if (!UI_MODES.includes(mode)) mode = 'normal';
       document.documentElement.setAttribute('data-ui-mode', mode);
       document.documentElement.removeAttribute('data-lite-more');
-      try { localStorage.setItem('lbcUiMode', mode); } catch (e) {}
+      if (!auto) { try { localStorage.setItem('lbcUiMode', mode); } catch (e) {} } // ເກັບສະເພາະຕອນຜູ້ໃຊ້ເລືອກເອງ
       document.querySelectorAll('.ui-mode-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === mode ? 'true' : 'false'));
       refreshLiteMenus();
     }
-    document.addEventListener('DOMContentLoaded', () => setUiMode(getUiMode()));
+    document.addEventListener('DOMContentLoaded', () => setUiMode(getUiMode(), true));
 
     // ມືຖື: ຖ້າໜ້າທີ່ເປີດຢູ່ມີແຖບ "ກັບຄືນ" ຂອງຕົນເອງແລ້ວ ໃຫ້ເຊື່ອງປຸ່ມ "ກັບຄືນເມນູ" ເທິງສຸດ (ກັນມີປຸ່ມກັບຄືນຊ້ຳກັນ)
     function syncOwnBackBar() {
@@ -31552,7 +31559,7 @@ function assetStatusBadgeClass(status) {
 </div>
 <script>
 (function () {
-  const APP_BUILD = 2;
+  const APP_BUILD = 4;
   const APP_VERSION_FALLBACK = '1.1.0';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
