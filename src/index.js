@@ -289,7 +289,7 @@ async function createLoanContractDraftForAsset(env, assetId, createdByEmail, opt
   const outlet = asset.outlet_code
     ? await env.DB.prepare("SELECT * FROM outlets WHERE code = ?").bind(asset.outlet_code).first()
     : null;
-  const mde = await env.DB.prepare("SELECT phone, team FROM mde_list WHERE mde_code = ?").bind(asset.mde_code).first();
+  const mde = await env.DB.prepare("SELECT mde_name, phone, team FROM mde_list WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?))").bind(asset.mde_code).first();
   const dsmName = await getDsmNameForTeam(env, mde && mde.team);
   const oldOutlet = asset.old_outlet_code
     ? await env.DB.prepare("SELECT phone FROM outlets WHERE code = ?").bind(asset.old_outlet_code).first()
@@ -319,9 +319,9 @@ async function createLoanContractDraftForAsset(env, assetId, createdByEmail, opt
       asset_id, tracking_no, outlet_code, outlet_name, outlet_owner, outlet_type, outlet_grade, outlet_phone,
       village, district, province, contract_type, handover_type, doors, door_variant, cooler_brand, cooler_type, qr_cd, serial_no, capx,
       old_doc_no, old_outlet_code, old_outlet_name, old_outlet_phone, move_reason,
-      mde_code, mde_phone, sig_dsm_name, created_by,
+      mde_code, mde_phone, sig_mde_name, sig_dsm_name, created_by,
       sales_beer, sales_premium, sales_csd_energy, sales_water_soda
-    ) VALUES (?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?,?, ?,?,?,?)`
+    ) VALUES (?,?,?,?,?,?,?,?, ?,?,?,?,?,?,?,?,?,?,?,?, ?,?,?,?,?, ?,?,?,?,?, ?,?,?,?)`
   ).bind(
     asset.id, asset.tracking_no || null, asset.outlet_code || null, (outlet && outlet.name) || asset.outlet_name || null,
     ownerVal, typeVal, levelVal,
@@ -330,7 +330,7 @@ async function createLoanContractDraftForAsset(env, assetId, createdByEmail, opt
     asset.serial_number || null, asset.capex || null,
     opts.old_doc_no || null, asset.old_outlet_code || null, asset.old_outlet_name || null, (oldOutlet && oldOutlet.phone) || null,
     opts.move_reason || null,
-    asset.mde_code || null, (mde && mde.phone) || null, dsmName || null, createdByEmail || null,
+    asset.mde_code || null, (mde && mde.phone) || null, (mde && mde.mde_name) || null, dsmName || null, createdByEmail || null,
     parseSalesTotal(opts.sales_beer), parseSalesTotal(opts.sales_premium), parseSalesTotal(opts.sales_csd_energy), parseSalesTotal(opts.sales_water_soda)
   ).run();
   const newId = ins.meta.last_row_id;
@@ -351,6 +351,12 @@ async function syncUnsignedLoanContractsOutlet(env, assetId, outletCode, outletN
       "SELECT * FROM loan_contracts WHERE asset_id = ? AND IFNULL(status, 'draft') != 'completed'"
     ).bind(assetId).all();
     if (!results || !results.length) return 0;
+    // MDE ຂອງ Asset (Admin ອາດປ່ຽນ MDE ພ້ອມກັນ) -> ອັບເດດ MDE Code/ຊື່/ເບີໂທ/DSM ໃນໃບທີ່ MDE ຍັງບໍ່ໄດ້ເຊັນ (sig_mde ຍັງວ່າງ) ເພື່ອໃຫ້ໃບສະແດງຊື່ MDE ສະເໝີ
+    const assetRow = await env.DB.prepare("SELECT mde_code FROM assets WHERE id = ?").bind(assetId).first();
+    const mdeInfo = assetRow && assetRow.mde_code
+      ? await env.DB.prepare("SELECT mde_name, phone, team FROM mde_list WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?))").bind(assetRow.mde_code).first()
+      : null;
+    const mdeDsm = mdeInfo ? await getDsmNameForTeam(env, mdeInfo.team) : null;
     const outlet = await env.DB.prepare("SELECT * FROM outlets WHERE code = ? ORDER BY active DESC LIMIT 1").bind(code).first();
     let mVillage = "", mDistrict = "";
     if (outlet && outlet.address) {
@@ -373,6 +379,13 @@ async function syncUnsignedLoanContractsOutlet(env, assetId, outletCode, outletN
       (outlet && outlet.province) || c.province || null,
       c.id
     ));
+    for (const c of results) {
+      if (c.sig_mde || !assetRow || !assetRow.mde_code) continue; // MDE ເຊັນແລ້ວ -> ຄົງຊື່ຕາມທີ່ເຊັນ
+      stmts.push(env.DB.prepare(
+        `UPDATE loan_contracts SET mde_code = ?, mde_phone = COALESCE(?, mde_phone), sig_mde_name = COALESCE(?, sig_mde_name),
+                sig_dsm_name = CASE WHEN sig_dsm IS NULL THEN COALESCE(?, sig_dsm_name) ELSE sig_dsm_name END WHERE id = ?`
+      ).bind(assetRow.mde_code, (mdeInfo && mdeInfo.phone) || null, (mdeInfo && mdeInfo.mde_name) || null, mdeDsm || null, c.id));
+    }
     await env.DB.batch(stmts);
     return results.length;
   } catch (e) {
