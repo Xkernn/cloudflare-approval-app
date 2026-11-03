@@ -9886,7 +9886,7 @@ export default {
 
       // 1) ຈັບຄູ່ຕົງເປ໊ະກ່ອນ
       let rows = ((await env.DB.prepare(
-        `SELECT * FROM assets WHERE qr_code = ?${scopeSql} LIMIT 6`
+        `SELECT * FROM assets WHERE qr_code = ?${scopeSql} ORDER BY id DESC LIMIT 6`
       ).bind(qrCode, ...scopeArgs).all()).results) || [];
 
       // 2) ບໍ່ພົບ -> ຈັບຄູ່ແບບ "ລົງທ້າຍດ້ວຍຄ່າທີ່ປ້ອນ" (ເຊັ່ນ QR ຈິງ CL-12345 ແຕ່ປ້ອນ 12345)
@@ -9894,16 +9894,23 @@ export default {
       if (rows.length === 0) {
         const escaped = qrCode.replace(/[\\%_]/g, "\\$&");
         rows = ((await env.DB.prepare(
-          `SELECT * FROM assets WHERE qr_code LIKE ? ESCAPE '\\'${scopeSql} LIMIT 6`
+          `SELECT * FROM assets WHERE qr_code LIKE ? ESCAPE '\\'${scopeSql} ORDER BY id DESC LIMIT 6`
         ).bind("%" + escaped, ...scopeArgs).all()).results) || [];
       }
 
       if (rows.length === 0) {
         return Response.json({ found: false, error: "ບໍ່ພົບ Asset ທີ່ມີ QR Code ນີ້ໃນລະບົບ" });
       }
-      // ພົບຫຼາຍກວ່າ 1 ລາຍການ -> ບໍ່ເດົາ ໃຫ້ຜູ້ໃຊ້ປ້ອນ QR Code ໃຫ້ຄົບ (ກັນຢືນຢັນຈັດສົ່ງຜິດຕູ້)
+      // ຕູ້ໜ່ວຍດຽວກັນອາດມີຫຼາຍແຖວໃນ Asset Tracking (ເຊັ່ນ ເກັບຄືນສາງ ສຳເລັດແລ້ວ + ຈັດສົ່ງໄປຮ້ານໃໝ່) ເຊິ່ງ QR ຊ້ຳກັນ:
+      // ແຖວທີ່ "ສຳເລັດ" ແລ້ວ ບໍ່ແມ່ນວຽກທີ່ຕ້ອງລາຍງານຈັດສົ່ງອີກ -> ຕັດອອກ ຖ້າຍັງມີແຖວທີ່ຍັງຄ້າງ (ບໍ່ເດົາຖ້າຍັງຄ້າງຫຼາຍກວ່າ 1)
       if (rows.length > 1) {
-        const shown = rows.slice(0, 5).map((r) => r.qr_code).join(", ");
+        const open = rows.filter((r) => r.status !== DELIVERED_STATUS);
+        if (open.length >= 1) rows = open;
+        else rows = [rows[0]]; // ສຳເລັດໝົດທຸກແຖວ -> ໃຊ້ແຖວຫຼ້າສຸດ (rows ຮຽງ id ໃໝ່ -> ເກົ່າ) ເພື່ອສະແດງວ່າ "ຈັດສົ່ງແລ້ວ"
+      }
+      // ຍັງຄ້າງຫຼາຍກວ່າ 1 ລາຍການ -> ບໍ່ເດົາ ໃຫ້ຜູ້ໃຊ້ປ້ອນ QR Code ໃຫ້ຄົບ (ກັນຢືນຢັນຈັດສົ່ງຜິດຕູ້)
+      if (rows.length > 1) {
+        const shown = rows.slice(0, 5).map((r) => `${r.qr_code} [${r.tracking_no || "-"} · ${r.doc_type || "-"} · ${r.outlet_name || "-"}]`).join(", ");
         return Response.json({
           found: false,
           ambiguous: true,
