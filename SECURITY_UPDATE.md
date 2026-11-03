@@ -107,3 +107,21 @@ npx wrangler deploy
 
 ## ຄັ້ງທີ 4c: `/api/mde-list` ບໍ່ເປີດຂໍ້ມູນເຕັມໃຫ້ຄົນນອກ
 ຄົນທີ່ບໍ່ໄດ້ login ໄດ້ສະເພາະ `team`, `mde_code`, `mde_name` ຂອງ MDE ທີ່ຍັງບໍ່ມີ user (ເບີໂທ ແລະ ຂໍ້ມູນອື່ນບໍ່ສົ່ງ) ແລະ ຈຳກັດ 30 ຄັ້ງ/15 ນາທີ/IP. ຄົນທີ່ login ແລ້ວໄດ້ຂໍ້ມູນເຕັມຄືເກົ່າ. ບໍ່ຕ້ອງ migration ເພີ່ມ.
+
+
+---
+
+# ອັບເດດຄັ້ງທີ 5: ປິດຊ່ອງ race ຂອງ OTP + ເຂັ້ມ CSP
+
+1. **OTP ປ້ອນຜິດ 5 ຄັ້ງ ເປັນ atomic** (`/api/reset-password-with-code`, `/api/register`): ເດີມອ່ານ `attempts` -> ກວດ OTP -> ຄ່ອຍບວກ ເຮັດໃຫ້ຍິງຂະໜານກັນ (parallel)
+   ຜ່ານດ່ານ `attempts < 5` ໄດ້ຫຼາຍຄັ້ງກວ່າ 5. ຕອນນີ້ "ຈອງສິດລອງ" ດ້ວຍ `UPDATE ... SET attempts = attempts + 1 WHERE attempts < 5` (ເບິ່ງ `meta.changes`) ກ່ອນກວດ OTP ທຸກຄັ້ງ.
+2. **ຈຳກັດຕໍ່ IP** ສຳລັບ `reset-password-with-code` (`#RESET`) ແລະ `register` (`#REGISTER`): ຜິດ 15 ຄັ້ງ/15 ນາທີ/IP -> 429. ໃຊ້ຕາຕະລາງ `login_attempts` ເດີມ (ບໍ່ຕ້ອງ migration). ການນັບ login ຕໍ່ IP ຂ້າມ key ພິເສດເຫຼົ່ານີ້.
+   (send-otp ແລະ forgot-password ມີ limit ຕໍ່ IP/ຕໍ່ອີເມວຢູ່ແລ້ວ.)
+3. **CSP**: `script-src` ປັກ CDN ຕາມ path + version ທີ່ແອັບໃຊ້ຈິງ (leaflet@1.9.4, three@0.128.0, jsqr@1.4.0, cdnjs xlsx/jsQR/three.js) ແທນທີ່ຈະເປີດທັງໂດເມນ unpkg/jsdelivr (ທີ່ host ແພັກເກດຂອງໃຜກໍໄດ້).
+   ເພີ່ມ `connect-src 'self' + CDN` -> script ທີ່ຖືກແຊກເຂົ້າມາ ສົ່ງ token ອອກໄປເຊີບເວີຂອງຜູ້ໂຈມຕີດ້ວຍ fetch/XHR ບໍ່ໄດ້.
+   **ຍັງມີ `'unsafe-inline'`** (onclick ~711 ຈຸດ) ແລະ ຍັງບໍ່ໄດ້ຈຳກັດ `img-src` ສະນັ້ນ XSS ຍັງຮັນໂຄດໄດ້ ແລະ ລັກຂໍ້ມູນຜ່ານ `new Image().src` ໄດ້ ຖ້າເກີດຊ່ອງຮົ່ວ.
+4. **XSS**: ກວດ template/ການຕໍ່ string ທີ່ໃສ່ `innerHTML` ໄດ້ຊ່ອງຮົ່ວ 1 ຈຸດ (`<datalist>` ຂອງຊື່ຮ້ານໃນໜ້າໃບສັນຍາ: `o.code`/`o.name` ບໍ່ຜ່ານ `esc()`) -> ແກ້ແລ້ວ.
+
+## ຕ້ອງທົດສອບຫຼັງ deploy (CSP ໃໝ່)
+ເປີດ DevTools Console ແລ້ວກວດວ່າບໍ່ມີ "Refused to load/connect" ໃນໜ້າ: ແຜນທີ່ (Leaflet), ສະແກນ QR, Export/Import Excel, ແລະ Virtual Office 3D.
+ຖ້າມີຖືກບລັອກ ໃຫ້ເພີ່ມ path ນັ້ນເຂົ້າ `public/_headers`.

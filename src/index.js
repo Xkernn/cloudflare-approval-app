@@ -1410,6 +1410,26 @@ const ROLE_WH_USER = ["admin", "warehouse", "user"]; // admin + ພະນັກ�
 const ROLE_CM_LOOKUP = ["admin", "warehouse", "user", "delivery"]; // ຄົ້ນຫາ Cooler Master ເພື່ອດຶງ QR/Serial/CapEx ເຂົ້າຟອມ (ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ ໃຊ້ໂດຍ delivery ນຳ) — ອ່ານຢ່າງດຽວ
 
 // API ທີ່ເປີດໃຫ້ໃຊ້ໄດ້ໂດຍບໍ່ຕ້ອງ login (ໜ້າສະໝັກ/ໜ້າ login ຕ້ອງໃຊ້)
+// ===== Rate limit ຕໍ່ IP ສຳລັບ endpoint ສາທາລະນະ (ໃຊ້ຕາຕະລາງ login_attempts ຄືເກົ່າ ແຕ່ໃຊ້ identifier ພິເສດ) =====
+// ນັບສະເພາະຄັ້ງທີ່ "ຜິດ" (OTP ຜິດ / ບໍ່ພົບບັນຊີ) ເພື່ອບໍ່ໃຫ້ຜູ້ໃຊ້ປົກກະຕິທີ່ໃຊ້ Wi-Fi ດຽວກັນຖືກຜົນກະທົບ
+const IP_LIMIT_KEYS = ["#MDELIST", "#RESET", "#REGISTER"]; // ຕ້ອງບໍ່ປົນກັບການນັບ login ຕໍ່ IP
+async function ipFailBlocked(env, ip, key, limit) {
+  try {
+    const r = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM login_attempts WHERE ip = ? AND identifier = ? AND created_at > datetime('now', '-15 minutes')"
+    ).bind(ip, key).first();
+    return (r?.c || 0) >= limit;
+  } catch (e) { console.error("ipFailBlocked", e); return false; }
+}
+async function ipFailNote(env, ip, key) {
+  try { await env.DB.prepare("INSERT INTO login_attempts (ip, identifier) VALUES (?, ?)").bind(ip, key).run(); }
+  catch (e) { console.error("ipFailNote", e); }
+}
+const TOO_MANY_PUBLIC = () => Response.json(
+  { error: "ລອງຜິດຫຼາຍເກີນໄປ ກະລຸນາລໍຖ້າ 15 ນາທີ ແລ້ວລອງໃໝ່" },
+  { status: 429, headers: { "Retry-After": "900" } }
+);
+
 const PUBLIC_API_ROUTES = new Set([
   "/api/login",
   "/api/maintenance-status",
@@ -7081,22 +7101,31 @@ export default {
           return Response.json({ error: "ກະລຸນາປ້ອນລະຫັດ OTP 6 ໂຕ ທີ່ໄດ້ຮັບທາງອີເມວ" }, { status: 400 });
         }
         const OTP_BAD = "ລະຫັດ OTP ບໍ່ຖືກຕ້ອງ ຫຼື ໝົດອາຍຸແລ້ວ ກະລຸນາກົດຂໍ OTP ໃໝ່";
+        const gIp = request.headers.get("CF-Connecting-IP") || "unknown";
+        if (await ipFailBlocked(env, gIp, "#REGISTER", 15)) return TOO_MANY_PUBLIC();
         const otpRow = await env.DB.prepare(
           `SELECT id, code_hash, attempts, (expires_at > datetime('now')) AS valid
            FROM register_otps WHERE email = ? AND status = 'pending' ORDER BY id DESC LIMIT 1`
         ).bind(cleanEmail).first();
         if (!otpRow || !otpRow.valid || !otpRow.code_hash) {
+          await ipFailNote(env, gIp, "#REGISTER");
           return Response.json({ error: OTP_BAD }, { status: 400 });
         }
-        if (otpRow.attempts >= 5) {
-          await env.DB.prepare("UPDATE register_otps SET status = 'cancelled', code_hash = NULL WHERE id = ?").bind(otpRow.id).run();
+        // ຈອງ "ສິດລອງ" ແບບ atomic ກ່ອນກວດ OTP (ກັນຍິງຂະໜານກັນເກີນ 5 ຄັ້ງ)
+        const claim = await env.DB.prepare(
+          "UPDATE register_otps SET attempts = attempts + 1 WHERE id = ? AND status = 'pending' AND attempts < 5"
+        ).bind(otpRow.id).run();
+        if (!claim?.meta?.changes) {
+          await env.DB.prepare("UPDATE register_otps SET status = 'cancelled', code_hash = NULL WHERE id = ? AND attempts >= 5").bind(otpRow.id).run();
+          await ipFailNote(env, gIp, "#REGISTER");
           return Response.json({ error: OTP_BAD }, { status: 400 });
         }
         const otpCheck = await verifyPassword(otp, otpRow.code_hash);
         if (!otpCheck.ok) {
           await env.DB.prepare(
-            "UPDATE register_otps SET attempts = attempts + 1, status = CASE WHEN attempts + 1 >= 5 THEN 'cancelled' ELSE status END WHERE id = ?"
+            "UPDATE register_otps SET status = CASE WHEN attempts >= 5 THEN 'cancelled' ELSE status END, code_hash = CASE WHEN attempts >= 5 THEN NULL ELSE code_hash END WHERE id = ?"
           ).bind(otpRow.id).run();
+          await ipFailNote(env, gIp, "#REGISTER");
           return Response.json({ error: OTP_BAD }, { status: 400 });
         }
 
@@ -7150,7 +7179,7 @@ export default {
       try {
         const att = await env.DB.prepare(
           `SELECT SUM(CASE WHEN identifier = ? THEN 1 ELSE 0 END) AS by_id,
-                  SUM(CASE WHEN ip = ? AND identifier != '#MDELIST' THEN 1 ELSE 0 END) AS by_ip
+                  SUM(CASE WHEN ip = ? AND identifier NOT IN ('#MDELIST','#RESET','#REGISTER') THEN 1 ELSE 0 END) AS by_ip
            FROM login_attempts WHERE created_at > datetime('now', '-15 minutes')`
         ).bind(idKey, ip).first();
         if ((att?.by_id || 0) >= 5 || (att?.by_ip || 0) >= 20) return tooMany();
@@ -7339,27 +7368,38 @@ export default {
           return Response.json({ error: "ລະຫັດຜ່ານໃໝ່ຕ້ອງຍາວຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ" }, { status: 400 });
         }
 
+        // ຈຳກັດຕໍ່ IP: ຜິດ 15 ຄັ້ງ/15 ນາທີ (ກັນຍິງເດົາ OTP ຂ້າມຫຼາຍບັນຊີ)
+        const rIp = request.headers.get("CF-Connecting-IP") || "unknown";
+        if (await ipFailBlocked(env, rIp, "#RESET", 15)) return TOO_MANY_PUBLIC();
+
         const user = await env.DB.prepare(
           "SELECT id, status FROM users WHERE UPPER(mde_code) = UPPER(?) OR UPPER(email) = UPPER(?)"
         ).bind(identifier, identifier).first();
-        if (!user || user.status !== "approved") return Response.json({ error: BAD }, { status: 400 });
+        if (!user || user.status !== "approved") { await ipFailNote(env, rIp, "#RESET"); return Response.json({ error: BAD }, { status: 400 }); }
 
         const row = await env.DB.prepare(
           `SELECT id, code_hash, attempts, (code_expires_at > datetime('now')) AS valid
            FROM password_reset_requests WHERE user_id = ? AND status = 'issued' ORDER BY id DESC LIMIT 1`
         ).bind(user.id).first();
-        if (!row || !row.valid || !row.code_hash) return Response.json({ error: BAD }, { status: 400 });
+        if (!row || !row.valid || !row.code_hash) { await ipFailNote(env, rIp, "#RESET"); return Response.json({ error: BAD }, { status: 400 }); }
 
-        if (row.attempts >= 5) {
-          await env.DB.prepare("UPDATE password_reset_requests SET status = 'cancelled' WHERE id = ?").bind(row.id).run();
+        // ຈອງ "ສິດລອງ" ແບບ atomic ກ່ອນກວດ OTP — ຖ້າຍິງຂະໜານກັນ (parallel) ກໍເກີນ 5 ຄັ້ງບໍ່ໄດ້
+        // (ເດີມ: ອ່ານ attempts -> ກວດ -> ຄ່ອຍບວກ ເຮັດໃຫ້ request ທີ່ມາພ້ອມກັນຜ່ານດ່ານ attempts<5 ໄດ້ຫຼາຍອັນ)
+        const claim = await env.DB.prepare(
+          "UPDATE password_reset_requests SET attempts = attempts + 1 WHERE id = ? AND status = 'issued' AND attempts < 5"
+        ).bind(row.id).run();
+        if (!claim?.meta?.changes) {
+          await env.DB.prepare("UPDATE password_reset_requests SET status = 'cancelled', code_hash = NULL WHERE id = ? AND attempts >= 5").bind(row.id).run();
+          await ipFailNote(env, rIp, "#RESET");
           return Response.json({ error: BAD }, { status: 400 });
         }
 
         const { ok } = await verifyPassword(code, row.code_hash);
         if (!ok) {
           await env.DB.prepare(
-            "UPDATE password_reset_requests SET attempts = attempts + 1, status = CASE WHEN attempts + 1 >= 5 THEN 'cancelled' ELSE status END WHERE id = ?"
+            "UPDATE password_reset_requests SET status = CASE WHEN attempts >= 5 THEN 'cancelled' ELSE status END, code_hash = CASE WHEN attempts >= 5 THEN NULL ELSE code_hash END WHERE id = ?"
           ).bind(row.id).run();
+          await ipFailNote(env, rIp, "#RESET");
           return Response.json({ error: BAD }, { status: 400 });
         }
 

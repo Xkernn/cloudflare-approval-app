@@ -23436,7 +23436,7 @@ function assetStatusBadgeClass(status) {
         loanOutletsCache = [];
       }
       const dl = document.getElementById('loanOutletDatalist');
-      dl.innerHTML = loanOutletsCache.map((o) => `<option value="${o.code} - ${o.name}">`).join('');
+      dl.innerHTML = loanOutletsCache.map((o) => `<option value="${esc(o.code)} - ${esc(o.name)}">`).join('');
       return loanOutletsCache;
     }
 
@@ -31559,7 +31559,7 @@ function assetStatusBadgeClass(status) {
 </div>
 <script>
 (function () {
-  const APP_BUILD = 4;
+  const APP_BUILD = 5;
   const APP_VERSION_FALLBACK = '1.1.0';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
