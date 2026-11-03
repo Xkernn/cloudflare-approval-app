@@ -2856,6 +2856,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <button id="nav-lost-cooler" class="menu-item hidden" onclick="switchView('lostCooler')">
             <i class="fa-solid fa-triangle-exclamation"></i> Manage Lost Cooler Master Data
           </button>
+          <button id="nav-virtual-office" class="menu-item hidden" onclick="openVirtualOffice()">
+            <i class="fa-solid fa-building"></i> Virtual Company 3D
+          </button>
           <button id="nav-new-cooler" class="menu-item hidden" onclick="switchView('newCoolerHub')">
             <i class="fa-solid fa-snowflake"></i> ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ
           </button>
@@ -10407,6 +10410,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         navStockCount.classList.add('hidden');
         navCoolerMaster.classList.add('hidden');
         document.getElementById('nav-lost-cooler').classList.add('hidden');
+        document.getElementById('nav-virtual-office').classList.add('hidden');
         navNewCooler.classList.add('hidden');
         document.getElementById('nav-prov-budget').classList.add('hidden');
         document.getElementById('nav-team-budget').classList.add('hidden');
@@ -10423,6 +10427,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         navCoolerMaster.classList.toggle('hidden', !(role === 'admin' || role === 'warehouse' || role === 'user')); // admin + warehouse + user (delivery ບໍ່ເຫັນ)
         navNewCooler.classList.toggle('hidden', !(role === 'admin' || role === 'warehouse'));
         document.getElementById('nav-lost-cooler').classList.toggle('hidden', role !== 'admin'); // Manage Lost Cooler Master Data: admin ເທົ່ານັ້ນ
+        document.getElementById('nav-virtual-office').classList.toggle('hidden', role !== 'admin'); // Virtual Company 3D: admin ເທົ່ານັ້ນ
         document.getElementById('nav-prov-budget').classList.toggle('hidden', role !== 'admin');
         document.getElementById('nav-team-budget').classList.toggle('hidden', role !== 'user' && role !== 'dsm');
         document.getElementById('nav-vte-budget').classList.toggle('hidden', role !== 'admin');
@@ -10450,7 +10455,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
        ເມນູທີ່ມັກ: ເກັບໃນ localStorage ຕໍ່ຜູ້ໃຊ້ · ປຸ່ມ ແກ້ໄຂ -> ກົດ +/− ຫຼື ກົດຄ້າງແລ້ວລາກ
        ໝາຍເຫດ: ໃຊ້ id ຂອງເມນູຂ້າງ (nav-*) ເປັນແຫຼ່ງຄວາມຈິງເລື່ອງສິດ/ການຊ່ອນ ເພາະ applyRoleMenu() ຍັງຄວບຄຸມຢູ່ */
     /* ชุดไอคอน SVG (sprite #ic-*) + สลับรูปแบบเมนูมือถือ: ใหม่ (ค่าเริ่มต้น) / เก่า (classic) */
-    const MM_IC = {"asset": "cube", "request": "file-plus", "history": "history", "delivery": "handoff", "dispatch": "truck", "dlvscan": "scan", "loan": "file-sign", "stock": "warehouse", "count": "count", "cmaster": "locate", "lostcooler": "alert", "newcooler": "snowflake", "prov": "wallet", "adminmgmt": "shield-user", "dsmsign": "sign", "teambudget": "pie", "vte": "city", "ann": "megaphone", "playbook": "book", "guide": "book-open", "tour": "help", "stock:dashboard": "bars", "stock:history": "archive", "stock:scan": "scan", "cm:scan": "scan", "loan:issue": "file-up", "loan:return": "file-down", "loan:survey": "search", "loan:queue": "file-sign", "loan:docs": "file-check", "hist:request": "list", "hist:delivery": "truck", "dlv:event": "calendar", "dlv:writeoff": "trash", "nc:imported": "tray-in", "nc:receive": "inbox", "nc:fill": "qr", "sp:plan": "calculator", "sp:trip": "route"};
+    const MM_IC = {"asset": "cube", "request": "file-plus", "history": "history", "delivery": "handoff", "dispatch": "truck", "dlvscan": "scan", "loan": "file-sign", "stock": "warehouse", "count": "count", "cmaster": "locate", "lostcooler": "alert", "vo": "city", "newcooler": "snowflake", "prov": "wallet", "adminmgmt": "shield-user", "dsmsign": "sign", "teambudget": "pie", "vte": "city", "ann": "megaphone", "playbook": "book", "guide": "book-open", "tour": "help", "stock:dashboard": "bars", "stock:history": "archive", "stock:scan": "scan", "cm:scan": "scan", "loan:issue": "file-up", "loan:return": "file-down", "loan:survey": "search", "loan:queue": "file-sign", "loan:docs": "file-check", "hist:request": "list", "hist:delivery": "truck", "dlv:event": "calendar", "dlv:writeoff": "trash", "nc:imported": "tray-in", "nc:receive": "inbox", "nc:fill": "qr", "sp:plan": "calculator", "sp:trip": "route"};
     function icSvg(name) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ic-' + name + '"/></svg>'; }
     (function () { try { if (localStorage.getItem('lbc_mm_style') === 'classic') document.documentElement.setAttribute('data-mm-style', 'classic'); } catch (e) {} })();
     function mmSetStyle(mode) {
@@ -10473,6 +10478,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       { key: 'count',     nav: 'nav-stock-count',    view: 'stockCount',     icon: 'fa-solid fa-boxes-stacked',   label: 'ກວດນັບສາງ',          badge: null,                    tone: 'pink' },
       { key: 'cmaster',   nav: 'nav-cooler-master',  view: 'coolerMaster',  icon: 'fa-magnifying-glass-location', label: 'ຄົ້ນຫາຕູ້ໃນລະບົບ', badge: null,            tone: 'teal' },
       { key: 'lostcooler', nav: 'nav-lost-cooler',   view: 'lostCooler',    icon: 'fa-solid fa-triangle-exclamation', label: 'Manage Lost Cooler Master Data', badge: null, tone: 'red', roles: ['admin'] },
+      { key: 'vo',        nav: 'nav-virtual-office', action: 'vo',           icon: 'fa-solid fa-building',    label: 'Virtual Company 3D', badge: null, tone: 'sky', roles: ['admin'] },
       { key: 'newcooler', nav: 'nav-new-cooler',     view: 'newCoolerHub',   icon: 'fa-solid fa-trailer',         label: 'ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ', badge: null,                  tone: 'sky' },
       { key: 'prov',      nav: 'nav-prov-budget',    view: 'provBudget',     icon: 'fa-solid fa-wallet',  label: 'ງົບຕູ້ແຊ່ຕ່າງແຂວງ',        badge: null,                    tone: 'red' },
       { key: 'adminmgmt', nav: 'nav-dashboard',      view: 'dashboard',      icon: 'fa-solid fa-user-shield', label: 'Admin Management',      badge: null,                    tone: 'slate', roles: ['admin'] },
@@ -10609,6 +10615,11 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     }
 
     function mmIsOpen() { const p = document.getElementById('mobileMenuPage'); return !!p && p.classList.contains('open'); }
+    // Virtual Company 3D = ໜ້າແຍກ (public/virtual-office/) — admin ເທົ່ານັ້ນ, ໃຊ້ Mock Data, ບໍ່ແຕະ API/DB
+    function openVirtualOffice() {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      window.location.href = '/virtual-office/';
+    }
     function openMenuPage() {
       const p = document.getElementById('mobileMenuPage');
       if (!p || !currentUser) return;
@@ -10659,6 +10670,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       if (!it) return;
       if (it.go) { it.go(); return; } // ເມນູຍ່ອຍ: switchView() ພາຍໃນ ປິດໜ້າເມນູໃຫ້ເອງ
       if (it.action === 'tour') { closeMenuPage(); startOnboardingTour(true); return; }
+      if (it.action === 'vo') { openVirtualOffice(); return; } // Virtual Company 3D: ເປີດໜ້າແຍກ /virtual-office/
       if (it.action === 'dlvscan') { dlvScanStart(); return; } // ເປີດກ້ອງທັນທີ ແລ້ວເດັ້ງ popup ທັບໜ້າເມນູ (ບໍ່ປ່ຽນໜ້າ)
       switchView(it.view); // switchView() ປິດໜ້າເມນູໃຫ້ເອງ (closeSidebar)
     }

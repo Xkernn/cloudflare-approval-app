@@ -58,12 +58,26 @@ export async function hashPassword(password) {
  * @param {string} stored - ค่าที่อยู่ในคอลัมน์ password_hash
  * @returns {Promise<{ ok: boolean, needsRehash: boolean }>}
  */
-export async function verifyPassword(password, stored) {
+// ປຽບທຽບແບບ constant-time (ບໍ່ໃຫ້ຮູ້ຄວາມຖືກຕ້ອງຈາກເວລາທີ່ໃຊ້)
+function safeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+export async function verifyPassword(password, stored, dummy = false) {
+  if (dummy) {
+    // ບັນຊີບໍ່ມີໃນລະບົບ: ເຮັດ PBKDF2 ເປົ່າໆ ໃຫ້ເວລາຕອບໃກ້ເຄີຍກັບກໍລະນີບັນຊີມີຢູ່
+    await deriveHash(String(password), new Uint8Array(16), PBKDF2_ITERATIONS);
+    return { ok: false, needsRehash: false };
+  }
   if (!stored) return { ok: false, needsRehash: false };
 
   if (!stored.startsWith("pbkdf2$")) {
     // ຮູບແບບເກົ່າ: password_hash ຄື plaintext ໂດຍກົງ
-    return { ok: password === stored, needsRehash: password === stored };
+    const same = safeEqual(String(password), stored);
+    return { ok: same, needsRehash: same };
   }
 
   const parts = stored.split("$");
@@ -74,5 +88,5 @@ export async function verifyPassword(password, stored) {
   const expectedHash = parts[3];
 
   const hash = await deriveHash(password, salt, iterations);
-  return { ok: bufferToBase64(hash) === expectedHash, needsRehash: false };
+  return { ok: safeEqual(bufferToBase64(hash), expectedHash), needsRehash: false };
 }

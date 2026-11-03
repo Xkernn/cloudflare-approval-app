@@ -2938,6 +2938,35 @@ export default {
     // ເພີ່ມ has_user = 1 ຖ້າ MDE Code ນັ້ນມີຜູ້ໃຊ້ງານສະໝັກໄປແລ້ວ (ໃຊ້ເພື່ອເຊື່ອງອອກຈາກໜ້າລົງທະບຽນ
     // ໂດຍບໍ່ກະທົບບ່ອນອື່ນທີ່ຍັງໃຊ້ dbMdeList ຊຸດເຕັມ ເຊັ່ນ Admin MDE Master List / ຄົ້ນຫາ Asset)
     if (url.pathname === "/api/mde-list" && request.method === "GET") {
+      // ຄົນທີ່ບໍ່ໄດ້ login (ໜ້າສະໝັກ) ເຫັນສະເພາະ team / mde_code / mde_name ຂອງ MDE ທີ່ຍັງບໍ່ມີຜູ້ໃຊ້ ແລະ ຈຳກັດຈຳນວນຄັ້ງຕໍ່ IP
+      // (ບໍ່ສົ່ງເບີໂທ ແລະ ຂໍ້ມູນອື່ນ). ຄົນທີ່ login ແລ້ວ (token ຖືກຕ້ອງ + ອະນຸມັດ) ໄດ້ຂໍ້ມູນເຕັມຄືເກົ່າ.
+      let mdeAuthed = false;
+      try {
+        const pl = await verifySessionToken(env, readBearerToken(request));
+        if (pl) {
+          const u = await env.DB.prepare("SELECT status, password_hash FROM users WHERE id = ?").bind(pl.uid).first();
+          mdeAuthed = !!(u && u.status === "approved" && pl.pv === (await passwordVersion(u.password_hash)));
+        }
+      } catch (_) { mdeAuthed = false; }
+      if (!mdeAuthed) {
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+        try {
+          const att = await env.DB.prepare(
+            "SELECT COUNT(*) AS c FROM login_attempts WHERE ip = ? AND identifier = '#MDELIST' AND created_at > datetime('now', '-15 minutes')"
+          ).bind(ip).first();
+          if ((att?.c || 0) >= 30) {
+            return Response.json({ error: "ລອງຫຼາຍເກີນໄປ ກະລຸນາລໍຖ້າ" }, { status: 429, headers: { "Retry-After": "900" } });
+          }
+          await env.DB.prepare("INSERT INTO login_attempts (ip, identifier) VALUES (?, '#MDELIST')").bind(ip).run();
+        } catch (e) { console.error("mde-list limit", e); }
+        const { results } = await env.DB.prepare(
+          `SELECT m.team, m.mde_code, m.mde_name, 0 AS has_user
+           FROM mde_list m
+           WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.mde_code = m.mde_code)
+           ORDER BY m.team, m.mde_code`
+        ).all();
+        return Response.json(results || [], { headers: { "Cache-Control": "no-store" } });
+      }
       const { results } = await env.DB.prepare(
         `SELECT m.*, CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END AS has_user
          FROM mde_list m
@@ -7108,14 +7137,48 @@ export default {
       const identifier = ((body.identifier ?? body.mde_code) || "").trim();
       // ดึงมาแค่ identifier ก่อน (เทียบรหัสผ่านที่ hash แล้วในโค้ด ไม่ใช่ใน SQL WHERE)
       // ใช้ UPPER() เทียบทั้ง mde_code และ email เพื่อให้ login ได้ไม่ว่าจะพิมพ์ตัวใหญ่/ตัวเล็กแบบไหนก็ตาม
+      // ຈຳກັດການລອງ login ຜິດ (ກັນເດົາລະຫັດຜ່ານ): ຕໍ່ບັນຊີ 5 ຄັ້ງ + ຕໍ່ IP 20 ຄັ້ງ ໃນ 15 ນາທີ
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const idKey = identifier.toUpperCase().slice(0, 254);
+      if (!identifier || typeof password !== "string" || password.length > 256) {
+        return Response.json({ error: "MDE Code/ອີເມວ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ" }, { status: 401 });
+      }
+      const tooMany = () => Response.json(
+        { error: "ລອງເຂົ້າສູ່ລະບົບຜິດຫຼາຍເກີນໄປ ກະລຸນາລໍຖ້າ 15 ນາທີ ແລ້ວລອງໃໝ່" },
+        { status: 429, headers: { "Retry-After": "900" } }
+      );
+      try {
+        const att = await env.DB.prepare(
+          `SELECT SUM(CASE WHEN identifier = ? THEN 1 ELSE 0 END) AS by_id,
+                  SUM(CASE WHEN ip = ? AND identifier != '#MDELIST' THEN 1 ELSE 0 END) AS by_ip
+           FROM login_attempts WHERE created_at > datetime('now', '-15 minutes')`
+        ).bind(idKey, ip).first();
+        if ((att?.by_id || 0) >= 5 || (att?.by_ip || 0) >= 20) return tooMany();
+      } catch (e) { console.error("login_attempts check", e); }
+      const recordLoginFailure = async () => {
+        try {
+          await env.DB.batch([
+            env.DB.prepare("INSERT INTO login_attempts (ip, identifier) VALUES (?, ?)").bind(ip, idKey),
+            env.DB.prepare("DELETE FROM login_attempts WHERE created_at < datetime('now', '-1 day')"),
+          ]);
+        } catch (e) { console.error("login_attempts insert", e); }
+      };
       const user = await env.DB.prepare(
         `SELECT u.*, m.mde_name FROM users u LEFT JOIN mde_list m ON m.mde_code = u.mde_code
          WHERE UPPER(u.mde_code) = UPPER(?) OR UPPER(u.email) = UPPER(?)`
       ).bind(identifier, identifier).first();
-      if (!user) return Response.json({ error: "MDE Code/ອີເມວ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ" }, { status: 401 });
+      if (!user) {
+        await verifyPassword(password, null, true); // ໃຊ້ເວລາໃກ້ເຄີຍກັນ ບໍ່ໃຫ້ຮູ້ວ່າບັນຊີມີຫຼືບໍ່ມີ
+        await recordLoginFailure();
+        return Response.json({ error: "MDE Code/ອີເມວ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ" }, { status: 401 });
+      }
 
       const { ok, needsRehash } = await verifyPassword(password, user.password_hash);
-      if (!ok) return Response.json({ error: "MDE Code/ອີເມວ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ" }, { status: 401 });
+      if (!ok) {
+        await recordLoginFailure();
+        return Response.json({ error: "MDE Code/ອີເມວ ຫຼືລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ" }, { status: 401 });
+      }
+      try { await env.DB.prepare("DELETE FROM login_attempts WHERE identifier = ?").bind(idKey).run(); } catch (e) {}
 
       // Lazy migration: ถ้ารหัสผ่านนี้ยังเป็นรูปแบบเก่า (plaintext) ให้ hash แล้วบันทึกทับทันที
       if (needsRehash) {

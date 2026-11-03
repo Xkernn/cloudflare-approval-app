@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Office · ຕິດຕາມລະບົບຕູ້ແຊ່</title>
+<style>
+@font-face{font-family:"NotoLao";src:url("/forms/NotoSansLao-Regular.ttf");font-weight:400}
+@font-face{font-family:"NotoLao";src:url("/forms/NotoSansLao-Bold.ttf");font-weight:700}
+:root{--paper:#eceee9;--floor:#f7f8f5;--ink:#1d2733;--mute:#66717d;--wall:#2b3745;--desk:#c27a1a;--new:#0e7c70;--line:#d6dad3;
+ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--paper:#14191f;--floor:#1b222a;--ink:#e6eaee;--mute:#92a0ad;--wall:#8795a4;--desk:#e0a24a;--new:#3cc2b2;--line:#2c3641}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:400 15px/1.55 "NotoLao","Noto Sans Lao",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline;justify-content:space-between;padding:18px 20px 6px;max-width:1200px;margin:0 auto}
+h1{font-size:22px;margin:0;font-weight:700}
+.meta{color:var(--mute);font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;max-width:1200px;margin:0 auto;padding:10px 20px 32px}
+.plan{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border:4px solid var(--wall);background:var(--floor)}
+.room{border:2px solid var(--wall);margin:-1px;padding:12px 14px 14px;min-height:190px;position:relative}
+.r-requests,.r-contracts,.r-delivery{grid-column:span 2}
+.r-stock{grid-column:span 3}.r-newcoolers{grid-column:span 3}
+.r-trips{grid-column:span 2}.r-checks{grid-column:span 4}
+.room h2{font-size:15px;margin:0 0 8px;font-weight:700}
+.desks{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:14px;align-items:center}
+.desk{width:14px;height:10px;background:var(--desk);border-radius:2px}
+.more{font-size:12px;color:var(--mute);margin-left:4px}
+.calm{font-size:13px;color:var(--mute)}
+.stats{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 0 8px;font-size:13px}
+.stats b{font-size:17px;margin-right:4px}
+.badge{position:absolute;top:10px;right:12px;font-size:12px;color:var(--new);font-weight:700}
+ul{list-style:none;margin:0;padding:0}
+.room li{font-size:13px;padding:5px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.room li span:first-child{min-width:0}
+.room li small,.feed li small{display:block;color:var(--mute);font-size:12px}
+.room li time,.feed li time{color:var(--mute);font-size:12px;white-space:nowrap}
+aside{background:var(--floor);border:1px solid var(--line);padding:14px 16px;align-self:start}
+aside h2{font-size:16px;margin:0 0 4px}
+.feed li{padding:8px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.feed .tag{color:var(--new);font-size:12px;font-weight:700}
+.msg{max-width:1200px;margin:24px auto;padding:0 20px;color:var(--mute)}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.plan{grid-template-columns:1fr}.room{grid-column:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Office ຕິດຕາມລະບົບຕູ້ແຊ່</h1>
+  <div class="meta" id="meta">ກຳລັງໂຫຼດ…</div>
+</header>
+<div class="msg" id="msg" hidden></div>
+<div class="layout" id="main" hidden>
+  <section class="plan" id="plan" aria-label="ແຕ່ລະຝ່າຍ"></section>
+  <aside>
+    <h2>ມີຫຍັງໃໝ່</h2>
+    <div class="meta">ລາຍການລ່າສຸດຈາກທຸກຝ່າຍ</div>
+    <ul class="feed" id="feed"></ul>
+  </aside>
+</div>
+<script>
+(function(){
+  var KEY='app_session_v1', plan=document.getElementById('plan'), feed=document.getElementById('feed');
+  function token(){try{var s=JSON.parse(localStorage.getItem(KEY)||'null');return s&&s.token||''}catch(e){return ''}}
+  function utc(s){return s?new Date(String(s).replace(' ','T')+(/[zZ+]/.test(s)?'':'Z')):null}
+  function ago(s){var d=utc(s);if(!d||isNaN(d))return '';var m=Math.round((Date.now()-d)/60000);
+    if(m<1)return 'ຕອນນີ້';if(m<60)return m+' ນາທີກ່ອນ';var h=Math.round(m/60);if(h<24)return h+' ຊົ່ວໂມງກ່ອນ';
+    return Math.round(h/24)+' ມື້ກ່ອນ'}
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+  function show(m){var b=document.getElementById('msg');b.hidden=false;b.textContent=m;document.getElementById('main').hidden=true}
+  function render(data){
+    document.getElementById('msg').hidden=true;document.getElementById('main').hidden=false;
+    plan.textContent='';feed.textContent='';var all=[];
+    data.rooms.forEach(function(r){
+      var room=el('section','room r-'+r.id);room.appendChild(el('h2',null,r.title));
+      if(r.new24)room.appendChild(el('div','badge','ໃໝ່ '+r.new24+' ໃນ 24 ຊມ'));
+      var desks=el('div','desks');
+      if(r.attention){for(var i=0;i<Math.min(r.attention,12);i++)desks.appendChild(el('span','desk'));
+        if(r.attention>12)desks.appendChild(el('span','more','+'+(r.attention-12)));
+        desks.appendChild(el('span','more',r.attention+' ລາຍການລໍຖ້າ'))}
+      else desks.appendChild(el('span','calm',r.error?'ໂຫຼດຂໍ້ມູນຝ່າຍນີ້ບໍ່ໄດ້':'ບໍ່ມີງານຄ້າງ'));
+      room.appendChild(desks);
+      var st=el('div','stats');r.stats.forEach(function(s){var d=el('span');d.appendChild(el('b',null,s.value));d.appendChild(document.createTextNode(s.label));st.appendChild(d)});
+      room.appendChild(st);
+      var ul=el('ul');r.items.slice(0,4).forEach(function(it){var li=el('li');var a=el('span');a.appendChild(document.createTextNode(it.text));a.appendChild(el('small',null,it.sub));li.appendChild(a);li.appendChild(el('time',null,ago(it.at)));ul.appendChild(li);all.push({room:r.title,it:it})});
+      r.items.slice(4).forEach(function(it){all.push({room:r.title,it:it})});
+      room.appendChild(ul);plan.appendChild(room)});
+    all.sort(function(a,b){return (utc(b.it.at)||0)-(utc(a.it.at)||0)});
+    all.slice(0,14).forEach(function(x){var li=el('li');var a=el('span');a.appendChild(el('span','tag',x.room));a.appendChild(el('small',null,x.it.text+' · '+x.it.sub));
+      li.appendChild(a);li.appendChild(el('time',null,ago(x.it.at)));feed.appendChild(li)});
+    document.getElementById('meta').textContent='ອັບເດດ '+new Date(data.generated_at).toLocaleTimeString('lo-LA',{hour:'2-digit',minute:'2-digit'})+' · ເບິ່ງຢ່າງດຽວ';
+  }
+  function load(){
+    var t=token();if(!t){show('ຍັງບໍ່ໄດ້ເຂົ້າສູ່ລະບົບ — ເຂົ້າສູ່ລະບົບໃນແອັບຫຼັກກ່ອນ ແລ້ວກັບມາເປີດໜ້ານີ້.');return}
+    fetch('/api/admin/office-overview',{headers:{Authorization:'Bearer '+t},cache:'no-store'}).then(function(r){
+      if(r.status===401){show('ໝົດເວລາເຂົ້າສູ່ລະບົບ — ເຂົ້າສູ່ລະບົບໃໝ່ໃນແອັບຫຼັກ.');return null}
+      if(r.status===403){show('ໜ້ານີ້ສຳລັບ admin ເທົ່ານັ້ນ.');return null}
+      if(!r.ok){show('ໂຫຼດຂໍ້ມູນບໍ່ໄດ້ (ລະຫັດ '+r.status+') — ລອງໃໝ່ອີກຄັ້ງ.');return null}
+      return r.json()}).then(function(d){if(d)render(d)}).catch(function(){show('ເຊື່ອມຕໍ່ບໍ່ໄດ້ — ກວດອິນເຕີເນັດ ແລ້ວລອງໃໝ່.')});
+  }
+  load();setInterval(function(){if(!document.hidden)load()},60000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)load()});
+})();
+</script>
+</body>
+</html>

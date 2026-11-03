@@ -1,36 +1,3 @@
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS mde_list;
-DROP TABLE IF EXISTS dsm_list;
-DROP TABLE IF EXISTS dsm_sign_links;
-DROP TABLE IF EXISTS assets;
-DROP TABLE IF EXISTS budgets;
-DROP TABLE IF EXISTS asset_requests;
-DROP TABLE IF EXISTS warehouse_stock; -- ตารางเก่า (เลิกใช้แล้ว) ลบทิ้งเผื่อยังมีอยู่จาก DB เดิม
-DROP TABLE IF EXISTS warehouse_stock_history;
-DROP TABLE IF EXISTS cooler_brands;
-DROP TABLE IF EXISTS cooler_types;
-DROP TABLE IF EXISTS cooler_models;
-DROP TABLE IF EXISTS special_cooler_brands;
-DROP TABLE IF EXISTS doc_types;
-DROP TABLE IF EXISTS push_subscriptions;
-DROP TABLE IF EXISTS login_logs;
-DROP TABLE IF EXISTS password_reset_requests;
-DROP TABLE IF EXISTS no_doc_deliveries;
-DROP TABLE IF EXISTS cooler_events;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS announcements;
-DROP TABLE IF EXISTS announcement_reads;
-DROP TABLE IF EXISTS ship_trip_plan_items;
-DROP TABLE IF EXISTS ship_trip_stops;
-DROP TABLE IF EXISTS ship_trip_stock;
-DROP TABLE IF EXISTS ship_trips;
-DROP TABLE IF EXISTS new_coolers;
-DROP TABLE IF EXISTS new_cooler_receipts;
-DROP TABLE IF EXISTS stock_count_items;
-DROP TABLE IF EXISTS stock_counts;
-DROP TABLE IF EXISTS wh_warehouses;
-DROP TABLE IF EXISTS outlets;
-DROP TABLE IF EXISTS loan_contracts;
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -314,7 +281,6 @@ CREATE INDEX idx_cooler_events_returned ON cooler_events(returned);
 CREATE INDEX idx_cooler_events_taken_date ON cooler_events(taken_date);
 
 -- ຕາຕະລາງລາຍງານ "ຕູ້ແຊ່ສະສາງ" (ຊຳລຸດ/ໝົດອາຍຸ/ສູນຫາຍ) - ຮັນ migration_add_cooler_writeoffs.sql ສຳລັບ DB ທີ່ deploy ແລ້ວ
-DROP TABLE IF EXISTS cooler_writeoffs;
 CREATE TABLE cooler_writeoffs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     stock_id INTEGER,
@@ -502,12 +468,10 @@ CREATE TABLE stock_count_items (
 CREATE INDEX idx_stock_counts_wh ON stock_counts(warehouse_id, period);
 CREATE INDEX idx_sci_count ON stock_count_items(count_id, result);
 
--- บัญชี Admin เริ่มต้น (email: admin@example.com / password: Admin@123)
--- **สำคัญ: ให้เข้าไปเปลี่ยนรหัสผ่านทันทีหลังใช้งานจริง ผ่านหน้า "เปลี่ยนรหัสผ่าน" หรือแก้ตรง DB**
--- หมายเหตุ: password_hash ด้านล่างเป็น plaintext ชั่วคราว ระบบจะ hash ให้อัตโนมัติ (PBKDF2)
--- ทันทีที่ login ครั้งแรกสำเร็จ (ดู src/auth.js) ไม่ต้องรัน migration อะไรเพิ่ม
-INSERT INTO users (email, password_hash, team, mde_code, role, status) VALUES
-    ('admin@example.com', 'Admin@123', 'ADMIN_TEAM', 'ADMIN', 'admin', 'approved');
+-- ບັນຊີ Admin ເລີ່ມຕົ້ນ: ບໍ່ມີລະຫັດຜ່ານຕາຍຕົວໃນໄຟລ໌ນີ້ອີກຕໍ່ໄປ (ເຄີຍເປັນ Admin@123 ຊຶ່ງໃຜກໍເດົາໄດ້)
+-- ສ້າງ admin ດ້ວຍ:  node create-admin.js admin@yourcompany.com 'ລະຫັດຜ່ານຂອງທ່ານ'
+-- ແລ້ວເອົາຄຳສັ່ງ SQL ທີ່ໄດ້ ໄປຮັນ:  npx wrangler d1 execute user-approval-db --remote --command "<SQL>"
+-- (ຖ້າ DB ເກົ່າຍັງມີ admin@example.com / Admin@123 ຢູ່ ໃຫ້ປ່ຽນລະຫັດ ຫຼື ລຶບທັນທີ)
 
 -- ຟັງຊັນ "ອອກໃບສັນຍາຢືມ" (ເບິ່ງລາຍລະອຽດຄໍລຳໃນ migration_add_loan_contracts.sql)
 
@@ -819,7 +783,6 @@ CREATE INDEX IF NOT EXISTS idx_cooler_events_capex_nc  ON cooler_events(capex CO
 CREATE INDEX IF NOT EXISTS idx_cooler_writeoffs_qr_nc     ON cooler_writeoffs(qr_code COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_cooler_writeoffs_serial_nc ON cooler_writeoffs(serial_number COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_cooler_writeoffs_capex_nc  ON cooler_writeoffs(capex COLLATE NOCASE);
-DROP TABLE IF EXISTS cooler_master_stats;
 CREATE TABLE cooler_master_stats (
     id INTEGER PRIMARY KEY CHECK (id = 1), total INTEGER NOT NULL DEFAULT 0,
     last_updated TEXT, provinces_json TEXT, refreshed_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -864,3 +827,14 @@ CREATE TABLE IF NOT EXISTS playbook_coolers (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_playbook_coolers_sort ON playbook_coolers(sort_order, id);
+
+
+-- ຈຳກັດການ login ຜິດ (rate limit) — ເບິ່ງ /api/login
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip TEXT NOT NULL,
+    identifier TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_ip ON login_attempts(ip, created_at);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_id ON login_attempts(identifier, created_at);

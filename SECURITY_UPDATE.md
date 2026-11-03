@@ -81,3 +81,29 @@ npx wrangler deploy
 - **ຄົ້ນຫາດ້ວຍ QR** (`/api/asset-tracking/lookup-by-qr`): ຈັບຄູ່ຕົງເປ໊ະກ່ອນ ແລ້ວຄ່ອຍຈັບແບບລົງທ້າຍ; ຖ້າພົບຫຼາຍກວ່າ 1 ລາຍການຈະບໍ່ເດົາ ແຕ່ບອກໃຫ້ປ້ອນ QR ໃຫ້ຄົບ;
   ຕົວ `%` `_` ທີ່ຜູ້ໃຊ້ພິມບໍ່ເປັນ wildcard ອີກຕໍ່ໄປ.
 - ຄຳຂໍ SQL ໃຊ້ `changes()` ແລະ `printf()` ຂອງ SQLite - ຄວນທົດສອບອະນຸມັດ 1 ຄຳຂໍດ້ວຍ `npx wrangler dev` (D1 local) ກ່ອນ deploy.
+
+---
+
+# ອັບເດດຄັ້ງທີ 4: ປິດ 3 ຂໍ້ "ຍັງເຫຼືອ" + security headers
+
+1. **Rate limit login** (`/api/login`): ຜິດ 5 ຄັ້ງ/ບັນຊີ ຫຼື 20 ຄັ້ງ/IP ໃນ 15 ນາທີ -> 429 (ຕາຕະລາງໃໝ່ `login_attempts`). ບັນຊີທີ່ບໍ່ມີໃນລະບົບກໍນັບ ແລະ ໃຊ້ເວລາຕອບໃກ້ກັນ (ກັນເດົາວ່າບັນຊີມີຢູ່ບໍ). ລ້າງຕົວນັບເມື່ອ login ສຳເລັດ.
+2. **ປຽບທຽບລະຫັດຜ່ານແບບ constant-time** ໃນ `src/auth.js` (ທັງ hash ແລະ plaintext ເກົ່າ).
+3. **ເອົາ admin ລະຫັດ `Admin@123` ອອກຈາກ `schema.sql`** -> ສ້າງ admin ດ້ວຍ `node create-admin.js <email> <ລະຫັດ>` (ພິມ SQL ມີ hash PBKDF2).
+4. **ແຍກ `DROP TABLE` ອອກຈາກ `schema.sql`** ໄປເປັນ `SQL/DANGEROUS_reset_database_drop_all.sql`.
+5. **Security headers** ຜ່ານ `public/_headers`: nosniff, X-Frame-Options DENY, HSTS, Referrer-Policy, Permissions-Policy (ກ້ອງ/GPS ສະເພາະ self), CSP ແບບເບົາ (frame-ancestors/base-uri/object-src/form-action). ບໍ່ໄດ້ໃສ່ `script-src` ເພາະ `index.html` ໃຊ້ inline script/onclick ຈຳນວນຫຼາຍ.
+
+## ຕ້ອງເຮັດຕອນ deploy
+```bash
+npx wrangler d1 execute user-approval-db --remote --file=SQL/migration_add_login_attempts.sql
+npx wrangler deploy
+```
+**DB ທີ່ໃຊ້ຢູ່:** ຖ້າຍັງມີ `admin@example.com` / `Admin@123` ໃຫ້ປ່ຽນລະຫັດຜ່ານ ຫຼື ລຶບທັນທີ.
+
+## ເພີ່ມ (ຄັ້ງທີ 4b): CSP `script-src`
+ຈຳກັດ script ໃຫ້ໂຫລດໄດ້ສະເພາະ origin ຕົນເອງ + unpkg / cdnjs / jsdelivr (ທີ່ແອັບໃຊ້ຢູ່) ແຕ່ຍັງເປີດ `'unsafe-inline'` ຢູ່ ເພາະ `index.html` ມີ inline `onclick` ~919 ຈຸດ.
+ຜົນ: script ຈາກໂດເມນອື່ນທີ່ຖືກແຊກເຂົ້າມາຈະຖືກບລັອກ. ແຕ່ inline script ທີ່ຖືກແຊກຍັງບໍ່ຖືກກັນ — ປ້ອງກັນດ້ວຍ `esc()` ຕາມເດີມ.
+ຖ້າຢາກເຮັດ CSP ເຂັ້ມເຕັມ (ບໍ່ມີ unsafe-inline) ຕ້ອງຍ້າຍ onclick ທັງໝົດເປັນ addEventListener ກ່ອນ.
+ບັນທຶກ: ລິ້ງ `/api/public/*` ປອດໄພດ້ວຍ token ສຸ່ມ 256-bit ຈຶ່ງບໍ່ໄດ້ເພີ່ມ rate limit.
+
+## ຄັ້ງທີ 4c: `/api/mde-list` ບໍ່ເປີດຂໍ້ມູນເຕັມໃຫ້ຄົນນອກ
+ຄົນທີ່ບໍ່ໄດ້ login ໄດ້ສະເພາະ `team`, `mde_code`, `mde_name` ຂອງ MDE ທີ່ຍັງບໍ່ມີ user (ເບີໂທ ແລະ ຂໍ້ມູນອື່ນບໍ່ສົ່ງ) ແລະ ຈຳກັດ 30 ຄັ້ງ/15 ນາທີ/IP. ຄົນທີ່ login ແລ້ວໄດ້ຂໍ້ມູນເຕັມຄືເກົ່າ. ບໍ່ຕ້ອງ migration ເພີ່ມ.
