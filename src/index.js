@@ -340,6 +340,47 @@ async function createLoanContractDraftForAsset(env, assetId, createdByEmail, opt
 }
 
 
+// Admin ແກ້ໄຂ Asset Tracking (ເຊັ່ນ ເພີ່ມ Outlet Code ໃຫ້ Asset ທີ່ມາຈາກຄຳຂໍທີ່ບໍ່ມີ Code) -> sync ຂໍ້ມູນຮ້ານໄປໃບສັນຍາຢືມທີ່ຜູກກັບ Asset ນີ້
+// ສະເພາະໃບທີ່ຍັງເຊັນບໍ່ສົມບູນ (status != 'completed': ຮ່າງ / ລໍຖ້າ DSM ເຊັນ); ໃບທີ່ເຊັນຄົບແລ້ວບໍ່ແຕະ ເພື່ອຮັກສາເນື້ອໃນເອກະສານຕາມທີ່ເຊັນ
+// ຖ້າ Code ມີໃນ Outlet Master -> ດຶງ ເຈົ້າຂອງ/ປະເພດ/ລະດັບ/ໂທ/ບ້ານ/ເມືອງ/ແຂວງ ມານຳ (ບໍ່ມີຄ່າໃນ Master ກໍຄົງຄ່າເດີມທີ່ກອກຕອນຂໍ Asset)
+async function syncUnsignedLoanContractsOutlet(env, assetId, outletCode, outletName) {
+  const code = String(outletCode || "").trim();
+  if (!assetId || !code) return 0;
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT * FROM loan_contracts WHERE asset_id = ? AND IFNULL(status, 'draft') != 'completed'"
+    ).bind(assetId).all();
+    if (!results || !results.length) return 0;
+    const outlet = await env.DB.prepare("SELECT * FROM outlets WHERE code = ? ORDER BY active DESC LIMIT 1").bind(code).first();
+    let mVillage = "", mDistrict = "";
+    if (outlet && outlet.address) {
+      const parts = String(outlet.address).split(",");
+      mVillage = (parts[0] || "").trim();
+      mDistrict = (parts[1] || "").trim();
+    }
+    const stmts = results.map((c) => env.DB.prepare(
+      `UPDATE loan_contracts SET outlet_code = ?, outlet_name = ?, outlet_owner = ?, outlet_type = ?, outlet_grade = ?,
+              outlet_phone = ?, village = ?, district = ?, province = ? WHERE id = ?`
+    ).bind(
+      code,
+      (outlet && outlet.name) || outletName || c.outlet_name || null,
+      (outlet && outlet.owner_name) || c.outlet_owner || null,
+      (outlet && outlet.outlet_type) || c.outlet_type || null,
+      (outlet && outlet.outlet_level) || c.outlet_grade || null,
+      (outlet && outlet.phone) || c.outlet_phone || null,
+      mVillage || c.village || null,
+      mDistrict || c.district || null,
+      (outlet && outlet.province) || c.province || null,
+      c.id
+    ));
+    await env.DB.batch(stmts);
+    return results.length;
+  } catch (e) {
+    console.error("syncUnsignedLoanContractsOutlet", e);
+    return 0; // ບໍ່ໃຫ້ລົ້ມການບັນທຶກ Asset
+  }
+}
+
 // ອອກໃບສັນຍາຢືມແບບປ້ອນເອງ (ບໍ່ມີ Asset ອ້າງອີງ) ປະເພດ "ຕູ້ເຄື່ອນຍ້າຍ" (handover_type = 'move')
 // -> ສ້າງແຖວ Asset Tracking (doc_type "ຕູ້ເຄື່ອນຍ້າຍ", ສະຖານະ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ") ໃຫ້ອັດຕະໂນມັດ ແລ້ວຜູກໃບສັນຍານີ້ເຂົ້າກັບ Asset ທີ່ສ້າງ
 // ບໍ່ throw error ອອກໄປ: ຖ້າສ້າງ Asset ບໍ່ໄດ້ (ເຊັ່ນ QR/Serial/CapEx ຊໍ້າ) ໃບສັນຍາທີ່ບັນທຶກແລ້ວຍັງຢູ່ຄືເກົ່າ ແລະ ສົ່ງ warning ກັບໄປແທນ
@@ -9454,6 +9495,9 @@ export default {
              old_outlet_code = ?, old_outlet_name = ?, old_latitude = ?, old_longitude = ?, status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ?`
           ).bind(outlet_code, outlet_name, cooler_brand, cooler_type, mde_code, doc_type, qr_code || null, serial_number || null, capex || null, lat, lng,
             old_outlet_code || null, old_outlet_name || null, oldLat, oldLng, status, id).run();
+
+          // sync ຂໍ້ມູນຮ້ານ (Outlet Code ຯລຯ) ໄປໃບສັນຍາຢືມທີ່ຍັງເຊັນບໍ່ສົມບູນຂອງ Asset ນີ້ (ໃບທີ່ເຊັນຄົບແລ້ວບໍ່ແຕະ)
+          await syncUnsignedLoanContractsOutlet(env, id, outlet_code, outlet_name);
 
           // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
           if (existingAsset && existingAsset.status !== status && DISPATCH_NOTIFY_STATUSES.includes(status)) {

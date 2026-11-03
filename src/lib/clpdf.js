@@ -290,7 +290,15 @@ export async function buildLoanPdf(env, d, opts = {}) {
   await sign(p1, 'mde', { x: 85, y: 104, w: 140, h: 42 });
   await sign(p1, 'dsm', { x: 235, y: 104, w: 140, h: 42 });
   await sign(p1, 'admin', { x: 385, y: 104, w: 155, h: 42 });
-  txt(p1, d.sig_mde_name, 115, 92.4, { size: 8.5, maxW: 90, clear: true });
+  // ຊື່ MDE: ໃຊ້ຊື່ທີ່ເຊັນ; ຖ້າຍັງບໍ່ເຊັນ (ຮ່າງ/ລໍ DSM) ດຶງຊື່ຈາກ MDE List ຕາມ MDE Code ໃຫ້ໃບສະແດງຊື່ MDE ສະເໝີ
+  let mdeNameForPdf = d.sig_mde_name;
+  if (!mdeNameForPdf && d.mde_code && env && env.DB) {
+    try {
+      const m = await env.DB.prepare("SELECT mde_name FROM mde_list WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) LIMIT 1").bind(d.mde_code).first();
+      mdeNameForPdf = m && m.mde_name;
+    } catch { /* ບໍ່ມີຊື່ - ປະຊ່ອງຫວ່າງ */ }
+  }
+  txt(p1, mdeNameForPdf, 115, 92.4, { size: 8.5, maxW: 90, clear: true });
   txt(p1, suffix(d.mde_code, 'MDE'), 152, 76.6, { size: 8.5, maxW: 52, clear: true });
   txt(p1, phoneLo(d.mde_phone).replace(/^020\s*/, ''), 137, 60.9, { size: 8.5, maxW: 67, clear: true });
   mid(p1, d.sig_dsm_name, 232, 146, 78, { size: 8 });

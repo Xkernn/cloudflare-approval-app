@@ -24372,7 +24372,7 @@ function assetStatusBadgeClass(status) {
             </div>
             <div class="data-card-sub">
               <span><i class="fa-solid fa-store"></i>${esc(c.outlet_code || '-')} - ${esc(c.outlet_name || '-')}</span>
-              <span><i class="fa-solid fa-user"></i>${esc(c.mde_code || '-')}</span>
+              <span><i class="fa-solid fa-user"></i>${esc(c.mde_code || '-')}${mdeNameFor(c.mde_code) ? ' - ' + esc(mdeNameFor(c.mde_code)) : ''}</span>
               ${c.contract_type ? `<span><i class="fa-solid fa-file-signature"></i>${esc(LOAN_CONTRACT_TYPE_LABEL[c.contract_type] || c.contract_type)}</span>` : ''}
               ${c.handover_type ? `<span><i class="fa-solid fa-dolly"></i>${esc(LOAN_HANDOVER_TYPE_LABEL[c.handover_type] || c.handover_type)}</span>` : ''}
               ${dsmChipHtml(c)}
@@ -24585,7 +24585,7 @@ function assetStatusBadgeClass(status) {
       const rows = [
         ['ເລກທີໃບ', c.doc_no || ('#' + c.id)],
         ['ຮ້ານ', `${c.outlet_code || ''} ${c.outlet_name || ''}`.trim() || '-'],
-        ['MDE', c.mde_code || '-'],
+        ['MDE', `${c.mde_code || '-'}${mdeNameFor(c.mde_code) ? ' - ' + mdeNameFor(c.mde_code) : ''}`],
         ['DSM', c.sig_dsm_name || '-'],
         ['ຍີ່ຫໍ້ຕູ້ແຊ່', c.cooler_brand || '-'],
         ['QR Code ຕູ້', c.qr_cd || '-'],
