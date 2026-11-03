@@ -6492,12 +6492,12 @@ export default {
     if (url.pathname === "/api/dsm/contracts" && request.method === "GET") {
       const team = session.team || "";
       const loan = await env.DB.prepare(
-        `SELECT id, doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, status, created_at,
+        `SELECT id, doc_no, COALESCE(NULLIF(TRIM(loan_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = loan_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, status, created_at,
                 (sig_mde IS NOT NULL) AS mde_signed, (sig_dsm IS NOT NULL) AS dsm_signed, sig_dsm_name, sig_dsm_at
            FROM loan_contracts WHERE ${TEAM_MDE_SQL} ORDER BY id DESC LIMIT 300`
       ).bind(team).all();
       const cancel = await env.DB.prepare(
-        `SELECT id, doc_no, loan_doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, status, created_at,
+        `SELECT id, doc_no, loan_doc_no, COALESCE(NULLIF(TRIM(cancel_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = cancel_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, status, created_at,
                 (sig_mde IS NOT NULL) AS mde_signed, (sig_dsm IS NOT NULL) AS dsm_signed, sig_dsm_name, sig_dsm_at
            FROM cancel_contracts WHERE ${TEAM_MDE_SQL} ORDER BY id DESC LIMIT 300`
       ).bind(team).all();
@@ -11936,7 +11936,7 @@ export default {
       const limit = Math.min(Number(url.searchParams.get("limit")) || 300, 500);
       if (session.role === "dsm") {
         const rows = await env.DB.prepare(
-          `SELECT id, doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, contract_type, handover_type, status,
+          `SELECT id, doc_no, COALESCE(NULLIF(TRIM(loan_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = loan_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, contract_type, handover_type, status,
                   created_by, created_at, sig_dsm_name, sig_dsm_at, ${dsmLinkStatusSql('loan', 'loan_contracts')}
            FROM loan_contracts WHERE ${TEAM_MDE_SQL} ORDER BY id DESC LIMIT ?`
         ).bind(session.team || "", limit).all();
@@ -11944,7 +11944,7 @@ export default {
       }
       const rows = canViewAll(session.role)
         ? await env.DB.prepare(
-            `SELECT id, doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
+            `SELECT id, doc_no, COALESCE(NULLIF(TRIM(loan_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = loan_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
                     contract_type, handover_type, status, created_by, created_at,
                     capx, doors, door_variant, old_doc_no, old_outlet_code, old_outlet_name, move_reason,
                     sales_beer, sales_premium, sales_csd_energy, sales_water_soda,
@@ -11952,7 +11952,7 @@ export default {
              FROM loan_contracts ORDER BY id DESC LIMIT ?`
           ).bind(limit).all()
         : await env.DB.prepare(
-            `SELECT id, doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
+            `SELECT id, doc_no, COALESCE(NULLIF(TRIM(loan_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = loan_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
                     contract_type, handover_type, status, created_by, created_at,
                     capx, doors, door_variant, old_doc_no, old_outlet_code, old_outlet_name, move_reason,
                     sales_beer, sales_premium, sales_csd_energy, sales_water_soda,
@@ -12412,13 +12412,13 @@ export default {
       const limit = Math.min(Number(url.searchParams.get("limit")) || 300, 500);
       if (session.role === "dsm") {
         const rows = await env.DB.prepare(
-          `SELECT id, doc_no, loan_doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, reasons, status,
+          `SELECT id, doc_no, loan_doc_no, COALESCE(NULLIF(TRIM(cancel_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = cancel_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, reasons, status,
                   created_by, created_at, sig_dsm_name, sig_dsm_at, ${dsmLinkStatusSql('cancel', 'cancel_contracts')}
            FROM cancel_contracts WHERE ${TEAM_MDE_SQL} ORDER BY id DESC LIMIT ?`
         ).bind(session.team || "", limit).all();
         return Response.json(rows.results || []);
       }
-      const cols = `id, doc_no, loan_doc_no, outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
+      const cols = `id, doc_no, loan_doc_no, COALESCE(NULLIF(TRIM(cancel_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = cancel_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
                     reasons, status, created_by, created_at, sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, ${dsmLinkStatusSql('cancel', 'cancel_contracts')}`;
       const rows = canViewAll(session.role)
         ? await env.DB.prepare(`SELECT ${cols} FROM cancel_contracts ORDER BY id DESC LIMIT ?`).bind(limit).all()
