@@ -381,6 +381,26 @@ async function syncUnsignedLoanContractsOutlet(env, assetId, outletCode, outletN
   }
 }
 
+// Admin ແກ້ໄຂ Asset Tracking (ເຊັ່ນ ເພີ່ມ/ແກ້ Outlet Code) -> sync Outlet Code/ຊື່ຮ້ານ ໄປຄຳຂໍ (asset_requests) ທີ່ຜູກກັບ Asset ນີ້ (asset_requests.asset_id)
+// ເພື່ອໃຫ້ໜ້າ "ປະຫວັດການຂໍ Asset" ສະແດງ Code ຕາມທີ່ແກ້ໄຂ; ຖ້າ Code ມີໃນ Outlet Master -> ໃຊ້ຊື່ຈາກ Master
+// ຄຳຂໍທີ່ມີ Code ແລ້ວ ຂໍ້ມູນເຈົ້າຂອງ/ປະເພດ/ໂທ ຖືກດຶງຈາກ Master ຕອນສະແດງຜົນ ຈຶ່ງລ້າງຄ່າທີ່ເຄີຍກອກເອງ (ສຳລັບຮ້ານບໍ່ມີ Code) ບໍ່ຈຳເປັນ - ບໍ່ແຕະຄ່າເຫຼົ່ານັ້ນ
+async function syncAssetRequestsOutlet(env, assetId, outletCode, outletName) {
+  const code = String(outletCode || "").trim();
+  if (!assetId || !code) return 0;
+  try {
+    const outlet = await env.DB.prepare("SELECT name FROM outlets WHERE code = ? ORDER BY active DESC LIMIT 1").bind(code).first();
+    const name = (outlet && outlet.name) || String(outletName || "").trim() || null;
+    const res = await env.DB.prepare(
+      `UPDATE asset_requests SET outlet_code = ?, outlet_name = COALESCE(?, outlet_name), updated_at = CURRENT_TIMESTAMP
+        WHERE asset_id = ? AND (IFNULL(outlet_code, '') != ? OR IFNULL(outlet_name, '') != IFNULL(?, IFNULL(outlet_name, '')))`
+    ).bind(code, name, assetId, code, name).run();
+    return (res && res.meta && res.meta.changes) || 0;
+  } catch (e) {
+    console.error("syncAssetRequestsOutlet", e);
+    return 0; // ບໍ່ໃຫ້ລົ້ມການບັນທຶກ Asset
+  }
+}
+
 // ອອກໃບສັນຍາຢືມແບບປ້ອນເອງ (ບໍ່ມີ Asset ອ້າງອີງ) ປະເພດ "ຕູ້ເຄື່ອນຍ້າຍ" (handover_type = 'move')
 // -> ສ້າງແຖວ Asset Tracking (doc_type "ຕູ້ເຄື່ອນຍ້າຍ", ສະຖານະ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ") ໃຫ້ອັດຕະໂນມັດ ແລ້ວຜູກໃບສັນຍານີ້ເຂົ້າກັບ Asset ທີ່ສ້າງ
 // ບໍ່ throw error ອອກໄປ: ຖ້າສ້າງ Asset ບໍ່ໄດ້ (ເຊັ່ນ QR/Serial/CapEx ຊໍ້າ) ໃບສັນຍາທີ່ບັນທຶກແລ້ວຍັງຢູ່ຄືເກົ່າ ແລະ ສົ່ງ warning ກັບໄປແທນ
@@ -9498,6 +9518,9 @@ export default {
 
           // sync ຂໍ້ມູນຮ້ານ (Outlet Code ຯລຯ) ໄປໃບສັນຍາຢືມທີ່ຍັງເຊັນບໍ່ສົມບູນຂອງ Asset ນີ້ (ໃບທີ່ເຊັນຄົບແລ້ວບໍ່ແຕະ)
           await syncUnsignedLoanContractsOutlet(env, id, outlet_code, outlet_name);
+
+          // sync Outlet Code/ຊື່ຮ້ານ ໄປຄຳຂໍ (asset_requests) ທີ່ຜູກກັບ Asset ນີ້ ເພື່ອໃຫ້ໜ້າປະຫວັດການຂໍ Asset ເຫັນ Code
+          await syncAssetRequestsOutlet(env, id, outlet_code, outlet_name);
 
           // ແຈ້ງເຕືອນ warehouse/delivery ຖ້າສະຖານະຖືກປ່ຽນເປັນ "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ຫຼື "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" (ບໍ່ໃຫ້ error ຕົງນີ້ເຮັດໃຫ້ save ລົ້ມເຫລວ)
           if (existingAsset && existingAsset.status !== status && DISPATCH_NOTIFY_STATUSES.includes(status)) {
