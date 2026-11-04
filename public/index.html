@@ -2592,6 +2592,48 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html[data-mm-style="premium"] .mobile-tab-label { color: #5A6A55; }
       html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-label { color: #075B35; font-weight: 700; }
     }
+
+    /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
+    html[data-mm-style="premium"] { --pr-green:#087A45; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#F5C21B; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=2"); }
+    html[data-mm-style="premium"] body { background-color: #FBF7E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
+    html[data-mm-style="premium"] .mm-page { background-color: #FBF7E6; background-image: var(--pr-pattern); background-size: 96px 96px; }
+    html[data-mm-style="premium"] .content-card { border-color: #EADFB4; box-shadow: 0 6px 18px -12px rgba(7,91,53,.28); }
+    /* hero page header */
+    html[data-mm-style="premium"] .page-header {
+      color: #F2FBEF;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(245,194,27,.32), transparent 46%),
+        radial-gradient(circle at 96% 100%, rgba(13,153,88,.60), transparent 52%),
+        linear-gradient(150deg, #063D24 0%, #075B35 58%, #087A45 100%);
+      box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); border: 1px solid rgba(245,194,27,.28);
+    }
+    html[data-mm-style="premium"] .page-header::before { color: var(--pr-gold-lt); background: rgba(245,194,27,.14); border: 1px solid rgba(245,194,27,.45); }
+    html[data-mm-style="premium"] .page-header p { color: #CFE6D4; }
+    html[data-mm-style="premium"] .page-header .btn-add { background: var(--pr-gold); color: #063D24; box-shadow: 0 6px 14px -8px rgba(245,194,27,.8); }
+    html[data-mm-style="premium"] .page-header .btn-add:hover { background: var(--pr-gold-lt); }
+    html[data-mm-style="premium"] .page-header .btn-add:focus-visible { outline-color: var(--pr-gold-lt); }
+    /* sidebar / slide-out menu */
+    html[data-mm-style="premium"] .sidebar::before { background: linear-gradient(170deg, #075B35 0%, #063D24 100%); border: 1px solid rgba(245,194,27,.28); box-shadow: 0 14px 30px -10px rgba(6,61,36,.6), 0 4px 10px rgba(6,61,36,.2); }
+    html[data-mm-style="premium"] .sidebar-brand { border-bottom-color: rgba(245,194,27,.2); }
+    html[data-mm-style="premium"] .sidebar-brand-title { color: var(--pr-cream); }
+    html[data-mm-style="premium"] .sidebar-brand-sub { color: #A9C9B3; }
+    html[data-mm-style="premium"] .menu-item { color: #CFE6D4; }
+    html[data-mm-style="premium"] .menu-item i { background: var(--pr-cream); }
+    html[data-mm-style="premium"] .menu-item:hover { background: rgba(245,194,27,.09); color: #fff; }
+    html[data-mm-style="premium"] .menu-item:hover i { background: #fff; }
+    html[data-mm-style="premium"] .menu-item.active { background: rgba(245,194,27,.14); color: var(--pr-gold-lt); }
+    html[data-mm-style="premium"] .menu-item.active i { background: linear-gradient(135deg, var(--pr-gold-lt), var(--pr-gold)); box-shadow: 0 0 0 3px var(--pr-forest), 0 8px 18px -6px rgba(245,194,27,.65); }
+    html[data-mm-style="premium"] .sidebar-footer { border-top-color: rgba(245,194,27,.2); }
+    /* login hero + notification hero */
+    html[data-mm-style="premium"] .auth-hero { color: #F2FBEF; background:
+        radial-gradient(circle at 18% 20%, rgba(13,153,88,.60), transparent 44%),
+        radial-gradient(circle at 82% 78%, rgba(245,194,27,.30), transparent 46%),
+        var(--pr-pattern),
+        linear-gradient(165deg, #063D24 0%, #075B35 62%, #087A45 100%); }
+    html[data-mm-style="premium"] .nf-hero { color: #F2FBEF; background:
+        radial-gradient(circle at 12% 0%, rgba(245,194,27,.32), transparent 46%),
+        radial-gradient(circle at 96% 100%, rgba(13,153,88,.60), transparent 52%),
+        linear-gradient(150deg, #063D24 0%, #075B35 58%, #087A45 100%); box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); }
   </style>
 <style>
 /* ໂໝດປິດລະບົບ (Maintenance) */

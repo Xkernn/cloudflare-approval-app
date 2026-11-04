@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- Beerlao Premium background tile: very faint green diamond + gold dots (edit freely, keep 96x96 so it tiles) -->
+  <path d="M48 8 88 48 48 88 8 48Z" fill="none" stroke="#087A45" stroke-opacity=".045" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M48 26 70 48 48 70 26 48Z" fill="#F5C21B" fill-opacity=".035"/>
+  <g fill="#F5C21B" fill-opacity=".14"><circle cx="48" cy="48" r="2"/><circle cx="0" cy="0" r="2"/><circle cx="96" cy="0" r="2"/><circle cx="0" cy="96" r="2"/><circle cx="96" cy="96" r="2"/></g>
+</svg>
