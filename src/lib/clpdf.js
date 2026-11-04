@@ -329,6 +329,34 @@ export async function buildLoanPdf(env, d, opts = {}) {
   await sign(p2, 'outlet', { x: 395, y: 56, w: 145, h: 58 });
   if (d.sig_outlet_name) mid(p2, d.sig_outlet_name, 395, 145, 48, { size: 8 });
 
+  // ຕໍ່ "ຮູບຮ້ານຄ້າ" ທີ່ແນບຕອນຂໍ Asset (asset_requests.shop_photo, ຜູກຜ່ານ asset_id) ເປັນໜ້າຖັດຈາກສັນຍາ
+  // - ບໍ່ເຮັດໃນໂໝດ preview (asset_id ມາຈາກ browser ເຊື່ອບໍ່ໄດ້) · ຖ້າບໍ່ມີຮູບ/ອ່ານບໍ່ໄດ້/ຮູບເສຍ -> ຂ້າມ, PDF ສັນຍາອອກປົກກະຕິ
+  try {
+    let shopBytes = opts.shopPhotoBytes || null;
+    if (!shopBytes && !opts.preview && d.asset_id && env && env.DB && env.PHOTOS) {
+      const r = await env.DB.prepare('SELECT shop_photo FROM asset_requests WHERE asset_id = ? AND shop_photo IS NOT NULL ORDER BY id DESC LIMIT 1').bind(d.asset_id).first();
+      if (r && r.shop_photo) shopBytes = await readR2(env, r.shop_photo);
+    }
+    if (shopBytes && shopBytes.length) {
+      const isJpg = shopBytes[0] === 0xff && shopBytes[1] === 0xd8 && shopBytes[2] === 0xff;
+      const isPng = shopBytes[0] === 0x89 && shopBytes[1] === 0x50 && shopBytes[2] === 0x4e && shopBytes[3] === 0x47;
+      if (isJpg || isPng) {
+        const im = isJpg ? await pdf.embedJpg(shopBytes) : await pdf.embedPng(shopBytes);
+        const PW = 595.28, PH = 841.89, M = 40;
+        const pg = pdf.addPage([PW, PH]);
+        txt(pg, 'ຮູບຮ້ານຄ້າ (Shop Photo)', M, 790, { size: 16, bold: true, color: BLACK });
+        const sub = [d.outlet_name, d.outlet_code ? `[${d.outlet_code}]` : '', d.doc_no].filter((x) => x && String(x).trim()).join('  ·  ');
+        txt(pg, sub, M, 768, { size: 10, color: BLACK, maxW: PW - 2 * M });
+        const B = { x: M, y: M, w: PW - 2 * M, h: 790 - 30 - M };
+        const k = Math.min(B.w / im.width, B.h / im.height);
+        const w = im.width * k, h = im.height * k;
+        const ix = B.x + (B.w - w) / 2, iy = B.y + B.h - h; // ຊິດຂອບເທິງ ໃຕ້ຫົວຂໍ້
+        pg.drawImage(im, { x: ix, y: iy, width: w, height: h });
+        pg.drawRectangle({ x: ix, y: iy, width: w, height: h, borderColor: rgb(0.75, 0.78, 0.8), borderWidth: 0.8 });
+      }
+    }
+  } catch (e) { console.error('ຕໍ່ໜ້າຮູບຮ້ານຄ້າບໍ່ສຳເລັດ:', e); }
+
   // ຕໍ່ເອກະສານເຈົ້າຂອງຮ້ານເປັນໜ້າສຸດທ້າຍ (opts.ownerDocBytes ຈາກ endpoint — admin/MDE ເຈົ້າຂອງໃບ/DSM ເທົ່ານັ້ນ)
   if (opts.ownerDocBytes) await addOwnerDocPage(pdf, opts.ownerDocBytes);
   return pdf.save();
