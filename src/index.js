@@ -1579,6 +1579,7 @@ const ROUTE_ROLES = {
   "/api/my-signature": ["user", "dsm"], // ລາຍເຊັນທີ່ບັນທຶກໄວ້ຂອງຕົນເອງ (MDE / DSM) — ເບິ່ງ/ບັນທຶກ/ລຶບ
   "/api/dsm/contracts": ["dsm"],
   "/api/dsm/contract-pdf": ["dsm"],
+  "/api/dsm/contract-detail": ["dsm"],
   "/api/dsm/sign": ["dsm"],
   // "/api/dsm-list" (GET): ບໍ່ຈຳກັດ role - user ທົ່ວໄປຕ້ອງເບິ່ງໄດ້ ເພື່ອສະແດງຊື່ DSM ຂອງທີມຕົນເອງ
   // ຕອນອອກໃບສັນຍາຢືມ (ຂຽນ/ແກ້ໄຂ ຈຳກັດສະເພາະ admin ຜ່ານ /api/admin/save-dsm, /api/admin/delete-dsm)
@@ -6583,6 +6584,36 @@ export default {
       ).bind(team).all();
       return Response.json({ team, dsm_name: await getDsmNameForTeam(env, team), loan: loan.results || [], cancel: cancel.results || [] });
     }
+    // ລາຍລະອຽດເອກະສານ ໃຫ້ DSM ກວດກ່ອນກົດ Approve (ສະເພາະເອກະສານຂອງທີມຕົນ) — ບໍ່ສົ່ງ key ຮູບ/ລາຍເຊັນ/ລິ້ງ token ອອກໄປ
+    if (url.pathname === "/api/dsm/contract-detail" && request.method === "GET") {
+      const cfg = DSM_DOC_KINDS[url.searchParams.get("kind")];
+      if (!cfg) return Response.json({ error: "ປະເພດເອກະສານບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+      const doc = await env.DB.prepare(`SELECT * FROM ${cfg.table} WHERE id = ?`).bind(url.searchParams.get("id")).first();
+      if (!doc || !(await dsmDocInTeam(doc, session.team))) return Response.json({ error: "ບໍ່ພົບເອກະສານໃນທີມຂອງທ່ານ" }, { status: 404 });
+      try {
+        const out = {};
+        for (const [k, v] of Object.entries(doc)) {
+          if (v == null || v === "") continue;
+          if (/^sig_[a-z_]+$/.test(k) && !/_(name|at)$/.test(k)) continue; // key ຮູບລາຍເຊັນ
+          if (/(photo|layout_plan|token|_key|password)/i.test(k)) continue;
+          if (typeof v === "string" && v.startsWith("data:")) continue;
+          out[k] = v;
+        }
+        out.mde_signed = !!doc.sig_mde;
+        out.dsm_signed = !!doc.sig_dsm;
+        out.mde_name = (await getMdeName(env, doc.mde_code)) || "";
+        if (!out.outlet_code && doc.asset_id) {
+          const a = await env.DB.prepare("SELECT outlet_code FROM assets WHERE id = ?").bind(doc.asset_id).first();
+          if (a && a.outlet_code) out.outlet_code = a.outlet_code;
+        }
+        out.kind = url.searchParams.get("kind");
+        out.kind_title = cfg.title;
+        return Response.json(out, { headers: RECEIPT_NO_CACHE });
+      } catch (e) {
+        console.error("/api/dsm/contract-detail", e);
+        return Response.json({ error: "ໂຫຼດລາຍລະອຽດບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
     if (url.pathname === "/api/dsm/contract-pdf" && request.method === "GET") {
       const cfg = DSM_DOC_KINDS[url.searchParams.get("kind")];
       if (!cfg) return Response.json({ error: "ປະເພດເອກະສານບໍ່ຖືກຕ້ອງ" }, { status: 400 });
@@ -6606,14 +6637,27 @@ export default {
         if (doc.sig_dsm) return Response.json({ error: "ເອກະສານນີ້ DSM ເຊັນແລ້ວ" }, { status: 409 });
         if (!doc.sig_mde) return Response.json({ error: "MDE ຍັງບໍ່ໄດ້ເຊັນເອກະສານນີ້" }, { status: 409 });
         const name = String(b.signer_name || "").trim().slice(0, 100) || (await getDsmNameForTeam(env, session.team)) || session.email;
-        if (!b.signature) return Response.json({ error: "ກະລຸນາເຊັນຊື່" }, { status: 400 });
+        // ກົດ Approve: ດຶງລາຍເຊັນ E-signature ທີ່ DSM ບັນທຶກໄວ້ (user_signatures) ມາໃສ່ໃນເອກະສານ — ບໍ່ຕ້ອງແຕ້ມໃໝ່
+        // (ຖ້າສົ່ງ signature ມາເອງ ຍັງຮອງຮັບຄືເດີມ)
         let sigKey;
-        try {
-          [sigKey] = await savePhotosToR2(env, [[b.signature, `${cfg.prefix}/${doc.id}/dsm-${Date.now()}.png`]]);
-        } catch (photoErr) {
-          const pr = photoErrorResponse(photoErr);
-          if (pr) return pr;
-          throw photoErr;
+        if (b.use_saved || !b.signature) {
+          await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS user_signatures (user_id INTEGER PRIMARY KEY, r2_key TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
+          ).run();
+          const saved = await env.DB.prepare("SELECT r2_key FROM user_signatures WHERE user_id = ?").bind(session.id).first();
+          const obj = saved ? await env.PHOTOS.get(saved.r2_key) : null;
+          if (!obj) return Response.json({ error: "ທ່ານຍັງບໍ່ໄດ້ສ້າງລາຍເຊັນ E-signature — ໄປສ້າງທີ່ ຕັ້ງຄ່າ (Profile) > ລາຍເຊັນຂອງຂ້ອຍ ກ່ອນ", code: "NO_SAVED_SIGNATURE" }, { status: 400 });
+          sigKey = `${cfg.prefix}/${doc.id}/dsm-${Date.now()}.png`;
+          const ct = (obj.httpMetadata && obj.httpMetadata.contentType) || "image/png";
+          await env.PHOTOS.put(sigKey, await obj.arrayBuffer(), { httpMetadata: { contentType: ct } });
+        } else {
+          try {
+            [sigKey] = await savePhotosToR2(env, [[b.signature, `${cfg.prefix}/${doc.id}/dsm-${Date.now()}.png`]]);
+          } catch (photoErr) {
+            const pr = photoErrorResponse(photoErr);
+            if (pr) return pr;
+            throw photoErr;
+          }
         }
         const res = await env.DB.batch([
           env.DB.prepare(`UPDATE ${cfg.table} SET sig_dsm = ?1, sig_dsm_name = ?2, sig_dsm_at = CURRENT_TIMESTAMP,
