@@ -659,6 +659,27 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='c
 
 
     .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+    /* ===== ໜ້າ ຕັ້ງຄ່າ: card ຫົວຂໍ້ → ກົດເຂົ້າໄປເຫັນລາຍລະອຽດ ===== */
+    .pf-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .pf-tile { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; cursor: pointer; font-family: inherit; color: var(--text-main); transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+    .pf-tile:hover { border-color: var(--primary); box-shadow: 0 6px 18px rgba(10,120,144,.12); transform: translateY(-1px); }
+    .pf-tile:active { transform: scale(.985); }
+    .pf-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .pf-ico { flex: 0 0 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(10,120,144,.10); color: var(--primary); font-size: 19px; }
+    .pf-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .pf-txt b { font-size: 15px; font-weight: 700; }
+    .pf-txt small { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pf-go { color: var(--text-muted); font-size: 13px; }
+    .pf-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .pf-bar.hidden { display: none; }
+    .pf-back { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .pf-back:hover { border-color: var(--primary); color: var(--primary); }
+    .pf-bar-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .pf-hub.hidden, .pf-grid.hidden { display: none; }
+    .pf-grid { grid-template-columns: minmax(0, 720px); }
+    .pf-grid > [data-pf]:not(.pf-on) { display: none !important; }
+    #pfGrid > #mySigCard.hidden { display: none !important; }
     .profile-info-list { display: flex; flex-direction: column; gap: 12px; }
     .profile-info-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #F5FAFA; border-radius: 10px; border: 1px solid var(--border-color); }
     .profile-info-item span:first-child { font-size: 13px; color: var(--text-muted); font-weight: 500; }
@@ -6504,15 +6525,58 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       <div id="view-profile" class="hidden">
         <div class="page-header">
           <div>
-            <h1>ຂໍ້ມູນສ່ວນຕົວ (Profile)</h1>
-            <p>ຈັດການຂໍ້ມູນບັນຊີຜູ້ໃຊ້ ແລະ ລະຫັດຜ່ານຂອງທ່ານ</p>
+            <h1>ຕັ້ງຄ່າ</h1>
+            <p>ເລືອກຫົວຂໍ້ທີ່ຕ້ອງການ ເພື່ອເບິ່ງ ແລະ ແກ້ໄຂລາຍລະອຽດ</p>
           </div>
         </div>
 
-        <div class="profile-grid">
-          <div class="content-card" id="mmThemeCard"><h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-palette" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນ Theme</h3><p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື (ຈື່ໄວ້ໃນເຄື່ອງນີ້)</p><div class="mm-theme-seg" role="group" aria-label="Theme"><button type="button" data-style="clean" aria-pressed="true" onclick="mmSetStyle('clean')"><b>ໃໝ່</b><small>ໄອຄອນເສັ້ນ ສີດຽວ ແຖບລຸ່ມແບບແບນ</small></button><button type="button" data-style="classic" aria-pressed="false" onclick="mmSetStyle('classic')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small></button></div></div>
+        <div id="pfHub" class="pf-hub" role="list">
+          <button type="button" class="pf-tile" role="listitem" data-pf-open="account" onclick="pfOpen('account')">
+            <span class="pf-ico"><i class="fa-solid fa-id-card"></i></span>
+            <span class="pf-txt"><b>ຂໍ້ມູນບັນຊີຜູ້ໃຊ້</b><small id="pfSubAccount">ອີເມວ, ສິດການໃຊ້ງານ, Team, MDE Code</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+          <button type="button" class="pf-tile" role="listitem" data-pf-open="display" onclick="pfOpen('display')">
+            <span class="pf-ico"><i class="fa-solid fa-palette"></i></span>
+            <span class="pf-txt"><b>ການສະແດງຜົນ</b><small>Theme ແລະ ໂໝດສະແດງຜົນ (ງ່າຍ / ທຳມະດາ)</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+          <button type="button" class="pf-tile" role="listitem" id="pfTileSig" data-pf-open="sig" onclick="pfOpen('sig')">
+            <span class="pf-ico"><i class="fa-solid fa-signature"></i></span>
+            <span class="pf-txt"><b>ລາຍເຊັນຂອງຂ້ອຍ</b><small id="pfSubSig">E-Signature ສຳລັບເຊັນເອກະສານ</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+          <button type="button" class="pf-tile" role="listitem" data-pf-open="password" onclick="pfOpen('password')">
+            <span class="pf-ico"><i class="fa-solid fa-key"></i></span>
+            <span class="pf-txt"><b>ປ່ຽນລະຫັດຜ່ານ</b><small>ຕັ້ງລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 8 ຕົວ)</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+          <button type="button" class="pf-tile" role="listitem" data-pf-open="push" onclick="pfOpen('push')">
+            <span class="pf-ico"><i class="fa-solid fa-bell"></i></span>
+            <span class="pf-txt"><b>ການແຈ້ງເຕືອນ</b><small id="pfSubPush">Push Notification</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+          <button type="button" class="pf-tile" role="listitem" data-pf-open="install" onclick="pfOpen('install')">
+            <span class="pf-ico"><i class="fa-solid fa-mobile-screen-button"></i></span>
+            <span class="pf-txt"><b>ຕິດຕັ້ງແອັບລົງມືຖື</b><small id="pfSubInstall">ເພີ່ມແອັບໃສ່ໜ້າຈໍຫຼັກ</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+          <button type="button" class="pf-tile" role="listitem" data-pf-open="update" onclick="pfOpen('update')">
+            <span class="pf-ico"><i class="fa-solid fa-arrows-rotate"></i></span>
+            <span class="pf-txt"><b>ອັບເດດແອັບ</b><small id="pfSubUpdate">ກວດເວີຊັນ ແລະ ດາວໂຫຼດ APK</small></span>
+            <i class="fa-solid fa-chevron-right pf-go"></i>
+          </button>
+        </div>
 
-          <div class="content-card" id="uiModeCard">
+        <div id="pfBar" class="pf-bar hidden">
+          <button type="button" class="pf-back" onclick="pfBack()"><i class="fa-solid fa-arrow-left"></i> ຕັ້ງຄ່າ</button>
+          <span id="pfBarTitle" class="pf-bar-title"></span>
+        </div>
+
+        <div class="profile-grid pf-grid hidden" id="pfGrid">
+          <div class="content-card" id="mmThemeCard" data-pf="display"><h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-palette" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນ Theme</h3><p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື (ຈື່ໄວ້ໃນເຄື່ອງນີ້)</p><div class="mm-theme-seg" role="group" aria-label="Theme"><button type="button" data-style="clean" aria-pressed="true" onclick="mmSetStyle('clean')"><b>ໃໝ່</b><small>ໄອຄອນເສັ້ນ ສີດຽວ ແຖບລຸ່ມແບບແບນ</small></button><button type="button" data-style="classic" aria-pressed="false" onclick="mmSetStyle('classic')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small></button></div></div>
+
+          <div class="content-card" id="uiModeCard" data-pf="display">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
               <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary); margin-right: 8px;"></i> ໂໝດສະແດງຜົນ
             </h3>
@@ -6523,7 +6587,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             </div>
           </div>
 
-          <div class="content-card">
+          <div class="content-card" data-pf="account">
             <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-id-card" style="color: var(--primary); margin-right: 8px;"></i> ຂໍ້ມູນບັນຊີຜູ້ໃຊ້
             </h2>
@@ -6535,7 +6599,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             </div>
           </div>
 
-          <div class="content-card hidden" id="mySigCard">
+          <div class="content-card hidden" id="mySigCard" data-pf="sig">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
               <i class="fa-solid fa-signature" style="color: var(--primary); margin-right: 8px;"></i> ລາຍເຊັນຂອງຂ້ອຍ (E-Signature)
             </h3>
@@ -6565,7 +6629,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             </div>
           </div>
 
-          <div class="content-card">
+          <div class="content-card" data-pf="password">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-key" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນລະຫັດຜ່ານໃໝ່
             </h3>
@@ -6587,7 +6651,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <div id="profileAlert" class="alert hidden"></div>
           </div>
 
-          <div class="content-card">
+          <div class="content-card" data-pf="push">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-bell" style="color: var(--primary); margin-right: 8px;"></i> ການແຈ້ງເຕືອນ (Push Notification)
             </h3>
@@ -6605,7 +6669,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <div id="pushAlert" class="alert hidden" style="margin-top: 14px;"></div>
           </div>
 
-          <div class="content-card">
+          <div class="content-card" data-pf="install">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-mobile-screen-button" style="color: var(--primary); margin-right: 8px;"></i> ຕິດຕັ້ງແອັບລົງມືຖື (Install App)
             </h3>
@@ -6622,7 +6686,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             </div>
           </div>
 
-          <div class="content-card" id="appUpdateCard">
+          <div class="content-card" id="appUpdateCard" data-pf="update">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main);">
               <i class="fa-solid fa-arrows-rotate" style="color: var(--primary); margin-right: 8px;"></i> ອັບເດດແອັບ
             </h3>
@@ -9987,6 +10051,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       } else if (viewName === 'profile') {
         document.getElementById('nav-profile').classList.add('active');
         document.getElementById('view-profile').classList.remove('hidden');
+        pfBack();
         renderProfileData();
       }
       pageTourMaybe(viewName); // ຄັ້ງທຳອິດທີ່ເຂົ້າໜ້ານີ້ -> ຄູ່ມືສັ້ນໆ ຂອງເມນູ/ເມນູຍ່ອຍ
@@ -10647,6 +10712,43 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       } catch (e) { appAlert(e.message || 'ລຶບບໍ່ສຳເລັດ'); }
     }
 
+    /* ===== ໜ້າ ຕັ້ງຄ່າ: hub ຂອງ card → ເປີດລາຍລະອຽດ ===== */
+    const PF_TITLES = { account: 'ຂໍ້ມູນບັນຊີຜູ້ໃຊ້', display: 'ການສະແດງຜົນ', sig: 'ລາຍເຊັນຂອງຂ້ອຍ', password: 'ປ່ຽນລະຫັດຜ່ານ', push: 'ການແຈ້ງເຕືອນ', install: 'ຕິດຕັ້ງແອັບລົງມືຖື', update: 'ອັບເດດແອັບ' };
+    function pfRefreshHub() {
+      const t = (id) => { const e = document.getElementById(id); return e ? (e.textContent || '').trim() : ''; };
+      const set = (id, v) => { const e = document.getElementById(id); if (e && v) e.textContent = v; };
+      const em = t('profEmail'); if (em && em !== '-') set('pfSubAccount', em);
+      const ps = t('pushStatusText'); if (ps && ps !== 'ກຳລັງກວດສອບ...') set('pfSubPush', ps);
+      const is = t('installStatusText'); if (is && is !== 'ກຳລັງກວດສອບ...') set('pfSubInstall', is);
+      const av = t('appVerText'); if (av && av !== '-') set('pfSubUpdate', 'ເວີຊັນ ' + av);
+      const sg = t('mySigStatus'); if (sg && sg !== 'ກຳລັງກວດສອບ...') set('pfSubSig', sg);
+      const tile = document.getElementById('pfTileSig');
+      if (tile) tile.classList.toggle('hidden', !(typeof mySigEnabled === 'function' && mySigEnabled()));
+    }
+    function pfBack() {
+      const hub = document.getElementById('pfHub'), grid = document.getElementById('pfGrid'), bar = document.getElementById('pfBar');
+      if (!hub || !grid) return;
+      grid.classList.add('hidden');
+      grid.querySelectorAll('[data-pf]').forEach(el => el.classList.remove('pf-on'));
+      bar.classList.add('hidden');
+      hub.classList.remove('hidden');
+      pfRefreshHub();
+      window.scrollTo(0, 0);
+    }
+    function pfOpen(key) {
+      const hub = document.getElementById('pfHub'), grid = document.getElementById('pfGrid'), bar = document.getElementById('pfBar');
+      if (!hub || !grid) return;
+      if (key === 'sig' && !(typeof mySigEnabled === 'function' && mySigEnabled())) return;
+      grid.querySelectorAll('[data-pf]').forEach(el => el.classList.toggle('pf-on', el.getAttribute('data-pf') === key));
+      document.getElementById('pfBarTitle').textContent = PF_TITLES[key] || '';
+      hub.classList.add('hidden');
+      grid.classList.remove('hidden');
+      bar.classList.remove('hidden');
+      window.scrollTo(0, 0);
+      if (key === 'sig') mySigSetMode(mySigMode); // canvas ຕ້ອງຄິດຂະໜາດຕອນເຫັນແລ້ວ
+    }
+    document.addEventListener('DOMContentLoaded', () => { const g = document.getElementById('pfGrid'); if (g) g.classList.add('hidden'); });
+
     function renderProfileData() {
       if (!currentUser) return;
       document.getElementById('profEmail').textContent = currentUser.email;
@@ -10658,7 +10760,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('profileAlert').classList.add('hidden');
       refreshPushUI();
       updateInstallUI();
-      mySigRefreshUI();
+      Promise.resolve(mySigRefreshUI()).finally(pfRefreshHub);
+      pfRefreshHub();
     }
 
     function showAlert(message, isError = false) {
@@ -11914,6 +12017,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       dsmDetailClose();
       switchView('profile');
       setTimeout(() => {
+        pfOpen('sig');
         const c = document.getElementById('mySigCard');
         if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.style.boxShadow = '0 0 0 3px #f59e0b'; setTimeout(() => { c.style.boxShadow = ''; }, 2500); }
       }, 350);
