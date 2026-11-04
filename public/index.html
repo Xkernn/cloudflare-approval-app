@@ -23184,7 +23184,7 @@ function assetStatusBadgeClass(status) {
 /* ==================== ເອກະສານເຈົ້າຂອງຮ້ານ (ແນບກ່ອນ MDE ເຊັນ) — ໃຊ້ຮ່ວມ 4 ຈຸດ: loan (wizard DOC-), cancel (wizard T-), loanSign (modal ເຊັນຮັບ), historyLoan (modal ປະຫວັດການຂໍ Asset)
        - ຕ້ອງແນບຮູບ 1 ຢ່າງ: ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ; ກ່ອນແນບ ຊ່ອງເຊັນຈະຖືກລັອກ
        - server ກວດຊ້ຳອີກຄັ້ງ (validateOwnerDocInput) ==================== */
-    const OWNER_DOC_LABELS = { id_card: 'ບັດປະຈຳໂຕ', passport: 'Passport', business_reg: 'ໃບທະບຽນວິສາຫະກິດ', census: 'ສຳມະໂນຄົວ' };
+    const OWNER_DOC_LABELS = { id_card: 'ບັດປະຈຳໂຕ', passport: 'Passport', business_reg: 'ໃບທະບຽນວິສາຫະກິດ', census: 'ສຳມະໂນຄົວ', shop_photo: 'ຮູບຮ້ານຄ້າ', cooler_photo: 'ຮູບຕູ້ແຊ່' };
     const OWNER_DOC_CANVAS = { loan: 'loanSigMdeCanvas', cancel: 'cancelSigMdeCanvas', loanSign: 'loanSignCanvas', historyLoan: 'historyLoanCanvas' };
     const ownerDocState = {};
 
@@ -23193,15 +23193,27 @@ function assetStatusBadgeClass(status) {
       ownerDocState[key] = { type: (existing && existing.type) || '', photo: null, existing: !!(existing && existing.has) };
       const box = document.getElementById(key + 'OwnerDocBox');
       if (!box) return;
-      box.innerHTML = `
-        <div class="owner-doc-title"><i class="fa-solid fa-id-card mr-1"></i> ແນບເອກະສານເຈົ້າຂອງຮ້ານ <span style="color:#dc2626;">*</span></div>
-        <div class="owner-doc-sub">ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ: ບັດປະຈຳໂຕ ຫຼື Passport ຫຼື ໃບທະບຽນວິສາຫະກິດ ຫຼື ສຳມະໂນຄົວ (ຮູບ JPG / PNG / WebP)</div>
-        <select id="${key}OwnerDocType" class="form-control" style="margin-bottom:8px;" onchange="ownerDocTypeChanged('${key}')">
-          <option value="">-- ເລືອກຊະນິດເອກະສານ --</option>
+      const isCancelPhoto = key === 'cancel'; // ໃບເກັບຕູ້ເຂົ້າສາງ (T-): ແນບຮູບຮ້ານ/ຮູບຕູ້ ແທນເອກະສານເຈົ້າຂອງຮ້ານ
+      const typeOptions = isCancelPhoto
+        ? `<option value="">-- ເລືອກຊະນິດຮູບ --</option>
+          <option value="shop_photo">ຮູບຮ້ານຄ້າ</option>
+          <option value="cooler_photo">ຮູບຕູ້ແຊ່</option>`
+        : `<option value="">-- ເລືອກຊະນິດເອກະສານ --</option>
           <option value="id_card">ບັດປະຈຳໂຕ</option>
           <option value="passport">Passport</option>
           <option value="business_reg">ໃບທະບຽນວິສາຫະກິດ</option>
-          <option value="census">ສຳມະໂນຄົວ</option>
+          <option value="census">ສຳມະໂນຄົວ</option>`;
+      const titleHtml = isCancelPhoto
+        ? '<i class="fa-solid fa-camera mr-1"></i> ແນບຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່ <span style="color:#dc2626;">*</span>'
+        : '<i class="fa-solid fa-id-card mr-1"></i> ແນບເອກະສານເຈົ້າຂອງຮ້ານ <span style="color:#dc2626;">*</span>';
+      const subHtml = isCancelPhoto
+        ? 'ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຮູບ ກ່ອນ MDE ເຊັນ: ຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່ (ບໍ່ຕ້ອງແນບເອກະສານຕິດຂັດຂອງລູກຄ້າ)'
+        : null;
+      box.innerHTML = `
+        <div class="owner-doc-title">${titleHtml}</div>
+        <div class="owner-doc-sub">${subHtml || `ຕ້ອງແນບຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ: ບັດປະຈຳໂຕ ຫຼື Passport ຫຼື ໃບທະບຽນວິສາຫະກິດ ຫຼື ສຳມະໂນຄົວ (ຮູບ JPG / PNG / WebP)`}</div>
+        <select id="${key}OwnerDocType" class="form-control" style="margin-bottom:8px;" onchange="ownerDocTypeChanged('${key}')">
+          ${typeOptions}
         </select>
         <input type="file" id="${key}OwnerDocFile" class="form-control" accept="image/*" onchange="ownerDocPicked('${key}', event)">
         <img id="${key}OwnerDocPreview" class="owner-doc-preview hidden" alt="">
@@ -23244,7 +23256,7 @@ function assetStatusBadgeClass(status) {
           stateEl.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> ແນບ' + esc(OWNER_DOC_LABELS[st.type] || '') + (st.photo ? ' ແລ້ວ' : ' ໄວ້ແລ້ວ (ໃບນີ້ມີເອກະສານແນບຢູ່ແລ້ວ)');
         } else {
           stateEl.style.color = '#b45309';
-          stateEl.textContent = !st.type ? 'ກະລຸນາເລືອກຊະນິດເອກະສານ ແລະ ແນບຮູບ' : 'ກະລຸນາແນບຮູບເອກະສານ';
+          stateEl.textContent = !st.type ? (key === 'cancel' ? 'ກະລຸນາເລືອກຊະນິດຮູບ ແລະ ແນບຮູບ' : 'ກະລຸນາເລືອກຊະນິດເອກະສານ ແລະ ແນບຮູບ') : (key === 'cancel' ? 'ກະລຸນາແນບຮູບ' : 'ກະລຸນາແນບຮູບເອກະສານ');
         }
       }
       const canvas = document.getElementById(OWNER_DOC_CANVAS[key]);
@@ -23255,7 +23267,7 @@ function assetStatusBadgeClass(status) {
         if (!ready && !hint) {
           hint = document.createElement('p');
           hint.className = 'owner-doc-lock-hint';
-          hint.textContent = 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານກ່ອນ ຈຶ່ງຈະເຊັນໄດ້';
+          hint.textContent = key === 'cancel' ? 'ກະລຸນາແນບຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່ກ່ອນ ຈຶ່ງຈະເຊັນໄດ້' : 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານກ່ອນ ຈຶ່ງຈະເຊັນໄດ້';
           wrap.parentNode.insertBefore(hint, wrap);
         } else if (ready && hint) {
           hint.remove();
@@ -23266,6 +23278,12 @@ function assetStatusBadgeClass(status) {
     // ຄືນຂໍ້ຄວາມຜິດພາດ (string) ຖ້າຍັງແນບບໍ່ຄົບ, null ຖ້າຄົບແລ້ວ
     function ownerDocError(key) {
       const st = ownerDocState[key];
+      if (key === 'cancel') {
+        if (!st) return 'ກະລຸນາແນບຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່';
+        if (!st.type) return 'ກະລຸນາເລືອກວ່າເປັນ ຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່';
+        if (!st.photo && !st.existing) return 'ກະລຸນາແນບຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່ ກ່ອນ MDE ເຊັນ';
+        return null;
+      }
       if (!st) return 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ';
       if (!st.type) return 'ກະລຸນາເລືອກຊະນິດເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ)';
       if (!st.photo && !st.existing) return 'ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ) ຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ';
@@ -24399,7 +24417,7 @@ function assetStatusBadgeClass(status) {
       if (!c.has_owner_doc) return '';
       const isOwner = !!(currentUser && currentUser.mde_code && String(currentUser.mde_code).toUpperCase() === String(c.mde_code || '').toUpperCase());
       if (!isAdmin && !isOwner) return '';
-      return `<button type="button" class="btn-act" style="background:#EAF0F0; color:#4B6469;" onclick="viewOwnerDoc('${kind}', ${c.id}, '${esc(c.owner_doc_type || '')}')"><i class="fa-solid fa-id-card mr-1"></i> ເອກະສານເຈົ້າຂອງຮ້ານ</button>`;
+      return `<button type="button" class="btn-act" style="background:#EAF0F0; color:#4B6469;" onclick="viewOwnerDoc('${kind}', ${c.id}, '${esc(c.owner_doc_type || '')}')"><i class="fa-solid fa-id-card mr-1"></i> ${(c.owner_doc_type === 'shop_photo' || c.owner_doc_type === 'cooler_photo') ? esc(OWNER_DOC_LABELS[c.owner_doc_type]) : 'ເອກະສານເຈົ້າຂອງຮ້ານ'}</button>`;
     }
 
     function dsmChipHtml(c) {

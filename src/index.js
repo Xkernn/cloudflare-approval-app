@@ -702,11 +702,21 @@ async function ownerDocBytesFor(env, session, row, forDsm) {
 // - ເກັບໃນ R2 key: loan-contract/<id>/owner-doc-<ts>.jpg | cancel-contract/<id>/owner-doc-<ts>.jpg
 // - ເບິ່ງໄດ້ສະເພາະ admin ແລະ MDE ເຈົ້າຂອງໃບ ຜ່ານ GET /api/contract-owner-doc (ເປັນຂໍ້ມູນສ່ວນຕົວ ຈຶ່ງບໍ່ເປີດຜ່ານ /api/photo)
 // ==========================================================================
-const OWNER_DOC_TYPES = { id_card: "ບັດປະຈຳໂຕ", passport: "Passport", business_reg: "ໃບທະບຽນວິສາຫະກິດ", census: "ສຳມະໂນຄົວ" };
+const OWNER_DOC_TYPES = { id_card: "ບັດປະຈຳໂຕ", passport: "Passport", business_reg: "ໃບທະບຽນວິສາຫະກິດ", census: "ສຳມະໂນຄົວ", shop_photo: "ຮູບຮ້ານຄ້າ", cooler_photo: "ຮູບຕູ້ແຊ່" };
+// ໃບເກັບຕູ້ເຂົ້າສາງ (T-): ບໍ່ຕ້ອງແນບເອກະສານຕິດຂັດຂອງລູກຄ້າ — ແນບ ຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່ ແທນ
+const CANCEL_PHOTO_TYPES = ["shop_photo", "cooler_photo"];
 
 // ກວດກ່ອນສ້າງ/ບັນທຶກໃບ ເມື່ອມີລາຍເຊັນ MDE ສົ່ງມາ: ຕ້ອງມີເອກະສານເຈົ້າຂອງຮ້ານ (ສົ່ງມາໃໝ່ ຫຼື ມີໃນໃບຢູ່ແລ້ວ) ພ້ອມຊະນິດທີ່ຖືກຕ້ອງ
-function validateOwnerDocInput(body, existingRow) {
+function validateOwnerDocInput(body, existingRow, kind) {
   const hasExisting = !!(existingRow && existingRow.owner_doc_photo);
+  if (kind === "cancel") {
+    if (!body.owner_doc_photo && !hasExisting) return "ກະລຸນາແນບຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່ ກ່ອນ MDE ເຊັນ";
+    const t = body.owner_doc_type || (existingRow && existingRow.owner_doc_type) || null;
+    // ໃບເກົ່າທີ່ແນບເອກະສານເຈົ້າຂອງຮ້ານໄວ້ແລ້ວ (ບໍ່ສົ່ງຮູບໃໝ່) ຍັງຖືວ່າຜ່ານ
+    if (body.owner_doc_photo && !CANCEL_PHOTO_TYPES.includes(t)) return "ກະລຸນາເລືອກວ່າເປັນ ຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່";
+    if (!t || !Object.prototype.hasOwnProperty.call(OWNER_DOC_TYPES, t)) return "ກະລຸນາເລືອກວ່າເປັນ ຮູບຮ້ານຄ້າ ຫຼື ຮູບຕູ້ແຊ່";
+    return null;
+  }
   if (!body.owner_doc_photo && !hasExisting) {
     return "ກະລຸນາແນບເອກະສານເຈົ້າຂອງຮ້ານ (ບັດປະຈຳໂຕ / Passport / ໃບທະບຽນວິສາຫະກິດ / ສຳມະໂນຄົວ) ຢ່າງໜ້ອຍ 1 ຢ່າງ ກ່ອນ MDE ເຊັນ";
   }
@@ -12501,7 +12511,7 @@ export default {
           if (!reasons) return Response.json({ error: "ກະລຸນາເລືອກເຫດຜົນຢ່າງໜ້ອຍ 1 ຂໍ້" }, { status: 400 });
           // ເອກະສານເຈົ້າຂອງຮ້ານ: ຕ້ອງແນບກ່ອນ MDE ເຊັນ
           if (body.sig_mde) {
-            const ownerDocErr = validateOwnerDocInput(body, null);
+            const ownerDocErr = validateOwnerDocInput(body, null, "cancel");
             if (ownerDocErr) return Response.json({ error: ownerDocErr }, { status: 400 });
           }
           const dsmName = await getDsmNameForTeam(env, mde && mde.team);
@@ -12576,7 +12586,7 @@ export default {
             return Response.json({ error: "ບໍ່ມີສິດແກ້ໄຂໃບນີ້" }, { status: 403 });
           }
           if (body.sig_mde) {
-            const ownerDocErr = validateOwnerDocInput(body, row);
+            const ownerDocErr = validateOwnerDocInput(body, row, "cancel");
             if (ownerDocErr) return Response.json({ error: ownerDocErr }, { status: 400 });
           }
           const sets = [];
