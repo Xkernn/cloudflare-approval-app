@@ -1576,6 +1576,7 @@ async function ncFillRoundSummary(env, round) {
 }
 
 const ROUTE_ROLES = {
+  "/api/my-signature": ["user", "dsm"], // ລາຍເຊັນທີ່ບັນທຶກໄວ້ຂອງຕົນເອງ (MDE / DSM) — ເບິ່ງ/ບັນທຶກ/ລຶບ
   "/api/dsm/contracts": ["dsm"],
   "/api/dsm/contract-pdf": ["dsm"],
   "/api/dsm/sign": ["dsm"],
@@ -8702,6 +8703,65 @@ export default {
       } catch (e) {
         console.error("/api/admin/reset-password", e);
         return Response.json({ error: "ບໍ່ສາມາດຕັ້ງລະຫັດຜ່ານໃໝ່ໄດ້" }, { status: 500 });
+      }
+    }
+
+    // ===================== ລາຍເຊັນຂອງຂ້ອຍ (role user = MDE / role dsm) =====================
+    // ເກັບຮູບລາຍເຊັນ 1 ອັນຕໍ່ຜູ້ໃຊ້ (ແຕ້ມເອງ ຫຼື ອັບໂຫຼດຮູບ) ໄວ້ໃນ R2 ແລ້ວດຶງມາໃສ່ຊ່ອງເຊັນໄດ້ ບໍ່ຕ້ອງແຕ້ມໃໝ່ທຸກຄັ້ງ
+    // - userId ມາຈາກ token ເທົ່ານັ້ນ (session.id) → ເບິ່ງ/ແກ້ລາຍເຊັນຄົນອື່ນບໍ່ໄດ້
+    // - ເວລາເຊັນເອກະສານຈິງ ຝັ່ງໜ້າຍັງສົ່ງຮູບລາຍເຊັນມາກັບຄຳຂໍເຊັນຄືເດີມ (server ບໍ່ດຶງລາຍເຊັນທີ່ບັນທຶກໄວ້ມາເຊັນແທນໂດຍອັດຕະໂນມັດ)
+    if (url.pathname === "/api/my-signature") {
+      try {
+        await env.DB.prepare(
+          `CREATE TABLE IF NOT EXISTS user_signatures (
+             user_id INTEGER PRIMARY KEY,
+             r2_key TEXT NOT NULL,
+             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+           )`
+        ).run();
+        const row = await env.DB.prepare("SELECT r2_key, updated_at FROM user_signatures WHERE user_id = ?").bind(session.id).first();
+        if (request.method === "GET") {
+          if (!row) return Response.json({ has: false }, { headers: RECEIPT_NO_CACHE });
+          const obj = await env.PHOTOS.get(row.r2_key);
+          if (!obj) return Response.json({ has: false }, { headers: RECEIPT_NO_CACHE });
+          const bytes = new Uint8Array(await obj.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+          const ct = (obj.httpMetadata && obj.httpMetadata.contentType) || "image/png";
+          return Response.json({ has: true, updated_at: row.updated_at, data_url: `data:${ct};base64,${btoa(bin)}` }, { headers: RECEIPT_NO_CACHE });
+        }
+        if (request.method === "POST") {
+          const b = await request.json();
+          if (!b.signature) return Response.json({ error: "ກະລຸນາແຕ້ມ ຫຼື ອັບໂຫຼດລາຍເຊັນ" }, { status: 400 });
+          if (typeof b.signature === "string" && b.signature.length > 700 * 1024) {
+            return Response.json({ error: "ຮູບລາຍເຊັນໃຫຍ່ເກີນໄປ (ບໍ່ເກີນ ~500KB)" }, { status: 400 });
+          }
+          const newKey = `user-signature/${session.id}/${Date.now()}.png`;
+          try {
+            await savePhotosToR2(env, [[b.signature, newKey]]);
+          } catch (photoErr) {
+            const pr = photoErrorResponse(photoErr);
+            if (pr) return pr;
+            throw photoErr;
+          }
+          await env.DB.prepare(
+            `INSERT INTO user_signatures (user_id, r2_key, updated_at) VALUES (?1, ?2, CURRENT_TIMESTAMP)
+             ON CONFLICT(user_id) DO UPDATE SET r2_key = excluded.r2_key, updated_at = CURRENT_TIMESTAMP`
+          ).bind(session.id, newKey).run();
+          if (row && row.r2_key) await deleteR2Photos(env, [row.r2_key]);
+          return Response.json({ message: "ບັນທຶກລາຍເຊັນຂອງທ່ານແລ້ວ" });
+        }
+        if (request.method === "DELETE") {
+          if (row) {
+            await env.DB.prepare("DELETE FROM user_signatures WHERE user_id = ?").bind(session.id).run();
+            await deleteR2Photos(env, [row.r2_key]);
+          }
+          return Response.json({ message: "ລຶບລາຍເຊັນທີ່ບັນທຶກໄວ້ແລ້ວ" });
+        }
+        return Response.json({ error: "Method not allowed" }, { status: 405 });
+      } catch (e) {
+        console.error("/api/my-signature", e);
+        return Response.json({ error: "ບໍ່ສາມາດຈັດການລາຍເຊັນໄດ້ ກະລຸນາລອງໃໝ່" }, { status: 500 });
       }
     }
 

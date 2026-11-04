@@ -3966,7 +3966,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
                 <label>ລາຍເຊັນ MDE (ຜູ້ຂໍ)</label>
                 <input type="text" id="loanSigMdeName" class="form-control" placeholder="ຊື່ຜູ້ເຊັນ" style="margin-bottom:8px; background:#f1f5f9; cursor:not-allowed;" readonly>
                 <div class="sig-pad-wrap"><canvas id="loanSigMdeCanvas" class="sig-pad-canvas"></canvas></div>
-                <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('loanSigMdeCanvas')">ລຶບ / ເຊັນໃໝ່</button>
+                <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('loanSigMdeCanvas')">ລຶບ / ເຊັນໃໝ່</button><button type="button" class="btn-add my-sig-use-btn hidden" style="margin-top:6px; margin-left:6px;" onclick="useSavedSignature('loanSigMdeCanvas')"><i class="fa-solid fa-signature mr-1"></i> ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
               </div>
 
               <div class="loan-nav-btns">
@@ -4094,7 +4094,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <label>ລາຍເຊັນ MDE (ຜູ້ແຈ້ງ)</label>
               <input type="text" id="cancelSigMdeName" class="form-control" placeholder="ຊື່ຜູ້ເຊັນ" style="margin-bottom:8px; background:#f1f5f9; cursor:not-allowed;" readonly>
               <div class="sig-pad-wrap"><canvas id="cancelSigMdeCanvas" class="sig-pad-canvas"></canvas></div>
-              <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('cancelSigMdeCanvas')">ລຶບ / ເຊັນໃໝ່</button>
+              <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('cancelSigMdeCanvas')">ລຶບ / ເຊັນໃໝ່</button><button type="button" class="btn-add my-sig-use-btn hidden" style="margin-top:6px; margin-left:6px;" onclick="useSavedSignature('cancelSigMdeCanvas')"><i class="fa-solid fa-signature mr-1"></i> ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
             </div>
             <div class="loan-nav-btns">
               <button type="button" class="btn-back" onclick="cancelPrevStep()"><i class="fa-solid fa-arrow-left mr-1"></i> ຍ້ອນກັບ</button>
@@ -6121,7 +6121,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <input id="dsmSignName" class="form-control" maxlength="100">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
             <label style="font-weight:700; font-size:13.5px; margin:0;">ລາຍເຊັນ</label>
-            <button type="button" class="btn-act" onclick="dsmSignClear()">ລ້າງ</button>
+            <button type="button" class="btn-act" onclick="dsmSignClear()">ລ້າງ</button><button type="button" class="btn-act my-sig-use-btn hidden" onclick="useSavedSignature('dsmSignCanvas')"><i class="fa-solid fa-signature"></i> ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
           </div>
           <div style="border:1px dashed #94a3b8; border-radius:10px; touch-action:none;"><canvas id="dsmSignCanvas" style="display:block; width:100%; height:170px;"></canvas></div>
           <div style="display:flex; gap:8px; margin-top:12px;">
@@ -6435,6 +6435,36 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <div class="profile-info-item"><span>ສິດການໃຊ້ງານ (Role)</span><span id="profRole">-</span></div>
               <div class="profile-info-item"><span>Team</span><span id="profTeam">-</span></div>
               <div class="profile-info-item"><span>MDE Code</span><span id="profMde">-</span></div>
+            </div>
+          </div>
+
+          <div class="content-card hidden" id="mySigCard">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
+              <i class="fa-solid fa-signature" style="color: var(--primary); margin-right: 8px;"></i> ລາຍເຊັນຂອງຂ້ອຍ (E-Signature)
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ສ້າງລາຍເຊັນຂອງທ່ານໄວ້ຄັ້ງດຽວ (ແຕ້ມເອງ ຫຼື ອັບໂຫຼດຮູບ) ແລ້ວກົດ "ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້" ຕອນເຊັນເອກະສານ ໂດຍບໍ່ຕ້ອງແຕ້ມໃໝ່ທຸກຄັ້ງ. ຍັງແຕ້ມໃໝ່ຕອນເຊັນໄດ້ຄືເດີມ.</p>
+            <div class="profile-info-item" style="margin-bottom:10px;"><span>ສະຖານະ</span><span id="mySigStatus">ກຳລັງກວດສອບ...</span></div>
+            <div id="mySigPreviewBox" class="hidden" style="border:1px dashed var(--border, #cbd5e1); border-radius:10px; padding:8px; background:#fff; text-align:center; margin-bottom:12px;">
+              <img id="mySigPreview" alt="ລາຍເຊັນທີ່ບັນທຶກໄວ້" style="max-width:100%; max-height:140px; object-fit:contain;">
+            </div>
+            <div class="mm-theme-seg" role="group" aria-label="ວິທີສ້າງລາຍເຊັນ" style="margin-bottom:10px;">
+              <button type="button" id="mySigTabDraw" aria-pressed="true" onclick="mySigSetMode('draw')"><b>ແຕ້ມເອງ</b><small>ເຊັນດ້ວຍນິ້ວ / ເມົ້າ</small></button>
+              <button type="button" id="mySigTabUpload" aria-pressed="false" onclick="mySigSetMode('upload')"><b>ອັບໂຫຼດຮູບ</b><small>ຮູບລາຍເຊັນ JPG / PNG</small></button>
+            </div>
+            <div id="mySigDrawBox">
+              <div class="sig-pad-wrap"><canvas id="mySigCanvas" class="sig-pad-canvas"></canvas></div>
+              <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('mySigCanvas')">ລຶບ / ແຕ້ມໃໝ່</button>
+            </div>
+            <div id="mySigUploadBox" class="hidden">
+              <input type="file" id="mySigFile" accept="image/png,image/jpeg,image/webp" class="form-control" onchange="mySigOnFile(this)">
+              <p style="font-size:12px; color: var(--text-muted); margin:6px 0;">ແນະນຳ: ຖ່າຍລາຍເຊັນໃສ່ເຈ້ຍຂາວ ແສງສະຫວ່າງພໍດີ. ລະບົບຈະເຮັດໃຫ້ພື້ນຫຼັງຂາວໂປ່ງໃສໃຫ້ອັດຕະໂນມັດ.</p>
+              <div id="mySigUploadPreviewBox" class="hidden" style="border:1px dashed var(--border, #cbd5e1); border-radius:10px; padding:8px; background:#fff; text-align:center;">
+                <img id="mySigUploadPreview" alt="ຕົວຢ່າງ" style="max-width:100%; max-height:140px; object-fit:contain;">
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+              <button type="button" id="mySigSaveBtn" class="btn-submit" style="flex:1 1 160px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="mySigSave()"><i class="fa-solid fa-floppy-disk mr-2"></i> ບັນທຶກລາຍເຊັນ</button>
+              <button type="button" id="mySigDeleteBtn" class="btn-add hidden" onclick="mySigDelete()"><i class="fa-solid fa-trash mr-1"></i> ລຶບລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
             </div>
           </div>
 
@@ -7467,7 +7497,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         <label>ຊື່ຜູ້ເຊັນ (MDE)</label>
         <input type="text" id="loanSignMdeName" class="form-control" style="margin-bottom:8px; background:#f1f5f9; cursor:not-allowed;" readonly>
         <div class="sig-pad-wrap"><canvas id="loanSignCanvas" class="sig-pad-canvas"></canvas></div>
-        <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('loanSignCanvas')">ລຶບ / ເຊັນໃໝ່</button>
+        <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('loanSignCanvas')">ລຶບ / ເຊັນໃໝ່</button><button type="button" class="btn-add my-sig-use-btn hidden" style="margin-top:6px; margin-left:6px;" onclick="useSavedSignature('loanSignCanvas')"><i class="fa-solid fa-signature mr-1"></i> ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
       </div>
 
       <p id="loanSignMsg" class="hidden" style="font-size: 13px; color: #dc2626; margin: 6px 0;"></p>
@@ -7572,7 +7602,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         <label>ຊື່ຜູ້ເຊັນ (MDE)</label>
         <input type="text" id="historyLoanMdeName" class="form-control" style="margin-bottom:8px; background:#f1f5f9; cursor:not-allowed;" readonly>
         <div class="sig-pad-wrap"><canvas id="historyLoanCanvas" class="sig-pad-canvas"></canvas></div>
-        <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('historyLoanCanvas')">ລຶບ / ເຊັນໃໝ່</button>
+        <button type="button" class="btn-add" style="margin-top:6px;" onclick="clearSignaturePad('historyLoanCanvas')">ລຶບ / ເຊັນໃໝ່</button><button type="button" class="btn-add my-sig-use-btn hidden" style="margin-top:6px; margin-left:6px;" onclick="useSavedSignature('historyLoanCanvas')"><i class="fa-solid fa-signature mr-1"></i> ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
       </div>
 
       <p id="historyLoanMsg" class="hidden" style="font-size: 13px; color: #dc2626; margin: 6px 0;"></p>
@@ -10383,6 +10413,141 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
     }
 
+    /* ===================== ລາຍເຊັນຂອງຂ້ອຍ (role user / dsm) =====================
+       - ບັນທຶກລາຍເຊັນຕົນເອງໄວ້ຢູ່ server (/api/my-signature) ແຕ້ມເອງ ຫຼື ອັບໂຫຼດຮູບ
+       - ປຸ່ມ "ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້" ຢູ່ຊ່ອງເຊັນ → ວາດຮູບນັ້ນລົງ canvas ແລ້ວສົ່ງເຊັນຄືເດີມ (ຍັງແກ້/ແຕ້ມທັບໄດ້) */
+    const MY_SIG_ROLES = ['user', 'dsm'];
+    let mySigCache = null;       // { has, data_url } | null (ຍັງບໍ່ໄດ້ໂຫຼດ)
+    let mySigMode = 'draw';
+    let mySigUploadDataUrl = null;
+    function mySigEnabled() { return !!currentUser && MY_SIG_ROLES.includes(currentUser.role); }
+    function syncMySigButtons() {
+      const on = mySigEnabled();
+      document.querySelectorAll('.my-sig-use-btn').forEach(b => b.classList.toggle('hidden', !on));
+    }
+    async function mySigFetch(force) {
+      if (!mySigEnabled()) return null;
+      if (mySigCache && !force) return mySigCache;
+      try {
+        const res = await fetch('/api/my-signature');
+        const d = await res.json().catch(() => ({}));
+        mySigCache = res.ok ? d : { has: false };
+      } catch (e) { mySigCache = { has: false }; }
+      return mySigCache;
+    }
+    function mySigDrawFit(ctx, img, w, h) {
+      const pad = 6, r = Math.min((w - pad * 2) / img.width, (h - pad * 2) / img.height, 1.5);
+      const dw = img.width * r, dh = img.height * r;
+      ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    }
+    function mySigLoadImg(src) {
+      return new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = () => reject(new Error('ໂຫຼດຮູບບໍ່ສຳເລັດ')); im.src = src; });
+    }
+    // ກົດຈາກຊ່ອງເຊັນ: padId = canvas id ຂອງ pad ກາງ (loanSigPads) ຫຼື 'dsmSignCanvas' (modal ຂອງ DSM)
+    async function useSavedSignature(padId) {
+      const d = await mySigFetch(true);
+      if (!d || !d.has) { appAlert('ຍັງບໍ່ມີລາຍເຊັນທີ່ບັນທຶກໄວ້ — ໄປສ້າງໄດ້ທີ່ ຕັ້ງຄ່າ (Profile) > ລາຍເຊັນຂອງຂ້ອຍ'); return; }
+      try {
+        const img = await mySigLoadImg(d.data_url);
+        if (padId === 'dsmSignCanvas') {
+          if (!dsmCv || !dsmCtx) return;
+          dsmCtx.clearRect(0, 0, dsmCv.width, dsmCv.height);
+          mySigDrawFit(dsmCtx, img, dsmCv.clientWidth || 300, dsmCv.clientHeight || 170);
+          dsmDirty = true;
+          return;
+        }
+        setupSignaturePad(padId);
+        const st = loanSigPads[padId];
+        if (!st) return;
+        st.ctx.clearRect(0, 0, st.canvas.width, st.canvas.height);
+        mySigDrawFit(st.ctx, img, st.canvas.clientWidth || 300, st.canvas.clientHeight || 160);
+        st.dirty = true;
+      } catch (e) { appAlert(e.message || 'ໃຊ້ລາຍເຊັນບໍ່ສຳເລັດ'); }
+    }
+    function mySigSetMode(m) {
+      mySigMode = m;
+      document.getElementById('mySigTabDraw').setAttribute('aria-pressed', m === 'draw');
+      document.getElementById('mySigTabUpload').setAttribute('aria-pressed', m === 'upload');
+      document.getElementById('mySigDrawBox').classList.toggle('hidden', m !== 'draw');
+      document.getElementById('mySigUploadBox').classList.toggle('hidden', m !== 'upload');
+      if (m === 'draw') requestAnimationFrame(() => setupSignaturePad('mySigCanvas'));
+    }
+    async function mySigRefreshUI() {
+      const card = document.getElementById('mySigCard');
+      if (!card) return;
+      card.classList.toggle('hidden', !mySigEnabled());
+      if (!mySigEnabled()) return;
+      const d = await mySigFetch(true);
+      const has = !!(d && d.has);
+      document.getElementById('mySigStatus').textContent = has ? 'ບັນທຶກແລ້ວ' : 'ຍັງບໍ່ໄດ້ບັນທຶກ';
+      document.getElementById('mySigPreviewBox').classList.toggle('hidden', !has);
+      if (has) document.getElementById('mySigPreview').src = d.data_url;
+      document.getElementById('mySigDeleteBtn').classList.toggle('hidden', !has);
+      mySigUploadDataUrl = null;
+      document.getElementById('mySigUploadPreviewBox').classList.add('hidden');
+      const f = document.getElementById('mySigFile'); if (f) f.value = '';
+      mySigSetMode(mySigMode);
+    }
+    // ຮູບທີ່ອັບໂຫຼດ → ຫຍໍ້ (ສູງສຸດ 800×320) + ເຮັດໃຫ້ພື້ນຫຼັງຂາວ/ສະຫວ່າງໂປ່ງໃສ ແລ້ວແປງເປັນ PNG
+    async function mySigOnFile(input) {
+      const file = input.files && input.files[0];
+      mySigUploadDataUrl = null;
+      document.getElementById('mySigUploadPreviewBox').classList.add('hidden');
+      if (!file) return;
+      if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) { appAlert('ຮອງຮັບສະເພາະຮູບ JPG / PNG / WebP'); input.value = ''; return; }
+      if (file.size > 8 * 1024 * 1024) { appAlert('ຮູບໃຫຍ່ເກີນໄປ (ບໍ່ເກີນ 8MB)'); input.value = ''; return; }
+      try {
+        const url = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('ອ່ານໄຟລ໌ບໍ່ໄດ້')); r.readAsDataURL(file); });
+        const img = await mySigLoadImg(url);
+        const sc = Math.min(1, 800 / img.width, 320 / img.height);
+        const w = Math.max(1, Math.round(img.width * sc)), h = Math.max(1, Math.round(img.height * sc));
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+        const id = cx.getImageData(0, 0, w, h), px = id.data;
+        for (let i = 0; i < px.length; i += 4) {
+          const lum = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+          if (lum > 215) { px[i + 3] = 0; }
+          else if (lum > 150) { px[i + 3] = Math.round(px[i + 3] * (215 - lum) / 65); } // ຂອບນຸ້ມ
+          if (px[i + 3] > 0) { px[i] = 11; px[i + 1] = 16; px[i + 2] = 32; } // ປ່ຽນເປັນສີໝຶກເຂັ້ມຄືກັບລາຍເຊັນແຕ້ມ
+        }
+        cx.putImageData(id, 0, 0);
+        mySigUploadDataUrl = cv.toDataURL('image/png');
+        document.getElementById('mySigUploadPreview').src = mySigUploadDataUrl;
+        document.getElementById('mySigUploadPreviewBox').classList.remove('hidden');
+      } catch (e) { appAlert(e.message || 'ອ່ານຮູບບໍ່ສຳເລັດ'); input.value = ''; }
+    }
+    async function mySigSave() {
+      let dataUrl = null;
+      if (mySigMode === 'draw') {
+        dataUrl = getSignatureDataUrl('mySigCanvas');
+        if (!dataUrl) return appAlert('ກະລຸນາແຕ້ມລາຍເຊັນກ່ອນ');
+      } else {
+        dataUrl = mySigUploadDataUrl;
+        if (!dataUrl) return appAlert('ກະລຸນາເລືອກຮູບລາຍເຊັນກ່ອນ');
+      }
+      const btn = document.getElementById('mySigSaveBtn'); btn.disabled = true;
+      try {
+        const res = await fetch('/api/my-signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ signature: dataUrl }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || 'ບັນທຶກບໍ່ສຳເລັດ');
+        clearSignaturePad('mySigCanvas');
+        showAlert(d.message || 'ບັນທຶກລາຍເຊັນແລ້ວ');
+        await mySigRefreshUI();
+      } catch (e) { appAlert(e.message || 'ບັນທຶກບໍ່ສຳເລັດ'); }
+      finally { btn.disabled = false; }
+    }
+    async function mySigDelete() {
+      if (!(await appConfirm('ລຶບລາຍເຊັນທີ່ບັນທຶກໄວ້ແມ່ນບໍ? (ເອກະສານທີ່ເຊັນໄປແລ້ວບໍ່ໄດ້ຮັບຜົນກະທົບ)'))) return;
+      try {
+        const res = await fetch('/api/my-signature', { method: 'DELETE' });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || 'ລຶບບໍ່ສຳເລັດ');
+        mySigCache = { has: false };
+        showAlert(d.message || 'ລຶບແລ້ວ');
+        await mySigRefreshUI();
+      } catch (e) { appAlert(e.message || 'ລຶບບໍ່ສຳເລັດ'); }
+    }
+
     function renderProfileData() {
       if (!currentUser) return;
       document.getElementById('profEmail').textContent = currentUser.email;
@@ -10394,6 +10559,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('profileAlert').classList.add('hidden');
       refreshPushUI();
       updateInstallUI();
+      mySigRefreshUI();
     }
 
     function showAlert(message, isError = false) {
@@ -11613,6 +11779,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       if (window.appHistoryGuardInit) window.appHistoryGuardInit();
       initPageTourHooks();
       applyRoleMenu();
+      mySigCache = null; syncMySigButtons();
       initMobileBadgeSync();
       initMenuDrag();
       if (!window._notifFabReady) { initNotifFab(); window._notifFabReady = true; }
