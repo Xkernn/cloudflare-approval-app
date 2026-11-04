@@ -3965,7 +3965,7 @@ export default {
         const lim = exportAll ? 5000 : limit, off = exportAll ? 0 : offset;
         const [rowsR, totalR] = await env.DB.batch([
           env.DB.prepare(
-            `SELECT c.id, c.outlet_code, c.qr_code, c.latest_scan, c.latest_scan_raw, c.outlet_id, c.master_id, c.updated_at,
+            `SELECT c.id, c.outlet_code, c.qr_code, c.latest_scan, c.latest_scan_raw, c.outlet_id, c.master_id, c.updated_at, c.last_check_result, c.last_check_at,
                     o.name AS o_name, o.owner_name AS o_owner, o.province AS o_province, o.address AS o_address, o.phone AS o_phone, o.latitude AS o_lat, o.longitude AS o_lng,
                     m.serial_number, m.capex, m.cooler_brand, m.cooler_type, m.cooler_model, m.outlet_code AS m_outlet_code, m.outlet_name AS m_outlet_name,
                     m.province AS m_province, m.status AS m_status, m.team, m.mde, m.dsm
@@ -4001,7 +4001,7 @@ export default {
       try {
         const w = cnsBuildWhere(url);
         const r = await env.DB.prepare(
-          `SELECT c.id, c.outlet_code, c.qr_code, c.latest_scan, c.outlet_id, c.master_id,
+          `SELECT c.id, c.outlet_code, c.qr_code, c.latest_scan, c.outlet_id, c.master_id, c.last_check_result, c.last_check_at,
                   o.name AS o_name, o.phone AS o_phone, o.province AS o_province, o.latitude AS o_lat, o.longitude AS o_lng,
                   m.serial_number, m.cooler_brand, m.cooler_type, m.outlet_name AS m_outlet_name, m.province AS m_province,
                   m.lat_position, m.long_position, m.mde, m.dsm
@@ -4017,7 +4017,7 @@ export default {
             id: x.id, outlet_code: x.outlet_code, outlet_name: x.o_name || x.m_outlet_name || null, phone: x.o_phone || null,
             province: x.o_province || x.m_province || null, qr_code: x.qr_code, serial_number: x.serial_number || null,
             brand: x.cooler_brand || null, type: x.cooler_type || null, latest_scan: x.latest_scan || null, mde: x.mde || null, dsm: x.dsm || null,
-            outlet_matched: !!x.outlet_id, cooler_matched: !!x.master_id, lat, lng,
+            outlet_matched: !!x.outlet_id, cooler_matched: !!x.master_id, last_check_result: x.last_check_result || null, last_check_at: x.last_check_at || null, lat, lng,
           });
         }
         return Response.json({ points, no_coord: noCoord });
@@ -4086,6 +4086,93 @@ export default {
       } catch (e) {
         console.error("/api/admin/cooler-not-scan/import", e);
         return Response.json({ error: "Import ບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່" }, { status: 500 });
+      }
+    }
+
+
+    // ລົງກວດຕູ້ (ຈາກ popup ແຜນທີ່): { id (cooler_not_scan.id), result: found|missing, photo (data URL), note? } — ຕ້ອງມີຮູບຢືນຢັນ
+    if (url.pathname === "/api/admin/cooler-not-scan/check" && request.method === "POST") {
+      let key = null;
+      try {
+        const b = await request.json();
+        const result = b.result === "found" || b.result === "missing" ? b.result : null;
+        if (!b.id || !result) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບ (ຕ້ອງເລືອກຜົນການກວດ)" }, { status: 400 });
+        if (!b.photo) return Response.json({ error: "ກະລຸນາຖ່າຍຮູບຢືນຢັນ" }, { status: 400 });
+        const row = await env.DB.prepare(
+          `SELECT c.id, c.qr_code, c.outlet_code, o.name AS o_name, o.province AS o_province,
+                  m.outlet_name AS m_outlet_name, m.province AS m_province, m.cooler_brand, m.cooler_type, m.serial_number
+             ${CNS_FROM} WHERE c.id = ?`
+        ).bind(b.id).first();
+        if (!row) return Response.json({ error: "ບໍ່ພົບລາຍການ" }, { status: 404 });
+        key = `cnscheck/${row.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        await savePhotosToR2(env, [[b.photo, key]]);
+        const actor = (session && session.email) || null;
+        await env.DB.batch([
+          env.DB.prepare(
+            `INSERT INTO cooler_not_scan_checks (scan_id, qr_code, outlet_code, outlet_name, province, cooler_brand, cooler_type, serial_number, result, photo, note, checked_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(row.id, row.qr_code, row.outlet_code, row.o_name || row.m_outlet_name || null, row.o_province || row.m_province || null,
+            row.cooler_brand || null, row.cooler_type || null, row.serial_number || null, result, key, cmClean(b.note, 500), actor),
+          env.DB.prepare("UPDATE cooler_not_scan SET last_check_result = ?, last_check_at = CURRENT_TIMESTAMP WHERE id = ?").bind(result, row.id),
+        ]);
+        return Response.json({ message: "ບັນທຶກຜົນການລົງກວດແລ້ວ" });
+      } catch (e) {
+        if (key) await deleteR2Photos(env, [key]);
+        const pe = photoErrorResponse(e);
+        if (pe) return pe;
+        console.error("/api/admin/cooler-not-scan/check", e);
+        return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່" }, { status: 500 });
+      }
+    }
+
+    // ແຖບ "ລົງກວດແລ້ວ": params q, result (found|missing), limit, offset
+    if (url.pathname === "/api/admin/cooler-not-scan/checks" && request.method === "GET") {
+      try {
+        const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "30", 10) || 30, 1), 100);
+        const offset = Math.max(parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0);
+        const where = [], binds = [];
+        const q = (url.searchParams.get("q") || "").trim().slice(0, 100);
+        if (q) {
+          const like = "%" + cmLikeEscape(q) + "%";
+          where.push("(qr_code LIKE ? ESCAPE '\\' OR outlet_code LIKE ? ESCAPE '\\' OR outlet_name LIKE ? ESCAPE '\\' OR serial_number LIKE ? ESCAPE '\\' OR checked_by LIKE ? ESCAPE '\\')");
+          binds.push(like, like, like, like, like);
+        }
+        const rs = url.searchParams.get("result");
+        if (rs === "found" || rs === "missing") where.push("result = ?"), binds.push(rs);
+        const wc = where.length ? "WHERE " + where.join(" AND ") : "";
+        const [rowsR, cntR] = await env.DB.batch([
+          env.DB.prepare(`SELECT * FROM cooler_not_scan_checks ${wc} ORDER BY id DESC LIMIT ? OFFSET ?`).bind(...binds, limit, offset),
+          env.DB.prepare(`SELECT COUNT(*) AS total, SUM(result = 'found') AS found, SUM(result = 'missing') AS missing FROM cooler_not_scan_checks ${wc}`).bind(...binds),
+        ]);
+        const c = (cntR.results && cntR.results[0]) || {};
+        return Response.json({ rows: rowsR.results || [], total: c.total || 0, found: c.found || 0, missing: c.missing || 0 });
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/checks", e);
+        return Response.json({ error: "ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    // ລຶບຜົນການລົງກວດ 1 ລາຍການ (admin ເທົ່ານັ້ນ — ຕາມກົດ delete*)
+    if (url.pathname === "/api/admin/cooler-not-scan/delete-check" && request.method === "POST") {
+      try {
+        const { id } = await request.json();
+        const row = id ? await env.DB.prepare("SELECT id, scan_id, photo FROM cooler_not_scan_checks WHERE id = ?").bind(id).first() : null;
+        if (!row) return Response.json({ error: "ບໍ່ພົບລາຍການ" }, { status: 404 });
+        await env.DB.prepare("DELETE FROM cooler_not_scan_checks WHERE id = ?").bind(row.id).run();
+        // ອັບເດດສະຖານະກວດຫຼ້າສຸດຂອງແຖວຕົ້ນທາງ ເປັນຜົນຂອງການກວດຄັ້ງກ່ອນໜ້າ (ຖ້າມີ)
+        if (row.scan_id) {
+          await env.DB.prepare(
+            `UPDATE cooler_not_scan SET
+               last_check_result = (SELECT result FROM cooler_not_scan_checks WHERE scan_id = ?1 ORDER BY id DESC LIMIT 1),
+               last_check_at = (SELECT checked_at FROM cooler_not_scan_checks WHERE scan_id = ?1 ORDER BY id DESC LIMIT 1)
+             WHERE id = ?1`
+          ).bind(row.scan_id).run();
+        }
+        await deleteR2Photos(env, [row.photo]);
+        return Response.json({ message: "ລຶບແລ້ວ" });
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/delete-check", e);
+        return Response.json({ error: "ລຶບບໍ່ສຳເລັດ" }, { status: 500 });
       }
     }
 
@@ -10862,7 +10949,7 @@ export default {
     // 7f. ดึงรูปถ่ายยืนยันการจัดส่งจาก R2 ด้วย key (ใช้แสดงใน <img> ฝั่ง Admin)
     if (url.pathname === "/api/photo" && request.method === "GET") {
       const key = url.searchParams.get("key");
-      if (!key || !(key.startsWith("delivery/") || key.startsWith("event/") || key.startsWith("announcement/") || key.startsWith("trip/") || key.startsWith("playbook/"))) {
+      if (!key || !(key.startsWith("delivery/") || key.startsWith("event/") || key.startsWith("announcement/") || key.startsWith("trip/") || key.startsWith("playbook/") || key.startsWith("cnscheck/"))) {
         return new Response("Invalid key", { status: 400 });
       }
 

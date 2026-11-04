@@ -5058,6 +5058,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         <div class="tab-nav" style="margin-bottom:14px;">
           <button id="cnsTabList" class="tab-btn active" onclick="cnsSwitchTab('list')"><i class="fa-solid fa-list mr-1"></i> ລາຍການ</button>
           <button id="cnsTabMap" class="tab-btn" onclick="cnsSwitchTab('map')"><i class="fa-solid fa-map-location-dot mr-1"></i> ແຜນທີ່</button>
+          <button id="cnsTabChecks" class="tab-btn" onclick="cnsSwitchTab('checks')"><i class="fa-solid fa-clipboard-check mr-1"></i> ລົງກວດແລ້ວ</button>
         </div>
 
         <div id="cnsPaneList">
@@ -5075,6 +5076,32 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <span>ຂະໜາດວົງມົນ = ຈຳນວນຕູ້ໃນຮ້ານ</span>
           </div>
         </div>
+        <div id="cnsPaneChecks" class="hidden">
+          <div id="cnsChecksChips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
+          <div class="content-card" style="padding:12px 14px; margin-bottom:14px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <div class="input-wrapper" style="flex:1; min-width:220px;"><i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="cnsChecksSearch" class="form-control" placeholder="QR, Serial, ລະຫັດ/ຊື່ຮ້ານ ຫຼື ຜູ້ກວດ (ກົດ Enter)" autocomplete="off"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();cnsChecksSearch();}">
+              </div>
+              <select id="cnsChecksResult" class="form-control" style="width:auto; min-width:160px;" onchange="cnsChecksSearch()" aria-label="ຜົນການກວດ">
+                <option value="">ທຸກຜົນການກວດ</option>
+                <option value="found">ຕູ້ຍັງພົບຢູ່ຮ້ານ</option>
+                <option value="missing">ຕູ້ບໍ່ເຫັນແລ້ວ</option>
+              </select>
+              <button class="btn-add" onclick="cnsChecksSearch()"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+            </div>
+          </div>
+          <div id="cnsChecksList"></div>
+          <div id="cnsChecksPager" style="display:flex; gap:10px; justify-content:center; align-items:center; margin:16px 0; flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <div id="cnsCheckModal" class="modal-overlay hidden" onclick="if(event.target===this)cnsCloseCheck()">
+        <div class="modal-card" id="cnsCheckBody"></div>
+      </div>
+      <div id="cnsPhotoModal" class="modal-overlay hidden" onclick="cnsClosePhoto()">
+        <div class="modal-card" style="text-align:center;"><img id="cnsPhotoImg" alt="" style="max-width:100%; max-height:75vh; border-radius:10px;"></div>
       </div>
 
       <div id="lostModal" class="modal-overlay hidden" onclick="if(event.target===this)lostCloseModal()">
@@ -19661,7 +19688,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     /* ===================== Cooler Not Scan (admin + ຜູ້ຊ່ວຍ admin) ===================== */
     const cnsState = { q: '', status: '', days: '', province: '', offset: 0, limit: 50, total: 0, tab: 'list' };
     let cnsItems = {};
-    let cnsMapInstance = null, cnsMapLayer = null;
+    let cnsMapInstance = null, cnsMapLayer = null, cnsMapPoints = {};
+    const cnsChecksState = { q: '', result: '', offset: 0, limit: 30, total: 0 };
+    let cnsCheckDraft = null;
     const CNS_HEADER_ALIASES = {
       outlet_code: ['outletcode', 'outlet', 'outletid', 'outletno', 'customercode', 'shopcode', 'ລະຫັດຮ້ານ', 'ລະຫັດoutlet', 'ລະຫັດຮ້ານຄ້າ'],
       qr_code: ['qrcode', 'qr', 'qrno', 'qrnumber', 'ລະຫັດqr', 'ລະຫັດqrcode', 'ຄິວອາ'],
@@ -19716,7 +19745,10 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       document.getElementById('cnsTabMap').classList.toggle('active', t === 'map');
       document.getElementById('cnsPaneList').classList.toggle('hidden', t !== 'list');
       document.getElementById('cnsPaneMap').classList.toggle('hidden', t !== 'map');
+      document.getElementById('cnsTabChecks').classList.toggle('active', t === 'checks');
+      document.getElementById('cnsPaneChecks').classList.toggle('hidden', t !== 'checks');
       if (t === 'map') cnsLoadMap();
+      if (t === 'checks') { cnsChecksState.offset = 0; cnsChecksLoad(); }
     }
 
     function cnsRenderChips(st) {
@@ -19785,7 +19817,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           <div class="data-card-main" style="width:100%;">
             <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
               <div class="data-card-title">${name ? esc(name) : '<span style="color:#94a3b8;">ບໍ່ພົບຊື່ຮ້ານ</span>'} <span style="font-weight:500; color:#64748b;">[${esc(it.outlet_code || '-')}]</span></div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">${okB(!!it.outlet_id, 'Outlet Master')}${okB(!!it.master_id, 'Cooler Master')}${mismatch ? '<span class="badge badge-pending">Outlet ບໍ່ກົງກັບ Master</span>' : ''}</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">${okB(!!it.outlet_id, 'Outlet Master')}${okB(!!it.master_id, 'Cooler Master')}${mismatch ? '<span class="badge badge-pending">Outlet ບໍ່ກົງກັບ Master</span>' : ''}${it.last_check_result ? `<span class="badge ${it.last_check_result === 'found' ? 'badge-approved' : 'badge-rejected'}">ລົງກວດແລ້ວ: ${it.last_check_result === 'found' ? 'ພົບຢູ່ຮ້ານ' : 'ບໍ່ເຫັນແລ້ວ'}</span>` : ''}</div>
             </div>
             <div class="data-card-sub" style="margin-top:6px;">
               <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}</span>
@@ -19826,7 +19858,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
 
         // ລວມຕູ້ທີ່ຢູ່ຮ້ານ/ຈຸດດຽວກັນເປັນ 1 ວົງມົນ
         const groups = new Map();
+        cnsMapPoints = {};
         (data.points || []).forEach(p => {
+          cnsMapPoints[p.id] = p;
           const key = (p.outlet_code ? String(p.outlet_code).trim().toUpperCase() : '') + '|' + p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
           if (!groups.has(key)) groups.set(key, { lat: p.lat, lng: p.lng, outlet_code: p.outlet_code, outlet_name: p.outlet_name, phone: p.phone, province: p.province, items: [] });
           const g = groups.get(key);
@@ -19843,7 +19877,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           const m = L.circleMarker([g.lat, g.lng], { radius: r, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.85 }).addTo(cnsMapLayer);
           const rows = g.items.slice(0, 15).map(i => {
             const d = cnsDaysSince(i.latest_scan);
-            return `<div style="margin-top:3px;"><b>${esc(i.qr_code || '-')}</b>${i.brand || i.type ? ' · ' + esc([i.brand, i.type].filter(Boolean).join(' ')) : ''}<br><span style="color:${cnsAgeColor(d)};">Scan: ${i.latest_scan ? esc(i.latest_scan) + (d != null ? ' (' + d + ' ມື້)' : '') : 'ບໍ່ມີຂໍ້ມູນ'}</span></div>`;
+            const chk = i.last_check_result ? `<br><span style="font-weight:700; color:${i.last_check_result === 'found' ? '#15803d' : '#b91c1c'};">ລົງກວດແລ້ວ: ${i.last_check_result === 'found' ? 'ພົບຢູ່ຮ້ານ' : 'ບໍ່ເຫັນແລ້ວ'}${i.last_check_at ? ' · ' + esc(fmtLaoTs(i.last_check_at)) : ''}</span>` : '';
+            return `<div style="margin-top:6px; padding-top:6px; border-top:1px solid #e2e8f0;"><b>${esc(i.qr_code || '-')}</b>${i.brand || i.type ? ' · ' + esc([i.brand, i.type].filter(Boolean).join(' ')) : ''}<br><span style="color:${cnsAgeColor(d)};">Scan: ${i.latest_scan ? esc(i.latest_scan) + (d != null ? ' (' + d + ' ມື້)' : '') : 'ບໍ່ມີຂໍ້ມູນ'}</span>${chk}<br><button type="button" onclick="cnsOpenCheck(${Number(i.id)})" style="margin-top:4px; padding:5px 12px; border:0; border-radius:8px; background:#0f766e; color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit;">ລົງກວດແລ້ວ</button></div>`;
           }).join('');
           const first = g.items[0] || {};
           m.bindPopup(`<div style="max-width:260px; font-size:13px;">
@@ -19866,6 +19901,147 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         console.error(e);
         info.textContent = 'ໂຫລດແຜນທີ່ບໍ່ສຳເລັດ';
       }
+    }
+
+    /* ---------- ລົງກວດ (ຈາກ popup ແຜນທີ່) → ແຖບ "ລົງກວດແລ້ວ" ---------- */
+    function cnsOpenCheck(id) {
+      const p = cnsMapPoints[id];
+      if (!p) return;
+      try { if (cnsMapInstance && cnsMapInstance.closePopup) cnsMapInstance.closePopup(); } catch (e) {}
+      cnsCheckDraft = { id, result: '', photo: '', saving: false };
+      cnsRenderCheckStep1();
+      document.getElementById('cnsCheckModal').classList.remove('hidden');
+    }
+    function cnsCloseCheck() { cnsCheckDraft = null; document.getElementById('cnsCheckModal').classList.add('hidden'); document.getElementById('cnsCheckBody').innerHTML = ''; }
+    function cnsCheckHead() {
+      const p = cnsMapPoints[cnsCheckDraft.id] || {};
+      return `<h2 style="font-size:18px; font-weight:700; margin-bottom:6px;">ລົງກວດຕູ້</h2>
+        <div style="font-size:13.5px; color:#475569; margin-bottom:14px;"><b>${esc(p.qr_code || '-')}</b>${p.brand || p.type ? ' · ' + esc([p.brand, p.type].filter(Boolean).join(' ')) : ''}<br>${esc(p.outlet_name || '-')} [${esc(p.outlet_code || '-')}]</div>`;
+    }
+    function cnsRenderCheckStep1() {
+      document.getElementById('cnsCheckBody').innerHTML = cnsCheckHead() + `
+        <div style="font-weight:600; margin-bottom:8px;">ຜົນການລົງກວດ?</div>
+        <button type="button" class="btn-submit" style="margin-top:0; background:#15803d;" onclick="cnsPickResult('found')"><i class="fa-solid fa-circle-check mr-1"></i> ຕູ້ຍັງພົບຢູ່ຮ້ານ</button>
+        <button type="button" class="btn-submit" style="margin-top:10px; background:#b91c1c;" onclick="cnsPickResult('missing')"><i class="fa-solid fa-circle-xmark mr-1"></i> ຕູ້ບໍ່ເຫັນແລ້ວ</button>
+        <button type="button" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:10px;" onclick="cnsCloseCheck()">ຍົກເລີກ</button>`;
+    }
+    function cnsPickResult(r) { cnsCheckDraft.result = r; cnsCheckDraft.photo = ''; cnsRenderCheckStep2(); }
+    function cnsRenderCheckStep2() {
+      const f = cnsCheckDraft.result === 'found';
+      document.getElementById('cnsCheckBody').innerHTML = cnsCheckHead() + `
+        <div style="display:inline-block; padding:4px 12px; border-radius:999px; font-weight:700; font-size:13px; margin-bottom:12px; background:${f ? '#dcfce7' : '#fee2e2'}; color:${f ? '#166534' : '#b91c1c'};">${f ? 'ຕູ້ຍັງພົບຢູ່ຮ້ານ' : 'ຕູ້ບໍ່ເຫັນແລ້ວ'}</div>
+        <div class="form-group">
+          <label>ຖ່າຍຮູບຢືນຢັນ ${f ? '(ຖ່າຍຮູບຕູ້ / ປ້າຍ QR)' : '(ຖ່າຍຮູບໜ້າຮ້ານ / ຈຸດທີ່ເຄີຍວາງຕູ້)'}</label>
+          <input type="file" id="cnsCheckFile" accept="image/*" capture="environment" class="hidden" onchange="cnsCheckPhoto(event)">
+          <button type="button" class="btn-submit" style="margin-top:0; background:#0f766e;" onclick="document.getElementById('cnsCheckFile').click()"><i class="fa-solid fa-camera mr-1"></i> <span id="cnsCheckPhotoBtn">ຖ່າຍຮູບ</span></button>
+          <img id="cnsCheckPreview" alt="" class="hidden" style="width:100%; max-height:260px; object-fit:contain; margin-top:10px; border-radius:10px; border:1px solid var(--border-color);">
+        </div>
+        <div class="form-group"><label>ໝາຍເຫດ (ຖ້າມີ)</label><textarea id="cnsCheckNote" class="form-control" rows="2" placeholder="ເຊັ່ນ ຮ້ານປິດ, ເຈົ້າຂອງບອກຍ້າຍຕູ້ໄປ..."></textarea></div>
+        <button type="button" id="cnsCheckSave" class="btn-submit" style="margin-top:0;" disabled onclick="cnsSubmitCheck()">ບັນທຶກຜົນການລົງກວດ</button>
+        <button type="button" class="btn-submit" style="background:#e2e8f0; color:#475569; margin-top:10px;" onclick="cnsRenderCheckStep1()">ກັບຄືນ</button>`;
+    }
+    async function cnsCheckPhoto(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      try {
+        cnsCheckDraft.photo = await compressImageFile(file);
+        const pv = document.getElementById('cnsCheckPreview');
+        pv.src = cnsCheckDraft.photo; pv.classList.remove('hidden');
+        document.getElementById('cnsCheckPhotoBtn').textContent = 'ຖ່າຍຮູບໃໝ່';
+        document.getElementById('cnsCheckSave').disabled = false;
+      } catch (e) { appAlert(e.message || 'ອ່ານຮູບບໍ່ສຳເລັດ'); }
+    }
+    async function cnsSubmitCheck() {
+      const d = cnsCheckDraft;
+      if (!d || d.saving) return;
+      if (!d.photo) { appAlert('ກະລຸນາຖ່າຍຮູບຢືນຢັນ'); return; }
+      d.saving = true;
+      const btn = document.getElementById('cnsCheckSave');
+      btn.disabled = true; btn.textContent = 'ກຳລັງບັນທຶກ...';
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/check', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: d.id, result: d.result, photo: d.photo, note: (document.getElementById('cnsCheckNote').value || '').trim() }) });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) { d.saving = false; btn.disabled = false; btn.textContent = 'ບັນທຶກຜົນການລົງກວດ'; appAlert(j.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+        cnsCloseCheck();
+        await appAlert('ບັນທຶກຜົນການລົງກວດແລ້ວ — ເບິ່ງໄດ້ໃນແຖບ "ລົງກວດແລ້ວ"');
+        cnsLoad(false);
+        if (cnsState.tab === 'map') cnsLoadMap();
+      } catch (e) { d.saving = false; btn.disabled = false; btn.textContent = 'ບັນທຶກຜົນການລົງກວດ'; appAlert('ເຄືອຂ່າຍມີບັນຫາ ກະລຸນາລອງໃໝ່'); }
+    }
+
+    /* ---------- ແຖບ "ລົງກວດແລ້ວ" (card) ---------- */
+    function cnsChecksSearch() {
+      cnsChecksState.q = document.getElementById('cnsChecksSearch').value.trim();
+      cnsChecksState.result = document.getElementById('cnsChecksResult').value;
+      cnsChecksState.offset = 0;
+      cnsChecksLoad();
+    }
+    function cnsChecksPage(d) { cnsChecksState.offset = Math.max(0, cnsChecksState.offset + d * cnsChecksState.limit); cnsChecksLoad(); window.scrollTo(0, 0); }
+    async function cnsChecksLoad() {
+      const list = document.getElementById('cnsChecksList');
+      list.innerHTML = '<div class="card-list-loading">ກຳລັງໂຫລດ...</div>';
+      try {
+        const p = new URLSearchParams({ limit: cnsChecksState.limit, offset: cnsChecksState.offset });
+        if (cnsChecksState.q) p.set('q', cnsChecksState.q);
+        if (cnsChecksState.result) p.set('result', cnsChecksState.result);
+        const res = await fetch('/api/admin/cooler-not-scan/checks?' + p.toString());
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { list.innerHTML = `<div class="card-list-error">${esc(data.error || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ')}</div>`; return; }
+        cnsChecksState.total = data.total || 0;
+        document.getElementById('cnsChecksChips').innerHTML =
+          `<span class="badge badge-default">ທັງໝົດ ${Number(data.total || 0).toLocaleString()}</span><span class="badge badge-approved">ພົບຢູ່ຮ້ານ ${Number(data.found || 0).toLocaleString()}</span><span class="badge badge-rejected">ບໍ່ເຫັນແລ້ວ ${Number(data.missing || 0).toLocaleString()}</span>`;
+        const rows = data.rows || [];
+        list.innerHTML = rows.length
+          ? `<div class="card-list">${rows.map(cnsRenderCheckCard).join('')}</div>`
+          : '<div class="card-list-empty">ຍັງບໍ່ມີລາຍການລົງກວດ — ເປີດແຖບແຜນທີ່ ກົດຈຸດຮ້ານ ແລ້ວກົດ "ລົງກວດແລ້ວ"</div>';
+        rows.forEach(r => { if (r.photo) setPhotoSrc(document.getElementById('cnsChk-' + r.id), '/api/photo?key=' + encodeURIComponent(r.photo)); });
+        const from = cnsChecksState.total ? cnsChecksState.offset + 1 : 0;
+        const to = Math.min(cnsChecksState.offset + cnsChecksState.limit, cnsChecksState.total);
+        document.getElementById('cnsChecksPager').innerHTML = cnsChecksState.total > cnsChecksState.limit
+          ? `<button class="btn-act" ${cnsChecksState.offset <= 0 ? 'disabled' : ''} onclick="cnsChecksPage(-1)">‹ ກ່ອນໜ້າ</button>
+             <span style="font-size:13px; color:var(--text-muted);">${from}-${to} / ${cnsChecksState.total.toLocaleString()}</span>
+             <button class="btn-act" ${to >= cnsChecksState.total ? 'disabled' : ''} onclick="cnsChecksPage(1)">ຖັດໄປ ›</button>` : '';
+      } catch (e) { list.innerHTML = '<div class="card-list-error">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</div>'; }
+    }
+    function cnsRenderCheckCard(r) {
+      const f = r.result === 'found';
+      const machine = [r.cooler_brand, r.cooler_type].filter(Boolean).join(' ');
+      return `
+        <div class="data-card">
+          <div class="data-card-main" style="width:100%;">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <img id="cnsChk-${Number(r.id)}" alt="" onclick="cnsOpenPhoto(this)" style="width:96px; height:96px; object-fit:cover; border-radius:10px; background:#e2e8f0; cursor:zoom-in; flex:none;">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                  <div class="data-card-title">${r.outlet_name ? esc(r.outlet_name) : '<span style="color:#94a3b8;">ບໍ່ພົບຊື່ຮ້ານ</span>'} <span style="font-weight:500; color:#64748b;">[${esc(r.outlet_code || '-')}]</span></div>
+                  <span class="badge ${f ? 'badge-approved' : 'badge-rejected'}">${f ? 'ຕູ້ຍັງພົບຢູ່ຮ້ານ' : 'ຕູ້ບໍ່ເຫັນແລ້ວ'}</span>
+                </div>
+                <div class="data-card-sub" style="margin-top:6px;">
+                  <span><i class="fa-solid fa-qrcode"></i>${esc(r.qr_code || '-')}</span>
+                  ${r.serial_number ? `<span><i class="fa-solid fa-barcode"></i>${esc(r.serial_number)}</span>` : ''}
+                  ${machine ? `<span><i class="fa-solid fa-snowflake"></i>${esc(machine)}</span>` : ''}
+                  ${r.province ? `<span><i class="fa-solid fa-map-pin"></i>${esc(r.province)}</span>` : ''}
+                </div>
+                ${r.note ? `<div style="margin-top:6px; font-size:13px; color:#b45309;"><i class="fa-regular fa-note-sticky"></i> ${esc(r.note)}</div>` : ''}
+                <div style="margin-top:6px; font-size:12px; color:#64748b;">ກວດໂດຍ ${esc(r.checked_by || '-')} · ${esc(fmtLaoTs(r.checked_at))}</div>
+                <div style="margin-top:8px;"><button class="btn-act" style="background:#fff; color:#b91c1c; border:1px solid #fecaca;" onclick="cnsDeleteCheck(${Number(r.id)})"><i class="fa-solid fa-trash"></i> ລຶບ</button></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    function cnsOpenPhoto(img) { if (!img || !img.src) return; document.getElementById('cnsPhotoImg').src = img.src; document.getElementById('cnsPhotoModal').classList.remove('hidden'); }
+    function cnsClosePhoto() { document.getElementById('cnsPhotoModal').classList.add('hidden'); document.getElementById('cnsPhotoImg').removeAttribute('src'); }
+    async function cnsDeleteCheck(id) {
+      if (!await appConfirm('ລຶບຜົນການລົງກວດນີ້ (ພ້ອມຮູບ)?')) return;
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/delete-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { appAlert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+        cnsChecksLoad(); cnsLoad(false);
+      } catch (e) { appAlert('ລຶບບໍ່ສຳເລັດ'); }
     }
 
     /* ---------- Import / Export / ຈັບຄູ່ / ລຶບ ---------- */
