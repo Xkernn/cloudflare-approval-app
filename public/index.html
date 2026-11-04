@@ -7,10 +7,11 @@
   <script>try{var m=localStorage.getItem('lbcUiMode');if(m==='easy')document.documentElement.setAttribute('data-ui-mode',m)}catch(e){}
 /* ເປີດຜ່ານເວັບ (ບໍ່ແມ່ນແອັບທີ່ຕິດຕັ້ງ): ຄ່າເລີ່ມຕົ້ນ = ໂໝດທຳມະດາ + Theme ແບບເກົ່າ (classic) ທັງມືຖື/ຄອມ — ຖ້າຜູ້ໃຊ້ເລືອກເອງ (lbc_mm_style_set) ໃຊ້ຕາມທີ່ເລືອກ */
 window.__lbcInstalled=(function(){try{return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true||(document.referrer||'').indexOf('android-app://')===0}catch(e){return false}})();
-try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='clean')?u:(window.__lbcInstalled?'clean':'classic');if(st==='classic')document.documentElement.setAttribute('data-mm-style','classic')}catch(e){if(!window.__lbcInstalled)document.documentElement.setAttribute('data-mm-style','classic')}</script>
+try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='clean'||u==='premium')?u:(window.__lbcInstalled?'clean':'classic');if(st==='classic'||st==='premium')document.documentElement.setAttribute('data-mm-style',st)}catch(e){if(!window.__lbcInstalled)document.documentElement.setAttribute('data-mm-style','classic')}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
 
+  <script src="/premium-icons.js?v=1"></script>
   <title>Cooler Tracking System LBC</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0A7890">
@@ -2474,7 +2475,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     /* ===== เมนูมือถือ: รูปแบบ "ใหม่" (clean) เป็นค่าเริ่มต้น / data-mm-style="classic" = แบบเดิม ===== */
     .ic { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; width: 1em; height: 1em; }
     html[data-mm-style="classic"] .ic { display: none; }
-    .mm-theme-seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .mm-theme-seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
     .mm-theme-seg button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 64px; padding: 12px 14px; border: 1.5px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-main); font-family: inherit; text-align: left; cursor: pointer; }
     .mm-theme-seg button b { font-size: 15px; font-weight: 700; }
     .mm-theme-seg button small { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
@@ -2559,6 +2560,28 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html:not([data-mm-style="classic"]) .mm-ic { border-radius: 14px; font-size: 24px; }
       html:not([data-mm-style="classic"]) .mm-ic > .ic { width: 24px; height: 24px; }
     }
+  
+    /* ===== Theme: Beerlao Premium (gold #F5C21B / green #087A45 / cream #FFF8DF) - uses the clean layout with a new palette ===== */
+    html[data-mm-style="premium"] {
+      --primary: #087A45; --primary-hover: #065F37; --primary-soft: #E8F5EC;
+      --amber: #9A6B00; --amber-soft: #FFF4CC;
+      --ink: #063D24; --ink-soft: #0B5233; --sidebar-bg: #063D24;
+      --bg-body: #FBF7E6; --border-color: #EADFB4; --text-main: #10301F; --text-muted: #5A6A55;
+    }
+    html[data-mm-style="premium"] .mobile-tab-indicator { background: #F5C21B; }
+    html[data-mm-style="premium"] .mobile-tab-icon { color: #A9C9B3; }
+    html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon,
+    html[data-mm-style="premium"] .mobile-tab.active:active .mobile-tab-icon { color: #F5C21B; }
+    html[data-mm-style="premium"] .mm-theme-seg button[aria-pressed="true"] { border-color: #F5C21B; background: #FFF8DF; box-shadow: 0 0 0 3px rgba(245,194,27,.3); }
+  
+    /* Premium icon pack: tiles for menu/tab, emoji -> SVG (inline FA masks are injected by premium-icons.js) */
+    .ic-pr { display: none; width: 100%; height: 100%; max-width: 100%; stroke: none; }
+    html[data-mm-style="premium"] .ic-pr { display: block; }
+    html[data-mm-style="premium"] .ic-pr ~ .ic { display: none; }
+    html[data-mm-style="premium"] .mm-ic:has(> .ic-pr) { background: transparent !important; box-shadow: none !important; border: 0 !important; }
+    html[data-mm-style="premium"] .mobile-tab-icon .ic-pr { width: 28px; height: 28px; margin: -2px; opacity: .8; }
+    html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon .ic-pr { opacity: 1; }
+    .pr-emo { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
   </style>
 <style>
 /* ໂໝດປິດລະບົບ (Maintenance) */
@@ -6574,7 +6597,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         </div>
 
         <div class="profile-grid pf-grid hidden" id="pfGrid">
-          <div class="content-card" id="mmThemeCard" data-pf="display"><h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-palette" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນ Theme</h3><p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື (ຈື່ໄວ້ໃນເຄື່ອງນີ້)</p><div class="mm-theme-seg" role="group" aria-label="Theme"><button type="button" data-style="clean" aria-pressed="true" onclick="mmSetStyle('clean')"><b>ໃໝ່</b><small>ໄອຄອນເສັ້ນ ສີດຽວ ແຖບລຸ່ມແບບແບນ</small></button><button type="button" data-style="classic" aria-pressed="false" onclick="mmSetStyle('classic')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small></button></div></div>
+          <div class="content-card" id="mmThemeCard" data-pf="display"><h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-palette" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນ Theme</h3><p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື (ຈື່ໄວ້ໃນເຄື່ອງນີ້)</p><div class="mm-theme-seg" role="group" aria-label="Theme"><button type="button" data-style="clean" aria-pressed="true" onclick="mmSetStyle('clean')"><b>ໃໝ່</b><small>ໄອຄອນເສັ້ນ ສີດຽວ ແຖບລຸ່ມແບບແບນ</small></button><button type="button" data-style="classic" aria-pressed="false" onclick="mmSetStyle('classic')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small></button><button type="button" data-style="premium" aria-pressed="false" onclick="mmSetStyle('premium')"><b>Beerlao Premium</b><small>ສີທອງ · ຂຽວ · ຄຣີມ ແລະ ໂລໂກ້ Beerlao</small></button></div></div>
 
           <div class="content-card" id="uiModeCard" data-pf="display">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
@@ -10868,14 +10891,30 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     const MM_IC = {"asset": "cube", "request": "file-plus", "history": "history", "delivery": "handoff", "dispatch": "truck", "dlvscan": "scan", "loan": "file-sign", "stock": "warehouse", "count": "count", "cmaster": "locate", "lostcooler": "alert", "cns": "scan", "vo": "city", "newcooler": "snowflake", "prov": "wallet", "adminmgmt": "shield-user", "dsmsign": "sign", "teambudget": "pie", "vte": "city", "ann": "megaphone", "playbook": "book", "guide": "book-open", "tour": "help", "stock:dashboard": "bars", "stock:history": "archive", "stock:scan": "scan", "cm:scan": "scan", "loan:issue": "file-up", "loan:return": "file-down", "loan:survey": "search", "loan:queue": "file-sign", "loan:docs": "file-check", "hist:request": "list", "hist:delivery": "truck", "dlv:event": "calendar", "dlv:writeoff": "trash", "nc:imported": "tray-in", "nc:receive": "inbox", "nc:fill": "qr", "sp:plan": "calculator", "sp:trip": "route"};
     function icSvg(name) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ic-' + name + '"/></svg>'; }
     /* ຄ່າເລີ່ມຕົ້ນຂອງ Theme ຕັ້ງຢູ່ <head> ແລ້ວ (ເວັບ=classic, ແອັບຕິດຕັ້ງ=clean) */
+    /* Beerlao Premium: swap theme-color, favicon, apple-touch and in-app logo */
+    function mmApplyBrand(on) {
+      const P = '/icons/premium/';
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', on ? '#087A45' : '#0A7890');
+      ['link[rel="icon"]', 'link[rel="apple-touch-icon"]'].forEach((sel) => {
+        const el = document.querySelector(sel); if (!el) return;
+        if (!el.dataset.o) el.dataset.o = el.getAttribute('href');
+        el.setAttribute('href', on ? P + (sel.indexOf('apple') > -1 ? 'apple-touch-icon.png' : 'icon-192.png') + '?v=3' : el.dataset.o);
+      });
+      document.querySelectorAll('img[src*="/icons/logo.png"], img[data-lbc-logo]').forEach((im) => {
+        if (!im.dataset.o) { im.dataset.o = im.getAttribute('src'); im.dataset.lbcLogo = '1'; }
+        im.setAttribute('src', on ? P + 'logo.png?v=3' : im.dataset.o);
+      });
+    }
     function mmSetStyle(mode, auto) {
       const r = document.documentElement;
-      if (mode === 'classic') r.setAttribute('data-mm-style', 'classic'); else { mode = 'clean'; r.removeAttribute('data-mm-style'); }
+      if (mode === 'classic' || mode === 'premium') r.setAttribute('data-mm-style', mode); else { mode = 'clean'; r.removeAttribute('data-mm-style'); }
+      mmApplyBrand(mode === 'premium'); if (window.mmPrEmoji) mmPrEmoji(mode === 'premium');
       if (!auto) { try { localStorage.setItem('lbc_mm_style_set', mode); } catch (e) {} } // ເກັບສະເພາະຕອນຜູ້ໃຊ້ເລືອກເອງ
       document.querySelectorAll('.mm-theme-seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.style === mode ? 'true' : 'false'));
       setTimeout(() => { if (typeof syncMobileTabbar === 'function') syncMobileTabbar(); }, 60);
     }
-    document.addEventListener('DOMContentLoaded', () => mmSetStyle(document.documentElement.getAttribute('data-mm-style') === 'classic' ? 'classic' : 'clean', true));
+    document.addEventListener('DOMContentLoaded', () => mmSetStyle(document.documentElement.getAttribute('data-mm-style') || 'clean', true));
     const MM_ITEMS = [
       { key: 'asset',     nav: 'nav-asset',          view: 'asset',          icon: 'fa-solid fa-clipboard-list',     label: 'ຕິດຕາມສະຖານະຕູ້ແຊ່',      badge: 'assetTrackingBadge',    tone: 'teal' },
       { key: 'request',   nav: 'nav-request',        view: 'request',        icon: 'fa-solid fa-file-medical',    label: 'ຂໍລະຫັດຕູ້ແຊ່',       badge: 'assetRequestBadge',     tone: 'orange' },
@@ -10970,7 +11009,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       const pinIc = ctx === 'fav' ? 'fa-minus' : (isFav ? 'fa-check' : 'fa-plus');
       const mark = it.sub ? '<span class="mm-sub-mark"><i class="fa-solid fa-angles-right"></i>' + icSvg('chev2') + '</span>' : '';
       return `<button type="button" class="mm-tile${it.sub ? ' mm-is-sub' : ''}"${id} data-key="${it.key}" onclick="mmTileClick('${it.key}', event)">
-          <span class="mm-ic mm-t-${it.tone}${it.key === 'lostcooler' ? ' mm-danger' : ''}"><i class="fa-solid ${it.icon}"></i>${icSvg(MM_IC[it.key] || 'cube')}${mark}${badge}<span class="mm-pin ${pinCls}"><i class="fa-solid ${pinIc}"></i>${icSvg(pinIc === 'fa-minus' ? 'minus' : (pinIc === 'fa-check' ? 'check' : 'plus'))}</span></span>
+          <span class="mm-ic mm-t-${it.tone}${it.key === 'lostcooler' ? ' mm-danger' : ''}"><i class="fa-solid ${it.icon}"></i>${(window.mmPr?mmPr(it.key):'')}${icSvg(MM_IC[it.key] || 'cube')}${mark}${badge}<span class="mm-pin ${pinCls}"><i class="fa-solid ${pinIc}"></i>${icSvg(pinIc === 'fa-minus' ? 'minus' : (pinIc === 'fa-check' ? 'check' : 'plus'))}</span></span>
           <span class="mm-lbl">${esc(it.label)}</span>
         </button>`;
     }
@@ -11196,14 +11235,14 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       MOBILE_TAB_DEFS.home.view = home.view;
       MOBILE_TAB_DEFS.home.nav = home.nav;
       const menuTab = `<button type="button" id="mobileTabMenu" class="mobile-tab" onclick="toggleMenuPage()" aria-label="ເປີດເມນູ">
-          <span class="mobile-tab-icon"><i class="fa-solid fa-table-cells-large"></i>${icSvg('grid')}</span>
+          <span class="mobile-tab-icon"><i class="fa-solid fa-table-cells-large"></i>${(window.mmPr?mmPr('tab:menu'):'')}${icSvg('grid')}</span>
           <span class="mobile-tab-label">ເມນູ</span>
         </button>`;
       bar.innerHTML = '<span id="mobileTabIndicator" class="mobile-tab-indicator" aria-hidden="true"></span>' + order.map((k) => {
         if (k === 'menu') return menuTab;
         const d = MOBILE_TAB_DEFS[k];
         return `<button type="button" id="mobileTab-${k}" class="mobile-tab" data-tab="${k}" onclick="switchView('${d.view}')" aria-label="${d.label}">
-          <span class="mobile-tab-icon"><i class="fa-solid ${d.icon}"></i>${icSvg({ home: 'home', map: 'map', notif: 'bell', profile: 'sliders' }[k])}${d.badge ? `<span id="tabbadge-${d.badge}" class="menu-badge hidden">0</span>` : ''}</span>
+          <span class="mobile-tab-icon"><i class="fa-solid ${d.icon}"></i>${(window.mmPr?mmPr('tab:'+k):'')}${icSvg({ home: 'home', map: 'map', notif: 'bell', profile: 'sliders' }[k])}${d.badge ? `<span id="tabbadge-${d.badge}" class="menu-badge hidden">0</span>` : ''}</span>
           <span class="mobile-tab-label">${d.label}</span>
         </button>`;
       }).join('');
