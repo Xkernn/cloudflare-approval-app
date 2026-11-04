@@ -1797,6 +1797,55 @@ function cmClean(v, max = 300) {
   const t = String(v == null ? "" : v).trim();
   return t ? t.slice(0, max) : null;
 }
+
+// ===== Cooler Not Scan (admin + ຜູ້ຊ່ວຍ admin) =====
+// ອ່ານວັນທີຈາກ Excel: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY (ມີເວລາຕໍ່ທ້າຍໄດ້) -> 'YYYY-MM-DD' ຫຼື 'YYYY-MM-DD HH:MM' (ອ່ານບໍ່ໄດ້ = null)
+function cnsParseDate(v) {
+  const t = String(v == null ? "" : v).trim();
+  if (!t) return null;
+  let y, mo, d, hh = null, mi = null, m;
+  if ((m = t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/))) { y = +m[1]; mo = +m[2]; d = +m[3]; hh = m[4]; mi = m[5]; }
+  else if ((m = t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})(?:[ T](\d{1,2}):(\d{2}))?/))) { d = +m[1]; mo = +m[2]; y = +m[3]; hh = m[4]; mi = m[5]; }
+  else return null;
+  if (y > 2400) y -= 543; // ປີ ພ.ສ.
+  if (y < 2000 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const p2 = (n) => String(n).padStart(2, "0");
+  const date = `${y}-${p2(mo)}-${p2(d)}`;
+  return hh != null ? `${date} ${p2(hh)}:${mi}` : date;
+}
+// ເງື່ອນໄຂຄົ້ນຫາ/ກັ່ນຕອງ ທີ່ໃຊ້ຮ່ວມກັນລະຫວ່າງ list ແລະ map
+const CNS_FROM = `FROM cooler_not_scan c LEFT JOIN outlets o ON o.id = c.outlet_id LEFT JOIN cooler_master m ON m.id = c.master_id`;
+function cnsBuildWhere(url) {
+  const where = [], binds = [];
+  const q = (url.searchParams.get("q") || "").trim().slice(0, 100);
+  if (q) {
+    const like = "%" + cmLikeEscape(q) + "%";
+    where.push(`(c.qr_norm LIKE ? ESCAPE '\\' OR c.outlet_code_norm LIKE ? ESCAPE '\\' OR o.name LIKE ? ESCAPE '\\' OR m.serial_norm LIKE ? ESCAPE '\\' OR m.capex_norm LIKE ? ESCAPE '\\' OR m.mde LIKE ? ESCAPE '\\' OR m.dsm LIKE ? ESCAPE '\\' OR m.team LIKE ? ESCAPE '\\')`);
+    const up = "%" + cmLikeEscape(q.toUpperCase()) + "%";
+    binds.push(up, up, like, up, up, like, like, like);
+  }
+  const st = (url.searchParams.get("status") || "").trim();
+  if (st === "no_outlet") where.push("c.outlet_id IS NULL");
+  else if (st === "no_cooler") where.push("c.master_id IS NULL");
+  else if (st === "matched") where.push("c.outlet_id IS NOT NULL AND c.master_id IS NOT NULL");
+  else if (st === "mismatch") where.push("m.id IS NOT NULL AND m.outlet_code IS NOT NULL AND TRIM(m.outlet_code) != '' AND UPPER(TRIM(m.outlet_code)) != IFNULL(c.outlet_code_norm, '')");
+  else if (st === "never") where.push("c.latest_scan IS NULL");
+  const days = parseInt(url.searchParams.get("days") || "", 10);
+  if (days > 0 && days <= 3650) where.push(`(c.latest_scan IS NULL OR substr(c.latest_scan, 1, 10) <= date('now', '-' || ? || ' days'))`), binds.push(days);
+  const prov = (url.searchParams.get("province") || "").trim().slice(0, 100);
+  if (prov) where.push("COALESCE(NULLIF(TRIM(o.province), ''), m.province) = ?"), binds.push(prov);
+  return { clause: where.length ? "WHERE " + where.join(" AND ") : "", binds };
+}
+// ຈັບຄູ່ແຖວທີ່ເລືອກ (ids) ຫຼື ທັງໝົດ ກັບ Outlet Master + Cooler Master ດ້ວຍ SQL ຄຳສັ່ງດຽວ
+function cnsRematchStmt(env, ids) {
+  const sel = ids && ids.length ? ` WHERE id IN (${ids.map(() => "?").join(",")})` : "";
+  return env.DB.prepare(
+    `UPDATE cooler_not_scan SET
+       outlet_id = (SELECT o.id FROM outlets o WHERE o.code = cooler_not_scan.outlet_code_norm LIMIT 1),
+       master_id = (SELECT m.id FROM cooler_master m WHERE m.qr_norm = cooler_not_scan.qr_norm ORDER BY m.id LIMIT 1)${sel}`
+  ).bind(...(ids || []));
+}
+const cnsNum = (v) => { const n = parseFloat(v); return Number.isFinite(n) && Math.abs(n) <= 180 ? n : null; };
 function cmLikeEscape(v) {
   return String(v).replace(/[\\%_]/g, (c) => "\\" + c);
 }
@@ -3900,6 +3949,170 @@ export default {
         return Response.json({ message: "ລຶບແລ້ວ" });
       } catch (e) {
         console.error("/api/admin/cooler-master/delete", e);
+        return Response.json({ error: "ລຶບບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+
+    // ===================== Cooler Not Scan (admin + ຜູ້ຊ່ວຍ admin; ລຶບ = admin ເທົ່ານັ້ນ ຕາມກົດ delete*) =====================
+    // ລາຍການ: params q, status (no_outlet|no_cooler|matched|mismatch|never), days (ບໍ່ສະແກນ >= N ມື້), province, limit, offset, stats=1
+    if (url.pathname === "/api/admin/cooler-not-scan/list" && request.method === "GET") {
+      try {
+        const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "50", 10) || 50, 1), 200);
+        const offset = Math.max(parseInt(url.searchParams.get("offset") || "0", 10) || 0, 0);
+        const w = cnsBuildWhere(url);
+        const exportAll = url.searchParams.get("all") === "1";
+        const lim = exportAll ? 5000 : limit, off = exportAll ? 0 : offset;
+        const [rowsR, totalR] = await env.DB.batch([
+          env.DB.prepare(
+            `SELECT c.id, c.outlet_code, c.qr_code, c.latest_scan, c.latest_scan_raw, c.outlet_id, c.master_id, c.updated_at,
+                    o.name AS o_name, o.owner_name AS o_owner, o.province AS o_province, o.address AS o_address, o.phone AS o_phone, o.latitude AS o_lat, o.longitude AS o_lng,
+                    m.serial_number, m.capex, m.cooler_brand, m.cooler_type, m.cooler_model, m.outlet_code AS m_outlet_code, m.outlet_name AS m_outlet_name,
+                    m.province AS m_province, m.status AS m_status, m.team, m.mde, m.dsm
+               ${CNS_FROM} ${w.clause}
+              ORDER BY (c.latest_scan IS NULL) DESC, c.latest_scan ASC, c.id ASC LIMIT ? OFFSET ?`
+          ).bind(...w.binds, lim, off),
+          env.DB.prepare(`SELECT COUNT(*) AS n ${CNS_FROM} ${w.clause}`).bind(...w.binds),
+        ]);
+        const out = { rows: rowsR.results || [], total: (totalR.results && totalR.results[0] && totalR.results[0].n) || 0 };
+        if (url.searchParams.get("stats") === "1") {
+          const st = await env.DB.prepare(
+            `SELECT COUNT(*) AS total, SUM(outlet_id IS NULL) AS no_outlet, SUM(master_id IS NULL) AS no_cooler,
+                    SUM(outlet_id IS NOT NULL AND master_id IS NOT NULL) AS matched, SUM(latest_scan IS NULL) AS never,
+                    SUM(latest_scan IS NOT NULL AND substr(latest_scan,1,10) <= date('now','-30 days')) AS d30,
+                    SUM(latest_scan IS NOT NULL AND substr(latest_scan,1,10) <= date('now','-90 days')) AS d90,
+                    MAX(updated_at) AS last_import FROM cooler_not_scan`
+          ).first();
+          const prov = await env.DB.prepare(
+            `SELECT COALESCE(NULLIF(TRIM(o.province), ''), m.province) AS p, COUNT(*) AS n ${CNS_FROM} GROUP BY p HAVING p IS NOT NULL AND p != '' ORDER BY p`
+          ).all();
+          out.stats = st || {};
+          out.provinces = (prov.results || []).map((r) => r.p);
+        }
+        return Response.json(out);
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/list", e);
+        return Response.json({ error: "ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    // ແຜນທີ່: ຈຸດ (ພິກັດ Outlet Master ກ່ອນ, ບໍ່ມີ -> ພິກັດໃນ Cooler Master) — ໃຊ້ filter ຊຸດດຽວກັບ list; ສູງສຸດ 5000 ຕູ້
+    if (url.pathname === "/api/admin/cooler-not-scan/map" && request.method === "GET") {
+      try {
+        const w = cnsBuildWhere(url);
+        const r = await env.DB.prepare(
+          `SELECT c.id, c.outlet_code, c.qr_code, c.latest_scan, c.outlet_id, c.master_id,
+                  o.name AS o_name, o.phone AS o_phone, o.province AS o_province, o.latitude AS o_lat, o.longitude AS o_lng,
+                  m.serial_number, m.cooler_brand, m.cooler_type, m.outlet_name AS m_outlet_name, m.province AS m_province,
+                  m.lat_position, m.long_position, m.mde, m.dsm
+             ${CNS_FROM} ${w.clause} LIMIT 5000`
+        ).bind(...w.binds).all();
+        let noCoord = 0;
+        const points = [];
+        for (const x of r.results || []) {
+          let lat = cnsNum(x.o_lat), lng = cnsNum(x.o_lng);
+          if (lat == null || lng == null || (lat === 0 && lng === 0)) { lat = cnsNum(x.lat_position); lng = cnsNum(x.long_position); }
+          if (lat == null || lng == null || (lat === 0 && lng === 0)) { noCoord++; continue; }
+          points.push({
+            id: x.id, outlet_code: x.outlet_code, outlet_name: x.o_name || x.m_outlet_name || null, phone: x.o_phone || null,
+            province: x.o_province || x.m_province || null, qr_code: x.qr_code, serial_number: x.serial_number || null,
+            brand: x.cooler_brand || null, type: x.cooler_type || null, latest_scan: x.latest_scan || null, mde: x.mde || null, dsm: x.dsm || null,
+            outlet_matched: !!x.outlet_id, cooler_matched: !!x.master_id, lat, lng,
+          });
+        }
+        return Response.json({ points, no_coord: noCoord });
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/map", e);
+        return Response.json({ error: "ໂຫລດແຜນທີ່ບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    // Import (ເທື່ອລະ <= 100 ແຖວ): ແຖວ { row_no, outlet_code, qr_code, latest_scan } — QR ຊ້ຳ = ອັບເດດແຖວເດີມ
+    if (url.pathname === "/api/admin/cooler-not-scan/import" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const rows = Array.isArray(body.rows) ? body.rows : [];
+        if (!rows.length) return Response.json({ error: "ບໍ່ພົບແຖວຂໍ້ມູນ" }, { status: 400 });
+        if (rows.length > 100) return Response.json({ error: "ສົ່ງເທື່ອລະບໍ່ເກີນ 100 ແຖວ" }, { status: 400 });
+        const actor = (session && session.email) || null;
+        const items = [], noQr = [], dupInFile = [];
+        const seen = new Set();
+        for (const r of rows) {
+          const rowNo = Number(r.row_no) || 0;
+          const qr = cmClean(r.qr_code, 120);
+          if (!qr) { noQr.push({ row: rowNo }); continue; }
+          const qn = cmNorm(qr);
+          if (seen.has(qn)) { dupInFile.push({ row: rowNo, code: qr }); } // ຊ້ຳໃນຊຸດດຽວກັນ: ແຖວຫຼັງສຸດຊະນະ
+          seen.add(qn);
+          const rawScan = cmClean(r.latest_scan, 100);
+          const oc = cmClean(r.outlet_code, 60);
+          items.push({ row: rowNo, qr, qn, oc, on: oc ? cmNorm(oc) : null, scan: cnsParseDate(rawScan), raw: rawScan });
+        }
+        // ແຖວທີ່ຊ້ຳໃນຊຸດ: ເກັບແຖວຫຼັງສຸດ
+        const last = new Map(); items.forEach((it) => last.set(it.qn, it));
+        const uniq = [...last.values()];
+        let updated = 0;
+        if (uniq.length) {
+          const ex = await env.DB.prepare(`SELECT qr_norm FROM cooler_not_scan WHERE qr_norm IN (${uniq.map(() => "?").join(",")})`).bind(...uniq.map((x) => x.qn)).all();
+          updated = (ex.results || []).length;
+          const stmts = uniq.map((it) => env.DB.prepare(
+            `INSERT INTO cooler_not_scan (outlet_code, outlet_code_norm, qr_code, qr_norm, latest_scan, latest_scan_raw,
+                                          outlet_id, master_id, imported_by)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6,
+                     (SELECT id FROM outlets WHERE code = ?2 LIMIT 1),
+                     (SELECT id FROM cooler_master WHERE qr_norm = ?4 ORDER BY id LIMIT 1), ?7)
+             ON CONFLICT(qr_norm) DO UPDATE SET
+               outlet_code = excluded.outlet_code, outlet_code_norm = excluded.outlet_code_norm, qr_code = excluded.qr_code,
+               latest_scan = excluded.latest_scan, latest_scan_raw = excluded.latest_scan_raw,
+               outlet_id = excluded.outlet_id, master_id = excluded.master_id, imported_by = excluded.imported_by, updated_at = CURRENT_TIMESTAMP`
+          ).bind(it.oc, it.on, it.qr, it.qn, it.scan, it.raw, actor));
+          await env.DB.batch(stmts);
+        }
+        // ແຖວທີ່ຈັບຄູ່ບໍ່ໄດ້ (ສຳລັບລາຍງານໃນ UI)
+        let noOutlet = [], noCooler = [], badDate = [];
+        if (uniq.length) {
+          const q = await env.DB.prepare(
+            `SELECT qr_norm, outlet_id, master_id FROM cooler_not_scan WHERE qr_norm IN (${uniq.map(() => "?").join(",")})`
+          ).bind(...uniq.map((x) => x.qn)).all();
+          const mp = new Map((q.results || []).map((r) => [r.qr_norm, r]));
+          for (const it of uniq) {
+            const r = mp.get(it.qn) || {};
+            if (!r.outlet_id) noOutlet.push({ row: it.row, code: it.oc || "" });
+            if (!r.master_id) noCooler.push({ row: it.row, code: it.qr });
+            if (it.raw && !it.scan) badDate.push({ row: it.row, code: it.raw });
+          }
+        }
+        return Response.json({ saved: uniq.length, updated, inserted: uniq.length - updated, no_qr: noQr, duplicates_in_file: dupInFile, no_outlet: noOutlet, no_cooler: noCooler, bad_date: badDate });
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/import", e);
+        return Response.json({ error: "Import ບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່" }, { status: 500 });
+      }
+    }
+
+    // ຈັບຄູ່ໃໝ່ທັງໝົດ ກັບ Outlet Master / Cooler Master ຕອນນີ້ (ຫຼັງ Master ອັບເດດ)
+    if (url.pathname === "/api/admin/cooler-not-scan/rematch" && request.method === "POST") {
+      try {
+        await cnsRematchStmt(env, null).run();
+        const st = await env.DB.prepare(
+          `SELECT COUNT(*) AS total, SUM(outlet_id IS NULL) AS no_outlet, SUM(master_id IS NULL) AS no_cooler FROM cooler_not_scan`
+        ).first();
+        return Response.json({ message: "ຈັບຄູ່ໃໝ່ແລ້ວ", ...st });
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/rematch", e);
+        return Response.json({ error: "ຈັບຄູ່ໃໝ່ບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
+    // ລຶບ (admin ເທົ່ານັ້ນ — ຜູ້ຊ່ວຍ admin ຖືກຫ້າມໂດຍກົດ delete*): { id } ຫຼື { all: true }
+    if (url.pathname === "/api/admin/cooler-not-scan/delete" && request.method === "POST") {
+      try {
+        const b = await request.json();
+        if (b.all === true) { await env.DB.prepare("DELETE FROM cooler_not_scan").run(); return Response.json({ message: "ລຶບທັງໝົດແລ້ວ" }); }
+        if (!b.id) return Response.json({ error: "ບໍ່ພົບລາຍການ" }, { status: 400 });
+        await env.DB.prepare("DELETE FROM cooler_not_scan WHERE id = ?").bind(b.id).run();
+        return Response.json({ message: "ລຶບແລ້ວ" });
+      } catch (e) {
+        console.error("/api/admin/cooler-not-scan/delete", e);
         return Response.json({ error: "ລຶບບໍ່ສຳເລັດ" }, { status: 500 });
       }
     }

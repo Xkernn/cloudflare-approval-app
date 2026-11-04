@@ -2179,6 +2179,7 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='c
     #view-stock-count       { --ph-ico: "\f46c"; }
     #view-cooler-master     { --ph-ico: "\f002"; }
     #view-lost-cooler       { --ph-ico: "\f071"; }
+    #view-cooler-not-scan   { --ph-ico: "\f3c5"; }
     #view-new-cooler-hub, #view-new-cooler { --ph-ico: "\f2dc"; }
     #view-ship-trip         { --ph-ico: "\f0d1"; }
     #view-ship-plan         { --ph-ico: "\f4d7"; }
@@ -2863,6 +2864,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </button>
           <button id="nav-lost-cooler" class="menu-item hidden" onclick="switchView('lostCooler')">
             <i class="fa-solid fa-triangle-exclamation"></i> Manage Lost Cooler Master Data
+          </button>
+          <button id="nav-cooler-not-scan" class="menu-item hidden" onclick="switchView('coolerNotScan')">
+            <i class="fa-solid fa-qrcode"></i> Cooler Not Scan
           </button>
           <button id="nav-virtual-office" class="menu-item hidden" onclick="openVirtualOffice()">
             <i class="fa-solid fa-building"></i> Virtual Company 3D
@@ -5012,6 +5016,65 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
         <div id="lostList"></div>
         <div id="lostPager" style="display:flex; gap:10px; justify-content:center; align-items:center; margin:16px 0; flex-wrap:wrap;"></div>
+      </div>
+
+      <!-- VIEW: Cooler Not Scan (admin + ຜູ້ຊ່ວຍ admin) — Import Excel (Outlet Code + QR Code + Latest Scan) ແລ້ວຈັບຄູ່ Outlet Master + Cooler Master -->
+      <div id="view-cooler-not-scan" class="hidden">
+        <div class="page-header">
+          <div>
+            <h1>Cooler Not Scan</h1>
+            <p>ຕູ້ທີ່ຍັງບໍ່ໄດ້ສະແກນ — Import ຈາກ Excel (Outlet Code, QR Code, Latest Scan) ແລ້ວລະບົບຈັບຄູ່ກັບ Outlet Master Data ແລະ Cooler Master Data ໃຫ້ອັດຕະໂນມັດ</p>
+          </div>
+          <div>
+            <button class="btn-add xl-io" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="cnsDownloadTemplate()"><i class="fa-solid fa-download mr-1"></i> Template</button>
+            <button class="btn-add xl-io" onclick="document.getElementById('cnsImportInput').click()"><i class="fa-solid fa-file-import mr-1"></i> Import Excel</button>
+            <input type="file" id="cnsImportInput" accept=".xlsx,.xls,.csv" class="hidden" onchange="cnsImportFile(event)">
+          </div>
+        </div>
+
+        <div id="cnsChips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;"></div>
+
+        <div class="content-card" style="padding:14px 16px; margin-bottom:14px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <div class="input-wrapper" style="flex:1; min-width:220px;"><i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="cnsSearchInput" class="form-control" placeholder="QR, Serial, CapEx, ລະຫັດ/ຊື່ຮ້ານ, MDE, DSM ຫຼື Team (ກົດ Enter)" autocomplete="off"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();cnsSearch();}">
+            </div>
+            <select id="cnsDays" class="form-control" style="width:auto; min-width:150px;" onchange="cnsSearch()" aria-label="ບໍ່ສະແກນຕັ້ງແຕ່">
+              <option value="">ບໍ່ສະແກນ: ທຸກໄລຍະ</option>
+              <option value="30">ບໍ່ສະແກນ ≥ 30 ມື້</option>
+              <option value="60">ບໍ່ສະແກນ ≥ 60 ມື້</option>
+              <option value="90">ບໍ່ສະແກນ ≥ 90 ມື້</option>
+              <option value="180">ບໍ່ສະແກນ ≥ 180 ມື້</option>
+            </select>
+            <select id="cnsProvince" class="form-control" style="width:auto; min-width:150px;" onchange="cnsSearch()" aria-label="ແຂວງ"><option value="">ທຸກແຂວງ</option></select>
+            <button class="btn-add" onclick="cnsSearch()"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+            <button class="btn-add xl-io" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="cnsRematch()" title="ຈັບຄູ່ກັບ Outlet Master / Cooler Master ໃໝ່ ຫຼັງ Master ມີການອັບເດດ"><i class="fa-solid fa-link mr-1"></i> ຈັບຄູ່ໃໝ່</button>
+            <button class="btn-add xl-io" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="cnsExport()"><i class="fa-solid fa-file-export mr-1"></i> Export Excel</button>
+            <button class="btn-add xl-io" style="background:#fff; color:#b91c1c; border:1px solid #fecaca;" onclick="cnsDeleteAll()"><i class="fa-solid fa-trash mr-1"></i> ລຶບທັງໝົດ</button>
+          </div>
+        </div>
+
+        <div class="tab-nav" style="margin-bottom:14px;">
+          <button id="cnsTabList" class="tab-btn active" onclick="cnsSwitchTab('list')"><i class="fa-solid fa-list mr-1"></i> ລາຍການ</button>
+          <button id="cnsTabMap" class="tab-btn" onclick="cnsSwitchTab('map')"><i class="fa-solid fa-map-location-dot mr-1"></i> ແຜນທີ່</button>
+        </div>
+
+        <div id="cnsPaneList">
+          <div id="cnsList"></div>
+          <div id="cnsPager" style="display:flex; gap:10px; justify-content:center; align-items:center; margin:16px 0; flex-wrap:wrap;"></div>
+        </div>
+
+        <div id="cnsPaneMap" class="hidden">
+          <div id="cnsMapInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:8px;"></div>
+          <div id="cnsMapContainer" style="height:min(70vh, 640px); min-height:360px; border-radius:14px; border:1px solid var(--border-color); overflow:hidden; position:relative; z-index:0;"></div>
+          <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:12.5px; color:#475569;">
+            <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#dc2626; vertical-align:-1px;"></span> ບໍ່ສະແກນ ≥ 90 ມື້ ຫຼື ບໍ່ມີຂໍ້ມູນ</span>
+            <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f59e0b; vertical-align:-1px;"></span> 30–89 ມື້</span>
+            <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#0ea5e9; vertical-align:-1px;"></span> ນ້ອຍກວ່າ 30 ມື້</span>
+            <span>ຂະໜາດວົງມົນ = ຈຳນວນຕູ້ໃນຮ້ານ</span>
+          </div>
+        </div>
       </div>
 
       <div id="lostModal" class="modal-overlay hidden" onclick="if(event.target===this)lostCloseModal()">
@@ -8669,7 +8732,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       dashboard: 'nav-dashboard', asset: 'nav-asset', map: 'nav-map', request: 'nav-request',
       history: 'nav-history', historyHub: 'nav-history', deliveryHub: 'nav-delivery-hub', delivery: 'nav-history', deliverConfirm: 'nav-delivery-hub', dispatchOut: 'nav-delivery-hub',
       noDocDelivery: 'nav-delivery-hub', coolerEvent: 'nav-delivery-hub', coolerWriteOff: 'nav-delivery-hub', coolerWriteOffList: 'nav-delivery-hub', noDocDeliveryList: 'nav-delivery-hub', coolerEventList: 'nav-delivery-hub', profile: 'nav-profile',
-      announcements: 'nav-announcements', warehouseStock: 'nav-warehouse-stock', stockCount: 'nav-stock-count', coolerMaster: 'nav-cooler-master', lostCooler: 'nav-lost-cooler', newCooler: 'nav-new-cooler', newCoolerHub: 'nav-new-cooler', shipTrip: 'nav-new-cooler', provBudget: 'nav-prov-budget', vteBudget: 'nav-vte-budget', teamBudget: 'nav-team-budget', shipPlan: 'nav-new-cooler', ncFill: 'nav-new-cooler',
+      announcements: 'nav-announcements', warehouseStock: 'nav-warehouse-stock', stockCount: 'nav-stock-count', coolerMaster: 'nav-cooler-master', lostCooler: 'nav-lost-cooler', coolerNotScan: 'nav-cooler-not-scan', newCooler: 'nav-new-cooler', newCoolerHub: 'nav-new-cooler', shipTrip: 'nav-new-cooler', provBudget: 'nav-prov-budget', vteBudget: 'nav-vte-budget', teamBudget: 'nav-team-budget', shipPlan: 'nav-new-cooler', ncFill: 'nav-new-cooler',
       loanContract: 'nav-loan-contract', notifications: 'nav-notifications', playbook: 'nav-playbook'
     };
     let pendingDeepLinkView = null;
@@ -9648,6 +9711,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('view-stock-count').classList.add('hidden');
       document.getElementById('view-cooler-master').classList.add('hidden');
       document.getElementById('view-lost-cooler').classList.add('hidden');
+      document.getElementById('view-cooler-not-scan').classList.add('hidden');
       document.getElementById('view-new-cooler').classList.add('hidden');
       document.getElementById('view-new-cooler-hub').classList.add('hidden');
       document.getElementById('view-ship-trip').classList.add('hidden');
@@ -9676,6 +9740,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('nav-stock-count').classList.remove('active');
       document.getElementById('nav-cooler-master').classList.remove('active');
       document.getElementById('nav-lost-cooler').classList.remove('active');
+      document.getElementById('nav-cooler-not-scan').classList.remove('active');
       document.getElementById('nav-new-cooler').classList.remove('active');
       document.getElementById('nav-prov-budget').classList.remove('active');
       document.getElementById('nav-vte-budget').classList.remove('active');
@@ -9843,6 +9908,13 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         document.getElementById('nav-lost-cooler').classList.add('active');
         document.getElementById('view-lost-cooler').classList.remove('hidden');
         loadLostCoolerPage();
+        window.scrollTo(0, 0);
+      } else if (viewName === 'coolerNotScan') {
+        // admin + ຜູ້ຊ່ວຍ admin (ຝັ່ງ UI ຖືກປະຕິບັດເປັນ role 'admin'; server ກວດສິດຊ້ຳ: /api/admin/*)
+        if (!currentUser || currentUser.role !== 'admin') { switchView('dashboard'); return; }
+        document.getElementById('nav-cooler-not-scan').classList.add('active');
+        document.getElementById('view-cooler-not-scan').classList.remove('hidden');
+        loadCoolerNotScanPage();
         window.scrollTo(0, 0);
       } else if (viewName === 'stockCount') {
         document.getElementById('nav-stock-count').classList.add('active');
@@ -10616,6 +10688,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         navStockCount.classList.add('hidden');
         navCoolerMaster.classList.add('hidden');
         document.getElementById('nav-lost-cooler').classList.add('hidden');
+        document.getElementById('nav-cooler-not-scan').classList.add('hidden');
         document.getElementById('nav-virtual-office').classList.add('hidden');
         navNewCooler.classList.add('hidden');
         document.getElementById('nav-prov-budget').classList.add('hidden');
@@ -10633,6 +10706,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         navCoolerMaster.classList.toggle('hidden', !(role === 'admin' || role === 'warehouse' || role === 'user')); // admin + warehouse + user (delivery ບໍ່ເຫັນ)
         navNewCooler.classList.toggle('hidden', !(role === 'admin' || role === 'warehouse'));
         document.getElementById('nav-lost-cooler').classList.toggle('hidden', role !== 'admin'); // Manage Lost Cooler Master Data: admin ເທົ່ານັ້ນ
+        document.getElementById('nav-cooler-not-scan').classList.toggle('hidden', role !== 'admin'); // Cooler Not Scan: admin + ຜູ້ຊ່ວຍ admin (UI ເຫັນເປັນ role admin)
         document.getElementById('nav-virtual-office').classList.toggle('hidden', role !== 'admin'); // Virtual Company 3D: admin ເທົ່ານັ້ນ
         document.getElementById('nav-prov-budget').classList.toggle('hidden', role !== 'admin');
         document.getElementById('nav-team-budget').classList.toggle('hidden', role !== 'user' && role !== 'dsm');
@@ -10661,7 +10735,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
        ເມນູທີ່ມັກ: ເກັບໃນ localStorage ຕໍ່ຜູ້ໃຊ້ · ປຸ່ມ ແກ້ໄຂ -> ກົດ +/− ຫຼື ກົດຄ້າງແລ້ວລາກ
        ໝາຍເຫດ: ໃຊ້ id ຂອງເມນູຂ້າງ (nav-*) ເປັນແຫຼ່ງຄວາມຈິງເລື່ອງສິດ/ການຊ່ອນ ເພາະ applyRoleMenu() ຍັງຄວບຄຸມຢູ່ */
     /* ชุดไอคอน SVG (sprite #ic-*) + สลับรูปแบบเมนูมือถือ: ใหม่ (ค่าเริ่มต้น) / เก่า (classic) */
-    const MM_IC = {"asset": "cube", "request": "file-plus", "history": "history", "delivery": "handoff", "dispatch": "truck", "dlvscan": "scan", "loan": "file-sign", "stock": "warehouse", "count": "count", "cmaster": "locate", "lostcooler": "alert", "vo": "city", "newcooler": "snowflake", "prov": "wallet", "adminmgmt": "shield-user", "dsmsign": "sign", "teambudget": "pie", "vte": "city", "ann": "megaphone", "playbook": "book", "guide": "book-open", "tour": "help", "stock:dashboard": "bars", "stock:history": "archive", "stock:scan": "scan", "cm:scan": "scan", "loan:issue": "file-up", "loan:return": "file-down", "loan:survey": "search", "loan:queue": "file-sign", "loan:docs": "file-check", "hist:request": "list", "hist:delivery": "truck", "dlv:event": "calendar", "dlv:writeoff": "trash", "nc:imported": "tray-in", "nc:receive": "inbox", "nc:fill": "qr", "sp:plan": "calculator", "sp:trip": "route"};
+    const MM_IC = {"asset": "cube", "request": "file-plus", "history": "history", "delivery": "handoff", "dispatch": "truck", "dlvscan": "scan", "loan": "file-sign", "stock": "warehouse", "count": "count", "cmaster": "locate", "lostcooler": "alert", "cns": "scan", "vo": "city", "newcooler": "snowflake", "prov": "wallet", "adminmgmt": "shield-user", "dsmsign": "sign", "teambudget": "pie", "vte": "city", "ann": "megaphone", "playbook": "book", "guide": "book-open", "tour": "help", "stock:dashboard": "bars", "stock:history": "archive", "stock:scan": "scan", "cm:scan": "scan", "loan:issue": "file-up", "loan:return": "file-down", "loan:survey": "search", "loan:queue": "file-sign", "loan:docs": "file-check", "hist:request": "list", "hist:delivery": "truck", "dlv:event": "calendar", "dlv:writeoff": "trash", "nc:imported": "tray-in", "nc:receive": "inbox", "nc:fill": "qr", "sp:plan": "calculator", "sp:trip": "route"};
     function icSvg(name) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#ic-' + name + '"/></svg>'; }
     /* ຄ່າເລີ່ມຕົ້ນຂອງ Theme ຕັ້ງຢູ່ <head> ແລ້ວ (ເວັບ=classic, ແອັບຕິດຕັ້ງ=clean) */
     function mmSetStyle(mode, auto) {
@@ -10684,6 +10758,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       { key: 'count',     nav: 'nav-stock-count',    view: 'stockCount',     icon: 'fa-solid fa-boxes-stacked',   label: 'ກວດນັບສາງ',          badge: null,                    tone: 'pink' },
       { key: 'cmaster',   nav: 'nav-cooler-master',  view: 'coolerMaster',  icon: 'fa-magnifying-glass-location', label: 'ຄົ້ນຫາຕູ້ໃນລະບົບ', badge: null,            tone: 'teal' },
       { key: 'lostcooler', nav: 'nav-lost-cooler',   view: 'lostCooler',    icon: 'fa-solid fa-triangle-exclamation', label: 'Manage Lost Cooler Master Data', badge: null, tone: 'red', roles: ['admin'] },
+      { key: 'cns',        nav: 'nav-cooler-not-scan', view: 'coolerNotScan', icon: 'fa-solid fa-qrcode', label: 'Cooler Not Scan', badge: null, tone: 'orange', roles: ['admin'] },
       { key: 'vo',        nav: 'nav-virtual-office', action: 'vo',           icon: 'fa-solid fa-building',    label: 'Virtual Company 3D', badge: null, tone: 'sky', roles: ['admin'] },
       { key: 'newcooler', nav: 'nav-new-cooler',     view: 'newCoolerHub',   icon: 'fa-solid fa-trailer',         label: 'ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ', badge: null,                  tone: 'sky' },
       { key: 'prov',      nav: 'nav-prov-budget',    view: 'provBudget',     icon: 'fa-solid fa-wallet',  label: 'ງົບຕູ້ແຊ່ຕ່າງແຂວງ',        badge: null,                    tone: 'red' },
@@ -11170,6 +11245,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       ['nav-stock-count', 'fa-clipboard-check', 'ກວດນັບສາງ', 'ບັນທຶກຜົນການກວດນັບສະຕັອກສາງ.'],
       ['nav-cooler-master', 'fa-magnifying-glass-location', 'ຄົ້ນຫາຕູ້ (Master)', 'ພິມ ຫຼື ສະແກນກ້ອງ QR / Serial / CapEx ເພື່ອເບິ່ງວ່າຕູ້ນີ້ຢູ່ໃສ ຕາມຂໍ້ມູນ Master ຕູ້ແຊ່ທົ່ວປະເທດ ພ້ອມຕຳແໜ່ງໃນລະບົບ (ສະຕັອກສາງ, Asset Tracking, ຕູ້ເຂົ້າໃໝ່, Event).'],
       ['nav-lost-cooler', 'fa-triangle-exclamation', 'Manage Lost Cooler Master Data', 'Admin ຈັດການຕູ້ທີ່ຢູ່ໃນ Cooler Master ແຕ່ຫາໂຕຈິງບໍ່ເຫັນ: ກວດສອບ ແລະ ຢືນຢັນສູນຫາຍ.'],
+      ['nav-cooler-not-scan', 'fa-qrcode', 'Cooler Not Scan', 'ລາຍການຕູ້ທີ່ຍັງບໍ່ໄດ້ສະແກນ: Import Excel (Outlet Code, QR Code, Latest Scan) ຈັບຄູ່ກັບ Outlet Master ແລະ Cooler Master ອັດຕະໂນມັດ, ເບິ່ງເປັນລາຍການ ຫຼື ແຖບແຜນທີ່.'],
       ['nav-new-cooler', 'fa-snowflake', 'ຕູ້ແຊ່ເຂົ້າໃຫມ່ / ຕ່າງແຂວງ', 'ຮັບຕູ້ໃໝ່ເຂົ້າສາງ, ສະແກນຢືນຢັນວ່າມີຕູ້, ແຜນສົ່ງຕູ້ຕ່າງແຂວງ ແລະ ຖ້ຽວລົດສົ່ງຕູ້ຕ່າງແຂວງ (ເຊັນ, ຂຶ້ນລົດ, ລິ້ງໃຫ້ຜູ້ຮັບເຊັນ). ສາງເຫັນສະເພາະບາງເມນູຍ່ອຍ.'],
       ['nav-prov-budget', 'fa-wallet', 'ງົບຕູ້ແຊ່ຕ່າງແຂວງ', 'ຕິດຕາມ ແລະ ນຳເຂົ້າ (Excel) ງົບປະມານຕູ້ແຊ່ຂອງແຕ່ລະແຂວງ.'],
       ['nav-team-budget', 'fa-chart-pie', 'ງົບປະມານຕູ້ຂອງທີມ', 'ເບິ່ງໂຄຕ້າ, ທີ່ໃຊ້ໄປແລ້ວ ແລະ ຄົງເຫຼືອ ຂອງທີມ ແຍກຕາມ Brand. ຄວນກວດກ່ອນຂໍຕູ້ "ໃໝ່".'],
@@ -19580,6 +19656,362 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         }
       };
       reader.readAsArrayBuffer(file);
+    }
+
+    /* ===================== Cooler Not Scan (admin + ຜູ້ຊ່ວຍ admin) ===================== */
+    const cnsState = { q: '', status: '', days: '', province: '', offset: 0, limit: 50, total: 0, tab: 'list' };
+    let cnsItems = {};
+    let cnsMapInstance = null, cnsMapLayer = null;
+    const CNS_HEADER_ALIASES = {
+      outlet_code: ['outletcode', 'outlet', 'outletid', 'outletno', 'customercode', 'shopcode', 'ລະຫັດຮ້ານ', 'ລະຫັດoutlet', 'ລະຫັດຮ້ານຄ້າ'],
+      qr_code: ['qrcode', 'qr', 'qrno', 'qrnumber', 'ລະຫັດqr', 'ລະຫັດqrcode', 'ຄິວອາ'],
+      latest_scan: ['latestscan', 'lastscan', 'latestscandate', 'lastscandate', 'lastscanned', 'latestscanned', 'scandate', 'latestscantime', 'lastscantime', 'ສະແກນຫຼ້າສຸດ', 'ວັນທີສະແກນຫຼ້າສຸດ', 'ວັນທີສະແກນ', 'ສະແກນລ່າສຸດ']
+    };
+    function cnsFieldForHeader(h) {
+      const n = String(h == null ? '' : h).toLowerCase().replace(/[^a-z0-9຀-໿]/g, '');
+      if (!n) return null;
+      for (const [f, al] of Object.entries(CNS_HEADER_ALIASES)) { if (al.includes(n)) return f; }
+      return null;
+    }
+    function cnsDaysSince(s) {
+      const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return null;
+      const t = Date.parse(`${m[1]}-${m[2]}-${m[3]}T00:00:00+07:00`);
+      return isNaN(t) ? null : Math.max(0, Math.floor((Date.now() - t) / 864e5));
+    }
+    function cnsAgeColor(days) { return days == null || days >= 90 ? '#dc2626' : (days >= 30 ? '#f59e0b' : '#0ea5e9'); }
+    function cnsQuery(extra) {
+      const p = new URLSearchParams();
+      if (cnsState.q) p.set('q', cnsState.q);
+      if (cnsState.status) p.set('status', cnsState.status);
+      if (cnsState.days) p.set('days', cnsState.days);
+      if (cnsState.province) p.set('province', cnsState.province);
+      Object.entries(extra || {}).forEach(([k, v]) => p.set(k, v));
+      return p.toString();
+    }
+
+    function loadCoolerNotScanPage() {
+      cnsState.offset = 0;
+      cnsLoad(true);
+      if (cnsState.tab === 'map') cnsLoadMap();
+    }
+    function cnsSearch() {
+      cnsState.q = document.getElementById('cnsSearchInput').value.trim();
+      cnsState.days = document.getElementById('cnsDays').value;
+      cnsState.province = document.getElementById('cnsProvince').value;
+      cnsState.offset = 0;
+      cnsLoad(false);
+      if (cnsState.tab === 'map') cnsLoadMap();
+    }
+    function cnsSetStatus(s) {
+      cnsState.status = cnsState.status === s ? '' : s;
+      cnsState.offset = 0;
+      cnsLoad(false);
+      if (cnsState.tab === 'map') cnsLoadMap();
+    }
+    function cnsPage(d) { cnsState.offset = Math.max(0, cnsState.offset + d * cnsState.limit); cnsLoad(false); window.scrollTo(0, 0); }
+    function cnsSwitchTab(t) {
+      cnsState.tab = t;
+      document.getElementById('cnsTabList').classList.toggle('active', t === 'list');
+      document.getElementById('cnsTabMap').classList.toggle('active', t === 'map');
+      document.getElementById('cnsPaneList').classList.toggle('hidden', t !== 'list');
+      document.getElementById('cnsPaneMap').classList.toggle('hidden', t !== 'map');
+      if (t === 'map') cnsLoadMap();
+    }
+
+    function cnsRenderChips(st) {
+      st = st || {};
+      const chip = (key, label, n, tone) => {
+        const on = cnsState.status === key;
+        const color = on ? '#fff' : (tone || 'var(--text-main)');
+        return `<button type="button" onclick="cnsSetStatus(${jsq(key)})" style="border:1px solid ${on ? 'var(--primary)' : 'var(--border-color)'}; background:${on ? 'var(--primary)' : '#fff'}; color:${color}; border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">${esc(label)}${n == null ? '' : ` <b>${Number(n || 0).toLocaleString()}</b>`}</button>`;
+      };
+      const all = `<button type="button" onclick="cnsState.status=''; cnsState.offset=0; cnsLoad(false); if(cnsState.tab==='map') cnsLoadMap();" style="border:1px solid ${!cnsState.status ? 'var(--primary)' : 'var(--border-color)'}; background:${!cnsState.status ? 'var(--primary)' : '#fff'}; color:${!cnsState.status ? '#fff' : 'var(--text-main)'}; border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">ທັງໝົດ <b>${Number(st.total || 0).toLocaleString()}</b></button>`;
+      document.getElementById('cnsChips').innerHTML = all
+        + chip('matched', 'ຈັບຄູ່ຄົບ', st.matched, '#166534')
+        + chip('no_outlet', 'ບໍ່ພົບ Outlet Master', st.no_outlet, '#b91c1c')
+        + chip('no_cooler', 'ບໍ່ພົບ Cooler Master', st.no_cooler, '#b91c1c')
+        + chip('mismatch', 'Outlet ບໍ່ກົງກັບ Master', null, '#b45309')
+        + chip('never', 'ບໍ່ມີວັນທີສະແກນ', st.never, '#475569')
+        + `<span style="align-self:center; font-size:12.5px; color:#64748b;">ບໍ່ສະແກນ ≥30 ມື້: <b>${Number(st.d30 || 0).toLocaleString()}</b> · ≥90 ມື້: <b>${Number(st.d90 || 0).toLocaleString()}</b>${st.last_import ? ' · Import ຫຼ້າສຸດ ' + esc(fmtLaoTs(st.last_import)) : ''}</span>`;
+    }
+
+    async function cnsLoad(withStats) {
+      const list = document.getElementById('cnsList');
+      list.innerHTML = '<div class="card-list-loading">ກຳລັງໂຫລດ...</div>';
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/list?' + cnsQuery({ limit: cnsState.limit, offset: cnsState.offset, stats: (withStats || !document.getElementById('cnsChips').innerHTML) ? 1 : 0 }));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { list.innerHTML = `<div class="card-list-error">${esc(data.error || 'ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ')}</div>`; return; }
+        if (data.stats) { cnsState.stats = data.stats; }
+        cnsRenderChips(cnsState.stats);
+        if (data.provinces) {
+          const sel = document.getElementById('cnsProvince');
+          const cur = cnsState.province;
+          sel.innerHTML = '<option value="">ທຸກແຂວງ</option>' + data.provinces.map(p => `<option value="${esc(p)}"${p === cur ? ' selected' : ''}>${esc(p)}</option>`).join('');
+        }
+        cnsState.total = data.total || 0;
+        cnsItems = {};
+        (data.rows || []).forEach(r => { cnsItems[r.id] = r; });
+        list.innerHTML = (data.rows || []).length
+          ? `<div class="card-list">${data.rows.map(cnsRenderCard).join('')}</div>`
+          : `<div class="card-list-empty">ບໍ່ມີລາຍການ${(cnsState.q || cnsState.status || cnsState.days || cnsState.province) ? ' ຕາມເງື່ອນໄຂທີ່ເລືອກ' : ' — ກົດ "Import Excel" ເພື່ອເລີ່ມ'}</div>`;
+        const from = cnsState.total ? cnsState.offset + 1 : 0;
+        const to = Math.min(cnsState.offset + cnsState.limit, cnsState.total);
+        document.getElementById('cnsPager').innerHTML = cnsState.total > cnsState.limit
+          ? `<button class="btn-act" ${cnsState.offset <= 0 ? 'disabled' : ''} onclick="cnsPage(-1)">‹ ກ່ອນໜ້າ</button>
+             <span style="font-size:13px; color:var(--text-muted);">${from}-${to} / ${cnsState.total.toLocaleString()}</span>
+             <button class="btn-act" ${to >= cnsState.total ? 'disabled' : ''} onclick="cnsPage(1)">ຖັດໄປ ›</button>`
+          : (cnsState.total ? `<span style="font-size:13px; color:var(--text-muted);">ທັງໝົດ ${cnsState.total.toLocaleString()} ລາຍການ</span>` : '');
+      } catch (e) {
+        list.innerHTML = '<div class="card-list-error">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</div>';
+      }
+    }
+
+    function cnsRenderCard(it) {
+      const name = it.o_name || it.m_outlet_name || '';
+      const days = cnsDaysSince(it.latest_scan);
+      const mismatch = it.master_id && it.m_outlet_code && String(it.m_outlet_code).trim().toUpperCase() !== String(it.outlet_code || '').trim().toUpperCase();
+      const okB = (ok, t) => `<span class="badge ${ok ? 'badge-approved' : 'badge-rejected'}">${ok ? '✓' : '✗'} ${esc(t)}</span>`;
+      const scanBadge = it.latest_scan
+        ? `<span class="badge" style="background:${cnsAgeColor(days)}1a; color:${cnsAgeColor(days)}; border:1px solid ${cnsAgeColor(days)}55;">${days != null ? days.toLocaleString() + ' ມື້ກ່ອນ' : '—'}</span>`
+        : '<span class="badge badge-default">ບໍ່ມີວັນທີສະແກນ</span>';
+      const hasGeo = (it.o_lat != null && it.o_lng != null && it.o_lat !== '' && it.o_lng !== '');
+      const mdeBits = [it.team ? 'Team: ' + it.team : '', it.dsm ? 'DSM: ' + it.dsm : '', it.mde ? 'MDE: ' + it.mde : ''].filter(Boolean);
+      const machine = [it.cooler_brand, it.cooler_type, it.cooler_model ? '(' + it.cooler_model + ')' : ''].filter(Boolean).join(' ');
+      const place = [it.o_province || it.m_province, it.o_address].filter(Boolean).join(' · ');
+      return `
+        <div class="data-card">
+          <div class="data-card-main" style="width:100%;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
+              <div class="data-card-title">${name ? esc(name) : '<span style="color:#94a3b8;">ບໍ່ພົບຊື່ຮ້ານ</span>'} <span style="font-weight:500; color:#64748b;">[${esc(it.outlet_code || '-')}]</span></div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">${okB(!!it.outlet_id, 'Outlet Master')}${okB(!!it.master_id, 'Cooler Master')}${mismatch ? '<span class="badge badge-pending">Outlet ບໍ່ກົງກັບ Master</span>' : ''}</div>
+            </div>
+            <div class="data-card-sub" style="margin-top:6px;">
+              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}</span>
+              <span><i class="fa-solid fa-barcode"></i>${esc(it.serial_number || '-')}</span>
+              <span><i class="fa-solid fa-coins"></i>${esc(it.capex || '-')}</span>
+              ${machine ? `<span><i class="fa-solid fa-snowflake"></i>${esc(machine)}</span>` : ''}
+            </div>
+            <div style="margin-top:8px; font-size:13.5px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <span><i class="fa-solid fa-clock-rotate-left" style="color:#0f766e;"></i> <b>Latest Scan:</b> ${it.latest_scan ? esc(it.latest_scan) : (it.latest_scan_raw ? esc(it.latest_scan_raw) + ' <span style="color:#b45309;">(ອ່ານວັນທີບໍ່ໄດ້)</span>' : '-')}</span>
+              ${scanBadge}
+            </div>
+            ${place || it.o_phone ? `<div style="margin-top:4px; font-size:12.5px; color:#475569; display:flex; gap:12px; flex-wrap:wrap;">${place ? `<span><i class="fa-solid fa-map-pin"></i> ${esc(place)}</span>` : ''}${it.o_phone ? `<span><i class="fa-solid fa-phone"></i> ${esc(it.o_phone)}</span>` : ''}</div>` : ''}
+            ${mismatch ? `<div style="margin-top:4px; font-size:12.5px; color:#b45309;"><i class="fa-solid fa-triangle-exclamation"></i> Cooler Master ລະບຸວ່າຕູ້ນີ້ຢູ່ຮ້ານ ${esc(it.m_outlet_name || '')} [${esc(it.m_outlet_code)}]</div>` : ''}
+            ${mdeBits.length ? `<div style="margin-top:4px; font-size:12.5px; color:#475569; display:flex; gap:12px; flex-wrap:wrap;">${mdeBits.map(b => `<span>${esc(b)}</span>`).join('')}</div>` : ''}
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+              ${hasGeo ? `<a class="btn-act" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color); text-decoration:none;" href="https://www.google.com/maps?q=${encodeURIComponent(it.o_lat + ',' + it.o_lng)}" target="_blank" rel="noopener"><i class="fa-solid fa-location-dot"></i> Google Maps</a>` : ''}
+              <button class="btn-act" style="background:#fff; color:#b91c1c; border:1px solid #fecaca;" onclick="cnsDeleteOne(${Number(it.id)})"><i class="fa-solid fa-trash"></i> ລຶບ</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    /* ---------- ແຜນທີ່ ---------- */
+    async function cnsLoadMap() {
+      const info = document.getElementById('cnsMapInfo');
+      info.textContent = 'ກຳລັງໂຫລດແຜນທີ່...';
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/map?' + cnsQuery());
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { info.textContent = data.error || 'ໂຫລດແຜນທີ່ບໍ່ສຳເລັດ'; return; }
+        if (!cnsMapInstance) {
+          cnsMapInstance = L.map('cnsMapContainer', { preferCanvas: true });
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(cnsMapInstance);
+          cnsMapLayer = L.layerGroup().addTo(cnsMapInstance);
+          cnsMapInstance.setView([18.2, 103.9], 6); // ລາວ
+        } else { cnsMapLayer.clearLayers(); }
+        setTimeout(() => cnsMapInstance.invalidateSize(), 0);
+
+        // ລວມຕູ້ທີ່ຢູ່ຮ້ານ/ຈຸດດຽວກັນເປັນ 1 ວົງມົນ
+        const groups = new Map();
+        (data.points || []).forEach(p => {
+          const key = (p.outlet_code ? String(p.outlet_code).trim().toUpperCase() : '') + '|' + p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
+          if (!groups.has(key)) groups.set(key, { lat: p.lat, lng: p.lng, outlet_code: p.outlet_code, outlet_name: p.outlet_name, phone: p.phone, province: p.province, items: [] });
+          const g = groups.get(key);
+          if (!g.outlet_name && p.outlet_name) g.outlet_name = p.outlet_name;
+          if (!g.phone && p.phone) g.phone = p.phone;
+          g.items.push(p);
+        });
+        const bounds = [];
+        groups.forEach(g => {
+          const ages = g.items.map(i => cnsDaysSince(i.latest_scan));
+          const worst = ages.some(a => a == null) ? null : Math.max(...ages);
+          const color = cnsAgeColor(worst);
+          const r = 6 + Math.min(g.items.length, 12);
+          const m = L.circleMarker([g.lat, g.lng], { radius: r, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.85 }).addTo(cnsMapLayer);
+          const rows = g.items.slice(0, 15).map(i => {
+            const d = cnsDaysSince(i.latest_scan);
+            return `<div style="margin-top:3px;"><b>${esc(i.qr_code || '-')}</b>${i.brand || i.type ? ' · ' + esc([i.brand, i.type].filter(Boolean).join(' ')) : ''}<br><span style="color:${cnsAgeColor(d)};">Scan: ${i.latest_scan ? esc(i.latest_scan) + (d != null ? ' (' + d + ' ມື້)' : '') : 'ບໍ່ມີຂໍ້ມູນ'}</span></div>`;
+          }).join('');
+          const first = g.items[0] || {};
+          m.bindPopup(`<div style="max-width:260px; font-size:13px;">
+            <b>${esc(g.outlet_name || 'ບໍ່ພົບຊື່ຮ້ານ')}</b><br>
+            <span style="color:#475569;">${esc(g.outlet_code || '-')}${g.province ? ' · ' + esc(g.province) : ''}</span><br>
+            ${g.phone ? `<span><i class="fa-solid fa-phone"></i> ${esc(g.phone)}</span><br>` : ''}
+            ${first.mde ? `<span>MDE: ${esc(first.mde)}</span><br>` : ''}
+            <div style="margin-top:6px; font-weight:700;">ຕູ້ທີ່ຍັງບໍ່ໄດ້ສະແກນ: ${g.items.length}</div>
+            ${rows}${g.items.length > 15 ? `<div style="margin-top:3px; color:#64748b;">... ແລະອີກ ${g.items.length - 15} ຕູ້</div>` : ''}
+            <div style="margin-top:8px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${g.lat},${g.lng}" target="_blank" rel="noopener">ນຳທາງ Google Maps</a></div>
+          </div>`);
+          bounds.push([g.lat, g.lng]);
+        });
+        if (bounds.length) cnsMapInstance.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+        const nPts = (data.points || []).length;
+        info.innerHTML = `ສະແດງ <b>${nPts.toLocaleString()}</b> ຕູ້ ໃນ <b>${groups.size.toLocaleString()}</b> ຈຸດ`
+          + (data.no_coord ? ` · <span style="color:#b45309;">${Number(data.no_coord).toLocaleString()} ຕູ້ບໍ່ມີພິກັດ (ບໍ່ມີ Lat/Long ໃນ Outlet Master ແລະ Cooler Master) ຈຶ່ງບໍ່ຂຶ້ນແຜນທີ່</span>` : '')
+          + (nPts >= 5000 ? ' · <span style="color:#b45309;">ສະແດງສູງສຸດ 5,000 ຕູ້ — ໃຊ້ຕົວກັ່ນຕອງເພື່ອເບິ່ງສ່ວນທີ່ເຫຼືອ</span>' : '');
+      } catch (e) {
+        console.error(e);
+        info.textContent = 'ໂຫລດແຜນທີ່ບໍ່ສຳເລັດ';
+      }
+    }
+
+    /* ---------- Import / Export / ຈັບຄູ່ / ລຶບ ---------- */
+    function cnsDownloadTemplate() {
+      const ws = XLSX.utils.aoa_to_sheet([['Outlet Code', 'QR Code', 'Latest Scan']]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Cooler Not Scan');
+      XLSX.writeFile(wb, 'cooler-not-scan-template.xlsx');
+    }
+
+    function cnsImportFile(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          // raw:false -> QR ຍາວໆ ບໍ່ກາຍເປັນ 1.2E+11 · dateNF -> ເຊວວັນທີອອກເປັນ YYYY-MM-DD hh:mm (ຕັດ 00:00 ອອກພາຍຫຼັງ)
+          const raw = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false, dateNF: 'yyyy-mm-dd hh:mm' });
+          if (!raw.length) { appAlert('ບໍ່ພົບຂໍ້ມູນໃນໄຟລ໌ທີ່ອັບໂຫລດ'); return; }
+          const headers = Object.keys(raw[0]);
+          const mapping = {};
+          headers.forEach(h => { const f = cnsFieldForHeader(h); if (f && !Object.values(mapping).includes(f)) mapping[h] = f; });
+          const mapped = Object.values(mapping);
+          if (!mapped.includes('qr_code')) { appAlert('ບໍ່ພົບຫົວຖັນ QR Code ໃນໄຟລ໌ — ກະລຸນາກວດແຖວທຳອິດ ຫຼື ກົດ Template'); return; }
+          const missing = ['outlet_code', 'latest_scan'].filter(f => !mapped.includes(f)).map(f => f === 'outlet_code' ? 'Outlet Code' : 'Latest Scan');
+          const ok = await appConfirm(`ພົບ ${raw.length.toLocaleString()} ແຖວ\nຖັນທີ່ຈັບຄູ່ໄດ້: ${mapped.join(', ')}${missing.length ? '\n⚠ ບໍ່ພົບຖັນ: ' + missing.join(', ') : ''}\n\nລະບົບຈະຈັບຄູ່ Outlet Code ກັບ Outlet Master Data ແລະ QR Code ກັບ Cooler Master Data. QR ທີ່ມີໃນລາຍການແລ້ວຈະຖືກອັບເດດ. ເລີ່ມນຳເຂົ້າ?`);
+          if (!ok) return;
+
+          const rows = raw.map((r, i) => {
+            const o = { row_no: i + 2 };
+            for (const h of Object.keys(mapping)) o[mapping[h]] = String(r[h] == null ? '' : r[h]).trim();
+            if (o.latest_scan) o.latest_scan = o.latest_scan.replace(/ 00:00$/, '');
+            return o;
+          });
+
+          let inserted = 0, updated = 0, failed = 0;
+          const noQr = [], noOutlet = [], noCooler = [], badDate = [], dup = [], errs = [], failedRows = [];
+          const CHUNK = 100;
+          showImportProgress('ກຳລັງນຳເຂົ້າ Cooler Not Scan...');
+          let done = 0;
+          for (let i = 0; i < rows.length; i += CHUNK) {
+            const chunk = rows.slice(i, i + CHUNK);
+            try {
+              const res = await fetch('/api/admin/cooler-not-scan/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: chunk }) });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok) {
+                inserted += data.inserted || 0; updated += data.updated || 0;
+                noQr.push(...(data.no_qr || [])); noOutlet.push(...(data.no_outlet || [])); noCooler.push(...(data.no_cooler || []));
+                badDate.push(...(data.bad_date || [])); dup.push(...(data.duplicates_in_file || []));
+              } else { failed += chunk.length; chunk.forEach(r => failedRows.push({ row: r.row_no, why: data.error || 'ນຳເຂົ້າບໍ່ສຳເລັດ' })); if (errs.length < 5) errs.push(`ແຖວ ${chunk[0].row_no}-${chunk[chunk.length - 1].row_no}: ${data.error || 'ບໍ່ສຳເລັດ'}`); }
+            } catch (err) {
+              failed += chunk.length; chunk.forEach(r => failedRows.push({ row: r.row_no, why: 'ເຄືອຂ່າຍມີບັນຫາ' })); if (errs.length < 5) errs.push(`ແຖວ ${chunk[0].row_no}-${chunk[chunk.length - 1].row_no}: ເຄືອຂ່າຍມີບັນຫາ`);
+            }
+            done += chunk.length;
+            updateImportProgress(done, rows.length, noQr.length + failed, [...noQr.map(x => `ແຖວ ${x.row}: ບໍ່ມີ QR Code`), ...errs]);
+          }
+          hideImportProgress();
+
+          const fmt = (title, arr) => arr.length ? `\n${title} (${arr.length.toLocaleString()}): ` + arr.slice(0, 8).map(x => `ແຖວ ${x.row}${x.code ? ' ' + x.code : ''}`).join(', ') + (arr.length > 8 ? ' ...' : '') : '';
+          let msg = `ນຳເຂົ້າສຳເລັດ ${(inserted + updated).toLocaleString()} ຕູ້ (ເພີ່ມໃໝ່ ${inserted.toLocaleString()} · ອັບເດດ ${updated.toLocaleString()})`
+            + fmt('ບໍ່ພົບໃນ Outlet Master', noOutlet) + fmt('ບໍ່ພົບໃນ Cooler Master', noCooler)
+            + fmt('ອ່ານວັນທີ Latest Scan ບໍ່ໄດ້', badDate) + fmt('QR ຊ້ຳໃນໄຟລ໌ (ໃຊ້ແຖວຫຼັງສຸດ)', dup) + fmt('ບໍ່ມີ QR Code', noQr);
+          if (failed) msg += `\nບໍ່ສຳເລັດ ${failed} ແຖວ:\n${errs.join('\n')}`;
+          await appAlert(msg);
+          cnsState.offset = 0; cnsLoad(true);
+          if (cnsState.tab === 'map') cnsLoadMap();
+
+          const attention = [
+            ...noQr.map(x => ({ row: x.row, why: 'ບໍ່ມີ QR Code' })),
+            ...noOutlet.map(x => ({ row: x.row, why: 'ບໍ່ພົບ Outlet Code ໃນ Outlet Master Data' })),
+            ...noCooler.map(x => ({ row: x.row, why: 'ບໍ່ພົບ QR Code ໃນ Cooler Master Data' })),
+            ...badDate.map(x => ({ row: x.row, why: 'ອ່ານວັນທີ Latest Scan ບໍ່ໄດ້' })),
+            ...failedRows
+          ].sort((a, b) => a.row - b.row);
+          if (attention.length && await appConfirm(`ດາວໂຫລດລາຍການທີ່ຈັບຄູ່ບໍ່ໄດ້/ມີບັນຫາ ${attention.length.toLocaleString()} ລາຍການ ພ້ອມເຫດຜົນ ເປັນ Excel?`)) {
+            const out = attention.map(x => Object.assign({ 'ແຖວໃນ Excel': x.row, 'ເຫດຜົນ': x.why }, raw[x.row - 2] || {}));
+            const wbS = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wbS, XLSX.utils.json_to_sheet(out), 'ຕ້ອງກວດ');
+            XLSX.writeFile(wbS, 'cooler-not-scan-import-issues-' + exportStamp() + '.xlsx');
+          }
+        } catch (err) {
+          hideImportProgress();
+          console.error(err);
+          appAlert('ອ່ານໄຟລ໌ບໍ່ສຳເລັດ ກະລຸນາກວດຮູບແບບໄຟລ໌');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    async function cnsExport() {
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/list?' + cnsQuery({ all: 1 }));
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { appAlert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
+        const rows = (data.rows || []).map(r => ({
+          'Outlet Code': r.outlet_code || '', 'Outlet Name': r.o_name || r.m_outlet_name || '', 'ແຂວງ': r.o_province || r.m_province || '',
+          'ທີ່ຢູ່': r.o_address || '', 'ເບີໂທ': r.o_phone || '', 'Latitude': r.o_lat ?? '', 'Longitude': r.o_lng ?? '',
+          'QR Code': r.qr_code || '', 'Serial Number': r.serial_number || '', 'CapEx': r.capex || '',
+          'Brand': r.cooler_brand || '', 'Type': r.cooler_type || '', 'Model': r.cooler_model || '',
+          'Latest Scan': r.latest_scan || r.latest_scan_raw || '', 'ບໍ່ສະແກນ (ມື້)': cnsDaysSince(r.latest_scan) ?? '',
+          'ພົບໃນ Outlet Master': r.outlet_id ? 'Y' : 'N', 'ພົບໃນ Cooler Master': r.master_id ? 'Y' : 'N',
+          'Outlet Code ຕາມ Cooler Master': r.m_outlet_code || '', 'Team': r.team || '', 'DSM': r.dsm || '', 'MDE': r.mde || ''
+        }));
+        if (!rows.length) { appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Cooler Not Scan');
+        XLSX.writeFile(wb, 'cooler-not-scan-' + exportStamp() + '.xlsx');
+        if (data.total > rows.length) appAlert(`Export ສູງສຸດ ${rows.length.toLocaleString()} ແຖວ ຈາກທັງໝົດ ${data.total.toLocaleString()} — ໃຊ້ຕົວກັ່ນຕອງເພື່ອແບ່ງ Export`);
+      } catch (e) { appAlert('Export ບໍ່ສຳເລັດ'); }
+    }
+
+    async function cnsRematch() {
+      if (!await appConfirm('ຈັບຄູ່ທຸກລາຍການກັບ Outlet Master Data ແລະ Cooler Master Data ອີກຄັ້ງ ຕາມຂໍ້ມູນປັດຈຸບັນ?')) return;
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/rematch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { appAlert(d.error || 'ຈັບຄູ່ໃໝ່ບໍ່ສຳເລັດ'); return; }
+        await appAlert(`ຈັບຄູ່ໃໝ່ແລ້ວ — ບໍ່ພົບ Outlet Master ${Number(d.no_outlet || 0).toLocaleString()} · ບໍ່ພົບ Cooler Master ${Number(d.no_cooler || 0).toLocaleString()} (ຈາກ ${Number(d.total || 0).toLocaleString()} ຕູ້)`);
+        cnsLoad(true);
+        if (cnsState.tab === 'map') cnsLoadMap();
+      } catch (e) { appAlert('ຈັບຄູ່ໃໝ່ບໍ່ສຳເລັດ'); }
+    }
+
+    async function cnsDeleteOne(id) {
+      if (!await appConfirm('ລຶບລາຍການນີ້ອອກຈາກ Cooler Not Scan?')) return;
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { appAlert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+        cnsLoad(true);
+        if (cnsState.tab === 'map') cnsLoadMap();
+      } catch (e) { appAlert('ລຶບບໍ່ສຳເລັດ'); }
+    }
+
+    async function cnsDeleteAll() {
+      if (!await appConfirm('ລຶບລາຍການ Cooler Not Scan "ທັງໝົດ"? (ຂໍ້ມູນ Outlet Master / Cooler Master ບໍ່ຖືກກະທົບ) — ກູ້ຄືນບໍ່ໄດ້')) return;
+      try {
+        const res = await fetch('/api/admin/cooler-not-scan/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ all: true }) });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) { appAlert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
+        cnsLoad(true);
+        if (cnsState.tab === 'map') cnsLoadMap();
+      } catch (e) { appAlert('ລຶບບໍ່ສຳເລັດ'); }
     }
 
     function cmDownloadTemplate() {
