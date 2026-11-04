@@ -277,7 +277,9 @@ export async function buildLoanPdf(env, d, opts = {}) {
 
   // ແຜນຜັງຈຸດວາງຕູ້ແຊ່ — ກ່ອງຂາວເບື້ອງຊ້າຍໃຕ້ຂໍ້ຄວາມ "ດັ່ງໃນແຜນຜັງລຸ່ມນີ້" (ພິກັດວັດຈາກ loan.pdf, ສັດສ່ວນ 238:91.5)
   {
-    const lp = opts.preview ? readInline(d.layout_plan) : await readR2(env, d.layout_plan);
+    // ເກັບໄດ້ 2 ແບບ: base64 data URL ໂດຍກົງໃນຄໍລຳ (preview / ຂໍ້ມູນເກົ່າ) ຫຼື R2 key
+    const lpIsInline = opts.preview || String(d.layout_plan || '').startsWith('data:');
+    const lp = lpIsInline ? readInline(d.layout_plan) : await readR2(env, d.layout_plan);
     if (lp) {
       try {
         const im = await pdf.embedPng(lp);

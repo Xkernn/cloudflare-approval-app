@@ -2304,7 +2304,7 @@ async function applyLoanContractSignatures(env, id, row, body) {
   await savePhotosToR2(env, toUpload);
   const oldKeysToDelete = sigSlots.filter((s) => newKeys[s] && row[`sig_${s}`]).map((s) => row[`sig_${s}`]);
   if (ownerDoc && row.owner_doc_photo) oldKeysToDelete.push(row.owner_doc_photo);
-  if (layoutKey && row.layout_plan) oldKeysToDelete.push(row.layout_plan);
+  if (layoutKey && row.layout_plan && !String(row.layout_plan).startsWith("data:")) oldKeysToDelete.push(row.layout_plan);
 
   const sets = [];
   const vals = [];
@@ -11983,7 +11983,7 @@ export default {
 
       await env.DB.prepare("DELETE FROM loan_contracts WHERE id = ?").bind(id).run();
       await deleteDsmLinks(env, "loan", row.id);
-      await deleteR2Photos(env, [row.sig_old_outlet, row.sig_mde, row.sig_dsm, row.sig_admin, row.sig_outlet, row.owner_doc_photo, row.layout_plan]);
+      await deleteR2Photos(env, [row.sig_old_outlet, row.sig_mde, row.sig_dsm, row.sig_admin, row.sig_outlet, row.owner_doc_photo, (row.layout_plan && !String(row.layout_plan).startsWith("data:")) ? row.layout_plan : null]);
       return Response.json({ message: "ລຶບໃບສັນຍາຢືມຮຽບຮ້ອຍແລ້ວ" });
     }
 
