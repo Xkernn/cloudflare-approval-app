@@ -19868,6 +19868,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         + chip('no_outlet', 'ບໍ່ພົບ Outlet Master', st.no_outlet, '#b91c1c')
         + chip('no_cooler', 'ບໍ່ພົບ Cooler Master', st.no_cooler, '#b91c1c')
         + chip('mismatch', 'Outlet ບໍ່ກົງກັບ Master', null, '#b45309')
+        + chip('in_lost', 'ມີໃນ Lost Cooler', st.in_lost, '#b45309')
         + chip('never', 'ບໍ່ມີວັນທີສະແກນ', st.never, '#475569')
         + `<span style="align-self:center; font-size:12.5px; color:#64748b;">ບໍ່ສະແກນ ≥30 ມື້: <b>${Number(st.d30 || 0).toLocaleString()}</b> · ≥90 ມື້: <b>${Number(st.d90 || 0).toLocaleString()}</b>${st.last_import ? ' · Import ຫຼ້າສຸດ ' + esc(fmtLaoTs(st.last_import)) : ''}</span>`;
     }
@@ -19921,7 +19922,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           <div class="data-card-main" style="width:100%;">
             <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
               <div class="data-card-title">${name ? esc(name) : '<span style="color:#94a3b8;">ບໍ່ພົບຊື່ຮ້ານ</span>'} <span style="font-weight:500; color:#64748b;">[${esc(it.outlet_code || '-')}]</span></div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">${okB(!!it.outlet_id, 'Outlet Master')}${okB(!!it.master_id, 'Cooler Master')}${mismatch ? '<span class="badge badge-pending">Outlet ບໍ່ກົງກັບ Master</span>' : ''}${it.last_check_result ? `<span class="badge ${it.last_check_result === 'found' ? 'badge-approved' : 'badge-rejected'}">ລົງກວດແລ້ວ: ${it.last_check_result === 'found' ? 'ພົບຢູ່ຮ້ານ' : 'ບໍ່ເຫັນແລ້ວ'}</span>` : ''}</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">${okB(!!it.outlet_id, 'Outlet Master')}${okB(!!it.master_id, 'Cooler Master')}${it.lost_status && LOST_STATUS[it.lost_status] ? `<span class="badge ${LOST_STATUS[it.lost_status].cls}" title="ສະຖານະໃນ Lost Cooler Master Data"><i class="fa-solid fa-snowflake"></i> Lost Cooler: ${esc(LOST_STATUS[it.lost_status].label)}</span>` : ''}${mismatch ? '<span class="badge badge-pending">Outlet ບໍ່ກົງກັບ Master</span>' : ''}${it.last_check_result ? `<span class="badge ${it.last_check_result === 'found' ? 'badge-approved' : 'badge-rejected'}">ລົງກວດແລ້ວ: ${it.last_check_result === 'found' ? 'ພົບຢູ່ຮ້ານ' : 'ບໍ່ເຫັນແລ້ວ'}</span>` : ''}</div>
             </div>
             <div class="data-card-sub" style="margin-top:6px;">
               <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}</span>
@@ -19981,7 +19982,8 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           const m = L.circleMarker([g.lat, g.lng], { radius: r, color: '#ffffff', weight: 2, fillColor: color, fillOpacity: 0.85 }).addTo(cnsMapLayer);
           const rows = g.items.slice(0, 15).map(i => {
             const d = cnsDaysSince(i.latest_scan);
-            const chk = i.last_check_result ? `<br><span style="font-weight:700; color:${i.last_check_result === 'found' ? '#15803d' : '#b91c1c'};">ລົງກວດແລ້ວ: ${i.last_check_result === 'found' ? 'ພົບຢູ່ຮ້ານ' : 'ບໍ່ເຫັນແລ້ວ'}${i.last_check_at ? ' · ' + esc(fmtLaoTs(i.last_check_at)) : ''}</span>` : '';
+            const lostB = i.lost_status && LOST_STATUS[i.lost_status] ? `<br><span style="font-weight:700; color:#b45309;">Lost Cooler: ${esc(LOST_STATUS[i.lost_status].label)}</span>` : '';
+            const chk = lostB + (i.last_check_result ? `<br><span style="font-weight:700; color:${i.last_check_result === 'found' ? '#15803d' : '#b91c1c'};">ລົງກວດແລ້ວ: ${i.last_check_result === 'found' ? 'ພົບຢູ່ຮ້ານ' : 'ບໍ່ເຫັນແລ້ວ'}${i.last_check_at ? ' · ' + esc(fmtLaoTs(i.last_check_at)) : ''}</span>` : '');
             return `<div style="margin-top:6px; padding-top:6px; border-top:1px solid #e2e8f0;"><b>${esc(i.qr_code || '-')}</b>${i.brand || i.type ? ' · ' + esc([i.brand, i.type].filter(Boolean).join(' ')) : ''}<br><span style="color:${cnsAgeColor(d)};">Scan: ${i.latest_scan ? esc(i.latest_scan) + (d != null ? ' (' + d + ' ມື້)' : '') : 'ບໍ່ມີຂໍ້ມູນ'}</span>${chk}<br><button type="button" onclick="cnsOpenCheck(${Number(i.id)})" style="margin-top:4px; padding:5px 12px; border:0; border-radius:8px; background:#0f766e; color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit;">ລົງກວດແລ້ວ</button></div>`;
           }).join('');
           const first = g.items[0] || {};
@@ -20250,6 +20252,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           'Brand': r.cooler_brand || '', 'Type': r.cooler_type || '', 'Model': r.cooler_model || '',
           'Latest Scan': r.latest_scan || r.latest_scan_raw || '', 'ບໍ່ສະແກນ (ມື້)': cnsDaysSince(r.latest_scan) ?? '',
           'ພົບໃນ Outlet Master': r.outlet_id ? 'Y' : 'N', 'ພົບໃນ Cooler Master': r.master_id ? 'Y' : 'N',
+          'ສະຖານະ Lost Cooler': r.lost_status ? ((LOST_STATUS[r.lost_status] || {}).label || r.lost_status) : '',
           'Outlet Code ຕາມ Cooler Master': r.m_outlet_code || '', 'Team': r.team || '', 'DSM': r.dsm || '', 'MDE': r.mde || ''
         }));
         if (!rows.length) { appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }

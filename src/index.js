@@ -154,7 +154,7 @@ function buildPendingMdeEmail({ mdeCode, mdeName, lines, trackingList, appUrl })
     "ກະລຸນາດຳເນີນການໂດຍໄວ (ສົ່ງເອກະສານ / ຊັບມິດ PowerApp).",
     appUrl ? `ເປີດລະບົບ: ${appUrl}` : "",
   ].filter((x) => x !== "").join("\n");
-  const html = `<div style="font-family:Arial,sans-serif;max-width:480px">
+  const html = `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:480px">
     <p>ເຖິງ MDE <b>${escMailHtml(who)}</b></p>
     <p>ທ່ານມີລາຍການ Asset Tracking ທີ່ຍັງຄ້າງດຳເນີນການ:</p>
     <ul>${(lines || []).map((l) => `<li>${escMailHtml(String(l).replace(/^•\s*/, ""))}</li>`).join("")}</ul>
@@ -176,7 +176,7 @@ function buildSignReminderEmail({ subject, who, intro, docs, moreCount, footer, 
     "", footer || "",
     appUrl ? `ເປີດລະບົບ: ${appUrl}` : "",
   ].filter((x) => x !== "").join("\n");
-  const html = `<div style="font-family:Arial,sans-serif;max-width:520px">
+  const html = `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:520px">
     <p>ເຖິງ <b>${escMailHtml(who)}</b></p>
     <p>${escMailHtml(intro)}</p>
     <ul>${(docs || []).map((d) => `<li>${escMailHtml(d.label)}${d.url ? `<br><a href="${escMailHtml(d.url)}">${escMailHtml(d.url)}</a>` : ""}${d.note ? `<br><span style="font-size:12px;color:#64748b">${escMailHtml(d.note)}</span>` : ""}</li>`).join("")}</ul>
@@ -1813,6 +1813,26 @@ function cnsParseDate(v) {
   const date = `${y}-${p2(mo)}-${p2(d)}`;
   return hh != null ? `${date} ${p2(hh)}:${mi}` : date;
 }
+// ສະຖານະຂອງຕູ້ໃນ Lost Cooler Master Data (ຕາມ master_id) — ຖ້າມີຫຼາຍແຖວ ເອົາແຖວທີ່ຍັງເປີດ (active) ກ່ອນ, ບໍ່ມີກໍເອົາແຖວຫຼ້າສຸດ
+// (ຖ້າຍັງບໍ່ໄດ້ຮັນ migration ຂອງ lost_coolers ຈະຄືນຄ່າວ່າງ ບໍ່ກະທົບໜ້າ Cooler Not Scan)
+function cnsPickLost(map, masterId, status) {
+  const cur = map[masterId];
+  if (!cur || LOST_ACTIVE.includes(status) || !LOST_ACTIVE.includes(cur)) map[masterId] = status;
+}
+async function cnsLostByIds(env, ids) {
+  const out = {};
+  const uniq = [...new Set((ids || []).filter((x) => x != null))];
+  if (!uniq.length) return out;
+  try {
+    const stmts = [];
+    for (let i = 0; i < uniq.length; i += 90) {
+      const part = uniq.slice(i, i + 90);
+      stmts.push(env.DB.prepare(`SELECT master_id, status FROM lost_coolers WHERE master_id IN (${part.map(() => "?").join(",")}) ORDER BY id ASC`).bind(...part));
+    }
+    for (const r of await env.DB.batch(stmts)) for (const x of (r.results || [])) cnsPickLost(out, x.master_id, x.status);
+  } catch (_) { /* ຍັງບໍ່ມີຕາຕະລາງ lost_coolers */ }
+  return out;
+}
 // ເງື່ອນໄຂຄົ້ນຫາ/ກັ່ນຕອງ ທີ່ໃຊ້ຮ່ວມກັນລະຫວ່າງ list ແລະ map
 const CNS_FROM = `FROM cooler_not_scan c LEFT JOIN outlets o ON o.id = c.outlet_id LEFT JOIN cooler_master m ON m.id = c.master_id`;
 function cnsBuildWhere(url) {
@@ -1830,6 +1850,7 @@ function cnsBuildWhere(url) {
   else if (st === "matched") where.push("c.outlet_id IS NOT NULL AND c.master_id IS NOT NULL");
   else if (st === "mismatch") where.push("m.id IS NOT NULL AND m.outlet_code IS NOT NULL AND TRIM(m.outlet_code) != '' AND UPPER(TRIM(m.outlet_code)) != IFNULL(c.outlet_code_norm, '')");
   else if (st === "never") where.push("c.latest_scan IS NULL");
+  else if (st === "in_lost") where.push("c.master_id IS NOT NULL AND EXISTS (SELECT 1 FROM lost_coolers l WHERE l.master_id = c.master_id)");
   const days = parseInt(url.searchParams.get("days") || "", 10);
   if (days > 0 && days <= 3650) where.push(`(c.latest_scan IS NULL OR substr(c.latest_scan, 1, 10) <= date('now', '-' || ? || ' days'))`), binds.push(days);
   const prov = (url.searchParams.get("province") || "").trim().slice(0, 100);
@@ -2449,7 +2470,7 @@ async function emailCompletedContractToMde(env, kind, contract) {
       "xaisanasin",
     ].filter((x, i, a) => x !== "" || (i > 0 && a[i - 1] !== ""));
     const e = escMailHtml;
-    const html = `<div style="font-family:Arial,sans-serif;max-width:560px;font-size:14px;line-height:1.6;color:#111827">
+    const html = `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:560px;font-size:14px;line-height:1.6;color:#111827">
       <p>Dear <b>${e(dearName)}</b>,</p>
       <p>${e(cfg.title)} <b>${e(docNo)}</b> ເຊັນຄົບທຸກຝ່າຍແລ້ວ.</p>
       ${outletLine ? `<p style="margin:0">ຮ້ານ: <b>${e(outletLine)}</b></p>` : ""}
@@ -3975,6 +3996,8 @@ export default {
           env.DB.prepare(`SELECT COUNT(*) AS n ${CNS_FROM} ${w.clause}`).bind(...w.binds),
         ]);
         const out = { rows: rowsR.results || [], total: (totalR.results && totalR.results[0] && totalR.results[0].n) || 0 };
+        const lostMap = await cnsLostByIds(env, out.rows.map((x) => x.master_id));
+        for (const x of out.rows) x.lost_status = (x.master_id != null && lostMap[x.master_id]) || null;
         if (url.searchParams.get("stats") === "1") {
           const st = await env.DB.prepare(
             `SELECT COUNT(*) AS total, SUM(outlet_id IS NULL) AS no_outlet, SUM(master_id IS NULL) AS no_cooler,
@@ -3987,6 +4010,10 @@ export default {
             `SELECT COALESCE(NULLIF(TRIM(o.province), ''), m.province) AS p, COUNT(*) AS n ${CNS_FROM} GROUP BY p HAVING p IS NOT NULL AND p != '' ORDER BY p`
           ).all();
           out.stats = st || {};
+          try {
+            const lc = await env.DB.prepare(`SELECT COUNT(*) AS n FROM cooler_not_scan c WHERE c.master_id IS NOT NULL AND EXISTS (SELECT 1 FROM lost_coolers l WHERE l.master_id = c.master_id)`).first();
+            out.stats.in_lost = (lc && lc.n) || 0;
+          } catch (_) { out.stats.in_lost = 0; }
           out.provinces = (prov.results || []).map((r) => r.p);
         }
         return Response.json(out);
@@ -4009,6 +4036,11 @@ export default {
         ).bind(...w.binds).all();
         let noCoord = 0;
         const points = [];
+        const lostMap = {};
+        try {
+          const lr = await env.DB.prepare(`SELECT l.master_id AS master_id, l.status AS status ${CNS_FROM} JOIN lost_coolers l ON l.master_id = c.master_id ${w.clause} ORDER BY l.id ASC LIMIT 5000`).bind(...w.binds).all();
+          for (const x of (lr.results || [])) cnsPickLost(lostMap, x.master_id, x.status);
+        } catch (_) { /* ຍັງບໍ່ມີຕາຕະລາງ lost_coolers */ }
         for (const x of r.results || []) {
           let lat = cnsNum(x.o_lat), lng = cnsNum(x.o_lng);
           if (lat == null || lng == null || (lat === 0 && lng === 0)) { lat = cnsNum(x.lat_position); lng = cnsNum(x.long_position); }
@@ -4017,7 +4049,7 @@ export default {
             id: x.id, outlet_code: x.outlet_code, outlet_name: x.o_name || x.m_outlet_name || null, phone: x.o_phone || null,
             province: x.o_province || x.m_province || null, qr_code: x.qr_code, serial_number: x.serial_number || null,
             brand: x.cooler_brand || null, type: x.cooler_type || null, latest_scan: x.latest_scan || null, mde: x.mde || null, dsm: x.dsm || null,
-            outlet_matched: !!x.outlet_id, cooler_matched: !!x.master_id, last_check_result: x.last_check_result || null, last_check_at: x.last_check_at || null, lat, lng,
+            outlet_matched: !!x.outlet_id, cooler_matched: !!x.master_id, last_check_result: x.last_check_result || null, last_check_at: x.last_check_at || null, lost_status: (x.master_id != null && lostMap[x.master_id]) || null, lat, lng,
           });
         }
         return Response.json({ points, no_coord: noCoord });
@@ -7565,7 +7597,7 @@ export default {
             to: cleanEmail,
             subject: "ລະຫັດ OTP ຢືນຢັນອີເມວ ສຳລັບລົງທະບຽນ",
             text: `ລະຫັດ OTP ຂອງທ່ານ: ${code}\n\nໃຊ້ໄດ້ 10 ນາທີ ແລະ ໃຊ້ໄດ້ຄັ້ງດຽວ.\nຖ້າທ່ານບໍ່ໄດ້ສະໝັກ ໃຫ້ບໍ່ຕ້ອງສົນໃຈອີເມວນີ້ ແລະ ຫ້າມບອກລະຫັດນີ້ກັບໃຜ.`,
-            html: `<div style="font-family:Arial,sans-serif;max-width:420px">
+            html: `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:420px">
               <p>ລະຫັດ OTP ສຳລັບຢືນຢັນອີເມວຕອນລົງທະບຽນ:</p>
               <p style="font-size:28px;font-weight:bold;letter-spacing:8px;background:#f3f4f6;padding:12px 16px;border-radius:8px;text-align:center">${code}</p>
               <p>ໃຊ້ໄດ້ <b>10 ນາທີ</b> ແລະ ໃຊ້ໄດ້ຄັ້ງດຽວ.</p>
@@ -7866,7 +7898,7 @@ export default {
               to: user.email,
               subject: "ລະຫັດ OTP ສຳລັບຕັ້ງລະຫັດຜ່ານໃໝ່",
               text: `ລະຫັດ OTP ຂອງທ່ານ: ${shown}\n\nໃຊ້ໄດ້ 10 ນາທີ ແລະ ໃຊ້ໄດ້ຄັ້ງດຽວ.\nຖ້າທ່ານບໍ່ໄດ້ຂໍ ໃຫ້ບໍ່ຕ້ອງສົນໃຈອີເມວນີ້ ແລະ ຫ້າມບອກລະຫັດນີ້ກັບໃຜ.`,
-              html: `<div style="font-family:Arial,sans-serif;max-width:420px">
+              html: `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:420px">
                 <p>ລະຫັດ OTP ສຳລັບຕັ້ງລະຫັດຜ່ານໃໝ່ຂອງທ່ານ:</p>
                 <p style="font-size:28px;font-weight:bold;letter-spacing:8px;background:#f3f4f6;padding:12px 16px;border-radius:8px;text-align:center">${shown}</p>
                 <p>ໃຊ້ໄດ້ <b>10 ນາທີ</b> ແລະ ໃຊ້ໄດ້ຄັ້ງດຽວ.</p>
@@ -8945,7 +8977,7 @@ export default {
                   to: email,
                   subject: "ຄູ່ມືການນຳໃຊ້ລະບົບ ສຳລັບ DSM",
                   text: `ສະບາຍດີ ${r.dsm_name || ""}\n\nບັນຊີ DSM (Team ${r.team}) ເຂົ້າສູ່ລະບົບທີ່ ${appUrl0} ດ້ວຍອີເມວ ${email}${attachments.length ? "\n\nແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້" : ""}`,
-                  html: `<div style="font-family:Arial,sans-serif;max-width:480px"><p>ສະບາຍດີ ${escMailHtml(r.dsm_name || "")}</p><p>ບັນຊີ <b>DSM</b> (Team <b>${escMailHtml(r.team)}</b>) ເຂົ້າສູ່ລະບົບທີ່ <a href="${appUrl0}">${appUrl0}</a> ດ້ວຍອີເມວ <b>${escMailHtml(email)}</b></p>${attachments.length ? "<p>ແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້</p>" : ""}</div>`,
+                  html: `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:480px"><p>ສະບາຍດີ ${escMailHtml(r.dsm_name || "")}</p><p>ບັນຊີ <b>DSM</b> (Team <b>${escMailHtml(r.team)}</b>) ເຂົ້າສູ່ລະບົບທີ່ <a href="${appUrl0}">${appUrl0}</a> ດ້ວຍອີເມວ <b>${escMailHtml(email)}</b></p>${attachments.length ? "<p>ແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້</p>" : ""}</div>`,
                   attachments,
                 }));
                 out.resent = (out.resent || 0) + 1;
@@ -8970,7 +9002,7 @@ export default {
               subject: "ບັນຊີ DSM ຂອງທ່ານພ້ອມໃຊ້ງານແລ້ວ",
               text: `ສະບາຍດີ ${r.dsm_name || ""}\n\nບັນຊີ DSM (Team ${r.team}) ຂອງທ່ານຖືກສ້າງແລ້ວ ໃຊ້ອີເມວນີ້ເຂົ້າສູ່ລະບົບ: ${email}\n\nຂັ້ນຕອນຕັ້ງລະຫັດຜ່ານຄັ້ງທຳອິດ:\n1) ເປີດ ${appUrl}\n2) ກົດ "ລືມລະຫັດຜ່ານ" ແລ້ວໃສ່ອີເມວນີ້\n3) ເອົາລະຫັດ OTP 6 ໂຕທີ່ໄດ້ຮັບທາງອີເມວ ມາຕັ້ງລະຫັດຜ່ານໃໝ່\n4) ເຂົ້າສູ່ລະບົບດ້ວຍອີເມວ + ລະຫັດຜ່ານທີ່ຕັ້ງ${attachments.length ? "\n\nແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້" : ""}`,
               attachments,
-              html: `<div style="font-family:Arial,sans-serif;max-width:480px">
+              html: `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Lao UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:480px">
                 <p>ສະບາຍດີ ${escMailHtml(r.dsm_name || "")}</p>
                 <p>ບັນຊີ <b>DSM</b> (Team <b>${escMailHtml(r.team)}</b>) ຂອງທ່ານຖືກສ້າງແລ້ວ. ໃຊ້ອີເມວນີ້ເຂົ້າສູ່ລະບົບ: <b>${escMailHtml(email)}</b></p>
                 <p><b>ຕັ້ງລະຫັດຜ່ານຄັ້ງທຳອິດ:</b></p>
