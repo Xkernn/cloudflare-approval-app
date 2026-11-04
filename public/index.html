@@ -11196,8 +11196,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       asset: { icon: 'fa-boxes-stacked', title: 'Asset Tracking',
         intro: 'ໜ້ານີ້ໃຊ້ຕິດຕາມຕູ້ແຊ່ທຸກໜ່ວຍ ຕັ້ງແຕ່ຍັງບໍ່ສົ່ງເອກະສານ ຈົນຈັດສົ່ງສຳເລັດ.',
         steps: [
-          { sel: '#view-asset-tracking .at-search', icon: 'fa-magnifying-glass', title: 'ຄົ້ນຫາ', text: 'ພິມ Tracking No, ຊື່ຮ້ານ, MDE, QR ຫຼື Serial ເພື່ອຫາຕູ້ທີ່ຕ້ອງການ.' },
-          { target: 'assetStatusPills', icon: 'fa-list-check', title: 'ແຖບ Status', text: 'ກົດເລືອກ Status ເພື່ອເບິ່ງສະເພາະຂັ້ນຕອນນັ້ນ ເຊັ່ນ ຍັງບໍ່ສົ່ງເອກະສານ, ກຳລັງຈັດສົ່ງ.' },
+          { sel: '#view-asset-tracking .at-search', icon: 'fa-magnifying-glass', title: 'ຄົ້ນຫາ', text: 'ພິມ Tracking No, ຊື່ຮ້ານ, MDE, QR ຫຼື Serial ເພື່ອຫາຕູ້ທີ່ຕ້ອງການ.', optional: true },
+          { target: 'assetStatusPills', icon: 'fa-list-check', title: 'ແຖບ Status', text: 'ກົດເລືອກ Status ເພື່ອເບິ່ງສະເພາະຂັ້ນຕອນນັ້ນ ເຊັ່ນ ຍັງບໍ່ສົ່ງເອກະສານ, ກຳລັງຈັດສົ່ງ.', optional: true },
           { sel: '#view-asset-tracking .at-toolbar-filters', icon: 'fa-filter', title: 'ຕົວກອງ', text: 'ກອງຕາມປະເພດເອກະສານ, ສະເພາະທີ່ຕິດທຸງ ແລະ ຊ່ວງວັນທີ່ອັບເດດ. ກົດ "ລ້າງ Filter" ເພື່ອເລີ່ມໃໝ່.' },
           { target: 'btnExportAsset', icon: 'fa-file-export', title: 'Export Excel', text: 'ດາວໂຫຼດລາຍການທີ່ກຳລັງເບິ່ງເປັນໄຟລ໌ Excel.', optional: true },
           { sel: '#assetCardList > :first-child', icon: 'fa-box', title: 'ລາຍການຕູ້ແຊ່', text: 'ແຕ່ລະ card ຄືຕູ້ແຊ່ 1 ໜ່ວຍ ສະແດງຮ້ານ, ຕູ້ ແລະ Status ປັດຈຸບັນ.', optional: true }
@@ -11210,7 +11210,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         intro: 'ໜ້ານີ້ໃຊ້ຂໍຕູ້ແຊ່ໃໝ່ ແລະ ເບິ່ງຄຳຂໍທີ່ສົ່ງໄປແລ້ວ.',
         steps: [
           { target: 'btnNewRequest', icon: 'fa-plus', title: 'ສົ່ງຄຳຂໍ Asset ໃໝ່', text: 'ກົດເພື່ອເລືອກຮ້ານ ແລະ ຕູ້ທີ່ຕ້ອງການ ແລ້ວສົ່ງຄຳຂໍໃຫ້ admin ກວດ ແລະ ອະນຸມັດ.', optional: true },
-          { sel: '#view-asset-request .at-search', icon: 'fa-magnifying-glass', title: 'ຄົ້ນຫາ', text: 'ຄົ້ນຫາດ້ວຍ Outlet, MDE, Brand ຫຼື Type.' },
+          { sel: '#view-asset-request .at-search', icon: 'fa-magnifying-glass', title: 'ຄົ້ນຫາ', text: 'ຄົ້ນຫາດ້ວຍ Outlet, MDE, Brand ຫຼື Type.', optional: true },
           { target: 'requestConditionPills', icon: 'fa-list-check', title: 'ກອງຕາມສະພາບ', text: 'ກົດເລືອກສະພາບຂອງຄຳຂໍ ເພື່ອເບິ່ງສະເພາະກຸ່ມນັ້ນ.', optional: true },
           { sel: '#view-asset-request .at-toolbar-filters', icon: 'fa-filter', title: 'ກອງ Brand / Type', text: 'ເລືອກ Brand ຫຼື Type ຂອງຕູ້. ກົດ "ລ້າງ Filter" ເພື່ອເລີ່ມໃໝ່.' }
         ] },
@@ -20290,6 +20290,10 @@ function assetStatusBadgeClass(status) {
       const isWarehouse = currentUser.role === 'warehouse';
       document.getElementById('btnAddAsset').classList.toggle('hidden', !isAdmin);
       document.getElementById('btnImportAsset').classList.toggle('hidden', !isAdmin);
+      // role user ມີລາຍການໜ້ອຍ: ເຊື່ອມຊ່ອງຄົ້ນຫາ + pill ສະຖານະ (ຄ່າກອງຖືກລ້າງເປັນ "ທັງໝົດ" ທຸກຄັ້ງທີ່ເປີດໜ້າ)
+      const atSimple = currentUser.role === 'user';
+      document.querySelector('#view-asset-tracking .at-search').classList.toggle('hidden', atSimple);
+      document.getElementById('assetStatusPills').classList.toggle('hidden', atSimple);
       document.getElementById('assetPageDesc').textContent = isAdmin
         ? 'ຈັດການລາຍການຊັບສິນທັງໝົດໃນລະບົບ'
         : isWarehouse
@@ -28987,6 +28991,11 @@ function assetStatusBadgeClass(status) {
     async function loadAssetRequests() {
       const canManage = currentUser.role === 'admin' || currentUser.role === 'warehouse';
       document.getElementById('btnNewRequest').classList.toggle('hidden', canManage);
+      // role user ມີຄຳຂໍໜ້ອຍ: ເຊື່ອມຊ່ອງຄົ້ນຫາ + pill (ຄ່າກອງຖືກລ້າງເປັນ "ທັງໝົດ" ທຸກຄັ້ງທີ່ເປີດໜ້າ)
+      const reqSimple = currentUser.role === 'user';
+      document.querySelector('#view-asset-request .at-search').classList.toggle('hidden', reqSimple);
+      document.getElementById('requestConditionPills').classList.toggle('hidden', reqSimple);
+      document.getElementById('requestStagePills').classList.toggle('hidden', reqSimple);
       document.getElementById('requestPageDesc').textContent = canManage
         ? (currentUser.role === 'warehouse'
             ? 'ຄຳຂໍທີ່ Admin ກວດສອບແລ້ວ — ສາງອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ (ຂັ້ນ 2)'
