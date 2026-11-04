@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" role="img" aria-labelledby="t">
+<title id="t">Vte Budget</title>
+<defs>
+ <linearGradient id="green" x1="20" y1="15" x2="100" y2="115" gradientUnits="userSpaceOnUse"><stop stop-color="#0D9958"/><stop offset="1" stop-color="#075B35"/></linearGradient>
+ <linearGradient id="gold" x1="25" y1="15" x2="105" y2="110" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD84A"/><stop offset="1" stop-color="#F5C21B"/></linearGradient>
+ <linearGradient id="cream" x1="25" y1="15" x2="100" y2="110" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFF8DF"/></linearGradient>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#174B36" flood-opacity=".18"/></filter>
+</defs>
+<g stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)"><path d="M12 107V45l25-20 25 20v62z" fill="url(#green)" stroke="#075B35" stroke-width="4"/><path d="M66 107V27l25-15 25 15v80z" fill="url(#gold)" stroke="#075B35" stroke-width="4"/><path d="M22 53h11v13H22zm20 0h11v13H42zm35-13h11v13H77zm20 0h11v13H97zM77 64h11v13H77zm20 0h11v13H97z" fill="#FFF8DF" stroke="#087A45" stroke-width="2"/></g>
+</svg>

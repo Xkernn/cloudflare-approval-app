@@ -1,0 +1,13 @@
+{
+  "name": "Beerlao Premium",
+  "format": "SVG",
+  "viewBox": "0 0 128 128",
+  "fontawesome": false,
+  "count": 46,
+  "palette": {
+    "primary": "#087A45",
+    "deep": "#075B35",
+    "gold": "#F5C21B",
+    "cream": "#FFF8DF"
+  }
+}

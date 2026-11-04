@@ -11,7 +11,7 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='c
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
 
-  <script src="/premium-icons.js?v=2"></script>
+  <script src="/premium-icons.js?v=3"></script>
   <title>Cooler Tracking System LBC</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0A7890">
@@ -2582,6 +2582,16 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .mobile-tab-icon .ic-pr { width: 28px; height: 28px; margin: -2px; opacity: .8; }
     html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon .ic-pr { opacity: 1; }
     .pr-emo { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
+    /* Custom SVG pack: icons are full-colour (green outline), so use a cream floating tab bar + crisp <img> sizing */
+    html[data-mm-style="premium"] img.ic-pr { object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
+    html[data-mm-style="premium"] .mm-ic > img.ic-pr { filter: drop-shadow(0 2px 3px rgba(7,91,53,.16)); }
+    @media (max-width: 992px) {
+      html[data-mm-style="premium"] .mobile-tabbar { background: rgba(255,251,234,.97); border: 1.5px solid #F5C21B; box-shadow: 0 14px 30px -10px rgba(7,91,53,.35), 0 4px 10px rgba(7,91,53,.12); }
+      html[data-mm-style="premium"] .mobile-tab { color: #5A6A55; }
+      html[data-mm-style="premium"] .mobile-tab.active { color: #075B35; }
+      html[data-mm-style="premium"] .mobile-tab-label { color: #5A6A55; }
+      html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-label { color: #075B35; font-weight: 700; }
+    }
   </style>
 <style>
 /* ໂໝດປິດລະບົບ (Maintenance) */

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" role="img" aria-labelledby="t">
+<title id="t">Virtual Company</title>
+<defs>
+ <linearGradient id="green" x1="20" y1="15" x2="100" y2="115" gradientUnits="userSpaceOnUse"><stop stop-color="#0D9958"/><stop offset="1" stop-color="#075B35"/></linearGradient>
+ <linearGradient id="gold" x1="25" y1="15" x2="105" y2="110" gradientUnits="userSpaceOnUse"><stop stop-color="#FFD84A"/><stop offset="1" stop-color="#F5C21B"/></linearGradient>
+ <linearGradient id="cream" x1="25" y1="15" x2="100" y2="110" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#FFF8DF"/></linearGradient>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#174B36" flood-opacity=".18"/></filter>
+</defs>
+<g stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)"><path d="M16 108V36l48-24 48 24v72z" fill="url(#green)" stroke="#075B35" stroke-width="5"/><path d="M28 48h19v20H28zm29 0h19v20H57zm29 0h14v20H86zM28 78h19v20H28zm29 0h19v20H57z" fill="url(#gold)" stroke="#FFF8DF" stroke-width="3"/><path d="M79 108V82h20v26" fill="#FFF8DF" stroke="#075B35" stroke-width="4"/></g>
+</svg>
