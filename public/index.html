@@ -12750,26 +12750,59 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
     }
 
-    async function createDsmUsers() {
-      const withEmail = (dbDsmList || []).filter(d => d.email);
-      if (!withEmail.length) { appAlert('ຍັງບໍ່ມີ DSM ທີ່ມີອີເມວໃນ DSM List'); return; }
-      const pending = withEmail.filter(d => !d.user_id).length;
-      if (!await appConfirm(`ສ້າງບັນຊີ DSM ຕາມ DSM List?\n\n- DSM ທີ່ມີອີເມວ: ${withEmail.length} ຄົນ (ຍັງບໍ່ມີບັນຊີ: ${pending})\n- ບັນຊີໃໝ່ຈະເປັນ role DSM ແລະ ອະນຸມັດທັນທີ\n- ລະບົບສົ່ງອີເມວບອກ DSM ໃຫ້ກົດ "ລືມລະຫັດຜ່ານ" ເພື່ອຕັ້ງລະຫັດຜ່ານເອງ`)) return;
+    // ເລືອກ DSM ທີ່ຕ້ອງການສ້າງ User (ແລະ ເລືອກວ່າຈະແນບຄູ່ມື PDF ບໍ) ກ່ອນສົ່ງ
+    function createDsmUsers() {
+      const list = (dbDsmList || []).filter(d => d.email);
+      if (!list.length) { appAlert('ຍັງບໍ່ມີ DSM ທີ່ມີອີເມວໃນ DSM List'); return; }
+      let ov = document.getElementById('dsmPickOverlay');
+      if (ov) ov.remove();
+      ov = document.createElement('div');
+      ov.id = 'dsmPickOverlay';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:14px;';
+      const rows = list.map(d => `<label style="display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid #e2e8f0;cursor:pointer;">
+          <input type="checkbox" class="dsmPickChk" value="${Number(d.id)}" ${d.user_id ? '' : 'checked'} style="margin-top:4px;">
+          <span style="flex:1;min-width:0;"><b>${esc(d.dsm_name || '-')}</b> <span style="color:#64748b;">· ${esc(d.team || '-')}</span><br>
+          <span style="font-size:12px;color:#64748b;word-break:break-all;">${esc(d.email)}</span></span>
+          <span class="badge ${d.user_id ? 'badge-approved' : 'badge-pending'}" style="white-space:nowrap;">${d.user_id ? 'ມີບັນຊີແລ້ວ' : 'ຍັງບໍ່ມີບັນຊີ'}</span>
+        </label>`).join('');
+      ov.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:90vh;display:flex;flex-direction:column;">
+          <div style="padding:14px 16px;border-bottom:1px solid #e2e8f0;"><b style="font-size:16px;">ເລືອກ DSM ເພື່ອສ້າງ User</b>
+            <div style="margin-top:6px;"><label style="font-size:13px;cursor:pointer;"><input type="checkbox" id="dsmPickAll"> ເລືອກທັງໝົດ</label></div></div>
+          <div style="overflow:auto;padding:4px 10px;flex:1;">${rows}</div>
+          <div style="padding:12px 16px;border-top:1px solid #e2e8f0;font-size:13px;">
+            <label style="display:block;margin-bottom:6px;cursor:pointer;"><input type="checkbox" id="dsmPickManual" checked> ແນບຄູ່ມືການນຳໃຊ້ (PDF) ໄປກັບອີເມວ</label>
+            <label style="display:block;margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="dsmPickResend"> ສົ່ງອີເມວ + ຄູ່ມືຄືນໃຫ້ DSM ທີ່ມີບັນຊີແລ້ວ (ບໍ່ປ່ຽນລະຫັດຜ່ານ)</label>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button type="button" class="btn-add" style="background:#fff;color:#0f172a;border:1px solid #cbd5e1;" onclick="document.getElementById('dsmPickOverlay').remove()">ຍົກເລີກ</button>
+              <button type="button" class="btn-add" id="dsmPickGo" style="background:#0f766e;" onclick="submitCreateDsmUsers()"><i class="fa-solid fa-user-plus mr-1"></i> ສ້າງ User ທີ່ເລືອກ</button>
+            </div></div></div>`;
+      document.body.appendChild(ov);
+      document.getElementById('dsmPickAll').onchange = (e) => ov.querySelectorAll('.dsmPickChk').forEach(c => { c.checked = e.target.checked; });
+    }
 
-      const res = await fetch('/api/admin/create-dsm-users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) { appAlert(d.error || 'ສ້າງບັນຊີ DSM ບໍ່ສຳເລັດ'); return; }
-
-      let detail = d.message || '';
-      if ((d.skipped || []).length) {
-        detail += '\n\nຂ້າມ:\n' + d.skipped.map(x => `- ${x.team} (${x.dsm_name}${x.email ? ', ' + x.email : ''}): ${x.reason}`).join('\n');
-      }
-      appAlert(detail);
-      loadAdminDsmTable();
+    async function submitCreateDsmUsers() {
+      const ov = document.getElementById('dsmPickOverlay');
+      const ids = Array.from(ov.querySelectorAll('.dsmPickChk:checked')).map(c => Number(c.value));
+      if (!ids.length) { appAlert('ກະລຸນາເລືອກ DSM ຢ່າງໜ້ອຍ 1 ຄົນ'); return; }
+      const attach_manual = document.getElementById('dsmPickManual').checked;
+      const resend_existing = document.getElementById('dsmPickResend').checked;
+      const btn = document.getElementById('dsmPickGo'); btn.disabled = true;
+      try {
+        const res = await fetch('/api/admin/create-dsm-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids, attach_manual, resend_existing })
+        });
+        const d = await res.json().catch(() => ({}));
+        ov.remove();
+        if (!res.ok) { appAlert(d.error || 'ສ້າງບັນຊີ DSM ບໍ່ສຳເລັດ'); return; }
+        let detail = d.message || '';
+        if ((d.skipped || []).length) {
+          detail += '\n\nຂ້າມ:\n' + d.skipped.map(x => `- ${x.team} (${x.dsm_name}${x.email ? ', ' + x.email : ''}): ${x.reason}`).join('\n');
+        }
+        appAlert(detail);
+        loadAdminDsmTable();
+      } catch (e) { btn.disabled = false; appAlert('ສ້າງບັນຊີ DSM ບໍ່ສຳເລັດ'); }
     }
 
     async function deleteDsm(id) {

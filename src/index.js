@@ -8600,6 +8600,18 @@ export default {
         try { body = await request.json(); } catch (_) { /* ບໍ່ມີ body ກໍໄດ້ */ }
         const ids = Array.isArray(body.ids) ? body.ids.map((n) => parseInt(n, 10)).filter((n) => Number.isInteger(n)) : null;
         const notify = body.notify !== false;
+        // ແນບ PDF ຄູ່ມື DSM (public/forms/DSM_Manual.pdf) ໄປກັບອີເມວ — ປິດໄດ້ດ້ວຍ attach_manual:false
+        const attachManual = body.attach_manual !== false;
+        // ສົ່ງອີເມວ + ຄູ່ມືຄືນໃຫ້ DSM ທີ່ມີບັນຊີແລ້ວ (ບໍ່ສ້າງບັນຊີໃໝ່ / ບໍ່ປ່ຽນລະຫັດ)
+        const resendExisting = body.resend_existing === true;
+        let manualBytes = null;
+        if (notify && attachManual) {
+          try {
+            const mres = await env.ASSETS.fetch(new URL("/forms/DSM_Manual.pdf", "https://assets.local/"));
+            if (mres.ok) manualBytes = new Uint8Array(await mres.arrayBuffer());
+          } catch (_) { /* ບໍ່ພົບຄູ່ມື -> ສົ່ງອີເມວໂດຍບໍ່ແນບ */ }
+        }
+        const attachments = manualBytes ? [{ filename: "DSM_Manual.pdf", contentType: "application/pdf", bytes: manualBytes }] : [];
 
         let rows;
         if (ids && ids.length) {
@@ -8627,6 +8639,17 @@ export default {
               out.skipped.push({ ...label, reason: `ມີບັນຊີ DSM ນີ້ແລ້ວ ແຕ່ຜູກກັບ Team "${ex.team || '-'}" (ບໍ່ກົງກັບ DSM List)` });
             } else {
               out.exists.push({ ...label, status: ex.status });
+              if (notify && resendExisting) {
+                const appUrl0 = url.origin;
+                runInBackground(ctx, sendEmail(env, {
+                  to: email,
+                  subject: "ຄູ່ມືການນຳໃຊ້ລະບົບ ສຳລັບ DSM",
+                  text: `ສະບາຍດີ ${r.dsm_name || ""}\n\nບັນຊີ DSM (Team ${r.team}) ເຂົ້າສູ່ລະບົບທີ່ ${appUrl0} ດ້ວຍອີເມວ ${email}${attachments.length ? "\n\nແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້" : ""}`,
+                  html: `<div style="font-family:Arial,sans-serif;max-width:480px"><p>ສະບາຍດີ ${escMailHtml(r.dsm_name || "")}</p><p>ບັນຊີ <b>DSM</b> (Team <b>${escMailHtml(r.team)}</b>) ເຂົ້າສູ່ລະບົບທີ່ <a href="${appUrl0}">${appUrl0}</a> ດ້ວຍອີເມວ <b>${escMailHtml(email)}</b></p>${attachments.length ? "<p>ແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້</p>" : ""}</div>`,
+                  attachments,
+                }));
+                out.resent = (out.resent || 0) + 1;
+              }
             }
             continue;
           }
@@ -8645,17 +8668,18 @@ export default {
             runInBackground(ctx, sendEmail(env, {
               to: email,
               subject: "ບັນຊີ DSM ຂອງທ່ານພ້ອມໃຊ້ງານແລ້ວ",
-              text: `ສະບາຍດີ ${r.dsm_name || ""}\n\nບັນຊີ DSM (Team ${r.team}) ຂອງທ່ານຖືກສ້າງແລ້ວ ໃຊ້ອີເມວນີ້ເຂົ້າສູ່ລະບົບ: ${email}\n\nຂັ້ນຕອນຕັ້ງລະຫັດຜ່ານຄັ້ງທຳອິດ:\n1) ເປີດ ${appUrl}\n2) ກົດ "ລືມລະຫັດຜ່ານ" ແລ້ວໃສ່ອີເມວນີ້\n3) ເອົາລະຫັດ OTP 6 ໂຕທີ່ໄດ້ຮັບທາງອີເມວ ມາຕັ້ງລະຫັດຜ່ານໃໝ່\n4) ເຂົ້າສູ່ລະບົບດ້ວຍອີເມວ + ລະຫັດຜ່ານທີ່ຕັ້ງ`,
+              text: `ສະບາຍດີ ${r.dsm_name || ""}\n\nບັນຊີ DSM (Team ${r.team}) ຂອງທ່ານຖືກສ້າງແລ້ວ ໃຊ້ອີເມວນີ້ເຂົ້າສູ່ລະບົບ: ${email}\n\nຂັ້ນຕອນຕັ້ງລະຫັດຜ່ານຄັ້ງທຳອິດ:\n1) ເປີດ ${appUrl}\n2) ກົດ "ລືມລະຫັດຜ່ານ" ແລ້ວໃສ່ອີເມວນີ້\n3) ເອົາລະຫັດ OTP 6 ໂຕທີ່ໄດ້ຮັບທາງອີເມວ ມາຕັ້ງລະຫັດຜ່ານໃໝ່\n4) ເຂົ້າສູ່ລະບົບດ້ວຍອີເມວ + ລະຫັດຜ່ານທີ່ຕັ້ງ${attachments.length ? "\n\nແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້" : ""}`,
+              attachments,
               html: `<div style="font-family:Arial,sans-serif;max-width:480px">
                 <p>ສະບາຍດີ ${escMailHtml(r.dsm_name || "")}</p>
                 <p>ບັນຊີ <b>DSM</b> (Team <b>${escMailHtml(r.team)}</b>) ຂອງທ່ານຖືກສ້າງແລ້ວ. ໃຊ້ອີເມວນີ້ເຂົ້າສູ່ລະບົບ: <b>${escMailHtml(email)}</b></p>
                 <p><b>ຕັ້ງລະຫັດຜ່ານຄັ້ງທຳອິດ:</b></p>
-                <ol><li>ເປີດ <a href="${appUrl}">${appUrl}</a></li><li>ກົດ "ລືມລະຫັດຜ່ານ" ແລ້ວໃສ່ອີເມວນີ້</li><li>ເອົາລະຫັດ OTP 6 ໂຕທີ່ໄດ້ຮັບທາງອີເມວ ມາຕັ້ງລະຫັດຜ່ານໃໝ່</li><li>ເຂົ້າສູ່ລະບົບດ້ວຍອີເມວ + ລະຫັດຜ່ານທີ່ຕັ້ງ</li></ol></div>`,
+                <ol><li>ເປີດ <a href="${appUrl}">${appUrl}</a></li><li>ກົດ "ລືມລະຫັດຜ່ານ" ແລ້ວໃສ່ອີເມວນີ້</li><li>ເອົາລະຫັດ OTP 6 ໂຕທີ່ໄດ້ຮັບທາງອີເມວ ມາຕັ້ງລະຫັດຜ່ານໃໝ່</li><li>ເຂົ້າສູ່ລະບົບດ້ວຍອີເມວ + ລະຫັດຜ່ານທີ່ຕັ້ງ</li></ol>${attachments.length ? "<p>ແນບຄູ່ມືການນຳໃຊ້ (PDF) ມາພ້ອມອີເມວນີ້</p>" : ""}</div>`,
             }));
           }
         }
 
-        const msg = `ສ້າງບັນຊີ DSM ໃໝ່ ${out.created.length} ຄົນ | ມີຢູ່ແລ້ວ ${out.exists.length} | ຂ້າມ ${out.skipped.length}`;
+        const msg = `ສ້າງບັນຊີ DSM ໃໝ່ ${out.created.length} ຄົນ | ມີຢູ່ແລ້ວ ${out.exists.length} | ຂ້າມ ${out.skipped.length}` + (notify && attachManual ? (manualBytes ? " | ແນບຄູ່ມື PDF ແລ້ວ" : " | ບໍ່ພົບໄຟລ໌ຄູ່ມື (ສົ່ງໂດຍບໍ່ແນບ)") : "") + (out.resent ? ` | ສົ່ງຄືນໃຫ້ DSM ເດີມ ${out.resent} ຄົນ` : "");
         return Response.json({ message: msg, ...out });
       } catch (e) {
         console.error("/api/admin/create-dsm-users", e);
