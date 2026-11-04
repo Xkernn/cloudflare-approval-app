@@ -1575,6 +1575,9 @@ async function ncFillRoundSummary(env, round) {
   return { round_id: round.id, started_at: round.started_at, count: groups.reduce((a, g) => a + g.n, 0), groups };
 }
 
+// ປິດການເຊັນ DSM ຜ່ານລິ້ງ (ບໍ່ຕ້ອງ login) — DSM ຕ້ອງ login ແລ້ວກົດ Approve ໃນເມນູ "Approve ເອກະສານ DSM" ເທົ່ານັ້ນ
+const DSM_LINK_SIGN_DISABLED_MSG = "ປິດການເຊັນຜ່ານລິ້ງແລ້ວ — DSM ກະລຸນາເຂົ້າສູ່ລະບົບ ແລ້ວກົດ Approve ໃນເມນູ \"Approve ເອກະສານ DSM\"";
+
 const ROUTE_ROLES = {
   "/api/my-signature": ["user", "dsm"], // ລາຍເຊັນທີ່ບັນທຶກໄວ້ຂອງຕົນເອງ (MDE / DSM) — ເບິ່ງ/ບັນທຶກ/ລຶບ
   "/api/dsm/contracts": ["dsm"],
@@ -3028,22 +3031,17 @@ async function runSignReminderEmails(env, { appUrl = "", minAgeDays = SIGN_REMIN
       if (mailStopped || out.dsm_emailed >= MAX_BULK_SIGN_DSM) { skipped.push(team); continue; }
       try {
         const shown = docs.slice(0, MAX_SIGN_DOCS_PER_EMAIL);
-        const prepared = [];
-        for (const doc of shown) {
-          const lk = await ensureDsmSignLink(env, doc.kind, doc.id, actor, false);
-          prepared.push({ doc, token: lk.token, expires_at: lk.expires_at });
-        }
+        const prepared = shown.map((doc) => ({ doc }));
         const mail = buildSignReminderEmail({
-          subject: `ເຕືອນ: ມີເອກະສານລໍຖ້າ DSM ເຊັນ ${docs.length} ໃບ`,
+          subject: `ເຕືອນ: ມີເອກະສານລໍຖ້າ DSM Approve ${docs.length} ໃບ`,
           who: `DSM ${d.dsm_name || ""} (Team ${team})`.replace(/\s+/g, " "),
-          intro: `ມີເອກະສານທີ່ MDE ເຊັນແລ້ວ ແລະ ລໍຖ້າທ່ານເຊັນ ${docs.length} ໃບ${age ? ` (ຄ້າງເກີນ ${age} ມື້)` : ""} — ກົດລິ້ງຂອງແຕ່ລະໃບເພື່ອເຊັນ:`,
+          intro: `ມີເອກະສານທີ່ MDE ເຊັນແລ້ວ ແລະ ລໍຖ້າທ່ານ Approve ${docs.length} ໃບ${age ? ` (ຄ້າງເກີນ ${age} ມື້)` : ""} — ກະລຸນາເຂົ້າສູ່ລະບົບ ແລ້ວໄປທີ່ເມນູ "Approve ເອກະສານ DSM":`,
           docs: prepared.map((x) => ({
             label: `${x.doc.kind === "cancel" ? "ໃບ T-" : "ໃບສັນຍາຢືມ"} ${x.doc.doc_no || ""}${x.doc.outlet_name ? " — " + x.doc.outlet_name : ""}${x.doc.mde_code ? " [" + x.doc.mde_code + "]" : ""}`.trim(),
-            url: `${base}/dsm-sign?t=${x.token}`,
-            note: x.expires_at ? `ໝົດອາຍຸ ${fmtLaoExpiry(x.expires_at)}` : "",
           })),
           moreCount: docs.length - shown.length,
-          footer: "ລິ້ງແຕ່ລະອັນໃຊ້ເຊັນໄດ້ຄັ້ງດຽວ ແລະ ໝົດອາຍຸຕາມເວລາທີ່ລະບຸ (ເວລາລາວ). ຢ່າສົ່ງຕໍ່ລິ້ງໃຫ້ຜູ້ອື່ນ.",
+          footer: "ການເຊັນຜ່ານລິ້ງຖືກປິດແລ້ວ — ຕ້ອງເຂົ້າສູ່ລະບົບ ແລະ ກົດ Approve ໃນລະບົບເທົ່ານັ້ນ (ຕ້ອງເພີ່ມລາຍເຊັນ E-signature ໃນ ຕັ້ງຄ່າ > ລາຍເຊັນຂອງຂ້ອຍ ກ່ອນ).",
+          appUrl: base,
         });
         await sendEmail(env, { to, subject: mail.subject, text: mail.text, html: mail.html });
         out.dsm_emailed++;
@@ -6637,28 +6635,16 @@ export default {
         if (doc.sig_dsm) return Response.json({ error: "ເອກະສານນີ້ DSM ເຊັນແລ້ວ" }, { status: 409 });
         if (!doc.sig_mde) return Response.json({ error: "MDE ຍັງບໍ່ໄດ້ເຊັນເອກະສານນີ້" }, { status: 409 });
         const name = String(b.signer_name || "").trim().slice(0, 100) || (await getDsmNameForTeam(env, session.team)) || session.email;
-        // ກົດ Approve: ດຶງລາຍເຊັນ E-signature ທີ່ DSM ບັນທຶກໄວ້ (user_signatures) ມາໃສ່ໃນເອກະສານ — ບໍ່ຕ້ອງແຕ້ມໃໝ່
-        // (ຖ້າສົ່ງ signature ມາເອງ ຍັງຮອງຮັບຄືເດີມ)
-        let sigKey;
-        if (b.use_saved || !b.signature) {
-          await env.DB.prepare(
-            `CREATE TABLE IF NOT EXISTS user_signatures (user_id INTEGER PRIMARY KEY, r2_key TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
-          ).run();
-          const saved = await env.DB.prepare("SELECT r2_key FROM user_signatures WHERE user_id = ?").bind(session.id).first();
-          const obj = saved ? await env.PHOTOS.get(saved.r2_key) : null;
-          if (!obj) return Response.json({ error: "ທ່ານຍັງບໍ່ໄດ້ສ້າງລາຍເຊັນ E-signature — ໄປສ້າງທີ່ ຕັ້ງຄ່າ (Profile) > ລາຍເຊັນຂອງຂ້ອຍ ກ່ອນ", code: "NO_SAVED_SIGNATURE" }, { status: 400 });
-          sigKey = `${cfg.prefix}/${doc.id}/dsm-${Date.now()}.png`;
-          const ct = (obj.httpMetadata && obj.httpMetadata.contentType) || "image/png";
-          await env.PHOTOS.put(sigKey, await obj.arrayBuffer(), { httpMetadata: { contentType: ct } });
-        } else {
-          try {
-            [sigKey] = await savePhotosToR2(env, [[b.signature, `${cfg.prefix}/${doc.id}/dsm-${Date.now()}.png`]]);
-          } catch (photoErr) {
-            const pr = photoErrorResponse(photoErr);
-            if (pr) return pr;
-            throw photoErr;
-          }
-        }
+        // Approve ຢ່າງດຽວ: ດຶງລາຍເຊັນ E-signature ທີ່ DSM ບັນທຶກໄວ້ (user_signatures) ມາໃສ່ໃນເອກະສານ — ບໍ່ຮັບລາຍເຊັນທີ່ client ສົ່ງມາ
+        await env.DB.prepare(
+          `CREATE TABLE IF NOT EXISTS user_signatures (user_id INTEGER PRIMARY KEY, r2_key TEXT NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`
+        ).run();
+        const saved = await env.DB.prepare("SELECT r2_key FROM user_signatures WHERE user_id = ?").bind(session.id).first();
+        const obj = saved ? await env.PHOTOS.get(saved.r2_key) : null;
+        if (!obj) return Response.json({ error: "ທ່ານຍັງບໍ່ທັນເພີ່ມລາຍເຊັນ E-signature — ໄປເພີ່ມທີ່ ຕັ້ງຄ່າ (Profile) > ລາຍເຊັນຂອງຂ້ອຍ ກ່ອນ", code: "NO_SAVED_SIGNATURE" }, { status: 400 });
+        const sigKey = `${cfg.prefix}/${doc.id}/dsm-${Date.now()}.png`;
+        const ct = (obj.httpMetadata && obj.httpMetadata.contentType) || "image/png";
+        await env.PHOTOS.put(sigKey, await obj.arrayBuffer(), { httpMetadata: { contentType: ct } });
         const res = await env.DB.batch([
           env.DB.prepare(`UPDATE ${cfg.table} SET sig_dsm = ?1, sig_dsm_name = ?2, sig_dsm_at = CURRENT_TIMESTAMP,
                  status = CASE WHEN sig_mde IS NOT NULL THEN 'completed' ELSE status END WHERE id = ?3 AND sig_dsm IS NULL`).bind(sigKey, name, doc.id),
@@ -6684,6 +6670,10 @@ export default {
       }
     }
 
+    // ປິດລິ້ງເຊັນ DSM ສາທາລະນະທັງໝົດ (ເບິ່ງໜ້າ / PDF / ເຊັນ) — ລິ້ງເກົ່າທີ່ສົ່ງໄປແລ້ວກໍໃຊ້ບໍ່ໄດ້
+    if (url.pathname === "/api/public/dsm-sign" || url.pathname === "/api/public/dsm-sign/pdf" || url.pathname === "/api/public/dsm-sign/sign") {
+      return Response.json({ state: "disabled", error: DSM_LINK_SIGN_DISABLED_MSG }, { status: 410, headers: RECEIPT_NO_CACHE });
+    }
     if (url.pathname === "/api/public/dsm-sign" && request.method === "GET") {
       try {
         const found = await dsmLinkByToken((url.searchParams.get("t") || "").trim());
@@ -9626,24 +9616,18 @@ export default {
             if (mailStopped || emailSent >= MAX_BULK_SIGN_DSM) { emailSkipped.push(team); continue; }
             try {
               const shown = docs.slice(0, MAX_SIGN_DOCS_PER_EMAIL);
-              const prepared = [];
-              for (const doc of shown) {
-                // ໃຊ້ລິ້ງເດີມຂອງໃບ (ຖ້າຍັງບໍ່ໝົດອາຍຸ) ເພື່ອບໍ່ໃຫ້ລິ້ງທີ່ເຄີຍສົ່ງ/ແຊຣ໌ໄປແລ້ວໃຊ້ບໍ່ໄດ້
-                const lk = await ensureDsmSignLink(env, doc.kind, doc.id, actor, false);
-                prepared.push({ doc, token: lk.token, expires_at: lk.expires_at });
-              }
+              const prepared = shown.map((doc) => ({ doc }));
               linkCount += prepared.length;
               const mail = buildSignReminderEmail({
-                subject: `ເຕືອນ: ມີເອກະສານລໍຖ້າ DSM ເຊັນ ${docs.length} ໃບ`,
+                subject: `ເຕືອນ: ມີເອກະສານລໍຖ້າ DSM Approve ${docs.length} ໃບ`,
                 who: `DSM ${d.dsm_name || ""} (Team ${team})`.replace(/\s+/g, " "),
-                intro: `ມີເອກະສານທີ່ MDE ເຊັນແລ້ວ ແລະ ລໍຖ້າທ່ານເຊັນ ${docs.length} ໃບ — ກົດລິ້ງຂອງແຕ່ລະໃບເພື່ອເຊັນ:`,
+                intro: `ມີເອກະສານທີ່ MDE ເຊັນແລ້ວ ແລະ ລໍຖ້າທ່ານ Approve ${docs.length} ໃບ — ກະລຸນາເຂົ້າສູ່ລະບົບ ແລ້ວໄປທີ່ເມນູ "Approve ເອກະສານ DSM":`,
                 docs: prepared.map((p) => ({
                   label: `${p.doc.kind === "cancel" ? "ໃບ T-" : "ໃບສັນຍາຢືມ"} ${p.doc.doc_no || ""}${p.doc.outlet_name ? " — " + p.doc.outlet_name : ""}${p.doc.mde_code ? " [" + p.doc.mde_code + "]" : ""}`.trim(),
-                  url: `${appUrl}/dsm-sign?t=${p.token}`,
-                  note: p.expires_at ? `ໝົດອາຍຸ ${fmtLaoExpiry(p.expires_at)}` : "",
                 })),
                 moreCount: docs.length - shown.length,
-                footer: "ລິ້ງແຕ່ລະອັນໃຊ້ເຊັນໄດ້ຄັ້ງດຽວ ແລະ ໝົດອາຍຸຕາມເວລາທີ່ລະບຸ (ເວລາລາວ). ຢ່າສົ່ງຕໍ່ລິ້ງໃຫ້ຜູ້ອື່ນ.",
+                footer: "ການເຊັນຜ່ານລິ້ງຖືກປິດແລ້ວ — ຕ້ອງເຂົ້າສູ່ລະບົບ ແລະ ກົດ Approve ໃນລະບົບເທົ່ານັ້ນ (ຕ້ອງເພີ່ມລາຍເຊັນ E-signature ໃນ ຕັ້ງຄ່າ > ລາຍເຊັນຂອງຂ້ອຍ ກ່ອນ).",
+                appUrl,
               });
               await sendEmail(env, { to, subject: mail.subject, text: mail.text, html: mail.html });
               emailSent++;
@@ -12534,6 +12518,7 @@ export default {
     // ສ້າງ/ສ້າງໃໝ່ ລິ້ງເຊັນ DSM ຂອງໃບສັນຍາຢືມ (kind=loan) ຫຼື ໃບ T- (kind=cancel) — ຄືນ URL ໃຫ້ກັອບ/ແຊຣ໌ໃຫ້ DSM
     // ສິດ: admin/warehouse/delivery ທຸກໃບ, MDE ສະເພາະໃບຂອງຕົນເອງ. ສ້າງໃໝ່ = ລິ້ງເກົ່າໃຊ້ບໍ່ໄດ້. DSM ເຊັນແລ້ວ -> ສ້າງບໍ່ໄດ້ (admin ກົດ ລ້າງລາຍເຊັນ DSM ກ່ອນ)
     if (url.pathname === "/api/dsm-sign-links/create" && request.method === "POST") {
+      return Response.json({ error: DSM_LINK_SIGN_DISABLED_MSG }, { status: 410 });
       try {
         const b = await request.json();
         const cfg = DSM_DOC_KINDS[b.kind];
@@ -12571,6 +12556,7 @@ export default {
 
     // ລ້າງລາຍເຊັນ DSM (admin ເທົ່ານັ້ນ) — ລຶບຮູບລາຍເຊັນ + ປິດລິ້ງ ເພື່ອໃຫ້ສ້າງລິ້ງໃໝ່ໃຫ້ DSM ເຊັນໃໝ່ໄດ້
     if (url.pathname === "/api/dsm-sign-links/reset" && request.method === "POST") {
+      return Response.json({ error: DSM_LINK_SIGN_DISABLED_MSG }, { status: 410 });
       if (session.role !== "admin") return Response.json({ error: "ມີສະເພາະ Admin ເທົ່ານັ້ນທີ່ລ້າງລາຍເຊັນ DSM ໄດ້" }, { status: 403 });
       try {
         const b = await request.json();

@@ -3971,7 +3971,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
               <div class="loan-nav-btns">
                 <button type="button" class="btn-back" onclick="loanPrevStep()"><i class="fa-solid fa-arrow-left mr-1"></i> ຍ້ອນກັບ</button>
-                <button type="button" id="loanSubmitBtn" class="btn-submit" onclick="loanSaveAndNext()"><i class="fa-solid fa-user-tie mr-1"></i> ບັນທຶກ ແລະ ສົ່ງລິ້ງໃຫ້ DSM</button>
+                <button type="button" id="loanSubmitBtn" class="btn-submit" onclick="loanSaveAndNext()"><i class="fa-solid fa-user-tie mr-1"></i> ບັນທຶກ ແລະ ສົ່ງໃຫ້ DSM Approve</button>
               </div>
             </div>
 
@@ -4098,7 +4098,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             </div>
             <div class="loan-nav-btns">
               <button type="button" class="btn-back" onclick="cancelPrevStep()"><i class="fa-solid fa-arrow-left mr-1"></i> ຍ້ອນກັບ</button>
-              <button type="button" id="cancelSubmitBtn" class="btn-submit" onclick="cancelSaveAndNext()"><i class="fa-solid fa-user-tie mr-1"></i> ບັນທຶກ ແລະ ສົ່ງລິ້ງໃຫ້ DSM</button>
+              <button type="button" id="cancelSubmitBtn" class="btn-submit" onclick="cancelSaveAndNext()"><i class="fa-solid fa-user-tie mr-1"></i> ບັນທຶກ ແລະ ສົ່ງໃຫ້ DSM Approve</button>
             </div>
           </div>
 
@@ -4126,9 +4126,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
           <div class="loan-step-panel" id="dsmStep4Section">
             <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:12px; margin-bottom:14px;">
-              <div style="font-size:14px; font-weight:700; color:#b45309;"><i class="fa-solid fa-hourglass-half mr-1"></i> ລໍຖ້າ DSM ເຊັນ</div>
+              <div style="font-size:14px; font-weight:700; color:#b45309;"><i class="fa-solid fa-hourglass-half mr-1"></i> ລໍຖ້າ DSM Approve</div>
               <div id="dsmWaitDocInfo" style="font-size:13px; color:var(--text-muted); margin-top:4px;"></div>
-              <div style="font-size:12.5px; color:#92400e; margin-top:6px;">ບັນທຶກເອກະສານແລ້ວ — ຂັ້ນຕອນກ່ອນໜ້າແກ້ໄຂ/ກັບຄືນບໍ່ໄດ້. ສົ່ງລິ້ງໃຫ້ DSM ເຊັນ ແລ້ວກົດ "ສຳເລັດ" — ເອກະສານຈະຄ້າງຢູ່ແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" ຈົນກວ່າ DSM ຈະເຊັນ</div>
+              <div style="font-size:12.5px; color:#92400e; margin-top:6px;">ບັນທຶກເອກະສານແລ້ວ — ຂັ້ນຕອນກ່ອນໜ້າແກ້ໄຂ/ກັບຄືນບໍ່ໄດ້. DSM ຂອງທີມທ່ານຕ້ອງເຂົ້າສູ່ລະບົບ ແລ້ວກົດ Approve ໃນເມນູ "Approve ເອກະສານ DSM" (ບໍ່ມີການເຊັນຜ່ານລິ້ງ). ກົດ "ສຳເລັດ" — ເອກະສານຈະຄ້າງຢູ່ແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" ຈົນກວ່າ DSM ຈະ Approve</div>
             </div>
 
             <div id="dsmWaitBusy" class="hidden" style="font-size:13px; color:var(--text-muted); padding:8px 0;"><i class="fa-solid fa-spinner fa-spin mr-1"></i> ກຳລັງສ້າງລິ້ງ...</div>
@@ -4157,11 +4157,11 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <p id="dsmWaitMsg" class="hidden" style="font-size:13px; color:#dc2626; margin:6px 0;"></p>
 
             <div class="loan-nav-btns">
-              <button type="button" class="btn-back" onclick="dsmWaitCreateLink(true)"><i class="fa-solid fa-rotate mr-1"></i> ສ້າງລິ້ງໃໝ່</button>
+              
               <button type="button" class="btn-submit" onclick="dsmWaitFinish()"><i class="fa-solid fa-check mr-1"></i> ສຳເລັດ</button>
             </div>
             <div style="text-align:center; margin-top:12px;">
-              <button type="button" class="btn-act btn-edit" onclick="dsmCheckStatus()"><i class="fa-solid fa-rotate-right mr-1"></i> ກວດວ່າ DSM ເຊັນແລ້ວຫຼືຍັງ</button>
+              <button type="button" class="btn-act btn-edit" onclick="dsmCheckStatus()"><i class="fa-solid fa-rotate-right mr-1"></i> ກວດວ່າ DSM Approve ແລ້ວຫຼືຍັງ</button>
               <p id="dsmCheckMsg" class="hidden" style="font-size:13px; color:#b45309; margin:8px 0 0;"></p>
             </div>
           </div>
@@ -6097,15 +6097,19 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       <div id="view-dsm-sign" class="hidden">
         <div class="page-header">
           <div>
-            <h1>ເຊັນເອກະສານ DSM</h1>
+            <h1>Approve ເອກະສານ DSM</h1>
             <p id="dsmSignDesc">ສັນຍາຢືມຕູ້ (DOC-) ແລະ ໃບຍົກເລີກ (T-) ຂອງທີມທ່ານ</p>
           </div>
         </div>
         <div class="content-card" style="padding:14px;">
+          <div id="dsmSigWarn" class="hidden" style="background:#fef3c7; border:1px solid #f59e0b; color:#78350f; border-radius:10px; padding:10px 12px; margin-bottom:10px; font-size:13.5px;">
+            <b><i class="fa-solid fa-triangle-exclamation mr-1"></i> ທ່ານຍັງບໍ່ທັນເພີ່ມລາຍເຊັນ E-signature</b> — ຕ້ອງເພີ່ມລາຍເຊັນກ່ອນ ຈຶ່ງຈະ Approve ເອກະສານໄດ້.
+            <div style="margin-top:8px;"><button type="button" class="btn-act btn-approve" onclick="dsmGoAddSignature()"><i class="fa-solid fa-signature mr-1"></i> ໄປເພີ່ມລາຍເຊັນ</button></div>
+          </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
             <select id="dsmSignFilter" class="form-control" style="max-width:240px;" onchange="renderDsmSign()">
-              <option value="todo">ລໍຖ້າ DSM ເຊັນ</option>
-              <option value="done">DSM ເຊັນແລ້ວ</option>
+              <option value="todo">ລໍຖ້າ Approve</option>
+              <option value="done">Approve ແລ້ວ</option>
               <option value="all">ທັງໝົດ</option>
             </select>
             <input id="dsmSignSearch" class="form-control" style="max-width:260px;" placeholder="ຄົ້ນຫາ ເລກເອກະສານ / ຮ້ານ / MDE" oninput="renderDsmSign()">
@@ -6130,23 +6134,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <button type="button" class="btn-act btn-edit" id="dsmDetailPdfBtn" onclick="dsmDetailTogglePdf()"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງຕົວຢ່າງ PDF</button>
             <button type="button" class="btn-act" onclick="dsmDetailOpenPdfTab()"><i class="fa-solid fa-up-right-from-square mr-1"></i> ເປີດ PDF ແທັບໃໝ່</button>
             <button type="button" class="btn-act btn-approve hidden" id="dsmDetailApproveBtn" style="flex:1 1 140px;" onclick="dsmDetailApprove()"><i class="fa-solid fa-circle-check mr-1"></i> Approve</button>
-          </div>
-        </div>
-      </div>
-      <div id="dsmSignModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,.55); align-items:center; justify-content:center; padding:16px;">
-        <div style="background:#fff; border-radius:14px; padding:16px; width:100%; max-width:440px;">
-          <h2 style="font-size:1.17em; margin:0 0 4px;" id="dsmSignModalTitle">ເຊັນເອກະສານ</h2>
-          <div id="dsmSignModalSub" style="color:#64748b; font-size:13px; margin-bottom:8px;"></div>
-          <label style="font-weight:700; font-size:13.5px;">ຊື່ DSM</label>
-          <input id="dsmSignName" class="form-control" maxlength="100">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <label style="font-weight:700; font-size:13.5px; margin:0;">ລາຍເຊັນ</label>
-            <button type="button" class="btn-act" onclick="dsmSignClear()">ລ້າງ</button><button type="button" class="btn-act my-sig-use-btn hidden" onclick="useSavedSignature('dsmSignCanvas')"><i class="fa-solid fa-signature"></i> ໃຊ້ລາຍເຊັນທີ່ບັນທຶກໄວ້</button>
-          </div>
-          <div style="border:1px dashed #94a3b8; border-radius:10px; touch-action:none;"><canvas id="dsmSignCanvas" style="display:block; width:100%; height:170px;"></canvas></div>
-          <div style="display:flex; gap:8px; margin-top:12px;">
-            <button type="button" class="btn-act" style="flex:1;" onclick="dsmSignClose()">ຍົກເລີກ</button>
-            <button type="button" class="btn-act btn-approve" style="flex:2;" id="dsmSignSubmitBtn" onclick="dsmSignSubmit()">ຢືນຢັນເຊັນ</button>
           </div>
         </div>
       </div>
@@ -6190,7 +6177,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <div class="guide-menu-tile"><b><i class="fa-solid fa-chart-pie"></i>ງົບປະມານຂອງທີມ</b><span>ເບິ່ງໂຄຕ້າ, ທີ່ໃຊ້ໄປແລ້ວ ແລະ ຄົງເຫຼືອ ແຍກຕາມ Brand</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-clipboard-list"></i>Asset Request</b><span>ສົ່ງຄຳຂໍເບີກ Asset ໃໝ່ ແລະ ຕິດຕາມຄຳຂໍທີ່ລໍຖ້າອະນຸມັດ</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-boxes-stacked"></i>Asset Tracking</b><span>ເບິ່ງລາຍການ Asset ຂອງ MDE ທ່ານ ແລະ Status ປັດຈຸບັນ</span></div>
-            <div class="guide-menu-tile"><b><i class="fa-solid fa-file-signature"></i>ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ</b><span>ອອກ ແລະ ເຊັນໃບສັນຍາຢືມ (DOC-), ໃບຍົກເລີກ/ເກັບຕູ້ເຂົ້າສາງ (T-) ແລ້ວສົ່ງລິ້ງໃຫ້ DSM ເຊັນ</span></div>
+            <div class="guide-menu-tile"><b><i class="fa-solid fa-file-signature"></i>ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ</b><span>ອອກ ແລະ ເຊັນໃບສັນຍາຢືມ (DOC-), ໃບຍົກເລີກ/ເກັບຕູ້ເຂົ້າສາງ (T-) ແລ້ວລໍຖ້າ DSM Approve ໃນລະບົບ</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-clock-rotate-left"></i>ປະຫວັດ Asset</b><span>ມີ 2 card: ປະຫວັດການຂໍ Asset (ຄຳຂໍທຸກສະຖານະ) ແລະ ປະຫວັດການຈັດສົ່ງ Asset (Status = ສຳເລັດ)</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-magnifying-glass-location"></i>ຄົ້ນຫາຕູ້ (Master)</b><span>ພິມ ຫຼື ສະແກນ QR / Serial / CapEx ເພື່ອເບິ່ງວ່າຕູ້ນັ້ນຢູ່ໃສໃນລະບົບ</span></div>
             <div class="guide-menu-tile"><b><i class="fa-solid fa-book-bookmark"></i>ຂະໜາດຕູ້ແຊ່</b><span>ເບິ່ງຂະໜາດ ແລະ ຮູບຕູ້ແຊ່ ແຕ່ລະປະເພດ</span></div>
@@ -6285,12 +6272,12 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <li><b>ຍອດຂາຍ</b> - ຍອດຂາຍລວມ (Total) ຂອງ Beer, Premium, CSD/Energy ແລະ Drinking Water/Soda</li>
               <li><b>ແຜນຜັງ</b> - ແຜນຜັງການວາງຕູ້ຢູ່ຮ້ານ</li>
               <li><b>ເອກະສານ + ເຊັນ</b> - ແນບເອກະສານເຈົ້າຂອງຮ້ານ ແລ້ວ <b>MDE ເຊັນລາຍເຊັນ</b></li>
-              <li><b>ລາຍເຊັນ DSM</b> - ລະບົບສ້າງ <b>ລິ້ງໃຊ້ໄດ້ຄັ້ງດຽວ</b> ໃຫ້ສົ່ງໃຫ້ DSM ທາງ WhatsApp / SMS / ກັອບປີ້ ເພື່ອເຊັນ (ລິ້ງບໍ່ມີວັນໝົດອາຍຸຖ້າຍັງບໍ່ເຊັນ; ຕ້ອງການໃໝ່ກົດ "ສ້າງລິ້ງໃໝ່"). ຫຼື DSM ເຂົ້າບັນຊີຂອງຕົນເອງ ແລ້ວເຊັນໃນເມນູ "ເຊັນເອກະສານ DSM"</li>
+              <li><b>DSM Approve</b> - ບໍ່ມີການເຊັນຜ່ານລິ້ງ. DSM ເຂົ້າບັນຊີຂອງຕົນເອງ ແລ້ວກົດ <b>Approve</b> ໃນເມນູ "Approve ເອກະສານ DSM" (ໃຊ້ລາຍເຊັນ E-signature ທີ່ DSM ບັນທຶກໄວ້ໃນ ຕັ້ງຄ່າ)</li>
               <li><b>ສະຫຼຸບ</b> - ກວດຜົນ, ເມື່ອ DSM ເຊັນແລ້ວ ເປີດ/ດາວໂຫຼດ PDF ໄດ້</li>
             </ol>
-            <p><b>ຂັ້ນຕອນອອກໃບຍົກເລີກ (T-)</b> ມີ 5 ຂັ້ນຕອນ: <b>ໃບສັນຍາເດີມ</b> (ເລືອກຮ້ານ + MDE) → <b>ເຫດຜົນ</b> (ຕິກໄດ້ຫຼາຍຂໍ້, ຂໍ້ມູນຕູ້ ແລະ ສະແກນ QR) → <b>ເອກະສານ + ເຊັນ</b> (MDE ເຊັນ) → <b>ລາຍເຊັນ DSM</b> → <b>ສະຫຼຸບ</b>. ວິທີສົ່ງລິ້ງໃຫ້ DSM ຄືກັນກັບໃບ DOC-.</p>
+            <p><b>ຂັ້ນຕອນອອກໃບຍົກເລີກ (T-)</b> ມີ 5 ຂັ້ນຕອນ: <b>ໃບສັນຍາເດີມ</b> (ເລືອກຮ້ານ + MDE) → <b>ເຫດຜົນ</b> (ຕິກໄດ້ຫຼາຍຂໍ້, ຂໍ້ມູນຕູ້ ແລະ ສະແກນ QR) → <b>ເອກະສານ + ເຊັນ</b> (MDE ເຊັນ) → <b>ລາຍເຊັນ DSM</b> → <b>ສະຫຼຸບ</b>. DSM Approve ໃນລະບົບຄືກັນກັບໃບ DOC-.</p>
 
-            <div class="guide-note"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ຫຼັງກົດ <b>"ບັນທຶກ ແລະ ສົ່ງລິ້ງໃຫ້ DSM"</b> ຂັ້ນຕອນກ່ອນໜ້າແກ້ໄຂ ຫຼື ຍ້ອນກັບບໍ່ໄດ້. ເອກະສານຈະຄ້າງຢູ່ແຖບ <b>"ເອກະສານຍັງບໍ່ເຊັນ"</b> ຈົນກວ່າ DSM ຈະເຊັນ - ກົດ "ກວດວ່າ DSM ເຊັນແລ້ວຫຼືຍັງ" ເພື່ອອັບເດດ. ລິ້ງນີ້ໃຊ້ໄດ້ຄັ້ງດຽວ. User ລຶບເອກະສານເອງບໍ່ໄດ້ (ໃຫ້ແຈ້ງ Admin).</div>
+            <div class="guide-note"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ຫຼັງກົດ <b>"ບັນທຶກ ແລະ ສົ່ງໃຫ້ DSM Approve"</b> ຂັ້ນຕອນກ່ອນໜ້າແກ້ໄຂ ຫຼື ຍ້ອນກັບບໍ່ໄດ້. ເອກະສານຈະຄ້າງຢູ່ແຖບ <b>"ເອກະສານຍັງບໍ່ເຊັນ"</b> ຈົນກວ່າ DSM ຈະ Approve - ກົດ "ກວດວ່າ DSM Approve ແລ້ວຫຼືຍັງ" ເພື່ອອັບເດດ. User ລຶບເອກະສານເອງບໍ່ໄດ້ (ໃຫ້ແຈ້ງ Admin).</div>
             <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ເມື່ອ MDE ແລະ DSM ເຊັນຄົບ Status ຂອງ Asset ຈະປ່ຽນເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp" ເອງ ແລະ ໃນ PDF ລວມມີເອກະສານສຳລັບສົ່ງ PowerApp. ເປີດ PDF ຄັ້ງທຳອິດ ລະບົບຈະບັນທຶກໄຟລ໌ລົງເຄື່ອງໃຫ້ອັດຕະໂນມັດ (ຊື່ຮ້ານ_ປະເພດຕູ້). ໃບ T- ຕ້ອງເຊັນຮັບໃຫ້ແລ້ວກ່ອນຈຶ່ງເປີດ PDF ໄດ້.</div>
           </div>
         </details>
@@ -6412,7 +6399,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <li><b>ຖືກເດັ້ງອອກເອງ</b> - ການ login ຢູ່ໄດ້ປະມານ 7 ວັນ ຫຼື ຖືກເດັ້ງອອກເມື່ອປ່ຽນລະຫັດຜ່ານ, ໃຫ້ login ໃໝ່.</li>
               <li><b>ສົ່ງຄຳຂໍ "ໃໝ່" ບໍ່ໄດ້</b> - ທີມຍັງບໍ່ມີງົບປະມານ ຫຼື ໂຄຕ້າເຕັມ. ກວດໃນເມນູ "ງົບປະມານຕູ້ຂອງທີມ".</li>
               <li><b>ບໍ່ພົບ Outlet Code ຕອນຂໍຕູ້</b> - ກວດລະຫັດອີກຄັ້ງ ຫຼືຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວຕື່ມຂໍ້ມູນຮ້ານ.</li>
-              <li><b>ເອກະສານຄ້າງຢູ່ "ເອກະສານຍັງບໍ່ເຊັນ"</b> - ຍັງລໍຖ້າ DSM ເຊັນ. ສົ່ງລິ້ງໃຫ້ DSM ອີກຄັ້ງ (ກົດ "ສ້າງລິ້ງໃໝ່") ແລ້ວກົດ "ກວດວ່າ DSM ເຊັນແລ້ວຫຼືຍັງ".</li>
+              <li><b>ເອກະສານຄ້າງຢູ່ "ເອກະສານຍັງບໍ່ເຊັນ"</b> - ຍັງລໍຖ້າ DSM Approve ໃນລະບົບ — ແຈ້ງ DSM ຂອງທີມໃຫ້ເຂົ້າລະບົບໄປກົດ Approve ແລ້ວກົດ "ກວດວ່າ DSM Approve ແລ້ວຫຼືຍັງ".</li>
               <li><b>ເຂົ້າເມນູອື່ນບໍ່ໄດ້ (ເດັ້ງກັບໜ້າແຈ້ງເຕືອນ)</b> - ມີແຈ້ງເຕືອນພິເສດຄ້າງຢູ່ ຕ້ອງດຳເນີນການໃນໜ້າທີ່ແຈ້ງກ່ອນ.</li>
               <li><b>ບໍ່ເຫັນ Asset</b> - Asset ອາດຈະ "ສຳເລັດ" ແລ້ວ (ໄປເບິ່ງທີ່ປະຫວັດການຈັດສົ່ງ) ຫຼື ຄຳຂໍຍັງບໍ່ໄດ້ຮັບອະນຸມັດ.</li>
               <li><b>ຄົ້ນຫາຕູ້ (Master) ບໍ່ພົບ</b> - ຄົ້ນຫາໄດ້ສະເພາະ QR, Serial, CapEx ເທົ່ານັ້ນ ກວດການພິມໃຫ້ຖືກ ຫຼື ໃຊ້ກ້ອງສະແກນ.</li>
@@ -10217,7 +10204,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('signRemTitle').textContent = kind === 'mde' ? 'MDE ຄ້າງເຊັນເອກະສານ' : 'DSM ຄ້າງເຊັນເອກະສານ';
       document.getElementById('signRemDesc').textContent = kind === 'mde'
         ? 'MDE ທີ່ມີໃບສັນຍາຢືມ / ໃບເກັບຕູ້ (T-) ທີ່ຍັງບໍ່ໄດ້ເຊັນ — ເລືອກແລ້ວກົດສົ່ງ (Push + ອີເມວຖ້າຕິກ)'
-        : 'DSM (ແຍກຕາມ Team) ທີ່ມີເອກະສານ MDE ເຊັນແລ້ວ ແຕ່ DSM ຍັງບໍ່ໄດ້ເຊັນ — ລະບົບສົ່ງອີເມວພ້ອມລິ້ງເຊັນຂອງແຕ່ລະໃບ (ໃຊ້ລິ້ງເດີມຖ້າຍັງບໍ່ເຊັນ, ບໍ່ມີວັນໝົດອາຍຸ)';
+        : 'DSM (ແຍກຕາມ Team) ທີ່ມີເອກະສານ MDE ເຊັນແລ້ວ ແຕ່ DSM ຍັງບໍ່ໄດ້ເຊັນ — ລະບົບສົ່ງອີເມວແຈ້ງໃຫ້ DSM ເຂົ້າລະບົບໄປກົດ Approve (ບໍ່ມີລິ້ງເຊັນ)';
       document.getElementById('signRemEmailWrap').style.display = kind === 'mde' ? 'flex' : 'none';
       document.getElementById('signRemResult').classList.add('hidden');
       list.innerHTML = '<div style="padding:16px; text-align:center; color:#64748b;">ກຳລັງໂຫລດ...</div>';
@@ -10315,7 +10302,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       const resultBox = document.getElementById('signRemResult');
       if (!keys.length) { appAlert('ກະລຸນາເລືອກຢ່າງໜ້ອຍ 1 ລາຍການ'); return; }
       const sendEmail = signRemKind === 'mde' && document.getElementById('signRemSendEmail').checked;
-      const what = signRemKind === 'mde' ? `MDE ${keys.length} ຄົນ${sendEmail ? ' (ສົ່ງເຂົ້າອີເມວນຳ)' : ''}` : `DSM ${keys.length} Team (ສົ່ງອີເມວພ້ອມລິ້ງເຊັນ)`;
+      const what = signRemKind === 'mde' ? `MDE ${keys.length} ຄົນ${sendEmail ? ' (ສົ່ງເຂົ້າອີເມວນຳ)' : ''}` : `DSM ${keys.length} Team (ສົ່ງອີເມວແຈ້ງໃຫ້ເຂົ້າລະບົບ Approve)`;
       if (!await appConfirm(`ສົ່ງແຈ້ງເຕືອນຫາ ${what}?`)) return;
 
       const btn = document.getElementById('btnSendSignReminder');
@@ -10463,19 +10450,12 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     function mySigLoadImg(src) {
       return new Promise((resolve, reject) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = () => reject(new Error('ໂຫຼດຮູບບໍ່ສຳເລັດ')); im.src = src; });
     }
-    // ກົດຈາກຊ່ອງເຊັນ: padId = canvas id ຂອງ pad ກາງ (loanSigPads) ຫຼື 'dsmSignCanvas' (modal ຂອງ DSM)
+    // ກົດຈາກຊ່ອງເຊັນ: padId = canvas id ຂອງ pad ກາງ (loanSigPads)
     async function useSavedSignature(padId) {
       const d = await mySigFetch(true);
       if (!d || !d.has) { appAlert('ຍັງບໍ່ມີລາຍເຊັນທີ່ບັນທຶກໄວ້ — ໄປສ້າງໄດ້ທີ່ ຕັ້ງຄ່າ (Profile) > ລາຍເຊັນຂອງຂ້ອຍ'); return; }
       try {
         const img = await mySigLoadImg(d.data_url);
-        if (padId === 'dsmSignCanvas') {
-          if (!dsmCv || !dsmCtx) return;
-          dsmCtx.clearRect(0, 0, dsmCv.width, dsmCv.height);
-          mySigDrawFit(dsmCtx, img, dsmCv.clientWidth || 300, dsmCv.clientHeight || 170);
-          dsmDirty = true;
-          return;
-        }
         setupSignaturePad(padId);
         const st = loanSigPads[padId];
         if (!st) return;
@@ -11185,7 +11165,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       ['nav-request', 'fa-clipboard-list', 'Asset Request', 'ຂໍຕູ້ແຊ່ໃໝ່: ໃສ່ Outlet Code (ຖ້າຮ້ານບໍ່ມີໃຫ້ຕິກ "ຮ້ານນີ້ບໍ່ມີ Outlet Code" ແລ້ວຕື່ມຂໍ້ມູນຮ້ານ), ເລືອກ Brand/Type, Doc Type, ປະເພດສັນຍາ, ໃສ່ເຫດຜົນ ແລະ ແນບຮູບຮ້ານຄ້າ ແລ້ວສົ່ງຄຳຂໍ ໃຫ້ admin ກວດ ແລະ ອະນຸມັດ.'],
       ['nav-history', 'fa-clock-rotate-left', 'ປະຫວັດ Asset', 'ມີ 2 card: ປະຫວັດການຂໍ Asset (ທຸກສະຖານະ ລວມ ຍົກເລີກ) ແລະ ປະຫວັດການຈັດສົ່ງ Asset. ເລກແດງ = ມີໃບສັນຍາທີ່ຍັງບໍ່ໄດ້ອອກ ຫຼື ຍັງຕ້ອງເຊັນ.'],
       ['nav-delivery-hub', 'fa-qrcode', 'ລາຍງານການຈັດສົ່ງ', 'ລວມວຽກຈັດສົ່ງ: ສະແກນຕູ້ຂຶ້ນລົດ, ລາຍງານຈັດສົ່ງ (ສະແກນ QR/Serial + ຖ່າຍຮູບ + ລູກຄ້າເຊັນ), ຈັດສົ່ງບໍ່ມີເອກະສານ, ຕູ້ Event ແລະ ຕູ້ສະສາງ. ກົດ card ເພື່ອເປີດໜ້າຍ່ອຍ.'],
-      ['nav-loan-contract', 'fa-file-signature', 'ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ', 'ອອກເອກະສານ: ໃບສັນຍາຢືມ (DOC-), ໃບຍົກເລີກ/ເກັບຕູ້ເຂົ້າສາງ (T-) ແລະ ຕູ້ແຊ່ສຳຫຼວດຄືນ. ມີ 3 ແຖບ: ສ້າງໃບໃໝ່ · ເອກະສານຍັງບໍ່ເຊັນ · ເອກະສານສຳເລັດແລ້ວ. ເຊັນຮັບແລ້ວຕ້ອງສົ່ງລິ້ງໃຫ້ DSM ເຊັນຕໍ່.'],
+      ['nav-loan-contract', 'fa-file-signature', 'ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ', 'ອອກເອກະສານ: ໃບສັນຍາຢືມ (DOC-), ໃບຍົກເລີກ/ເກັບຕູ້ເຂົ້າສາງ (T-) ແລະ ຕູ້ແຊ່ສຳຫຼວດຄືນ. ມີ 3 ແຖບ: ສ້າງໃບໃໝ່ · ເອກະສານຍັງບໍ່ເຊັນ · ເອກະສານສຳເລັດແລ້ວ. ເຊັນຮັບແລ້ວຕ້ອງລໍຖ້າ DSM Approve ໃນລະບົບ.'],
       ['nav-warehouse-stock', 'fa-warehouse', 'ສະຕັອກສາງ', 'ລາຍການຕູ້ໃນສາງ, ແຖບ ພາບລວມ (Dashboard), ສະແກນຫາຕູ້ໃນສາງ ແລະ ເບິ່ງຕູ້ທີ່ຖືກຈອງ ວ່າຈອງໃຫ້ຮ້ານ/MDE ໃດ.'],
       ['nav-stock-count', 'fa-clipboard-check', 'ກວດນັບສາງ', 'ບັນທຶກຜົນການກວດນັບສະຕັອກສາງ.'],
       ['nav-cooler-master', 'fa-magnifying-glass-location', 'ຄົ້ນຫາຕູ້ (Master)', 'ພິມ ຫຼື ສະແກນກ້ອງ QR / Serial / CapEx ເພື່ອເບິ່ງວ່າຕູ້ນີ້ຢູ່ໃສ ຕາມຂໍ້ມູນ Master ຕູ້ແຊ່ທົ່ວປະເທດ ພ້ອມຕຳແໜ່ງໃນລະບົບ (ສະຕັອກສາງ, Asset Tracking, ຕູ້ເຂົ້າໃໝ່, Event).'],
@@ -11696,7 +11676,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
     /* ===================== role DSM: ເຊັນເອກະສານຂອງທີມ ===================== */
     let dsmSignData = { loan: [], cancel: [], team: '', dsm_name: '' };
-    let dsmSignTarget = null;
     async function loadDsmSign() {
       const box = document.getElementById('dsmSignList');
       box.innerHTML = '<div class="mgmt-card-list-empty">ກຳລັງໂຫລດ...</div>';
@@ -11705,6 +11684,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         const d = await res.json();
         if (!res.ok) throw new Error(d.error || 'ໂຫລດບໍ່ສຳເລັດ');
         dsmSignData = d;
+        await mySigFetch(true);
         document.getElementById('dsmSignDesc').textContent = 'ທີມ ' + (d.team || '-') + ' — ສັນຍາຢືມຕູ້ (DOC-) ແລະ ໃບຍົກເລີກ (T-)';
         renderDsmSign();
       } catch (e) {
@@ -11712,6 +11692,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
     }
     function renderDsmSign() {
+      const _w = document.getElementById('dsmSigWarn'); if (_w) _w.classList.toggle('hidden', dsmHasSig());
       const box = document.getElementById('dsmSignList');
       const f = document.getElementById('dsmSignFilter').value;
       const q = (document.getElementById('dsmSignSearch').value || '').trim().toLowerCase();
@@ -11724,8 +11705,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       if (!rows.length) { box.innerHTML = '<div class="mgmt-card-list-empty">ບໍ່ມີເອກະສານ</div>'; return; }
       box.innerHTML = rows.map(r => {
         const state = r.dsm_signed
-          ? '<span class="badge badge-approved">DSM ເຊັນແລ້ວ</span>'
-          : (r.mde_signed ? '<span class="badge badge-pending">ລໍຖ້າ DSM ເຊັນ</span>' : '<span class="badge badge-default">MDE ຍັງບໍ່ເຊັນ</span>');
+          ? '<span class="badge badge-approved">DSM Approve ແລ້ວ</span>'
+          : (r.mde_signed ? '<span class="badge badge-pending">ລໍຖ້າ DSM Approve</span>' : '<span class="badge badge-default">MDE ຍັງບໍ່ເຊັນ</span>');
         return `<div class="mgmt-card">
           <div class="mgmt-card-top"><div class="mgmt-card-title">${esc(r.doc_no || '-')} <span class="badge badge-info">${r.kindLabel}</span></div>${state}</div>
           <div class="mgmt-card-sub">
@@ -11736,7 +11717,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <div class="mgmt-card-controls">
             <button class="btn-act" onclick="dsmDetailOpen('${r.kind}', ${Number(r.id)})"><i class="fa-solid fa-circle-info mr-1"></i> ລາຍລະອຽດ</button>
             <button class="btn-act btn-edit" onclick="dsmOpenPdf('${r.kind}', ${Number(r.id)})"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF</button>
-            ${(!r.dsm_signed && r.mde_signed) ? `<button class="btn-act btn-approve" onclick="dsmApprove('${r.kind}', ${Number(r.id)})"><i class="fa-solid fa-circle-check mr-1"></i> Approve</button>` : ''}
+            ${(!r.dsm_signed && r.mde_signed) ? (dsmHasSig() ? `<button class="btn-act btn-approve" onclick="dsmApprove('${r.kind}', ${Number(r.id)})"><i class="fa-solid fa-circle-check mr-1"></i> Approve</button>` : `<button class="btn-act btn-approve" aria-disabled="true" title="ຍັງບໍ່ທັນເພີ່ມລາຍເຊັນ" style="opacity:.45; cursor:not-allowed;" onclick="dsmNeedSigPrompt()"><i class="fa-solid fa-lock mr-1"></i> Approve</button>`) : ''}
           </div>
         </div>`;
       }).join('');
@@ -11781,7 +11762,13 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           const val = k === 'status' ? dsmStatusLabel(d[k]) : d[k];
           return `<div style="color:#64748b;">${esc(DSM_DETAIL_LABELS[k] || k)}</div><div style="font-weight:600; word-break:break-word;">${esc(String(val))}</div>`;
         }).join('') + '</div>';
-        if (d.mde_signed && !d.dsm_signed) document.getElementById('dsmDetailApproveBtn').classList.remove('hidden');
+        if (d.mde_signed && !d.dsm_signed) {
+          const ab = document.getElementById('dsmDetailApproveBtn');
+          ab.classList.remove('hidden');
+          await mySigFetch(false);
+          ab.style.opacity = dsmHasSig() ? '' : '.45'; ab.style.cursor = dsmHasSig() ? '' : 'not-allowed';
+          ab.innerHTML = dsmHasSig() ? '<i class="fa-solid fa-circle-check mr-1"></i> Approve' : '<i class="fa-solid fa-lock mr-1"></i> Approve (ຍັງບໍ່ທັນເພີ່ມລາຍເຊັນ)';
+        }
       } catch (e) { body.innerHTML = '<div class="mgmt-card-list-empty">' + esc(e.message || 'ໂຫຼດບໍ່ສຳເລັດ') + '</div>'; }
     }
     function dsmDetailClose() {
@@ -11813,16 +11800,31 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     function dsmDetailOpenPdfTab() { if (dsmDetailTarget) dsmOpenPdf(dsmDetailTarget.kind, dsmDetailTarget.id); }
     async function dsmDetailApprove() {
       if (!dsmDetailTarget) return;
+      if (!dsmHasSig()) { await dsmNeedSigPrompt(); return; }
       const t = dsmDetailTarget;
       dsmDetailClose();
       await dsmApprove(t.kind, t.id);
+    }
+    function dsmHasSig() { return !!(mySigCache && mySigCache.has); }
+    // ນຳທາງໄປໜ້າ Profile > ລາຍເຊັນຂອງຂ້ອຍ ເພື່ອເພີ່ມ E-signature
+    function dsmGoAddSignature() {
+      dsmDetailClose();
+      switchView('profile');
+      setTimeout(() => {
+        const c = document.getElementById('mySigCard');
+        if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.style.boxShadow = '0 0 0 3px #f59e0b'; setTimeout(() => { c.style.boxShadow = ''; }, 2500); }
+      }, 350);
+    }
+    async function dsmNeedSigPrompt() {
+      const go = await appConfirm('ທ່ານຍັງບໍ່ທັນເພີ່ມລາຍເຊັນ E-signature ຈຶ່ງ Approve ບໍ່ໄດ້. ໄປເພີ່ມລາຍເຊັນຕອນນີ້ເລີຍບໍ?', { title: 'ຍັງບໍ່ທັນເພີ່ມລາຍເຊັນ', confirmText: 'ໄປເພີ່ມລາຍເຊັນ', danger: false });
+      if (go) dsmGoAddSignature();
     }
     // DSM ກົດ Approve → server ດຶງລາຍເຊັນ E-signature ທີ່ບັນທຶກໄວ້ ໃສ່ໃນເອກະສານ (ບໍ່ຕ້ອງແຕ້ມລາຍເຊັນຕອນນີ້)
     async function dsmApprove(kind, id) {
       const r = (dsmSignData[kind] || []).find(x => Number(x.id) === Number(id));
       if (!r) return;
       const sig = await mySigFetch(true);
-      if (!sig || !sig.has) { appAlert('ທ່ານຍັງບໍ່ໄດ້ສ້າງລາຍເຊັນ E-signature — ໄປສ້າງທີ່ ຕັ້ງຄ່າ (Profile) > ລາຍເຊັນຂອງຂ້ອຍ ກ່ອນ ແລ້ວຈຶ່ງ Approve'); return; }
+      if (!sig || !sig.has) { dsmNeedSigPrompt(); return; }
       const name = dsmSignData.dsm_name || (currentUser && currentUser.mde_name) || '';
       const ok = await appConfirm(`Approve ${r.doc_no || ''} ແລະໃຊ້ລາຍເຊັນ E-signature ຂອງທ່ານໃສ່ໃນເອກະສານ?`, { title: 'ຢືນຢັນ Approve', confirmText: 'Approve', danger: false });
       if (!ok) return;
@@ -11834,48 +11836,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         showAlert(d.message || 'Approve ແລ້ວ'); loadDsmSign();
       } catch (e) { appAlert(e.message || 'Approve ບໍ່ສຳເລັດ'); }
     }
-    let dsmCv = null, dsmCtx = null, dsmDirty = false, dsmDrawing = false, dsmLast = null;
-    function dsmSignOpen(kind, id) {
-      const r = (dsmSignData[kind] || []).find(x => Number(x.id) === Number(id));
-      if (!r) return;
-      dsmSignTarget = { kind, id: Number(id) };
-      document.getElementById('dsmSignModalTitle').textContent = 'ເຊັນ ' + (r.doc_no || '');
-      document.getElementById('dsmSignModalSub').textContent = (r.outlet_name || '') + ' · ' + (r.mde_code || '');
-      document.getElementById('dsmSignName').value = dsmSignData.dsm_name || (currentUser && currentUser.mde_name) || '';
-      document.getElementById('dsmSignModal').style.display = 'flex';
-      dsmCv = document.getElementById('dsmSignCanvas'); dsmCtx = dsmCv.getContext('2d');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3), w = dsmCv.clientWidth || 300, h = dsmCv.clientHeight || 170;
-      dsmCv.width = Math.round(w * dpr); dsmCv.height = Math.round(h * dpr);
-      dsmCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      dsmCtx.lineWidth = 2.4; dsmCtx.lineCap = 'round'; dsmCtx.lineJoin = 'round'; dsmCtx.strokeStyle = '#0b1020'; dsmCtx.fillStyle = '#0b1020';
-      dsmDirty = false;
-      if (!dsmCv._bound) {
-        dsmCv._bound = true;
-        const pos = e => { const b = dsmCv.getBoundingClientRect(); return { x: e.clientX - b.left, y: e.clientY - b.top }; };
-        dsmCv.addEventListener('pointerdown', e => { e.preventDefault(); dsmCv.setPointerCapture(e.pointerId); dsmDrawing = true; dsmLast = pos(e); dsmDirty = true; dsmCtx.beginPath(); dsmCtx.arc(dsmLast.x, dsmLast.y, 1.3, 0, Math.PI * 2); dsmCtx.fill(); });
-        dsmCv.addEventListener('pointermove', e => { if (!dsmDrawing) return; e.preventDefault(); const p = pos(e); dsmCtx.beginPath(); dsmCtx.moveTo(dsmLast.x, dsmLast.y); dsmCtx.lineTo(p.x, p.y); dsmCtx.stroke(); dsmLast = p; });
-        const stop = () => { dsmDrawing = false; dsmLast = null; };
-        dsmCv.addEventListener('pointerup', stop); dsmCv.addEventListener('pointercancel', stop); dsmCv.addEventListener('pointerleave', stop);
-      }
-    }
-    function dsmSignClear() { if (dsmCtx) { dsmCtx.clearRect(0, 0, dsmCv.width, dsmCv.height); dsmDirty = false; } }
-    function dsmSignClose() { document.getElementById('dsmSignModal').style.display = 'none'; dsmSignTarget = null; }
-    async function dsmSignSubmit() {
-      if (!dsmSignTarget) return;
-      const name = document.getElementById('dsmSignName').value.trim();
-      if (!name) return appAlert('ກະລຸນາໃສ່ຊື່ DSM');
-      if (!dsmDirty) return appAlert('ກະລຸນາເຊັນຊື່');
-      const btn = document.getElementById('dsmSignSubmitBtn'); btn.disabled = true;
-      try {
-        const res = await fetch('/api/dsm/sign', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: dsmSignTarget.kind, id: dsmSignTarget.id, signer_name: name, signature: dsmCv.toDataURL('image/png') }) });
-        const d = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(d.error || 'ບັນທຶກບໍ່ສຳເລັດ');
-        dsmSignClose(); showAlert(d.message || 'ບັນທຶກລາຍເຊັນແລ້ວ'); loadDsmSign();
-      } catch (e) { appAlert(e.message || 'ບັນທຶກບໍ່ສຳເລັດ'); }
-      finally { btn.disabled = false; }
-    }
-
     function enterApp(user) {
       // ຜູ້ຊ່ວຍ Admin (assistant_admin): UI ປະຕິບັດຄືກັບ admin ແຕ່ເຊື່ອງການຈັດການຜູ້ໃຊ້/ການລຶບ — ສິດຈິງຖືກບັງຄັບທີ່ server
       if (user && (user.role === 'assistant_admin' || user.isAssistantAdmin)) {
@@ -24617,7 +24577,7 @@ function assetStatusBadgeClass(status) {
           const reasonTxt = String(c.reasons || '').split(',').filter(Boolean).map((r) => CANCEL_REASON_LABEL[r] || r).join(', ');
           const done = c.status === 'completed';
           const cancelHint = (inQueue && c.status === 'awaiting_dsm' && (canViewAllRole || (currentUser && currentUser.mde_code && String(currentUser.mde_code).toUpperCase() === String(c.mde_code || '').toUpperCase())))
-            ? queueHintHtml('ກົດບັດນີ້ເພື່ອສົ່ງລິ້ງໃຫ້ DSM ເຊັນ', 'fa-hand-pointer') : '';
+            ? queueHintHtml('ລໍຖ້າ DSM Approve ໃນລະບົບ', 'fa-hand-pointer') : '';
           const cancelActions = [
             cancelHint ? '' : dsmActionHtml('cancel', c, isAdmin, canViewAllRole),
             done ? `<button type="button" class="btn-act btn-edit" onclick="openCancelContractPdf(${c.id})"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF</button>` : '',
@@ -24661,7 +24621,7 @@ function assetStatusBadgeClass(status) {
         const draftClick = inQueue && isDraft && !isAwaitingDsm && canSign; // ໃບຮ່າງ (ລະບົບສ້າງອັດຕະໂນມັດ) -> ກົດບັດເປີດ Step wizard
         const loanClick = (inQueue && isAwaitingDsm) || draftClick;
         const loanHint = !loanClick ? '' : (isAwaitingDsm
-          ? queueHintHtml(c.dsm_link_status === 'pending' ? 'ລໍຖ້າ DSM ເຊັນ — ກົດບັດນີ້ເພື່ອເບິ່ງ/ສົ່ງລິ້ງອີກຄັ້ງ' : 'ກົດບັດນີ້ເພື່ອສົ່ງລິ້ງໃຫ້ DSM ເຊັນ', 'fa-hand-pointer')
+          ? queueHintHtml(c.dsm_link_status === 'pending' ? 'ລໍຖ້າ DSM Approve ໃນລະບົບ' : 'ລໍຖ້າ DSM Approve ໃນລະບົບ', 'fa-hand-pointer')
           : queueHintHtml('ກົດບັດນີ້ເພື່ອເຊັນຮັບ (MDE)', 'fa-signature'));
         const loanClickFn = !isDraft ? `openLoanContractPdf(${c.id})` : (isAwaitingDsm ? `dsmWaitOpenFromList('loan', ${c.id})` : `loanOpenDraftWizard(${c.id})`);
         return `
@@ -24699,76 +24659,23 @@ function assetStatusBadgeClass(status) {
 
     function dsmChipHtml(c) {
       if (c.sig_dsm_at || c.dsm_link_status === 'signed') {
-        return `<span style="color:#15803d;"><i class="fa-solid fa-circle-check"></i>DSM ເຊັນແລ້ວ${c.sig_dsm_name ? ' · ' + esc(c.sig_dsm_name) : ''}</span>`;
+        return `<span style="color:#15803d;"><i class="fa-solid fa-circle-check"></i>DSM Approve ແລ້ວ${c.sig_dsm_name ? ' · ' + esc(c.sig_dsm_name) : ''}</span>`;
       }
-      if (c.dsm_link_status === 'pending') return '<span style="color:#b45309;"><i class="fa-solid fa-hourglass-half"></i>ລໍຖ້າ DSM ເຊັນ</span>';
-      if (c.dsm_link_status === 'expired') return '<span style="color:#b91c1c;"><i class="fa-solid fa-clock"></i>ລິ້ງ DSM ໝົດອາຍຸ</span>';
-      if (c.status === 'awaiting_dsm') return '<span style="color:#b45309;"><i class="fa-solid fa-hourglass-half"></i>ລໍຖ້າ DSM ເຊັນ — ຍັງບໍ່ໄດ້ສົ່ງລິ້ງ</span>';
+      if (c.dsm_link_status === 'pending' || c.dsm_link_status === 'expired' || c.status === 'awaiting_dsm') return '<span style="color:#b45309;"><i class="fa-solid fa-hourglass-half"></i>ລໍຖ້າ DSM Approve</span>';
       return '';
     }
 
     // ປຸ່ມ: ຍັງບໍ່ເຊັນ = ສົ່ງລິ້ງ DSM / ສົ່ງລິ້ງໃໝ່ | ເຊັນແລ້ວ = ບໍ່ມີປຸ່ມ
-    function dsmActionHtml(kind, c, isAdmin, canViewAllRole) {
-      const mine = currentUser && currentUser.mde_code && String(currentUser.mde_code).toUpperCase() === String(c.mde_code || '').toUpperCase();
-      if (!canViewAllRole && !mine) return '';
-      const signed = !!(c.sig_dsm_at || c.dsm_link_status === 'signed');
-      if (signed) return ''; // DSM ເຊັນແລ້ວ — ບໍ່ມີປຸ່ມ "ລ້າງລາຍເຊັນ DSM" ໃນລາຍການອີກ (ລາຍເຊັນຢູ່ໃນ PDF ແລ້ວ)
-      if (c.status === 'completed') return ''; // ເອກະສານສຳເລັດແລ້ວ — ຜ່ານຂັ້ນ DSM ໄປແລ້ວ ບໍ່ຕ້ອງມີປຸ່ມສົ່ງລິ້ງ
-      const label = c.dsm_link_status ? 'ສົ່ງລິ້ງ DSM ໃໝ່' : 'ສົ່ງລິ້ງ DSM';
-      // MDE ເຊັນແລ້ວ ລໍຖ້າ DSM -> ເປີດສະເຕັບ 5 ຂອງ wizard (ຄ້າງຢູ່ "ລໍຖ້າ DSM ເຊັນ", ກັບຄືນບໍ່ໄດ້); ໃບຮ່າງອື່ນໆ ໃຊ້ໜ້າຕ່າງເດີມ
-      if (c.status === 'awaiting_dsm') {
-        return `<button type="button" class="btn-act btn-edit" onclick="dsmWaitOpenFromList('${kind}', ${c.id})"><i class="fa-solid fa-user-tie mr-1"></i> ${label}</button>`;
-      }
-      return `<button type="button" class="btn-act btn-edit" onclick="openDsmLinkModal('${kind}', ${c.id})"><i class="fa-solid fa-user-tie mr-1"></i> ${label}</button>`;
-    }
+    // ປິດການເຊັນຜ່ານລິ້ງແລ້ວ: ບໍ່ມີປຸ່ມ "ສົ່ງລິ້ງ DSM" — DSM ກົດ Approve ໃນລະບົບເອງ
+    function dsmActionHtml(kind, c, isAdmin, canViewAllRole) { return ''; }
 
     let dsmLinkLast = null;
 
     let dsmLinkCurrent = null; // { kind, id, contractObj, intro } — ໃຊ້ຕອນກົດ "ສ້າງລິ້ງໃໝ່"
+    // ປິດການເຊັນຜ່ານລິ້ງແລ້ວ — ແຈ້ງໃຫ້ຮູ້ວ່າ DSM ຕ້ອງ login ແລ້ວ Approve ໃນລະບົບ (ບໍ່ສ້າງລິ້ງອີກ)
     async function openDsmLinkModal(kind, id, contractObj, intro, regenerate) {
-      const list = kind === 'cancel' ? dbCancelHistory : dbLoanContractHistory;
-      const c = contractObj || (list || []).find(x => x.id === id);
-      if (!c) return;
-      const introEl = document.getElementById('dsmLinkIntro');
-      introEl.textContent = intro || '';
-      introEl.classList.toggle('hidden', !intro);
-      dsmLinkCurrent = { kind, id, contractObj, intro };
-      // ມີລິ້ງເກົ່າທີ່ຍັງໃຊ້ໄດ້ -> ສະແດງລິ້ງເດີມ (ບໍ່ອອກໃໝ່); ຈະອອກລິ້ງໃໝ່ກໍຕໍ່ເມື່ອກົດ "ສ້າງລິ້ງໃໝ່"
-      dsmLinkLast = null;
-      document.getElementById('dsmLinkDocInfo').textContent = `${c.doc_no || ('#' + c.id)} — ${c.outlet_name || '-'} (${c.mde_code || '-'})`;
-      document.getElementById('dsmLinkBox').classList.add('hidden');
-      document.getElementById('dsmLinkMsg').classList.add('hidden');
-      document.getElementById('dsmLinkBusy').classList.remove('hidden');
-      document.getElementById('dsmLinkModal').classList.remove('hidden');
-      const msgEl = document.getElementById('dsmLinkMsg');
-      try {
-        const res = await fetch('/api/dsm-sign-links/create', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind, id, regenerate: !!regenerate })
-        });
-        const data = await res.json().catch(() => ({}));
-        document.getElementById('dsmLinkBusy').classList.add('hidden');
-        if (!res.ok) { msgEl.textContent = data.error || 'ສ້າງລິ້ງບໍ່ສຳເລັດ'; msgEl.classList.remove('hidden'); return; }
-        dsmLinkLast = {
-          url: data.url,
-          phone: dsmPhoneDigits(data.dsm_phone),
-          text: `ກະລຸນາກົດລິ້ງເພື່ອກວດ ແລະ ເຊັນ ${data.title || 'ເອກະສານ'} ${data.doc_no || ''}${c.outlet_name ? ' (' + c.outlet_name + ')' : ''}: ${data.url}`,
-        };
-        document.getElementById('dsmLinkTitle').textContent = `ລິ້ງເຊັນ DSM${data.dsm_name ? ' — ' + data.dsm_name : ''} · ${data.doc_no || ''}`;
-        document.getElementById('dsmLinkInput').value = data.url;
-        document.getElementById('dsmLinkExpire').textContent = (data.expires_at && !String(data.expires_at).startsWith('9999') ? `ໝົດອາຍຸ: ${fmtLaoTs(data.expires_at)} (GMT+7)` : '') + (data.reused ? ' · ລິ້ງເດີມ (ເຄີຍສ້າງໄວ້ແລ້ວ)' : ' · ລິ້ງໃໝ່');
-        document.getElementById('dsmLinkBox').classList.remove('hidden');
-        // ມີເບີ DSM (ຈາກ DSM List) -> ສະແດງປຸ່ມສົ່ງ WhatsApp/SMS ຫາ DSM ໂດຍກົງ (ເປີດແອັບພ້ອມຂໍ້ຄວາມ — ຜູ້ໃຊ້ກົດສົ່ງເອງ)
-        document.getElementById('dsmLinkDirect').classList.toggle('hidden', !dsmLinkLast.phone);
-        c.dsm_link_status = 'pending';
-        filterLoanContractHistory();
-      } catch (err) {
-        document.getElementById('dsmLinkBusy').classList.add('hidden');
-        msgEl.textContent = 'ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'; msgEl.classList.remove('hidden');
-      }
+      appAlert('ເອກະສານນີ້ລໍຖ້າ DSM ຂອງທີມທ່ານ Approve ໃນລະບົບ — DSM ເຂົ້າສູ່ລະບົບ ແລ້ວກົດ Approve ໃນເມນູ "Approve ເອກະສານ DSM" (ປິດການເຊັນຜ່ານລິ້ງແລ້ວ ຈຶ່ງບໍ່ຕ້ອງສົ່ງລິ້ງ)');
     }
-
-    // ເບີ DSM -> ຮູບແບບສາກົນ (ລາວ +856). 020 xxxx xxxx -> 85620xxxxxxxx ; ບໍ່ມີເບີ -> ''
     async function dsmLinkRegenerate() {
       const cur = dsmLinkCurrent;
       if (!cur) return;
@@ -24795,7 +24702,7 @@ function assetStatusBadgeClass(status) {
     // ຫຼັງ MDE ເຊັນແລ້ວ ໃບຈະເປັນ "ລໍຖ້າ DSM ເຊັນ" -> ເດັ້ງໜ້າຕ່າງສ້າງລິ້ງໃຫ້ທັນທີ (ແຈ້ງເຕືອນໃຫ້ສົ່ງຕໍ່ໃຫ້ DSM ຂອງຕົນ)
     function promptDsmLinkAfterSign(kind, contract) {
       if (!contract || contract.status !== 'awaiting_dsm') return false;
-      openDsmLinkModal(kind, contract.id, contract, 'ເຊັນແລ້ວ ✔ — ເອກະສານນີ້ຍັງບໍ່ສຳເລັດ ຈົນກວ່າ DSM ຈະເຊັນ. ກະລຸນາສົ່ງລິ້ງຂ້າງລຸ່ມໃຫ້ DSM ຂອງທ່ານເຊັນ');
+      openDsmLinkModal(kind, contract.id, contract, 'ເຊັນແລ້ວ ✔ — ລໍຖ້າ DSM Approve ໃນລະບົບ');
       return true;
     }
 
@@ -24860,7 +24767,7 @@ function assetStatusBadgeClass(status) {
       document.getElementById('dsmWaitBusy').classList.add('hidden');
       document.getElementById('dsmWaitBox').classList.add('hidden');
       document.getElementById('dsmWaitMsg').classList.add('hidden');
-      document.getElementById('dsmWaitExisting').classList.toggle('hidden', autoCreate || !ctx.hasLink);
+      document.getElementById('dsmWaitExisting').classList.add('hidden');
       dsmLinkLast = null;
       document.getElementById('dsmStep4Section').classList.remove('hidden');
       document.getElementById('dsmStep5Section').classList.add('hidden');
@@ -24868,7 +24775,6 @@ function assetStatusBadgeClass(status) {
       document.getElementById('dsmWaitPanel').classList.remove('hidden');
       window.scrollTo({ top: 0 });
       if (contract.status === 'completed') { dsmShowStep5(); return; }
-      if (autoCreate) dsmWaitCreateLink(false);
     }
 
     // ສະເຕັບ 5: ສະຫຼຸບ + PDF (DSM ເຊັນແລ້ວ ໃບສຳເລັດ)
@@ -24941,54 +24847,12 @@ function assetStatusBadgeClass(status) {
       document.getElementById('loanSubBar').classList.remove('dsm-locked');
     }
 
-    async function dsmWaitCreateLink(force) {
-      const ctx = dsmWaitCtx;
-      if (!ctx || ctx.busy) return;
-      if (force && ctx.hasLink && !await appConfirm('ສ້າງລິ້ງໃໝ່? ລິ້ງເກົ່າທີ່ສົ່ງໃຫ້ DSM ໄປແລ້ວຈະໃຊ້ບໍ່ໄດ້ທັນທີ', { danger: false })) return;
-      if (dsmWaitCtx !== ctx) return;
-      const c = ctx.contract;
-      const msgEl = document.getElementById('dsmWaitMsg');
-      ctx.busy = true;
-      document.getElementById('dsmWaitBox').classList.add('hidden');
-      document.getElementById('dsmWaitExisting').classList.add('hidden');
-      msgEl.classList.add('hidden');
-      document.getElementById('dsmWaitBusy').classList.remove('hidden');
-      try {
-        const res = await fetch('/api/dsm-sign-links/create', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ kind: ctx.kind, id: c.id, regenerate: !!force })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (dsmWaitCtx !== ctx) return; // ອອກຈາກສະເຕັບນີ້ໄປແລ້ວ
-        document.getElementById('dsmWaitBusy').classList.add('hidden');
-        if (!res.ok) { msgEl.textContent = data.error || 'ສ້າງລິ້ງບໍ່ສຳເລັດ'; msgEl.classList.remove('hidden'); return; }
-        ctx.hasLink = true;
-        c.dsm_link_status = 'pending';
-        dsmLinkLast = {
-          url: data.url,
-          phone: dsmPhoneDigits(data.dsm_phone),
-          inputId: 'dsmWaitLinkInput',
-          text: `ກະລຸນາກົດລິ້ງເພື່ອກວດ ແລະ ເຊັນ ${data.title || 'ເອກະສານ'} ${data.doc_no || ''}${c.outlet_name ? ' (' + c.outlet_name + ')' : ''}: ${data.url}`,
-        };
-        document.getElementById('dsmWaitLinkTitle').textContent = `ລິ້ງເຊັນ DSM${data.dsm_name ? ' — ' + data.dsm_name : ''} · ${data.doc_no || ''}`;
-        document.getElementById('dsmWaitLinkInput').value = data.url;
-        document.getElementById('dsmWaitExpire').textContent = (data.expires_at && !String(data.expires_at).startsWith('9999') ? `ໝົດອາຍຸ: ${fmtLaoTs(data.expires_at)} (GMT+7)` : '') + (data.reused ? ' · ລິ້ງເດີມ (ເຄີຍສ້າງໄວ້ແລ້ວ)' : ' · ລິ້ງໃໝ່');
-        document.getElementById('dsmWaitDirect').classList.toggle('hidden', !dsmLinkLast.phone);
-        document.getElementById('dsmWaitBox').classList.remove('hidden');
-      } catch (err) {
-        if (dsmWaitCtx !== ctx) return;
-        document.getElementById('dsmWaitBusy').classList.add('hidden');
-        msgEl.textContent = 'ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'; msgEl.classList.remove('hidden');
-      } finally {
-        ctx.busy = false;
-      }
-    }
+    async function dsmWaitCreateLink(force) { return; } // ປິດການເຊັນຜ່ານລິ້ງແລ້ວ
 
     // ກົດ "ສຳເລັດ": ອອກຈາກ wizard -> ແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" (ໃບຄ້າງຢູ່ "ລໍຖ້າ DSM ເຊັນ")
     function dsmWaitFinish() {
       const ctx = dsmWaitCtx;
       if (!ctx || ctx.busy) return;
-      if (!ctx.hasLink && ctx.contract.status !== 'completed') { appAlert('ກະລຸນາສ້າງລິ້ງ ແລະ ສົ່ງໃຫ້ DSM ກ່ອນກົດ "ສຳເລັດ"'); return; }
       loanGoQueueAfterClose = true;
       dsmWaitHide();
       loanCloseSubpage();
@@ -30221,7 +30085,7 @@ function assetStatusBadgeClass(status) {
       const noteBox = (bg, fg, html) => raw(`<div style="background:${bg}; color:${fg}; border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.6; text-align:left; white-space:normal;">${html}</div>`);
       if (codeLocked) {
         const stepHint = r.loan_state === 'none' ? 'ຍັງບໍ່ໄດ້ອອກໃບສັນຍາຢືມ — ກົດ "ໄປໜ້າເຊັນເອກະສານ" ເພື່ອອອກໃບ'
-          : (r.loan_state === 'awaiting_dsm' ? 'ໃບສັນຍາລໍຖ້າ DSM ເຊັນ — ກົດ "ໄປໜ້າເຊັນເອກະສານ" ເພື່ອສົ່ງລິ້ງໃຫ້ DSM'
+          : (r.loan_state === 'awaiting_dsm' ? 'ໃບສັນຍາລໍຖ້າ DSM Approve ໃນລະບົບ'
           : 'ມີໃບສັນຍາແລ້ວ ແຕ່ຍັງເຊັນບໍ່ຄົບ — ກົດ "ໄປໜ້າເຊັນເອກະສານ" ເພື່ອເຊັນໃຫ້ຄົບ');
         fields.push(['ຄຳອະທິບາຍ', noteBox('#FFF7E6', '#7a4a06',
           `<b>✅ ຄຳຂໍນີ້ຖືກອະນຸມັດແລ້ວ</b> ແຕ່ຍັງບໍ່ໄດ້ລະຫັດຕູ້.<br>ຕ້ອງເຮັດຂັ້ນຕອນເຊັນເອກະສານໃຫ້ຄົບກ່ອນ (ອອກໃບສັນຍາຢືມ → MDE ເຊັນ → DSM ເຊັນ) ຈຶ່ງຈະໄດ້ຮັບລະຫັດຕູ້ (QR Code / Serial / CapEx).<br><b>ຕອນນີ້:</b> ${stepHint}`)]);
