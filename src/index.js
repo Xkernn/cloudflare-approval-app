@@ -2380,22 +2380,29 @@ async function emailCompletedContractToMde(env, kind, contract) {
     const qr = doc.qr_cd || "", sn = doc.serial_no || "";
     const outletLine = `${doc.outlet_code ? doc.outlet_code + " - " : ""}${doc.outlet_name || ""}`.trim();
     const cooler = [qr ? `QR: ${qr}` : "", sn ? `Serial: ${sn}` : "", doc.capx ? `CapEx: ${doc.capx}` : ""].filter(Boolean).join(" · ");
+    // ຮູບແບບອີເມວມາດຕະຖານ: Dear ... / ເນື້ອໃນ / Best regards, / Cooler Team / xaisanasin
+    const dearName = mdeName ? `${code} - ${mdeName}` : code;
     const lines = [
-      `ເຖິງ ${mdeName ? code + " - " + mdeName : code}`,
+      `Dear ${dearName},`,
       "",
       `${cfg.title} ${docNo} ເຊັນຄົບທຸກຝ່າຍແລ້ວ.`,
       outletLine ? `ຮ້ານ: ${outletLine}` : "",
       cooler ? `ລະຫັດຕູ້: ${cooler}` : "",
       "",
       "ກະລຸນານຳໄຟລ໌ PDF ທີ່ແນບມານີ້ ໄປຊັບມິດ (Submit) ໃນ Power App.",
+      "",
+      "Best regards,",
+      "Cooler Team",
+      "xaisanasin",
     ].filter((x, i, a) => x !== "" || (i > 0 && a[i - 1] !== ""));
     const e = escMailHtml;
-    const html = `<div style="font-family:Arial,sans-serif;max-width:520px">
-      <p>ເຖິງ <b>${e(mdeName ? code + " - " + mdeName : code)}</b></p>
+    const html = `<div style="font-family:Arial,sans-serif;max-width:560px;font-size:14px;line-height:1.6;color:#111827">
+      <p>Dear <b>${e(dearName)}</b>,</p>
       <p>${e(cfg.title)} <b>${e(docNo)}</b> ເຊັນຄົບທຸກຝ່າຍແລ້ວ.</p>
-      ${outletLine ? `<p>ຮ້ານ: <b>${e(outletLine)}</b></p>` : ""}
-      ${cooler ? `<p>ລະຫັດຕູ້: <b>${e(cooler)}</b></p>` : ""}
-      <p style="background:#ecfeff;border:1px solid #67e8f9;padding:10px 12px;border-radius:8px">ກະລຸນານຳໄຟລ໌ PDF ທີ່ແນບມານີ້ ໄປ <b>ຊັບມິດ (Submit) ໃນ Power App</b>.</p></div>`;
+      ${outletLine ? `<p style="margin:0">ຮ້ານ: <b>${e(outletLine)}</b></p>` : ""}
+      ${cooler ? `<p style="margin:0">ລະຫັດຕູ້: <b>${e(cooler)}</b></p>` : ""}
+      <p style="background:#ecfeff;border:1px solid #67e8f9;padding:10px 12px;border-radius:8px;margin:14px 0">ກະລຸນານຳໄຟລ໌ PDF ທີ່ແນບມານີ້ ໄປ <b>ຊັບມິດ (Submit) ໃນ Power App</b>.</p>
+      <p style="margin:18px 0 0">Best regards,<br>Cooler Team<br>xaisanasin</p></div>`;
     await sendEmail(env, {
       to,
       subject: `ເຊັນຄົບແລ້ວ — ${outletLine || docNo}${qr ? " (QR " + qr + ")" : ""} · ກະລຸນາຊັບມິດ Power App`,
