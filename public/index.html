@@ -716,6 +716,8 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic'||u==='c
     .dh-check.disabled { visibility: hidden; }
     .data-card.dh-selected { background: #EEF8FA; box-shadow: inset 0 0 0 1.5px var(--primary); }
     .at-btn-primary:hover { background: var(--primary-hover); }
+    #btnNewRequest.at-btn { height: 54px; padding: 0 28px; font-size: 17px; font-weight: 700; border-radius: 12px; }
+    #btnNewRequest.at-btn i { font-size: 18px; }
     .at-btn-link { background: transparent; color: var(--text-muted); height: 34px; padding: 0 8px; }
     .at-btn-link:hover { color: var(--danger); }
     .at-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
@@ -5999,7 +6001,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             </div>
             <div class="at-actions">
               <button id="btnNewRequest" type="button" class="at-btn at-btn-primary hidden" onclick="openRequestModal()">
-                <i class="fa-solid fa-plus"></i> <span>ສົ່ງຄຳຂໍ Asset ໃໝ່</span>
+                <i class="fa-solid fa-plus"></i> <span>ຂໍລະຫັດຕູ້ແຊ່</span>
               </button>
             </div>
           </div>
@@ -6195,7 +6197,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <summary><i class="fa-solid fa-clipboard-list guide-ico"></i> 2. ສົ່ງຄຳຂໍເບີກ Asset ໃໝ່ (Asset Request)</summary>
           <div class="guide-body">
             <ol>
-              <li>ເຂົ້າເມນູ <b>Asset Request</b> ແລ້ວກົດປຸ່ມ <b>ສົ່ງຄຳຂໍ Asset ໃໝ່</b></li>
+              <li>ເຂົ້າເມນູ <b>Asset Request</b> ແລ້ວກົດປຸ່ມ <b>ຂໍລະຫັດຕູ້ແຊ່</b></li>
               <li>ປ້ອນ <b>Outlet Code</b> - ລະບົບດຶງ <b>Outlet Name</b> ຈາກ Outlet Master Data ໃຫ້ອັດຕະໂນມັດ (ແກ້ເອງບໍ່ໄດ້). ຖ້າຮ້ານ<b>ບໍ່ມີ Outlet Code</b> ໃຫ້ຕິກ <b>"ຮ້ານນີ້ບໍ່ມີ Outlet Code"</b> ແລ້ວພິມຊື່ຮ້ານ ແລະ ຕື່ມຂໍ້ມູນຮ້ານໃຫ້ຄົບ (ຊື່ເຈົ້າຂອງຮ້ານ, ປະເພດ, ລະດັບຮ້ານ, ແຂວງ, ບ້ານ, ເມືອງ, ເບີໂທຜູ້ຕິດຕໍ່)</li>
               <li>ເລືອກ <b>ສະພາບ</b>:
                 <ul style="margin-top:6px;">
@@ -7897,7 +7899,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
   <!-- ==================== MODAL (ສົ່ງຄຳຂໍ ASSET REQUEST ໃໝ່) ==================== -->
   <div id="requestModal" class="modal-overlay hidden">
     <div class="modal-card">
-      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ສົ່ງຄຳຂໍ Asset ໃໝ່</h3>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">ຂໍລະຫັດຕູ້ແຊ່</h3>
 
       <div class="form-group">
         <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
@@ -11209,7 +11211,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       request: { icon: 'fa-clipboard-list', title: 'Asset Request',
         intro: 'ໜ້ານີ້ໃຊ້ຂໍຕູ້ແຊ່ໃໝ່ ແລະ ເບິ່ງຄຳຂໍທີ່ສົ່ງໄປແລ້ວ.',
         steps: [
-          { target: 'btnNewRequest', icon: 'fa-plus', title: 'ສົ່ງຄຳຂໍ Asset ໃໝ່', text: 'ກົດເພື່ອເລືອກຮ້ານ ແລະ ຕູ້ທີ່ຕ້ອງການ ແລ້ວສົ່ງຄຳຂໍໃຫ້ admin ກວດ ແລະ ອະນຸມັດ.', optional: true },
+          { target: 'btnNewRequest', icon: 'fa-plus', title: 'ຂໍລະຫັດຕູ້ແຊ່', text: 'ກົດເພື່ອເລືອກຮ້ານ ແລະ ຕູ້ທີ່ຕ້ອງການ ແລ້ວສົ່ງຄຳຂໍໃຫ້ admin ກວດ ແລະ ອະນຸມັດ.', optional: true },
           { sel: '#view-asset-request .at-search', icon: 'fa-magnifying-glass', title: 'ຄົ້ນຫາ', text: 'ຄົ້ນຫາດ້ວຍ Outlet, MDE, Brand ຫຼື Type.', optional: true },
           { target: 'requestConditionPills', icon: 'fa-list-check', title: 'ກອງຕາມສະພາບ', text: 'ກົດເລືອກສະພາບຂອງຄຳຂໍ ເພື່ອເບິ່ງສະເພາະກຸ່ມນັ້ນ.', optional: true },
           { sel: '#view-asset-request .at-toolbar-filters', icon: 'fa-filter', title: 'ກອງ Brand / Type', text: 'ເລືອກ Brand ຫຼື Type ຂອງຕູ້. ກົດ "ລ້າງ Filter" ເພື່ອເລີ່ມໃໝ່.' }
@@ -28994,8 +28996,9 @@ function assetStatusBadgeClass(status) {
       // role user ມີຄຳຂໍໜ້ອຍ: ເຊື່ອມຊ່ອງຄົ້ນຫາ + pill (ຄ່າກອງຖືກລ້າງເປັນ "ທັງໝົດ" ທຸກຄັ້ງທີ່ເປີດໜ້າ)
       const reqSimple = currentUser.role === 'user';
       document.querySelector('#view-asset-request .at-search').classList.toggle('hidden', reqSimple);
-      document.getElementById('requestConditionPills').classList.toggle('hidden', reqSimple);
-      document.getElementById('requestStagePills').classList.toggle('hidden', reqSimple);
+      // ເອົາ pill ອອກທຸກ role (ຄ່າກອງ requestConditionFilter/requestStageFilter ຖືກລ້າງເປັນ '' ທຸກຄັ້ງທີ່ເປີດໜ້າ)
+      document.getElementById('requestConditionPills').classList.add('hidden');
+      document.getElementById('requestStagePills').classList.add('hidden');
       document.getElementById('requestPageDesc').textContent = canManage
         ? (currentUser.role === 'warehouse'
             ? 'ຄຳຂໍທີ່ Admin ກວດສອບແລ້ວ — ສາງອະນຸມັດ ແລະ ໃສ່ລະຫັດຕູ້ (ຂັ້ນ 2)'
