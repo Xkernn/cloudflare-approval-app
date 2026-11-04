@@ -2293,14 +2293,22 @@ async function applyLoanContractSignatures(env, id, row, body) {
     }
   }
   const ownerDoc = planOwnerDocUpload("loan-contract", id, row, body, stamp, toUpload);
+  // ແຜນຜັງຈຸດວາງຕູ້ແຊ່ (PNG ຈາກ canvas ຝັ່ງໜ້າ) -> R2 ແລ້ວເກັບ key ໃນ loan_contracts.layout_plan; ບໍ່ສົ່ງມາ = ໃຊ້ແຜນຜັງເດີມ
+  let layoutKey = null;
+  if (typeof body.layout_plan === "string" && body.layout_plan.startsWith("data:image/")) {
+    layoutKey = `loan-contract/${id}/layout-${stamp}.png`;
+    toUpload.push([body.layout_plan, layoutKey]);
+  }
   if (!toUpload.length) return row;
   // savePhotosToR2 ອັບໂຫລດທັງໝົດ ຫຼື throw (ບໍ່ອັບແຕ່ບາງສ່ວນ) — ຖ້າສຳເລັດ key ທຸກອັນທີ່ສົ່ງໄປແມ່ນຖືກບັນທຶກແລ້ວ
   await savePhotosToR2(env, toUpload);
   const oldKeysToDelete = sigSlots.filter((s) => newKeys[s] && row[`sig_${s}`]).map((s) => row[`sig_${s}`]);
   if (ownerDoc && row.owner_doc_photo) oldKeysToDelete.push(row.owner_doc_photo);
+  if (layoutKey && row.layout_plan) oldKeysToDelete.push(row.layout_plan);
 
   const sets = [];
   const vals = [];
+  if (layoutKey) sets.push("layout_plan = ?"), vals.push(layoutKey);
   for (const slot of sigSlots) {
     if (newKeys[slot]) {
       sets.push(`sig_${slot} = ?`, `sig_${slot}_name = ?`, `sig_${slot}_at = CURRENT_TIMESTAMP`);
@@ -11948,7 +11956,7 @@ export default {
                     contract_type, handover_type, status, created_by, created_at,
                     capx, doors, door_variant, old_doc_no, old_outlet_code, old_outlet_name, move_reason,
                     sales_beer, sales_premium, sales_csd_energy, sales_water_soda,
-                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, ${dsmLinkStatusSql('loan', 'loan_contracts')}
+                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, (layout_plan IS NOT NULL) AS has_layout_plan, ${dsmLinkStatusSql('loan', 'loan_contracts')}
              FROM loan_contracts ORDER BY id DESC LIMIT ?`
           ).bind(limit).all()
         : await env.DB.prepare(
@@ -11956,7 +11964,7 @@ export default {
                     contract_type, handover_type, status, created_by, created_at,
                     capx, doors, door_variant, old_doc_no, old_outlet_code, old_outlet_name, move_reason,
                     sales_beer, sales_premium, sales_csd_energy, sales_water_soda,
-                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, ${dsmLinkStatusSql('loan', 'loan_contracts')}
+                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, (layout_plan IS NOT NULL) AS has_layout_plan, ${dsmLinkStatusSql('loan', 'loan_contracts')}
              FROM loan_contracts WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) ORDER BY id DESC LIMIT ?`
           ).bind(session.mde_code, limit).all();
       return Response.json(rows.results || []);
@@ -11975,7 +11983,7 @@ export default {
 
       await env.DB.prepare("DELETE FROM loan_contracts WHERE id = ?").bind(id).run();
       await deleteDsmLinks(env, "loan", row.id);
-      await deleteR2Photos(env, [row.sig_old_outlet, row.sig_mde, row.sig_dsm, row.sig_admin, row.sig_outlet, row.owner_doc_photo]);
+      await deleteR2Photos(env, [row.sig_old_outlet, row.sig_mde, row.sig_dsm, row.sig_admin, row.sig_outlet, row.owner_doc_photo, row.layout_plan]);
       return Response.json({ message: "ລຶບໃບສັນຍາຢືມຮຽບຮ້ອຍແລ້ວ" });
     }
 
@@ -12110,7 +12118,7 @@ export default {
             const docNo = `DOC${String(newId).padStart(4, "0")}`;
             await env.DB.prepare("UPDATE loan_contracts SET doc_no = ? WHERE id = ?").bind(docNo, newId).run();
             row = await env.DB.prepare("SELECT * FROM loan_contracts WHERE id = ?").bind(newId).first();
-            if (body.sig_mde || body.sig_admin || body.sig_outlet || body.sig_old_outlet) {
+            if (body.sig_mde || body.sig_admin || body.sig_outlet || body.sig_old_outlet || body.layout_plan) {
               row = await applyLoanContractSignatures(env, newId, row, body);
             }
 
@@ -12177,7 +12185,7 @@ export default {
             sales_csd_energy: body.sales_csd_energy, sales_water_soda: body.sales_water_soda,
           });
           // ຖ້າສົ່ງລາຍເຊັນມາພ້ອມຕອນສ້າງເລີຍ (ອອກໃບຄັ້ງດຽວຄົບ) — ອັບໂຫລດ+ບັນທຶກທັນທີ ບໍ່ຕ້ອງເອີ້ນຄືນ
-          if (row && (body.sig_mde || body.sig_admin || body.sig_outlet || body.sig_old_outlet)) {
+          if (row && (body.sig_mde || body.sig_admin || body.sig_outlet || body.sig_old_outlet || body.layout_plan)) {
             row = await applyLoanContractSignatures(env, row.id, row, body);
           }
         } else {
@@ -12326,6 +12334,7 @@ export default {
           sig_admin: body.sig_admin || null, sig_admin_name: body.sig_admin_name || null, sig_admin_at: body.sig_admin ? now : null,
           sig_outlet: body.sig_outlet || null, sig_outlet_name: body.sig_outlet_name || null, sig_outlet_at: body.sig_outlet ? now : null,
           sig_old_outlet: body.sig_old_outlet || null, sig_old_outlet_name: body.sig_old_outlet_name || null,
+          layout_plan: body.layout_plan || null,
         };
 
         const pdfBytes = await buildLoanPdf(env, row, { preview: true });

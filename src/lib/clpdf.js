@@ -275,13 +275,28 @@ export async function buildLoanPdf(env, d, opts = {}) {
   cells(p1, d.serial_no, 338.3, { size: 9.5 });
   cells(p1, d.capx, 321.2, { size: 9.5 });
 
+  // ແຜນຜັງຈຸດວາງຕູ້ແຊ່ — ກ່ອງຂາວເບື້ອງຊ້າຍໃຕ້ຂໍ້ຄວາມ "ດັ່ງໃນແຜນຜັງລຸ່ມນີ້" (ພິກັດວັດຈາກ loan.pdf, ສັດສ່ວນ 238:91.5)
+  {
+    const lp = opts.preview ? readInline(d.layout_plan) : await readR2(env, d.layout_plan);
+    if (lp) {
+      try {
+        const im = await pdf.embedPng(lp);
+        const B = { x: 83, y: 183, w: 238, h: 91.5 };
+        const k = Math.min(B.w / im.width, B.h / im.height);
+        const w = im.width * k;
+        const h = im.height * k;
+        p1.drawImage(im, { x: B.x + (B.w - w) / 2, y: B.y + (B.h - h) / 2, width: w, height: h });
+      } catch { /* ຮູບແຜນຜັງເສຍ — ປະກ່ອງຫວ່າງ */ }
+    }
+  }
+
   // ກ່ອງ "ສະເພາະຕູ້ແຊ່ຖືກເຄື່ອນຍ້າຍມາຈາກຮ້ານຄ້າອື່ນ" — ຕື່ມສະເພາະໃບຍ້າຍຕູ້ (handover_type === 'move')
   if (d.handover_type === 'move') {
     txt(p1, suffix(d.old_doc_no, 'DOC'), 425, 271, { size: 9, lift: 0 });
     txt(p1, d.old_outlet_code, 425, 256.3, { size: 8, maxW: 118, lift: 0 });
     txt(p1, d.old_outlet_name, 425, 241.6, { size: 8, maxW: 118, lift: 0 });
     txt(p1, phoneLo(d.old_outlet_phone), 425, 226.8, { size: 8, maxW: 118, lift: 0 });
-    txt(p1, d.move_reason, 245, 212.1, { size: 7, maxW: 118, lift: 0 });
+    txt(p1, d.move_reason, 425, 212.1, { size: 7, maxW: 118, lift: 0 });
     await sign(p1, 'old_outlet', { x: 420, y: 186, w: 124, h: 22 });
     txt(p1, d.sig_old_outlet_name, 423, 180, { size: 6.5, maxW: 118, lift: 0 });
   }
