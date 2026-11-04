@@ -2355,7 +2355,60 @@ async function applyLoanContractSignatures(env, id, row, body) {
 
 // ໃບສັນຍາຢືມເຊັນຄົບ (MDE + DSM = completed) -> Asset ທີ່ຜູກກັບໃບນີ້ ຈາກ "ຍັງບໍ່ທັນເຊັນເອກະສານ" ເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp"
 // ປ່ຽນສະເພາະ Asset ທີ່ຍັງຢູ່ຂັ້ນ "ຍັງບໍ່ທັນເຊັນເອກະສານ" (ບໍ່ຖອຍສະຖານະທີ່ໄປໄກກວ່ານີ້ແລ້ວ). ບໍ່ throw error ບໍ່ໃຫ້ກະທົບການເຊັນ
+// ສັນຍາ/ໃບ T- ເຊັນຄົບທຸກຝ່າຍ (completed) -> ສົ່ງ PDF ເຂົ້າອີເມວ MDE ອັດຕະໂນມັດ ເພື່ອນຳໄປຊັບມິດ PowerApp
+// - ເອີ້ນຈາກ advanceAssetAfterLoanSigned / advanceAssetAfterCancelSigned (ທຸກທາງທີ່ເຊັນຄົບຜ່ານຈຸດນີ້)
+// - ບໍ່ throw error ອອກໄປ: ສົ່ງເມວບໍ່ສຳເລັດ (ບໍ່ໄດ້ຕັ້ງ Gmail / MDE ບໍ່ມີອີເມວ) ບໍ່ກະທົບການເຊັນ
+// - PDF ລວມເອກະສານເຈົ້າຂອງຮ້ານ / ຮູບຮ້ານ-ຕູ້ (ໜ້າສຸດທ້າຍ) ຄືກັບປຸ່ມ "ຊຸດສົ່ງ Power App"
+async function emailCompletedContractToMde(env, kind, contract) {
+  try {
+    if (!contract || !contract.id) return;
+    const cfg = DSM_DOC_KINDS[kind];
+    if (!cfg) return;
+    const doc = await env.DB.prepare(`SELECT * FROM ${cfg.table} WHERE id = ?`).bind(contract.id).first();
+    if (!doc || doc.status !== "completed") return;
+    const code = String(doc.mde_code || "").trim();
+    if (!code) return;
+    const user = await env.DB.prepare(
+      "SELECT email FROM users WHERE role = 'user' AND status = 'approved' AND UPPER(TRIM(mde_code)) = UPPER(?) AND IFNULL(email,'') != '' ORDER BY id LIMIT 1"
+    ).bind(code).first();
+    const to = user ? String(user.email || "").trim() : "";
+    if (!to || !EMAIL_PATTERN.test(to)) { console.log("[completed-mail] MDE", code, "ບໍ່ມີອີເມວ — ຂ້າມ"); return; }
+    const mdeName = await getMdeName(env, code);
+    const pdfBytes = await cfg.build(env, doc, { ownerDocBytes: await ownerDocBytesFor(env, null, doc, true) });
+    const docNo = doc.doc_no || `#${doc.id}`;
+    const qr = doc.qr_cd || "", sn = doc.serial_no || "";
+    const outletLine = `${doc.outlet_code ? doc.outlet_code + " - " : ""}${doc.outlet_name || ""}`.trim();
+    const cooler = [qr ? `QR: ${qr}` : "", sn ? `Serial: ${sn}` : "", doc.capx ? `CapEx: ${doc.capx}` : ""].filter(Boolean).join(" · ");
+    const lines = [
+      `ເຖິງ ${mdeName ? code + " - " + mdeName : code}`,
+      "",
+      `${cfg.title} ${docNo} ເຊັນຄົບທຸກຝ່າຍແລ້ວ.`,
+      outletLine ? `ຮ້ານ: ${outletLine}` : "",
+      cooler ? `ລະຫັດຕູ້: ${cooler}` : "",
+      "",
+      "ກະລຸນານຳໄຟລ໌ PDF ທີ່ແນບມານີ້ ໄປຊັບມິດ (Submit) ໃນ Power App.",
+    ].filter((x, i, a) => x !== "" || (i > 0 && a[i - 1] !== ""));
+    const e = escMailHtml;
+    const html = `<div style="font-family:Arial,sans-serif;max-width:520px">
+      <p>ເຖິງ <b>${e(mdeName ? code + " - " + mdeName : code)}</b></p>
+      <p>${e(cfg.title)} <b>${e(docNo)}</b> ເຊັນຄົບທຸກຝ່າຍແລ້ວ.</p>
+      ${outletLine ? `<p>ຮ້ານ: <b>${e(outletLine)}</b></p>` : ""}
+      ${cooler ? `<p>ລະຫັດຕູ້: <b>${e(cooler)}</b></p>` : ""}
+      <p style="background:#ecfeff;border:1px solid #67e8f9;padding:10px 12px;border-radius:8px">ກະລຸນານຳໄຟລ໌ PDF ທີ່ແນບມານີ້ ໄປ <b>ຊັບມິດ (Submit) ໃນ Power App</b>.</p></div>`;
+    await sendEmail(env, {
+      to,
+      subject: `ເຊັນຄົບແລ້ວ — ${outletLine || docNo}${qr ? " (QR " + qr + ")" : ""} · ກະລຸນາຊັບມິດ Power App`,
+      text: lines.join("\n"),
+      html,
+      attachments: [{ filename: `${contractSaveName(doc)}.pdf`, contentType: "application/pdf", bytes: pdfBytes }],
+    });
+  } catch (e) {
+    console.error("emailCompletedContractToMde", kind, e && e.message ? e.message : e);
+  }
+}
+
 async function advanceAssetAfterLoanSigned(env, contract) {
+  await emailCompletedContractToMde(env, "loan", contract);
   try {
     if (!contract) return;
     const tracking = String(contract.tracking_no || "").trim();
@@ -2380,6 +2433,7 @@ async function advanceAssetAfterLoanSigned(env, contract) {
 
 // ໃບ T- (cancel_contracts, ຮັບຕູ້ເຂົ້າສາງ) ເຊັນຄົບ (MDE + DSM = completed) -> Asset "ເກັບຄືນສາງ" ທີ່ຜູກກັບໃບນີ້ ຈາກ "ຍັງບໍ່ທັນເຊັນເອກະສານ" ເປັນ "ຍັງບໍ່ຊັບມິດ PowerApp"
 async function advanceAssetAfterCancelSigned(env, contract) {
+  await emailCompletedContractToMde(env, "cancel", contract);
   try {
     if (!contract) return;
     const tracking = String(contract.tracking_no || "").trim();

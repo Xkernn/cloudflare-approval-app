@@ -32,19 +32,31 @@ function encodeHeader(value) {
   return words.map((w) => `=?UTF-8?B?${b64Utf8(w)}?=`).join("\r\n ");
 }
 
-export function buildMimeMessage({ from, fromName, to, subject, text, html }) {
-  const boundary = "b_" + b64Bytes(crypto.getRandomValues(new Uint8Array(12))).replace(/[^A-Za-z0-9]/g, "");
+export function buildMimeMessage({ from, fromName, to, subject, text, html, attachments }) {
+  const rnd = () => b64Bytes(crypto.getRandomValues(new Uint8Array(12))).replace(/[^A-Za-z0-9]/g, "");
+  const boundary = "b_" + rnd();
   const fromHeader = fromName ? `${encodeHeader(fromName)} <${from}>` : from;
+  const files = (attachments || []).filter((a) => a && a.bytes && a.bytes.length);
+  const outer = files.length ? "m_" + rnd() : "";
   const head = [
     `From: ${fromHeader}`,
     `To: ${to}`,
     `Subject: ${encodeHeader(subject)}`,
     "MIME-Version: 1.0",
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    files.length ? `Content-Type: multipart/mixed; boundary="${outer}"` : `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ].join("\r\n");
   const part = (type, body) =>
     `--${boundary}\r\nContent-Type: ${type}; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${wrap76(b64Utf8(body))}\r\n`;
-  return `${head}\r\n\r\n${part("text/plain", text || "")}${part("text/html", html || text || "")}--${boundary}--`;
+  const alt = `${part("text/plain", text || "")}${part("text/html", html || text || "")}--${boundary}--`;
+  if (!files.length) return `${head}\r\n\r\n${alt}`;
+  // ມີໄຟລ໌ແນບ: multipart/mixed ຫໍ່ multipart/alternative (ຂໍ້ຄວາມ) + ໄຟລ໌ແນບ (base64)
+  const fname = encodeHeader(files[0].filename || "file");
+  const attParts = files.map((a) => {
+    const n = encodeHeader(a.filename || "file");
+    return `--${outer}\r\nContent-Type: ${a.contentType || "application/octet-stream"}; name="${n}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${n}"\r\n\r\n${wrap76(b64Bytes(a.bytes))}\r\n`;
+  }).join("");
+  void fname;
+  return `${head}\r\n\r\n--${outer}\r\nContent-Type: multipart/alternative; boundary="${boundary}"\r\n\r\n${alt}\r\n${attParts}--${outer}--`;
 }
 
 // access token ມີອາຍຸ ~1 ຊົ່ວໂມງ — ເກັບໄວ້ໃນ isolate ເພື່ອບໍ່ຕ້ອງຂໍໃໝ່ທຸກຄັ້ງ
@@ -72,7 +84,7 @@ async function getAccessToken(env) {
   return cachedToken.token;
 }
 
-export async function sendEmail(env, { to, subject, text, html }) {
+export async function sendEmail(env, { to, subject, text, html, attachments }) {
   const missing = ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER"].filter((k) => !env[k]);
   if (missing.length || String(env.GMAIL_SENDER).includes("CHANGE_ME")) {
     throw new Error("MAIL_NOT_CONFIGURED: " + (missing.join(",") || "GMAIL_SENDER"));
@@ -87,6 +99,7 @@ export async function sendEmail(env, { to, subject, text, html }) {
     subject,
     text,
     html,
+    attachments,
   });
   // ຂໍ້ຄວາມທັງໝົດເປັນ ASCII ແລ້ວ (header + base64) -> btoa ໄດ້ໂດຍກົງ, ປ່ຽນເປັນ base64url
   const raw = btoa(message).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
