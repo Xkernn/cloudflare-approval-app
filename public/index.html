@@ -20372,7 +20372,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         list.innerHTML = rows.length
           ? `<div class="card-list">${rows.map(cnsRenderCheckCard).join('')}</div>`
           : '<div class="card-list-empty">ຍັງບໍ່ມີລາຍການລົງກວດ — ເປີດແຖບແຜນທີ່ ກົດຈຸດຮ້ານ ແລ້ວກົດ "ລົງກວດແລ້ວ"</div>';
-        rows.forEach(r => { if (r.photo) setPhotoSrc(document.getElementById('cnsChk-' + r.id), '/api/photo?key=' + encodeURIComponent(r.photo)); });
+        rows.forEach(r => { if (r.photo) setPhotoSrc(document.getElementById('cnsChk-' + r.id), r.photo); });
         const from = cnsChecksState.total ? cnsChecksState.offset + 1 : 0;
         const to = Math.min(cnsChecksState.offset + cnsChecksState.limit, cnsChecksState.total);
         document.getElementById('cnsChecksPager').innerHTML = cnsChecksState.total > cnsChecksState.limit
