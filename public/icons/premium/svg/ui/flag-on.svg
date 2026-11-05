@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- flagged (urgent): solid red flag, green pole, gold base dot -->
+  <defs><linearGradient id="r" x1="30" y1="14" x2="110" y2="80" gradientUnits="userSpaceOnUse"><stop stop-color="#F26B6B"/><stop offset="1" stop-color="#C62828"/></linearGradient></defs>
+  <path d="M26 118V12" stroke="#075B35" stroke-width="12" stroke-linecap="round"/>
+  <path d="M32 16H114L96 46 114 76H32Z" fill="url(#r)" stroke="#7F1D1D" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="26" cy="116" r="7" fill="#F5C21B" stroke="#075B35" stroke-width="4"/>
+</svg>

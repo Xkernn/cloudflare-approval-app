@@ -2688,6 +2688,10 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .mm-pin > i, html[data-mm-style="premium"] .mm-pin > .ic { display: none !important; }
     html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-ic { outline: 3px solid #F5C21B; outline-offset: 3px; border-radius: 18px; background: rgba(245,194,27,.18); }
     html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-lbl { color: #075B35; font-weight: 700; }
+    /* Asset Tracking flag toggle: hollow grey = not flagged, solid red = flagged */
+    html[data-mm-style="premium"] i.fa-flag.af-off::before { background-image: url("/icons/premium/svg/ui/flag-off.svg?v=2"); width: 1.35em; height: 1.35em; opacity: .85; }
+    html[data-mm-style="premium"] i.fa-flag.af-on::before { background-image: url("/icons/premium/svg/ui/flag-on.svg?v=1"); width: 1.35em; height: 1.35em; filter: drop-shadow(0 1px 2px rgba(198,40,40,.45)); }
+    html[data-mm-style="premium"] i.fa-flag.af-off:hover::before { opacity: 1; }
     /* hub-card title tiles: slightly larger icons on cream */
     html[data-mm-style="premium"] :is(#ncHub, #spHub, #loanMenuPage, #view-delivery-hub, #view-history-hub, #view-new-cooler-hub) .loan-type-card-title i { background: #FFF8DF; border: 1px solid #EADFB4; }
     html[data-mm-style="premium"] :is(#ncHub, #spHub, #loanMenuPage, #view-delivery-hub, #view-history-hub, #view-new-cooler-hub) .loan-type-card-title i::before { width: 1.55em; height: 1.55em; vertical-align: middle; }
@@ -21512,8 +21516,8 @@ function assetStatusBadgeClass(status) {
           <div class="data-card-main">
             <div class="data-card-title">
               ${isAdmin
-                ? `<i class="fa-solid fa-flag" onclick="event.stopPropagation(); toggleAssetFlag(${a.id}, this)" title="${a.flagged ? 'ຖອດທຸງ' : 'ຕິດທຸງ'}" style="cursor:pointer; margin-right:4px; color:${a.flagged ? '#e0a800' : '#c9c9c9'};"></i>`
-                : (a.flagged ? '<i class="fa-solid fa-flag" title="ຕິດທຸງໄວ້" style="margin-right:4px; color:#e0a800;"></i>' : '')}
+                ? `<i class="fa-solid fa-flag ${a.flagged ? 'af-on' : 'af-off'}" onclick="event.stopPropagation(); toggleAssetFlag(${a.id}, this)" title="${a.flagged ? 'ຖອດທຸງ' : 'ຕິດທຸງ'}" style="cursor:pointer; margin-right:4px; color:${a.flagged ? '#e0a800' : '#c9c9c9'};"></i>`
+                : (a.flagged ? '<i class="fa-solid fa-flag af-on" title="ຕິດທຸງໄວ້" style="margin-right:4px; color:#e0a800;"></i>' : '')}
               ${esc(assetOutletLabel(a) || '-')}
               ${a.flagged ? '<span class="badge badge-rejected" title="ຕິດທຸງໄວ້">ດ່ວນ</span>' : ''}
               ${!hasLatLng(a) ? '<span class="badge badge-pending" title="ຍັງບໍ່ມີພິກັດ Lat/Long">⚠ ບໍ່ມີພິກັດ</span>' : ''}

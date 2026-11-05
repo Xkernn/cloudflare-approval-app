@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- not flagged: hollow grey flag outline (tap to flag) -->
+  <path d="M26 118V12" stroke="#8FA096" stroke-width="10" stroke-linecap="round"/>
+  <path d="M32 18H112L94 46 112 74H32Z" fill="#FFFFFF" stroke="#8FA096" stroke-width="8" stroke-linejoin="round"/>
+</svg>
