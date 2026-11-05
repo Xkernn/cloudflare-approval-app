@@ -23985,13 +23985,11 @@ function assetStatusBadgeClass(status) {
         <div class="lp-box">
           <div class="lp-title">ແຜນຜັງຈຸດວາງຕູ້ແຊ່</div>
           <div class="lp-sub">ເຈົ້າຂອງຮ້ານ ຕົກລົງໃຫ້ບໍລິສັດຕັ້ງຕູ້ແຊ່ໄວ້ໃນພື້ນທີ່ ຕາມການກຳນົດຂອງບໍລິສັດເບຍລາວ ດັ່ງໃນແຜນຜັງນີ້.<br>
-            ກົດ <b>＋ ເພີ່ມຮູບແບບ</b> ເພື່ອເລືອກຮູບມາວາງ ແລ້ວ <b>ລາກຍ້າຍ</b> (ວາງໄດ້ສະເພາະໃນກອບ ແລະ ບໍ່ທັບກັນ) · ລາກ <b>ມຸມຂວາລຸ່ມ</b> = ປັບຂະໜາດ · ລາກ <b>ວົງມົນດ້ານເທິງ</b> ຫຼື ກົດປຸ່ມໝຸນ = ໝຸນ</div>
+            ແຜນຜັງນີ້ໃຊ້ໄດ້ສະເພາະ <b>ຮູບແບບທີ່ກຽມໄວ້ໃຫ້</b> (ບໍ່ສາມາດແຕ້ມເອງໄດ້) — ກົດ <b>＋ ເພີ່ມຮູບແບບ</b> ເພື່ອເລືອກຮູບມາວາງ ແລ້ວ <b>ລາກຍ້າຍ</b> (ວາງໄດ້ສະເພາະໃນກອບ ແລະ ບໍ່ທັບກັນ) · ລາກ <b>ມຸມຂວາລຸ່ມ</b> = ປັບຂະໜາດ · ລາກ <b>ວົງມົນດ້ານເທິງ</b> ຫຼື ກົດປຸ່ມໝຸນ = ໝຸນ</div>
           <div style="position:relative">
             <div class="lp-tools">
               <button type="button" class="lp-tool lp-add" onclick="lpTogglePicker('${key}')"><i class="fa-solid fa-plus"></i> ເພີ່ມຮູບແບບ</button>
-              <button type="button" class="lp-tool active" data-tool="pen" onclick="lpSetTool('${key}','pen')"><i class="fa-solid fa-pen"></i> ແຕ້ມ</button>
-              <button type="button" class="lp-tool" data-tool="eraser" onclick="lpSetTool('${key}','eraser')"><i class="fa-solid fa-eraser"></i> ລຶບເສັ້ນ</button>
-              <button type="button" class="lp-tool" data-tool="select" onclick="lpSetTool('${key}','select')"><i class="fa-solid fa-arrows-up-down-left-right"></i> ເລືອກ/ຍ້າຍ</button>
+              <button type="button" class="lp-tool active" data-tool="select" onclick="lpSetTool('${key}','select')"><i class="fa-solid fa-arrows-up-down-left-right"></i> ເລືອກ/ຍ້າຍ</button>
             </div>
             <div class="lp-picker" id="${key}LpPicker">
               <div class="lp-picker-title">ເລືອກຮູບແບບທີ່ຕ້ອງການເພີ່ມ</div>
@@ -24010,7 +24008,7 @@ function assetStatusBadgeClass(status) {
           <div id="${key}LpStatus" class="lp-status"></div>
         </div>`;
       const canvas = document.getElementById(key + 'LpCanvas');
-      lpState[key] = { ops: [], objs: [], sel: null, tool: 'pen', cur: null, drag: null, hist: [],
+      lpState[key] = { ops: [], objs: [], sel: null, tool: 'select', cur: null, drag: null, hist: [],
         existing: !!existing, canvas, ctx: canvas.getContext('2d'), boxId };
       lpState[key].objs.push(lpNewFrame());   // ກອບຂອບເຂດຂຶ້ນອັດຕະໂນມັດ ແລະ ຄົງທີ່
       lpBind(key);
@@ -24187,10 +24185,9 @@ function assetStatusBadgeClass(status) {
     /* ---------- ເຄື່ອງມື ---------- */
     function lpSetTool(key, tool) {
       const st = lpState[key]; if (!st) return;
-      st.tool = tool;
-      if (tool !== 'select') st.sel = null;
+      st.tool = 'select';   // ມີໂໝດດຽວ: ເລືອກ/ຍ້າຍ ຮູບແບບທີ່ກຽມໄວ້ (ບໍ່ມີແຕ້ມມື)
       lpTogglePicker(key, false);
-      document.querySelectorAll(`#${st.boxId} .lp-tool[data-tool]`).forEach((b) => b.classList.toggle('active', b.dataset.tool === tool));
+      document.querySelectorAll(`#${st.boxId} .lp-tool[data-tool]`).forEach((b) => b.classList.toggle('active', b.dataset.tool === 'select'));
       lpRedraw(key);
     }
     function lpAdd(key, type) {
@@ -24208,7 +24205,7 @@ function assetStatusBadgeClass(status) {
     function lpRotate(key, deg) {
       const st = lpState[key]; if (!st) return;
       const o = st.sel;
-      if (!o) { lpMsg(key, 'ກົດ "ເລືອກ/ຍ້າຍ" ແລ້ວແຕະວັດຖຸທີ່ຕ້ອງການໝຸນກ່ອນ'); return; }
+      if (!o) { lpMsg(key, 'ແຕະວັດຖຸທີ່ຕ້ອງການໝຸນກ່ອນ'); return; }
       const r = (o.r || 0) + deg * Math.PI / 180;
       let { x, y } = lpClampPos(o.x, o.y, o.w, o.h, r);       // ຖ້າໝຸນແລ້ວລົ້ນກອບ ໃຫ້ເລື່ອນເຂົ້າມາ
       if (lpOverlaps(st, o, x, y, o.w, o.h, r)) { lpMsg(key, 'ໝຸນບໍ່ໄດ້ — ຈະທັບອັນອື່ນ'); return; }
@@ -24240,20 +24237,10 @@ function assetStatusBadgeClass(status) {
           st.sel = hit;
           st.drag = hit ? { mode: 'move', dx: p.x - hit.x, dy: p.y - hit.y, snapped: false } : null;
           lpRedraw(key);
-        } else {
-          lpSnap(st);
-          st.cur = { e: st.tool === 'eraser', p: [[p.x, p.y]] };
-          lpPaintPen(st.ctx, st.cur);
         }
+        /* ບໍ່ມີໂໝດແຕ້ມມື/ຢາງລຶບ — ໃຊ້ໄດ້ສະເພາະຮູບແບບທີ່ກຽມໄວ້ໃຫ້ */
       });
       c.addEventListener('pointermove', (e) => {
-        if (st.cur) {
-          e.preventDefault();
-          const p = lpPt(c, e), prev = st.cur.p[st.cur.p.length - 1];
-          st.cur.p.push([p.x, p.y]);
-          lpPaintPen(st.ctx, { e: st.cur.e, p: [prev, [p.x, p.y]] });   // ແຕ້ມສະເພາະເສັ້ນຕ່ອນໃໝ່ (ໄວ)
-          return;
-        }
         const d = st.drag, o = st.sel;
         if (!d || !o) return;
         e.preventDefault();
@@ -24285,7 +24272,6 @@ function assetStatusBadgeClass(status) {
         lpRedraw(key);
       });
       const end = () => {
-        if (st.cur) { st.ops.push(st.cur); st.cur = null; lpRedraw(key); }
         st.drag = null;
         lpRefresh(key);
       };
@@ -24296,23 +24282,15 @@ function assetStatusBadgeClass(status) {
     /* ມີອັນໃດຢູ່ໃນແຜນຜັງແທ້ບໍ — ວັດຖຸ ຫຼື ເສັ້ນທີ່ຍັງເຫຼືອ (ກັນກໍລະນີແຕ້ມແລ້ວລຶບໝົດ) */
     function lpHasInk(key) {
       const st = lpState[key];
-      if (!st) return false;
-      if (st.objs.some((o) => o.t !== 'frame')) return true;   // ກອບຂອບເຂດອັນດຽວ (ອັດຕະໂນມັດ) ບໍ່ນັບວ່າແຕ້ມແລ້ວ
-      if (!st.ops.length) return false;
-      const off = document.createElement('canvas'); off.width = LP_W; off.height = LP_H;
-      const octx = off.getContext('2d');
-      st.ops.forEach((op) => lpPaintPen(octx, op));
-      const d = octx.getImageData(0, 0, LP_W, LP_H).data;
-      for (let i = 3; i < d.length; i += 4) { if (d[i] > 0) return true; }
-      return false;
+      return !!(st && st.objs.some((o) => o.t !== 'frame'));   // ກອບຂອບເຂດອັນດຽວ (ອັດຕະໂນມັດ) ບໍ່ນັບວ່າວາງແລ້ວ
     }
 
     function lpRefresh(key) {
       const st = lpState[key]; if (!st) return;
       const el = document.getElementById(key + 'LpStatus'); if (!el) return;
-      if (lpHasInk(key)) { el.style.color = '#15803d'; el.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> ແຕ້ມແຜນຜັງແລ້ວ'; }
-      else if (st.existing) { el.style.color = '#15803d'; el.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> ມີແຜນຜັງບັນທຶກໄວ້ແລ້ວ — ຖ້າບໍ່ແຕ້ມໃໝ່ ຈະໃຊ້ແຜນຜັງເດີມ'; }
-      else { el.style.color = 'var(--text-muted)'; el.textContent = 'ຍັງບໍ່ໄດ້ແຕ້ມແຜນຜັງ'; }
+      if (lpHasInk(key)) { el.style.color = '#15803d'; el.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> ຈັດວາງແຜນຜັງແລ້ວ'; }
+      else if (st.existing) { el.style.color = '#15803d'; el.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> ມີແຜນຜັງບັນທຶກໄວ້ແລ້ວ — ຖ້າບໍ່ຈັດວາງໃໝ່ ຈະໃຊ້ແຜນຜັງເດີມ'; }
+      else { el.style.color = 'var(--text-muted)'; el.textContent = 'ຍັງບໍ່ໄດ້ຈັດວາງແຜນຜັງ'; }
     }
 
     /* ສົ່ງອອກເປັນ PNG ໂດຍບໍ່ມີກອບ/ຈຸດຈັບຂອງການເລືອກ */
@@ -24330,7 +24308,7 @@ function assetStatusBadgeClass(status) {
       const st = lpState[key];
       if (!st) return '';
       if (st.existing || lpHasInk(key)) return '';
-      return 'ກະລຸນາແຕ້ມແຜນຜັງຈຸດວາງຕູ້ແຊ່ໃນໃບສັນຍາກ່ອນເຊັນ';
+      return 'ກະລຸນາຈັດວາງແຜນຜັງຈຸດວາງຕູ້ແຊ່ໃນໃບສັນຍາ (ເພີ່ມຮູບແບບ) ກ່ອນເຊັນ';
     }
 
     function lpPayload(key) {
