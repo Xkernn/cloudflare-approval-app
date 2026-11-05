@@ -2680,6 +2680,14 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .guide-item > summary::after { content: ""; font-size: 0; width: 14px; height: 14px; background: url("/icons/premium/svg/mini/chevron-down.svg?v=1") center / contain no-repeat; }
     html[data-mm-style="premium"] .ad-flow.done .ad-ring::after { content: ""; font: 0/0 sans-serif; background: url("/icons/premium/svg/mini/check.svg?v=1") center / 62% no-repeat; }
     html[data-mm-style="premium"] .page-header .btn-add i.fa-plus::before { background-image: url("/icons/premium/svg/mini/circle-plus.svg?v=1"); filter: none; }
+    /* edit-mode pin badge: 3 clearly different states (add / already pinned / remove) + highlighted tile when pinned */
+    html[data-mm-style="premium"] .mm-pin, html[data-mm-style="premium"] .mm-pin.on, html[data-mm-style="premium"] .mm-pin.rm { width: 30px; height: 30px; top: -10px; left: -10px; border: 0; border-radius: 50%; background-color: transparent; background-repeat: no-repeat; background-position: center; background-size: contain; box-shadow: 0 4px 10px rgba(6,61,36,.35); }
+    html[data-mm-style="premium"] .mm-pin { background-image: url("/icons/premium/svg/ui/pin-add.svg?v=1"); }
+    html[data-mm-style="premium"] .mm-pin.on { background-image: url("/icons/premium/svg/ui/pin-on.svg?v=1"); }
+    html[data-mm-style="premium"] .mm-pin.rm { background-image: url("/icons/premium/svg/ui/pin-remove.svg?v=1"); }
+    html[data-mm-style="premium"] .mm-pin > i, html[data-mm-style="premium"] .mm-pin > .ic { display: none !important; }
+    html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-ic { outline: 3px solid #F5C21B; outline-offset: 3px; border-radius: 18px; background: rgba(245,194,27,.18); }
+    html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-lbl { color: #075B35; font-weight: 700; }
     /* hub-card title tiles: slightly larger icons on cream */
     html[data-mm-style="premium"] :is(#ncHub, #spHub, #loanMenuPage, #view-delivery-hub, #view-history-hub, #view-new-cooler-hub) .loan-type-card-title i { background: #FFF8DF; border: 1px solid #EADFB4; }
     html[data-mm-style="premium"] :is(#ncHub, #spHub, #loanMenuPage, #view-delivery-hub, #view-history-hub, #view-new-cooler-hub) .loan-type-card-title i::before { width: 1.55em; height: 1.55em; vertical-align: middle; }
