@@ -4969,7 +4969,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         <div id="stock-sec-list" class="content-card">
           <div style="padding: 16px 16px 0 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <div class="input-wrapper fl-search" style="max-width: 320px; flex: 1; min-width: 220px;"><i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="stockSearchInput" class="form-control" placeholder="ຄົ້ນຫາ QR, Serial, CapEx, Model..." oninput="filterWarehouseStock()">
+              <input type="text" id="stockSearchInput" class="form-control" placeholder="ຄົ້ນຫາ QR, Serial, CapEx, Model..." oninput="stockSearchDebounced()">
             </div>
             <div class="msel" id="stockWarehouseFilter" data-all-label="ທຸກສາງ"></div>
             <div class="msel" id="stockStatusFilter" data-all-label="ທຸກສະຖານະ"></div>
@@ -14346,13 +14346,38 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         if (brands.length && !brands.includes((s.cooler_brand || '').toString().trim())) return false;
         if (types.length && !types.includes((s.cooler_type || '').toString().trim())) return false;
         if (!q) return true;
-        const haystack = [s.qr_code, s.serial_number, s.capex, s.cooler_model, s.cooler_brand, s.cooler_type]
-          .map(v => (v || '').toString().toLowerCase()).join(' ');
-        return haystack.includes(q);
+        return stockHaystack(s).includes(q);
       });
     }
 
+    /* ປະສິດທິພາບ: ໜ່ວງຍ້ອນສ້າງ card ທຸກແຖວພ້ອມກັນ + ກອງໃໝ່ທຸກຕົວອັກສອນທີ່ພິມ
+       -> ພິມແລ້ວລໍຖ້າ 250ms ຄ່ອຍກອງ, ສະແດງເທື່ອລະ STOCK_PAGE_SIZE ແຖວ (ປຸ່ມ "ສະແດງເພີ່ມ"), ແລະຈື່ຂໍ້ຄວາມຄົ້ນຫາຂອງແຕ່ລະແຖວໄວ້ (ບໍ່ສ້າງໃໝ່ທຸກຄັ້ງ) */
+    const STOCK_PAGE_SIZE = 60;
+    let stockShowLimit = STOCK_PAGE_SIZE;
+    let stockLastFiltered = [];
+    let stockSearchTimer = null;
+    const stockHaystackCache = new WeakMap();
+    function stockSearchDebounced() {
+      clearTimeout(stockSearchTimer);
+      stockSearchTimer = setTimeout(filterWarehouseStock, 250);
+    }
+    function stockHaystack(s) {
+      let h = stockHaystackCache.get(s);
+      if (h === undefined) {
+        h = [s.qr_code, s.serial_number, s.capex, s.cooler_model, s.cooler_brand, s.cooler_type]
+          .map(v => (v || '').toString().toLowerCase()).join(' ');
+        stockHaystackCache.set(s, h);
+      }
+      return h;
+    }
+    function stockShowMore() {
+      stockShowLimit += STOCK_PAGE_SIZE;
+      renderStockCardList(stockLastFiltered);
+    }
+
     function filterWarehouseStock() {
+      clearTimeout(stockSearchTimer);
+      stockShowLimit = STOCK_PAGE_SIZE;
       const filtered = getFilteredWarehouseStock();
       const hasFilter = !!document.getElementById('stockSearchInput').value.trim() ||
         ['stockWarehouseFilter', 'stockStatusFilter', 'stockBrandFilter', 'stockTypeFilter'].some(id => msGet(id).length);
@@ -14363,13 +14388,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
     function renderStockSummaryBar(items) {
       const bar = document.getElementById('stockSummaryBar');
-      const inWh = items.filter(s => s.status === 'in_warehouse').length;
-      const reserved = items.filter(s => s.status === 'reserved').length;
-      const outlet = items.filter(s => s.status === 'outlet').length;
-      const event = items.filter(s => s.status === 'event').length;
-      const pendingWo = items.filter(s => s.status === 'pending_write_off').length;
-      const writeOff = items.filter(s => s.status === 'write_off').length;
-      bar.textContent = `ທັງໝົດ ${items.length} ລາຍການ — ຢູ່ໃນສາງ ${inWh} | ຈອງແລ້ວ ${reserved} | ອອກໄປຮ້ານແລ້ວ ${outlet} | ກຳລັງໃຊ້ງານ Event ${event} | ລໍຖ້າສະສາງ ${pendingWo} | ສະສາງ ${writeOff}`;
+      const c = {};
+      for (const s of items) c[s.status] = (c[s.status] || 0) + 1;
+      bar.textContent = `ທັງໝົດ ${items.length} ລາຍການ — ຢູ່ໃນສາງ ${c.in_warehouse || 0} | ຈອງແລ້ວ ${c.reserved || 0} | ອອກໄປຮ້ານແລ້ວ ${c.outlet || 0} | ກຳລັງໃຊ້ງານ Event ${c.event || 0} | ລໍຖ້າສະສາງ ${c.pending_write_off || 0} | ສະສາງ ${c.write_off || 0}`;
     }
 
     function renderStockCardList(items) {
@@ -14378,7 +14399,13 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         list.innerHTML = `<div class="card-list-empty">ບໍ່ພົບລາຍການສະຕັອກ</div>`;
         return;
       }
-      list.innerHTML = items.map(s => `
+      stockLastFiltered = items;
+      const shown = items.slice(0, stockShowLimit);
+      const isAdmin = currentUser.role === 'admin';
+      const moreBtn = items.length > shown.length
+        ? `<div style="text-align:center; padding:12px;"><button type="button" class="btn-act btn-edit" style="padding:10px 18px;" onclick="stockShowMore()">ສະແດງເພີ່ມ (ເຫຼືອ ${items.length - shown.length} ຈາກ ${items.length} ລາຍການ)</button></div>`
+        : '';
+      list.innerHTML = shown.map(s => `
         <div class="data-card">
           <div class="data-card-main">
             <div class="data-card-title">
@@ -14396,11 +14423,11 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <span class="badge ${STOCK_STATUS_BADGE[s.status] || 'badge-default'}">${esc(STOCK_STATUS_LABEL[s.status] || s.status)}</span>
             <div style="display:flex; gap:6px;">
               <button onclick="openEditStockModal(${s.id})" class="btn-act btn-edit">ແກ້ໄຂ</button>
-              ${currentUser.role === 'admin' ? `<button onclick="deleteStockItem(${s.id})" class="btn-act btn-delete">ລຶບ</button>` : ''}
+              ${isAdmin ? `<button onclick="deleteStockItem(${s.id})" class="btn-act btn-delete">ລຶບ</button>` : ''}
             </div>
           </div>
         </div>
-      `).join('');
+      `).join('') + moreBtn;
     }
 
     /* ເຕີມຕົວເລືອກ Model ໃນ dropdown ຈາກ Master List (appCatalog.models) - ຄືກັນກັບ Brand/Type */
