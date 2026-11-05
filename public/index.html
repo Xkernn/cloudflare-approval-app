@@ -873,6 +873,8 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic')?'class
       .app-container { width: 100%; max-width: 100%; }
       .main-content, .content-card, .page-header, .page-header > * { min-width: 0; max-width: 100%; }
       img, video, canvas, svg { max-width: 100%; }
+      /* Leaflet ແຕ້ມຈຸດ (preferCanvas) ເທິງ <canvas> ທີ່ກວ້າງກວ່າ pane 0px -> max-width:100% ເຮັດໃຫ້ກວ້າງ 0 ຈຸດຫາຍໃນມືຖື (Cooler Not Scan) */
+      .leaflet-container canvas, .leaflet-container svg, .leaflet-container img { max-width: none !important; max-height: none !important; }
       .form-control, select, input, textarea { max-width: 100%; box-sizing: border-box; }
       .at-search, .pb-dl, .msel { min-width: 0; }
       [style*="min-width:280px"], [style*="min-width: 280px"] { min-width: 0 !important; }
@@ -20198,7 +20200,9 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           </div>`);
           bounds.push([g.lat, g.lng]);
         });
+        cnsMapInstance.invalidateSize();
         if (bounds.length) cnsMapInstance.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+        setTimeout(() => { try { cnsMapInstance.invalidateSize(); } catch (e) {} }, 350);   // ມືຖື: layout ຍັງລັງເລຕອນສະລັບແຖບ
         const nPts = (data.points || []).length;
         info.innerHTML = `ສະແດງ <b>${nPts.toLocaleString()}</b> ຕູ້ ໃນ <b>${groups.size.toLocaleString()}</b> ຈຸດ`
           + (data.no_coord ? ` · <span style="color:#b45309;">${Number(data.no_coord).toLocaleString()} ຕູ້ບໍ່ມີພິກັດ (ບໍ່ມີ Lat/Long ໃນ Outlet Master ແລະ Cooler Master) ຈຶ່ງບໍ່ຂຶ້ນແຜນທີ່</span>` : '')
