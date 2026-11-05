@@ -5289,6 +5289,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
                 <option value="missing">ຕູ້ບໍ່ເຫັນແລ້ວ</option>
               </select>
               <button class="btn-add" onclick="cnsChecksSearch()"><i class="fa-solid fa-magnifying-glass mr-1"></i> ຄົ້ນຫາ</button>
+              <button class="btn-add xl-io" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="cnsChecksExport()"><i class="fa-solid fa-file-export mr-1"></i> Export Excel</button>
             </div>
           </div>
           <div id="cnsChecksList"></div>
@@ -20380,6 +20381,38 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
              <span style="font-size:13px; color:var(--text-muted);">${from}-${to} / ${cnsChecksState.total.toLocaleString()}</span>
              <button class="btn-act" ${to >= cnsChecksState.total ? 'disabled' : ''} onclick="cnsChecksPage(1)">ຖັດໄປ ›</button>` : '';
       } catch (e) { list.innerHTML = '<div class="card-list-error">ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ</div>'; }
+    }
+    async function cnsChecksExport() {
+      try {
+        // ດຶງທຸກໜ້າ ຕາມຕົວກັ່ນຕອງທີ່ເລືອກຢູ່ (ຄົ້ນຫາ + ຜົນການກວດ)
+        const PAGE = 100;
+        let all = [], offset = 0, total = Infinity, guard = 0;
+        while (all.length < total && guard++ < 500) {
+          const p = new URLSearchParams({ limit: PAGE, offset });
+          if (cnsChecksState.q) p.set('q', cnsChecksState.q);
+          if (cnsChecksState.result) p.set('result', cnsChecksState.result);
+          const res = await fetch('/api/admin/cooler-not-scan/checks?' + p.toString());
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { appAlert(data.error || 'Export ບໍ່ສຳເລັດ'); return; }
+          total = data.total || 0;
+          const rows = data.rows || [];
+          if (!rows.length) break;
+          all = all.concat(rows);
+          offset += rows.length;
+        }
+        if (!all.length) { appAlert('ບໍ່ມີຂໍ້ມູນໃຫ້ Export'); return; }
+        const out = all.map(r => ({
+          'Outlet Code': r.outlet_code || '', 'Outlet Name': r.outlet_name || '', 'ແຂວງ': r.province || '',
+          'QR Code': r.qr_code || '', 'Serial Number': r.serial_number || '',
+          'Brand': r.cooler_brand || '', 'Type': r.cooler_type || '',
+          'ຜົນການກວດ': r.result === 'found' ? 'ຕູ້ຍັງພົບຢູ່ຮ້ານ' : (r.result === 'missing' ? 'ຕູ້ບໍ່ເຫັນແລ້ວ' : (r.result || '')),
+          'ໝາຍເຫດ': r.note || '', 'ຜູ້ກວດ': r.checked_by || '',
+          'ວັນທີກວດ': r.checked_at ? fmtLaoTs(r.checked_at) : '', 'ຮູບ (R2 key)': r.photo || ''
+        }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'ລົງກວດແລ້ວ');
+        XLSX.writeFile(wb, 'cooler-not-scan-checked-' + exportStamp() + '.xlsx');
+      } catch (e) { appAlert('Export ບໍ່ສຳເລັດ'); }
     }
     function cnsRenderCheckCard(r) {
       const f = r.result === 'found';
