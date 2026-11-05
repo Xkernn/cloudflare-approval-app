@@ -12460,7 +12460,7 @@ export default {
       if (session.role === "dsm") {
         const rows = await env.DB.prepare(
           `SELECT id, doc_no, COALESCE(NULLIF(TRIM(loan_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = loan_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, contract_type, handover_type, status,
-                  created_by, created_at, sig_dsm_name, sig_dsm_at, ${dsmLinkStatusSql('loan', 'loan_contracts')}
+                  created_by, created_at, sig_dsm_name, sig_dsm_at, printed_at, printed_by, ${dsmLinkStatusSql('loan', 'loan_contracts')}
            FROM loan_contracts WHERE ${TEAM_MDE_SQL} ORDER BY id DESC LIMIT ?`
         ).bind(session.team || "", limit).all();
         return Response.json(rows.results || []);
@@ -12471,7 +12471,7 @@ export default {
                     contract_type, handover_type, status, created_by, created_at,
                     capx, doors, door_variant, old_doc_no, old_outlet_code, old_outlet_name, move_reason,
                     sales_beer, sales_premium, sales_csd_energy, sales_water_soda,
-                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, (layout_plan IS NOT NULL) AS has_layout_plan, ${dsmLinkStatusSql('loan', 'loan_contracts')}
+                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, (layout_plan IS NOT NULL) AS has_layout_plan, printed_at, printed_by, ${dsmLinkStatusSql('loan', 'loan_contracts')}
              FROM loan_contracts ORDER BY id DESC LIMIT ?`
           ).bind(limit).all()
         : await env.DB.prepare(
@@ -12479,7 +12479,7 @@ export default {
                     contract_type, handover_type, status, created_by, created_at,
                     capx, doors, door_variant, old_doc_no, old_outlet_code, old_outlet_name, move_reason,
                     sales_beer, sales_premium, sales_csd_energy, sales_water_soda,
-                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, (layout_plan IS NOT NULL) AS has_layout_plan, ${dsmLinkStatusSql('loan', 'loan_contracts')}
+                    sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, (layout_plan IS NOT NULL) AS has_layout_plan, printed_at, printed_by, ${dsmLinkStatusSql('loan', 'loan_contracts')}
              FROM loan_contracts WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) ORDER BY id DESC LIMIT ?`
           ).bind(session.mde_code, limit).all();
       return Response.json(rows.results || []);
@@ -12933,19 +12933,47 @@ export default {
       }
     }
 
+    // admin ໝາຍວ່າ "ປິ້ນເອກະສານອອກແລ້ວ" (ໃບສັນຍາຢືມ DOC- ຫຼື ໃບເກັບຕູ້ T- ທີ່ເຊັນຄົບແລ້ວ) / ຍົກເລີກການໝາຍ
+    // body: { kind: "loan" | "cancel", id, printed: true | false }
+    if (url.pathname === "/api/contracts/printed" && request.method === "POST") {
+      if (session.role !== "admin") {
+        return Response.json({ error: "ສະເພາະ Admin ເທົ່ານັ້ນທີ່ໝາຍວ່າປິ້ນແລ້ວໄດ້" }, { status: 403 });
+      }
+      try {
+        const body = await request.json();
+        const table = body.kind === "cancel" ? "cancel_contracts" : (body.kind === "loan" ? "loan_contracts" : null);
+        const id = Number(body.id);
+        if (!table || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບ" }, { status: 400 });
+        const row = await env.DB.prepare(`SELECT id, status FROM ${table} WHERE id = ?`).bind(id).first();
+        if (!row) return Response.json({ error: "ບໍ່ພົບເອກະສານ" }, { status: 404 });
+        if (row.status !== "completed") return Response.json({ error: "ໝາຍໄດ້ສະເພາະເອກະສານທີ່ເຊັນຄົບແລ້ວ" }, { status: 400 });
+        if (body.printed === false) {
+          await env.DB.prepare(`UPDATE ${table} SET printed_at = NULL, printed_by = NULL WHERE id = ?`).bind(id).run();
+          return Response.json({ message: "ຍົກເລີກການໝາຍປິ້ນແລ້ວ", printed_at: null, printed_by: null });
+        }
+        const actor = (session && session.email) || null;
+        await env.DB.prepare(`UPDATE ${table} SET printed_at = CURRENT_TIMESTAMP, printed_by = ? WHERE id = ?`).bind(actor, id).run();
+        const upd = await env.DB.prepare(`SELECT printed_at, printed_by FROM ${table} WHERE id = ?`).bind(id).first();
+        return Response.json({ message: "ໝາຍວ່າປິ້ນເອກະສານອອກແລ້ວ", printed_at: upd && upd.printed_at, printed_by: upd && upd.printed_by });
+      } catch (e) {
+        console.error("/api/contracts/printed", e);
+        return Response.json({ error: "ບັນທຶກບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     // ປະຫວັດໃບ T- ທັງໝົດ (mde ເຫັນສະເພາະຂອງຕົນ)
     if (url.pathname === "/api/cancel-contracts/history" && request.method === "GET") {
       const limit = Math.min(Number(url.searchParams.get("limit")) || 300, 500);
       if (session.role === "dsm") {
         const rows = await env.DB.prepare(
           `SELECT id, doc_no, loan_doc_no, COALESCE(NULLIF(TRIM(cancel_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = cancel_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no, reasons, status,
-                  created_by, created_at, sig_dsm_name, sig_dsm_at, ${dsmLinkStatusSql('cancel', 'cancel_contracts')}
+                  created_by, created_at, sig_dsm_name, sig_dsm_at, printed_at, printed_by, ${dsmLinkStatusSql('cancel', 'cancel_contracts')}
            FROM cancel_contracts WHERE ${TEAM_MDE_SQL} ORDER BY id DESC LIMIT ?`
         ).bind(session.team || "", limit).all();
         return Response.json(rows.results || []);
       }
       const cols = `id, doc_no, loan_doc_no, COALESCE(NULLIF(TRIM(cancel_contracts.outlet_code),''), (SELECT a.outlet_code FROM assets a WHERE a.id = cancel_contracts.asset_id)) AS outlet_code, outlet_name, mde_code, cooler_brand, qr_cd, serial_no,
-                    reasons, status, created_by, created_at, sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, ${dsmLinkStatusSql('cancel', 'cancel_contracts')}`;
+                    reasons, status, created_by, created_at, sig_dsm_name, sig_dsm_at, owner_doc_type, (owner_doc_photo IS NOT NULL) AS has_owner_doc, printed_at, printed_by, ${dsmLinkStatusSql('cancel', 'cancel_contracts')}`;
       const rows = canViewAll(session.role)
         ? await env.DB.prepare(`SELECT ${cols} FROM cancel_contracts ORDER BY id DESC LIMIT ?`).bind(limit).all()
         : await env.DB.prepare(`SELECT ${cols} FROM cancel_contracts WHERE UPPER(TRIM(mde_code)) = UPPER(TRIM(?)) ORDER BY id DESC LIMIT ?`)

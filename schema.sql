@@ -476,6 +476,8 @@ CREATE INDEX idx_sci_count ON stock_count_items(count_id, result);
 CREATE TABLE IF NOT EXISTS loan_contracts (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     mde_seen_at      DATETIME,                 -- MDE ເປີດເບິ່ງໃບທີ່ເຊັນຄົບແລ້ວຄັ້ງທຳອິດ (ໃຊ້ຢຸດສຽງເຕືອນ)
+    printed_at       DATETIME,                 -- admin ໝາຍວ່າປິ້ນເອກະສານອອກແລ້ວ (ເມື່ອໃດ)
+    printed_by       TEXT,                     -- admin ຄົນທີ່ໝາຍ (email)
     doc_no           TEXT UNIQUE,              -- ຕັ້ງຫຼັງ insert ຄື DOC0001 (ຄືຮູບແບບ tracking_no)
     asset_id         INTEGER REFERENCES assets(id),
     tracking_no      TEXT,                     -- ອ້າງອີງ assets.tracking_no ຕອນອອກໃບ (ຖ້າມີ)

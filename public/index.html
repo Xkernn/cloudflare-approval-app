@@ -2582,6 +2582,22 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .mobile-tab-icon .ic-pr { width: 28px; height: 28px; margin: -2px; opacity: .8; }
     html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon .ic-pr { opacity: 1; }
     .pr-emo { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
+    /* ===== ເຄື່ອງໝາຍ "ປິ້ນເອກະສານອອກແລ້ວ" ໃນແຖບເອກະສານທີ່ເຊັນຄົບ ===== */
+    .badge-printed { background: #E3F6EA; color: #0B6B3A; border: 1px solid #9AD9B4; }
+    .badge-unprinted { background: #FFF4D6; color: #8A5A00; border: 1px solid #F5C21B; }
+    .badge-printed i, .badge-unprinted i { margin-right: 3px; font-size: .9em; }
+    .loan-doc-card.is-printed { box-shadow: inset 5px 0 0 #12915d; }
+    .loan-doc-card.not-printed { box-shadow: inset 5px 0 0 #F5A800; }
+    .print-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .print-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--border-color); background: #fff; color: var(--text-main); font: 600 13px var(--font-ui, inherit); cursor: pointer; }
+    .print-tabs button b { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(0,0,0,.07); font-size: 12px; text-align: center; }
+    .print-tabs button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .print-tabs button.on b { background: rgba(255,255,255,.25); }
+    .btn-act.btn-print { background: #E3F6EA; color: #0B6B3A; }
+    .btn-act.btn-unprint { background: #F1F5F6; color: #4B6469; }
+    html[data-mm-style="premium"] .print-tabs button.on { background: #075B35; border-color: #F5C21B; color: #FFD84A; }
+    html[data-mm-style="premium"] .print-tabs button.on b { background: rgba(245,194,27,.25); }
+    html[data-mm-style="premium"] .badge-printed { background: #075B35; color: #FFD84A; border-color: #075B35; }
     /* Custom SVG pack: icons are full-colour (green outline), so use a cream floating tab bar + crisp <img> sizing */
     html[data-mm-style="premium"] img.ic-pr { object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
     html[data-mm-style="premium"] .mm-ic > img.ic-pr { filter: drop-shadow(0 2px 3px rgba(7,91,53,.16)); }
@@ -4356,6 +4372,11 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               oninput="filterLoanContractHistory()">
           </div>
           <select id="loanHistoryMdeFilter" class="form-control hidden" style="margin-bottom: 12px;" onchange="filterLoanContractHistory()" title="ກອງຕາມ MDE (admin)"></select>
+          <div id="loanPrintTabs" class="print-tabs hidden" role="group" aria-label="ສະຖານະການປິ້ນເອກະສານ">
+            <button type="button" data-pt="all" class="on" onclick="setLoanPrintFilter('all')">ທັງໝົດ <b>0</b></button>
+            <button type="button" data-pt="unprinted" onclick="setLoanPrintFilter('unprinted')"><i class="fa-solid fa-print"></i> ຍັງບໍ່ປິ້ນ <b>0</b></button>
+            <button type="button" data-pt="printed" onclick="setLoanPrintFilter('printed')"><i class="fa-solid fa-circle-check"></i> ປິ້ນອອກແລ້ວ <b>0</b></button>
+          </div>
           <div id="loanHistoryCardList" class="card-list"><div class="card-list-empty">ກຳລັງໂຫລດ...</div></div>
         </div>
       </div>
@@ -25403,6 +25424,44 @@ function assetStatusBadgeClass(status) {
     let dbLoanContractHistory = [];
     let dbCancelHistory = []; // ໃບ T- (ຮັບຕູ້ເຂົ້າສາງ)
     let loanHistoryLoaded = false;
+    let loanPrintFilter = 'all'; // all | unprinted | printed (ແຖບ "ເອກະສານ" ຂອງ admin/warehouse/delivery)
+
+    function setLoanPrintFilter(v) { loanPrintFilter = v; filterLoanContractHistory(); }
+    // ເຄື່ອງໝາຍ "ປິ້ນເອກະສານອອກແລ້ວ" (admin ເປັນຜູ້ໝາຍ) — ໃຊ້ກັບໃບສັນຍາຢືມ DOC- ແລະ ໃບເກັບຕູ້ T- ທີ່ເຊັນຄົບແລ້ວ
+    function printBadgeHtml(c, showUnprinted) {
+      if (c.status !== 'completed') return '';
+      if (c.printed_at) return '<span class="badge badge-printed"><i class="fa-solid fa-print"></i> ປິ້ນອອກແລ້ວ</span>';
+      return showUnprinted ? '<span class="badge badge-unprinted"><i class="fa-solid fa-print"></i> ຍັງບໍ່ປິ້ນ</span>' : '';
+    }
+    function printCardCls(c, showUnprinted) {
+      if (c.status !== 'completed') return '';
+      return c.printed_at ? ' is-printed' : (showUnprinted ? ' not-printed' : '');
+    }
+    function printInfoHtml(c) {
+      if (c.status !== 'completed' || !c.printed_at) return '';
+      const who = c.printed_by ? ' ໂດຍ ' + esc(String(c.printed_by).split('@')[0]) : '';
+      return `<span><i class="fa-solid fa-print"></i>ປິ້ນແລ້ວ${who} · ${esc(fmtLaoTs(c.printed_at) || '')}</span>`;
+    }
+    function printToggleBtnHtml(kind, c, isAdmin) {
+      if (!isAdmin || c.status !== 'completed') return '';
+      return c.printed_at
+        ? `<button type="button" class="btn-act btn-unprint" onclick="toggleContractPrinted('${kind}', ${c.id}, false)"><i class="fa-solid fa-rotate-left mr-1"></i> ຍົກເລີກໝາຍປິ້ນ</button>`
+        : `<button type="button" class="btn-act btn-print" onclick="toggleContractPrinted('${kind}', ${c.id}, true)"><i class="fa-solid fa-print mr-1"></i> ໝາຍວ່າປິ້ນແລ້ວ</button>`;
+    }
+    async function toggleContractPrinted(kind, id, printed) {
+      if (!printed && !await appConfirm('ຍົກເລີກການໝາຍວ່າປິ້ນເອກະສານນີ້?')) return;
+      try {
+        const res = await fetch('/api/contracts/printed', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind, id, printed: !!printed })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { appAlert(data.error || 'ບັນທຶກບໍ່ສຳເລັດ'); return; }
+        const row = (kind === 'cancel' ? dbCancelHistory : dbLoanContractHistory).find((x) => x.id === id);
+        if (row) { row.printed_at = data.printed_at || null; row.printed_by = data.printed_by || null; }
+        filterLoanContractHistory();
+      } catch (err) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
+    }
 
     async function loadLoanContractHistory(forceReload) {
       const listEl = document.getElementById('loanHistoryCardList');
@@ -25443,7 +25502,21 @@ function assetStatusBadgeClass(status) {
           .map((v) => (v || '').toString().toLowerCase()).join(' ');
         return haystack.includes(q);
       });
-      renderLoanContractHistory(filtered, 'loanHistoryCardList', (q || mdeFilter) ? 'ບໍ່ພົບໃບສັນຍາຢືມ' : 'ຍັງບໍ່ມີເອກະສານທີ່ເຊັນສຳເລັດແລ້ວ');
+      // ແຖບກອງ "ຍັງບໍ່ປິ້ນ / ປິ້ນອອກແລ້ວ" (ສະເພາະ admin/warehouse/delivery) — ຕົວເລກນັບຈາກຜົນຄົ້ນຫາ/ກອງ MDE
+      const canSeePrint = !!(currentUser && ['admin', 'warehouse', 'delivery'].includes(currentUser.role));
+      const printedN = filtered.filter((c) => c.printed_at).length;
+      const ptabs = document.getElementById('loanPrintTabs');
+      if (ptabs) {
+        ptabs.classList.toggle('hidden', !canSeePrint);
+        const nums = { all: filtered.length, unprinted: filtered.length - printedN, printed: printedN };
+        ptabs.querySelectorAll('button').forEach((b) => {
+          b.classList.toggle('on', b.dataset.pt === loanPrintFilter);
+          const nEl = b.querySelector('b'); if (nEl) nEl.textContent = nums[b.dataset.pt];
+        });
+      }
+      const pf = canSeePrint ? loanPrintFilter : 'all';
+      const shownDocs = pf === 'unprinted' ? filtered.filter((c) => !c.printed_at) : (pf === 'printed' ? filtered.filter((c) => c.printed_at) : filtered);
+      renderLoanContractHistory(shownDocs, 'loanHistoryCardList', pf !== 'all' ? (pf === 'printed' ? 'ຍັງບໍ່ມີເອກະສານທີ່ໝາຍວ່າປິ້ນແລ້ວ' : 'ເອກະສານທັງໝົດປິ້ນແລ້ວ') : ((q || mdeFilter) ? 'ບໍ່ພົບໃບສັນຍາຢືມ' : 'ຍັງບໍ່ມີເອກະສານທີ່ເຊັນສຳເລັດແລ້ວ'));
       // ຄິວເຊັນ = ໃບທີ່ຍັງເປັນຮ່າງ (ຍັງບໍ່ທັນເຊັນຮັບ) — ໃບ DOC- ແລະ ໃບ T- (ຖ້າຍັງບໍ່ completed) ເພື່ອບໍ່ໃຫ້ໃບຮ່າງຫາຍໄປຈາກທັງສອງແຖບ
       const queue = all.filter((c) => !isDone(c));
       // Filter MDE (admin) ຂອງແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" — ຕົວເລກ badge ຍັງນັບທັງໝົດ (ບໍ່ຂຶ້ນກັບ filter)
@@ -25481,16 +25554,18 @@ function assetStatusBadgeClass(status) {
           const cancelActions = [
             cancelHint ? '' : dsmActionHtml('cancel', c, isAdmin, canViewAllRole),
             done ? `<button type="button" class="btn-act btn-edit" onclick="openCancelContractPdf(${c.id})"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF</button>` : '',
+            printToggleBtnHtml('cancel', c, isAdmin),
             isAdmin ? `<button type="button" class="btn-act btn-delete" onclick="deleteCancelContract(${c.id})"><i class="fa-solid fa-trash mr-1"></i> ລຶບ</button>` : '',
           ].filter(Boolean).join('');
           const cancelClick = (inQueue && c.status === 'awaiting_dsm') || done; // ສຳເລັດແລ້ວ: ກົດບັດເປີດ PDF
           const cancelClickFn = done ? `openCancelContractPdf(${c.id})` : `dsmWaitOpenFromList('cancel', ${c.id})`;
           return `
-        <div class="data-card loan-doc-card${cancelClick ? ' dsm-clickable' : ''}"${cancelClick ? ` onclick="${cancelClickFn}"` : ''}>
+        <div class="data-card loan-doc-card${cancelClick ? ' dsm-clickable' : ''}${printCardCls(c, canViewAllRole)}"${cancelClick ? ` onclick="${cancelClickFn}"` : ''}>
           <div class="data-card-main">
             <div class="data-card-title">
               ${esc(c.doc_no || ('#' + c.id))}
               <span class="badge ${done ? 'badge-approved' : 'badge-pending'}">${done ? 'ເກັບຕູ້ເຂົ້າສາງ' : (c.status === 'awaiting_dsm' ? 'ລໍຖ້າ DSM ເຊັນ' : 'ຮ່າງ')}</span>
+              ${printBadgeHtml(c, canViewAllRole)}
             </div>
             <div class="data-card-sub">
               <span><i class="fa-solid fa-store"></i>${esc(c.outlet_code || '-')} - ${esc(c.outlet_name || '-')}</span>
@@ -25499,6 +25574,7 @@ function assetStatusBadgeClass(status) {
               ${reasonTxt ? `<span><i class="fa-solid fa-circle-info"></i>${esc(reasonTxt)}</span>` : ''}
               ${dsmChipHtml(c)}
               <span><i class="fa-solid fa-clock"></i>${esc(fmtLaoTs(c.created_at) || '-')}</span>
+              ${printInfoHtml(c)}
             </div>
             ${dsmMiniProgressHtml(c)}
             ${cancelHint}
@@ -25516,6 +25592,7 @@ function assetStatusBadgeClass(status) {
           canSign && !inQueue ? `<button type="button" class="btn-act btn-edit" onclick="openLoanSignModal(${c.id})"><i class="fa-solid fa-signature mr-1"></i> ເຊັນຮັບ</button>` : '',
           inQueue && !isDone0(c) ? '' : dsmActionHtml('loan', c, isAdmin, canViewAllRole),
           !isDraft ? `<button type="button" class="btn-act btn-edit" onclick="openLoanContractPdf(${c.id})"><i class="fa-solid fa-file-pdf mr-1"></i> ເບິ່ງ PDF</button>` : '',
+          printToggleBtnHtml('loan', c, isAdmin),
           isAdmin ? `<button type="button" class="btn-act btn-delete" onclick="deleteLoanContract(${c.id})"><i class="fa-solid fa-trash mr-1"></i> ລຶບ</button>` : '',
         ].filter(Boolean).join('');
         const draftClick = inQueue && isDraft && !isAwaitingDsm && canSign; // ໃບຮ່າງ (ລະບົບສ້າງອັດຕະໂນມັດ) -> ກົດບັດເປີດ Step wizard
@@ -25525,11 +25602,12 @@ function assetStatusBadgeClass(status) {
           : queueHintHtml('ກົດບັດນີ້ເພື່ອເຊັນຮັບ (MDE)', 'fa-signature'));
         const loanClickFn = !isDraft ? `openLoanContractPdf(${c.id})` : (isAwaitingDsm ? `dsmWaitOpenFromList('loan', ${c.id})` : `loanOpenDraftWizard(${c.id})`);
         return `
-        <div class="data-card loan-doc-card${(loanClick || !isDraft) ? ' dsm-clickable' : ''}"${(loanClick || !isDraft) ? ` onclick="${loanClickFn}"` : ''}>
+        <div class="data-card loan-doc-card${(loanClick || !isDraft) ? ' dsm-clickable' : ''}${printCardCls(c, canViewAllRole)}"${(loanClick || !isDraft) ? ` onclick="${loanClickFn}"` : ''}>
           <div class="data-card-main">
             <div class="data-card-title">
               ${esc(c.doc_no || ('#' + c.id))}
               <span class="badge ${c.status === 'completed' ? 'badge-approved' : 'badge-pending'}">${c.status === 'completed' ? 'ອອກໃບແລ້ວ' : (isAwaitingDsm ? 'ລໍຖ້າ DSM ເຊັນ' : 'ຮ່າງ')}</span>
+              ${printBadgeHtml(c, canViewAllRole)}
             </div>
             <div class="data-card-sub">
               <span><i class="fa-solid fa-store"></i>${esc(c.outlet_code || '-')} - ${esc(c.outlet_name || '-')}</span>
@@ -25538,6 +25616,7 @@ function assetStatusBadgeClass(status) {
               ${c.handover_type ? `<span><i class="fa-solid fa-dolly"></i>${esc(LOAN_HANDOVER_TYPE_LABEL[c.handover_type] || c.handover_type)}</span>` : ''}
               ${dsmChipHtml(c)}
               <span><i class="fa-solid fa-clock"></i>${esc(fmtLaoTs(c.created_at) || '-')}</span>
+              ${printInfoHtml(c)}
             </div>
             ${dsmMiniProgressHtml(c)}
             ${loanHint}
