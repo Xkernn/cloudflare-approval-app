@@ -1179,6 +1179,11 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic')?'class
     @keyframes amPulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.7); opacity: 0; } }
     .am-tip { font-size: 11px; font-weight: 700; padding: 2px 6px; }
     @media (prefers-reduced-motion: reduce) { .am-truck.idle, .am-truck.idle::after { animation: none; } }
+    /* Map Tracking: ໜ້າເຕັມຈໍ (ແບບດຽວກັບແຜນທີ່ Cooler Not Scan) */
+    #view-map-tracking:not(.hidden) { position: fixed; inset: 0; z-index: 900; background: #f4f8f9; display: flex; flex-direction: column; animation: none; }
+    .map-fs-head { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; background: #fff; border-bottom: 1px solid var(--border-color); }
+    html:has(#view-map-tracking:not(.hidden)), body:has(#view-map-tracking:not(.hidden)) { overflow: hidden; }
+    #view-map-tracking:not(.hidden) .map-doctype-legend { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
     .map-doctype-legend {
       position: absolute; bottom: 10px; left: 10px; z-index: 500;
       background: #ffffff; border-radius: 10px; padding: 8px 12px;
@@ -2615,7 +2620,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
 
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
-    html[data-mm-style="premium"] { --pr-green:#087A45; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#F5C21B; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=2"); }
+    html[data-mm-style="premium"] { --pr-green:#087A45; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#F5C21B; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
     html[data-mm-style="premium"] body { background-color: #FBF7E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
     html[data-mm-style="premium"] .mm-page { background-color: #FBF7E6; background-image: var(--pr-pattern); background-size: 96px 96px; }
     html[data-mm-style="premium"] .content-card { border-color: #EADFB4; box-shadow: 0 6px 18px -12px rgba(7,91,53,.28); }
@@ -6282,19 +6287,18 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       </div>
 
       <!-- VIEW 2b: MAP TRACKING -->
-      <div id="view-map-tracking" class="hidden">
-        <div class="page-header">
-          <div>
-            <h1>Map Tracking</h1>
-            <p id="mapPageDesc">ສະແດງຕຳແໜ່ງ Asset ເທິງແຜນທີ່ (ຈາກພິກັດ Latitude/Longitude ທີ່ບັນທຶກໄວ້)</p>
+      <div id="view-map-tracking" class="hidden" role="dialog" aria-label="Map Tracking">
+        <div class="map-fs-head">
+          <button type="button" class="btn-back" onclick="mapTrackingGoBack()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:800; font-size:16px; line-height:1.2;"><i class="fa-solid fa-map-location-dot mr-1" style="color:var(--primary);"></i> Map Tracking</div>
+            <div id="mapPageDesc" style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">ສະແດງຕຳແໜ່ງ Asset ເທິງແຜນທີ່ (ຈາກພິກັດ Latitude/Longitude ທີ່ບັນທຶກໄວ້)</div>
           </div>
         </div>
-        <div class="content-card" style="padding: 0; overflow: hidden;">
-          <div id="assetMapContainer" style="width: 100%; height: 560px; position: relative; z-index: 1;"></div>
-        </div>
-        <p id="mapNoDataMsg" class="hidden" style="text-align:center; color: var(--text-muted); padding: 16px;">
+        <p id="mapNoDataMsg" class="hidden" style="text-align:center; color: var(--text-muted); padding: 8px 14px; margin:0; background:#fff; border-bottom:1px solid var(--border-color); font-size:12.5px;">
           ຍັງບໍ່ມີ Asset ທີ່ບັນທຶກພິກັດ Latitude/Longitude ໄວ້ — ເພີ່ມພິກັດໄດ້ຈາກໜ້າ "ແກ້ໄຂ" ໃນ Asset Tracking
         </p>
+        <div id="assetMapContainer" style="flex:1; min-height:0; width:100%; position:relative; z-index:0;"></div>
       </div>
 
       <!-- VIEW 2c: ASSET REQUEST -->
@@ -22816,6 +22820,12 @@ function assetStatusBadgeClass(status) {
       });
     }
 
+    function mapTrackingGoBack() {
+      let v = 'dashboard';
+      try { const h = mmHomeFor(currentUser && currentUser.role); if (h && h.view) v = h.view; } catch (e) {}
+      switchView(v);
+    }
+    window.addEventListener('resize', () => { try { if (assetMapInstance && !document.getElementById('view-map-tracking').classList.contains('hidden')) assetMapInstance.invalidateSize(); } catch (e) {} });
     async function loadAssetMap() {
       document.getElementById('mapPageDesc').textContent = (currentUser.role === 'admin' || currentUser.role === 'warehouse' || currentUser.role === 'delivery')
         ? 'ສະແດງຕຳແໜ່ງ Asset ທີ່ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ/ຈັດສົ່ງ (ແຍກສີຕາມ Doc Type) ບວກລາຍການທີ່ຕິດທຸງໄວ້ທັງໝົດ (ສີແດງ ດ່ວນ)'
