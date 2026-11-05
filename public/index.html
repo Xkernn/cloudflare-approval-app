@@ -2634,6 +2634,55 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
         radial-gradient(circle at 12% 0%, rgba(245,194,27,.32), transparent 46%),
         radial-gradient(circle at 96% 100%, rgba(13,153,88,.60), transparent 52%),
         linear-gradient(150deg, #063D24 0%, #075B35 58%, #087A45 100%); box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); }
+
+    /* ===== Premium: card-head icons that were Font Awesome glyphs in CSS (::before / ::after) -> custom SVG ===== */
+    html[data-mm-style="premium"] #view-user-dashboard { --ph-img: url("/icons/premium/svg/tab-bar/home.svg?v=1"); }
+    html[data-mm-style="premium"] #view-admin-dashboard { --ph-img: url("/icons/premium/svg/main-menu/admin_management.svg?v=1"); }
+    html[data-mm-style="premium"] #view-asset-tracking { --ph-img: url("/icons/premium/svg/main-menu/asset_tracking.svg?v=1"); }
+    html[data-mm-style="premium"] #view-delivery-hub { --ph-img: url("/icons/premium/svg/main-menu/delivery_report.svg?v=1"); }
+    html[data-mm-style="premium"] #view-history-hub, html[data-mm-style="premium"] #view-asset-delivery-history, html[data-mm-style="premium"] #view-asset-history { --ph-img: url("/icons/premium/svg/main-menu/asset_history.svg?v=1"); }
+    html[data-mm-style="premium"] #view-delivery-confirm { --ph-img: url("/icons/premium/svg/main-menu/delivery_scan.svg?v=1"); }
+    html[data-mm-style="premium"] #view-loan-contract { --ph-img: url("/icons/premium/svg/main-menu/loan_document.svg?v=1"); }
+    html[data-mm-style="premium"] #view-no-doc-delivery { --ph-img: url("/icons/premium/svg/mini/file-lines.svg?v=1"); }
+    html[data-mm-style="premium"] #view-no-doc-delivery-list, html[data-mm-style="premium"] #view-cooler-event-list, html[data-mm-style="premium"] #view-cooler-writeoff-list { --ph-img: url("/icons/premium/svg/mini/list-check.svg?v=1"); }
+    html[data-mm-style="premium"] #view-cooler-event { --ph-img: url("/icons/premium/svg/sub-menu/cooler_event.svg?v=1"); }
+    html[data-mm-style="premium"] #view-cooler-writeoff { --ph-img: url("/icons/premium/svg/sub-menu/cooler_depot.svg?v=1"); }
+    html[data-mm-style="premium"] #view-warehouse-stock { --ph-img: url("/icons/premium/svg/main-menu/warehouse_stock.svg?v=1"); }
+    html[data-mm-style="premium"] #view-stock-count { --ph-img: url("/icons/premium/svg/main-menu/warehouse_count.svg?v=1"); }
+    html[data-mm-style="premium"] #view-cooler-master { --ph-img: url("/icons/premium/svg/main-menu/cooler_search.svg?v=1"); }
+    html[data-mm-style="premium"] #view-lost-cooler { --ph-img: url("/icons/premium/svg/main-menu/lost_cooler.svg?v=1"); }
+    html[data-mm-style="premium"] #view-cooler-not-scan { --ph-img: url("/icons/premium/svg/main-menu/cooler_not_scan.svg?v=1"); }
+    html[data-mm-style="premium"] #view-new-cooler-hub, html[data-mm-style="premium"] #view-new-cooler { --ph-img: url("/icons/premium/svg/main-menu/new_cooler.svg?v=1"); }
+    html[data-mm-style="premium"] #view-ship-trip { --ph-img: url("/icons/premium/svg/sub-menu/province_trips.svg?v=1"); }
+    html[data-mm-style="premium"] #view-ship-plan { --ph-img: url("/icons/premium/svg/sub-menu/delivery_plan.svg?v=1"); }
+    html[data-mm-style="premium"] #view-prov-budget { --ph-img: url("/icons/premium/svg/main-menu/province_budget.svg?v=1"); }
+    html[data-mm-style="premium"] #view-vte-budget { --ph-img: url("/icons/premium/svg/main-menu/vte_budget.svg?v=1"); }
+    html[data-mm-style="premium"] #view-team-budget { --ph-img: url("/icons/premium/svg/main-menu/team_budget.svg?v=1"); }
+    html[data-mm-style="premium"] #view-announcements { --ph-img: url("/icons/premium/svg/main-menu/announcement.svg?v=1"); }
+    html[data-mm-style="premium"] #view-map-tracking { --ph-img: url("/icons/premium/svg/tab-bar/map.svg?v=1"); }
+    html[data-mm-style="premium"] #view-asset-request { --ph-img: url("/icons/premium/svg/main-menu/asset_request.svg?v=1"); }
+    html[data-mm-style="premium"] #view-user-guide { --ph-img: url("/icons/premium/svg/main-menu/user_guide.svg?v=1"); }
+    html[data-mm-style="premium"] #view-playbook { --ph-img: url("/icons/premium/svg/main-menu/cooler_size_guide.svg?v=1"); }
+    html[data-mm-style="premium"] #view-profile { --ph-img: url("/icons/premium/svg/tab-bar/profile.svg?v=1"); }
+    html[data-mm-style="premium"] .page-header::before { content: ""; font-size: 0; background: #FFF8DF var(--ph-img, url("/icons/premium/svg/mini/bars.svg?v=1")) center / 64% no-repeat; border: 1.5px solid #F5C21B; box-shadow: 0 6px 14px -8px rgba(0,0,0,.45); }
+    html[data-mm-style="premium"] #assetCardList { --dc-img: url("/icons/premium/svg/main-menu/asset_tracking.svg?v=1"); }
+    html[data-mm-style="premium"] #deliveryHistoryCardList { --dc-img: url("/icons/premium/svg/main-menu/delivery_report.svg?v=1"); }
+    html[data-mm-style="premium"] #requestCardList { --dc-img: url("/icons/premium/svg/main-menu/asset_request.svg?v=1"); }
+    html[data-mm-style="premium"] #historyRequestsCardList, html[data-mm-style="premium"] #stockHistoryCardList { --dc-img: url("/icons/premium/svg/main-menu/asset_history.svg?v=1"); }
+    html[data-mm-style="premium"] #stockCardList { --dc-img: url("/icons/premium/svg/main-menu/warehouse_stock.svg?v=1"); }
+    html[data-mm-style="premium"] #scListCards { --dc-img: url("/icons/premium/svg/main-menu/warehouse_count.svg?v=1"); }
+    html[data-mm-style="premium"] #scItemCards { --dc-img: url("/icons/premium/svg/main-menu/delivery_scan.svg?v=1"); }
+    html[data-mm-style="premium"] .data-card::before { content: ""; font-size: 0; background-image: var(--dc-img, url("/icons/premium/svg/mini/cube.svg?v=1")); background-repeat: no-repeat; background-position: center; background-size: 62%; }
+    html[data-mm-style="premium"] .data-card:hover::before { color: transparent; }
+    /* hub-card + guide arrows */
+    html[data-mm-style="premium"] #ncHub .loan-type-card::after, html[data-mm-style="premium"] #spHub .loan-type-card::after, html[data-mm-style="premium"] #loanMenuPage .loan-type-card::after, html[data-mm-style="premium"] #view-delivery-hub .loan-type-card::after, html[data-mm-style="premium"] #view-history-hub .loan-type-card::after, html[data-mm-style="premium"] #view-new-cooler-hub .loan-type-card::after {
+      content: ""; font-size: 0; width: 16px; height: 16px; margin-top: -8px; background: url("/icons/premium/svg/mini/chevron-right.svg?v=1") center / contain no-repeat; }
+    html[data-mm-style="premium"] .guide-item > summary::after { content: ""; font-size: 0; width: 14px; height: 14px; background: url("/icons/premium/svg/mini/chevron-down.svg?v=1") center / contain no-repeat; }
+    html[data-mm-style="premium"] .ad-flow.done .ad-ring::after { content: ""; font: 0/0 sans-serif; background: url("/icons/premium/svg/mini/check.svg?v=1") center / 62% no-repeat; }
+    html[data-mm-style="premium"] .page-header .btn-add i.fa-plus::before { background-image: url("/icons/premium/svg/mini/circle-plus.svg?v=1"); filter: none; }
+    /* hub-card title tiles: slightly larger icons on cream */
+    html[data-mm-style="premium"] :is(#ncHub, #spHub, #loanMenuPage, #view-delivery-hub, #view-history-hub, #view-new-cooler-hub) .loan-type-card-title i { background: #FFF8DF; border: 1px solid #EADFB4; }
+    html[data-mm-style="premium"] :is(#ncHub, #spHub, #loanMenuPage, #view-delivery-hub, #view-history-hub, #view-new-cooler-hub) .loan-type-card-title i::before { width: 1.55em; height: 1.55em; vertical-align: middle; }
   </style>
 <style>
 /* ໂໝດປິດລະບົບ (Maintenance) */
