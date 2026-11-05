@@ -19995,6 +19995,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     const cnsState = { q: '', status: '', days: '', province: '', offset: 0, limit: 50, total: 0, tab: 'list' };
     let cnsItems = {};
     let cnsMapInstance = null, cnsMapLayer = null, cnsMapPoints = {};
+    const CNS_CLICK_ZOOM = 17;   // ລະດັບຊູມເມື່ອກົດຈຸດ
     const cnsChecksState = { q: '', result: '', offset: 0, limit: 30, total: 0 };
     let cnsCheckDraft = null;
     const CNS_HEADER_ALIASES = {
@@ -20189,7 +20190,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             return `<div style="margin-top:6px; padding-top:6px; border-top:1px solid #e2e8f0;"><b>${esc(i.qr_code || '-')}</b>${i.brand || i.type ? ' · ' + esc([i.brand, i.type].filter(Boolean).join(' ')) : ''}<br><span style="color:${cnsAgeColor(d)};">Scan: ${i.latest_scan ? esc(i.latest_scan) + (d != null ? ' (' + d + ' ມື້)' : '') : 'ບໍ່ມີຂໍ້ມູນ'}</span>${chk}<br><button type="button" onclick="cnsOpenCheck(${Number(i.id)})" style="margin-top:4px; padding:5px 12px; border:0; border-radius:8px; background:#0f766e; color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit;">ລົງກວດແລ້ວ</button></div>`;
           }).join('');
           const first = g.items[0] || {};
-          m.bindPopup(`<div style="max-width:260px; font-size:13px;">
+          const popupHtml = (`<div style="max-width:260px; font-size:13px;">
             <b>${esc(g.outlet_name || 'ບໍ່ພົບຊື່ຮ້ານ')}</b><br>
             <span style="color:#475569;">${esc(g.outlet_code || '-')}${g.province ? ' · ' + esc(g.province) : ''}</span><br>
             ${g.phone ? `<span><i class="fa-solid fa-phone"></i> ${esc(g.phone)}</span><br>` : ''}
@@ -20198,6 +20199,16 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
             ${rows}${g.items.length > 15 ? `<div style="margin-top:3px; color:#64748b;">... ແລະອີກ ${g.items.length - 15} ຕູ້</div>` : ''}
             <div style="margin-top:8px;"><a href="https://www.google.com/maps/dir/?api=1&destination=${g.lat},${g.lng}" target="_blank" rel="noopener">ນຳທາງ Google Maps</a></div>
           </div>`);
+          // ກົດຈຸດ -> ຊູມເຂົ້າຫາຈຸດນັ້ນ (ນຸ່ມນວນ) ແລ້ວຈຶ່ງເປີດ popup
+          m.on('click', () => {
+            const map = cnsMapInstance, ll = L.latLng(g.lat, g.lng), z = Math.max(map.getZoom(), CNS_CLICK_ZOOM);
+            const popup = L.popup({ maxWidth: 280, autoPan: true, autoPanPadding: [20, 20] }).setLatLng(ll).setContent(popupHtml);
+            map.closePopup();
+            const near = map.getZoom() >= z && map.getCenter().distanceTo(ll) < 5;
+            if (near) { popup.openOn(map); return; }
+            map.once('moveend', () => popup.openOn(map));
+            map.flyTo(ll, z, { duration: 0.6 });
+          });
           bounds.push([g.lat, g.lng]);
         });
         cnsMapInstance.invalidateSize();
