@@ -5207,6 +5207,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </div>
           <div>
             <button class="btn-add xl-io" style="background:#ffffff; color:var(--text-main); border:1px solid var(--border-color);" onclick="cnsDownloadTemplate()"><i class="fa-solid fa-download mr-1"></i> Template</button>
+            <button type="button" id="cnsMapBtn" class="btn-add xl-io" style="background:#ffffff; color:var(--primary); border:1px solid var(--border-color);" onclick="cnsOpenMapPage()" title="ແຜນທີ່" aria-label="ແຜນທີ່"><i class="fa-solid fa-map-location-dot"></i></button>
             <button class="btn-add xl-io" onclick="document.getElementById('cnsImportInput').click()"><i class="fa-solid fa-file-import mr-1"></i> Import Excel</button>
             <input type="file" id="cnsImportInput" accept=".xlsx,.xls,.csv" class="hidden" onchange="cnsImportFile(event)">
           </div>
@@ -5237,7 +5238,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
         <div class="tab-nav" style="margin-bottom:14px;">
           <button id="cnsTabList" class="tab-btn active" onclick="cnsSwitchTab('list')"><i class="fa-solid fa-list mr-1"></i> ລາຍການ</button>
-          <button id="cnsTabMap" class="tab-btn" onclick="cnsSwitchTab('map')"><i class="fa-solid fa-map-location-dot mr-1"></i> ແຜນທີ່</button>
           <button id="cnsTabChecks" class="tab-btn" onclick="cnsSwitchTab('checks')"><i class="fa-solid fa-clipboard-check mr-1"></i> ລົງກວດແລ້ວ</button>
         </div>
 
@@ -5246,16 +5246,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <div id="cnsPager" style="display:flex; gap:10px; justify-content:center; align-items:center; margin:16px 0; flex-wrap:wrap;"></div>
         </div>
 
-        <div id="cnsPaneMap" class="hidden">
-          <div id="cnsMapInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:8px;"></div>
-          <div id="cnsMapContainer" style="height:min(70vh, 640px); min-height:360px; border-radius:14px; border:1px solid var(--border-color); overflow:hidden; position:relative; z-index:0;"></div>
-          <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:12.5px; color:#475569;">
-            <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#dc2626; vertical-align:-1px;"></span> ບໍ່ສະແກນ ≥ 90 ມື້ ຫຼື ບໍ່ມີຂໍ້ມູນ</span>
-            <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f59e0b; vertical-align:-1px;"></span> 30–89 ມື້</span>
-            <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#0ea5e9; vertical-align:-1px;"></span> ນ້ອຍກວ່າ 30 ມື້</span>
-            <span>ຂະໜາດວົງມົນ = ຈຳນວນຕູ້ໃນຮ້ານ</span>
-          </div>
-        </div>
         <div id="cnsPaneChecks" class="hidden">
           <div id="cnsChecksChips" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;"></div>
           <div class="content-card" style="padding:12px 14px; margin-bottom:14px;">
@@ -6881,6 +6871,24 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
   </div>
 
   <!-- Alert Modal (ແທນ appAlert() ຂອງ browser) -->
+  <!-- ແຜນທີ່ Cooler Not Scan: ໜ້າເຕັມຈໍແຍກຕ່າງຫາກ (ເປີດຈາກປຸ່ມໄອຄອນແຜນທີ່) -->
+  <div id="cnsMapPage" class="hidden" style="position:fixed; inset:0; z-index:900; background:#f4f8f9; display:flex; flex-direction:column;" role="dialog" aria-label="ແຜນທີ່ Cooler Not Scan">
+    <div style="display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; background:#fff; border-bottom:1px solid var(--border-color);">
+      <button type="button" class="btn-back" onclick="cnsCloseMapPage()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
+      <div style="min-width:0; flex:1;">
+        <div style="font-weight:800; font-size:16px; line-height:1.2;"><i class="fa-solid fa-map-location-dot mr-1" style="color:var(--primary);"></i> ແຜນທີ່ Cooler Not Scan</div>
+        <div id="cnsMapInfo" style="font-size:12.5px; color:var(--text-muted); margin-top:2px;"></div>
+      </div>
+    </div>
+    <div id="cnsMapContainer" style="flex:1; min-height:0; width:100%; position:relative; z-index:0;"></div>
+    <div style="display:flex; gap:6px 14px; flex-wrap:wrap; padding:8px 14px calc(8px + env(safe-area-inset-bottom, 0px)); background:#fff; border-top:1px solid var(--border-color); font-size:12.5px; color:#475569;">
+      <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#dc2626; vertical-align:-1px;"></span> ບໍ່ສະແກນ ≥ 90 ມື້ ຫຼື ບໍ່ມີຂໍ້ມູນ</span>
+      <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#f59e0b; vertical-align:-1px;"></span> 30–89 ມື້</span>
+      <span><span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#0ea5e9; vertical-align:-1px;"></span> ນ້ອຍກວ່າ 30 ມື້</span>
+      <span>ຂະໜາດວົງມົນ = ຈຳນວນຕູ້ໃນຮ້ານ</span>
+    </div>
+  </div>
+
   <div id="alertModal" class="confirm-overlay hidden" style="z-index:3100" role="alertdialog" aria-modal="true" aria-labelledby="alertModalTitle" aria-describedby="alertModalMessage">
     <div class="confirm-box" id="alertModalBox">
       <div class="confirm-icon" id="alertModalIcon">!</div>
@@ -19995,6 +20003,22 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     const cnsState = { q: '', status: '', days: '', province: '', offset: 0, limit: 50, total: 0, tab: 'list' };
     let cnsItems = {};
     let cnsMapInstance = null, cnsMapLayer = null, cnsMapPoints = {};
+    /* ---------- ໜ້າແຜນທີ່ເຕັມຈໍ ---------- */
+    function cnsMapOpen() { const el = document.getElementById('cnsMapPage'); return !!el && !el.classList.contains('hidden'); }
+    function cnsOpenMapPage() {
+      document.getElementById('cnsMapPage').classList.remove('hidden');
+      document.documentElement.style.overflow = 'hidden';
+      cnsLoadMap();
+    }
+    function cnsCloseMapPage() {
+      try { if (cnsMapInstance) cnsMapInstance.closePopup(); } catch (e) {}
+      document.getElementById('cnsMapPage').classList.add('hidden');
+      document.documentElement.style.overflow = '';
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && cnsMapOpen() && !document.querySelector('.modal-overlay:not(.hidden), .confirm-overlay:not(.hidden)')) cnsCloseMapPage();
+    });
+    window.addEventListener('resize', () => { if (cnsMapOpen() && cnsMapInstance) cnsMapInstance.invalidateSize(); });
     const CNS_CLICK_ZOOM = 17;   // ລະດັບຊູມເມື່ອກົດຈຸດ
     const cnsChecksState = { q: '', result: '', offset: 0, limit: 30, total: 0 };
     let cnsCheckDraft = null;
@@ -20029,7 +20053,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     function loadCoolerNotScanPage() {
       cnsState.offset = 0;
       cnsLoad(true);
-      if (cnsState.tab === 'map') cnsLoadMap();
+      if (cnsMapOpen()) cnsLoadMap();
     }
     function cnsSearch() {
       cnsState.q = document.getElementById('cnsSearchInput').value.trim();
@@ -20037,24 +20061,21 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       cnsState.province = document.getElementById('cnsProvince').value;
       cnsState.offset = 0;
       cnsLoad(false);
-      if (cnsState.tab === 'map') cnsLoadMap();
+      if (cnsMapOpen()) cnsLoadMap();
     }
     function cnsSetStatus(s) {
       cnsState.status = cnsState.status === s ? '' : s;
       cnsState.offset = 0;
       cnsLoad(false);
-      if (cnsState.tab === 'map') cnsLoadMap();
+      if (cnsMapOpen()) cnsLoadMap();
     }
     function cnsPage(d) { cnsState.offset = Math.max(0, cnsState.offset + d * cnsState.limit); cnsLoad(false); window.scrollTo(0, 0); }
     function cnsSwitchTab(t) {
       cnsState.tab = t;
       document.getElementById('cnsTabList').classList.toggle('active', t === 'list');
-      document.getElementById('cnsTabMap').classList.toggle('active', t === 'map');
       document.getElementById('cnsPaneList').classList.toggle('hidden', t !== 'list');
-      document.getElementById('cnsPaneMap').classList.toggle('hidden', t !== 'map');
       document.getElementById('cnsTabChecks').classList.toggle('active', t === 'checks');
       document.getElementById('cnsPaneChecks').classList.toggle('hidden', t !== 'checks');
-      if (t === 'map') cnsLoadMap();
       if (t === 'checks') { cnsChecksState.offset = 0; cnsChecksLoad(); }
     }
 
@@ -20065,7 +20086,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const color = on ? '#fff' : (tone || 'var(--text-main)');
         return `<button type="button" onclick="cnsSetStatus(${jsq(key)})" style="border:1px solid ${on ? 'var(--primary)' : 'var(--border-color)'}; background:${on ? 'var(--primary)' : '#fff'}; color:${color}; border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">${esc(label)}${n == null ? '' : ` <b>${Number(n || 0).toLocaleString()}</b>`}</button>`;
       };
-      const all = `<button type="button" onclick="cnsState.status=''; cnsState.offset=0; cnsLoad(false); if(cnsState.tab==='map') cnsLoadMap();" style="border:1px solid ${!cnsState.status ? 'var(--primary)' : 'var(--border-color)'}; background:${!cnsState.status ? 'var(--primary)' : '#fff'}; color:${!cnsState.status ? '#fff' : 'var(--text-main)'}; border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">ທັງໝົດ <b>${Number(st.total || 0).toLocaleString()}</b></button>`;
+      const all = `<button type="button" onclick="cnsState.status=''; cnsState.offset=0; cnsLoad(false); if(cnsMapOpen()) cnsLoadMap();" style="border:1px solid ${!cnsState.status ? 'var(--primary)' : 'var(--border-color)'}; background:${!cnsState.status ? 'var(--primary)' : '#fff'}; color:${!cnsState.status ? '#fff' : 'var(--text-main)'}; border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">ທັງໝົດ <b>${Number(st.total || 0).toLocaleString()}</b></button>`;
       document.getElementById('cnsChips').innerHTML = all
         + chip('matched', 'ຈັບຄູ່ຄົບ', st.matched, '#166534')
         + chip('no_outlet', 'ບໍ່ພົບ Outlet Master', st.no_outlet, '#b91c1c')
@@ -20149,7 +20170,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
     }
 
     /* ---------- ແຜນທີ່ ---------- */
-    async function cnsLoadMap() {
+    async function cnsLoadMap(keepView) {
       const info = document.getElementById('cnsMapInfo');
       info.textContent = 'ກຳລັງໂຫລດແຜນທີ່...';
       try {
@@ -20212,7 +20233,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           bounds.push([g.lat, g.lng]);
         });
         cnsMapInstance.invalidateSize();
-        if (bounds.length) cnsMapInstance.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+        if (bounds.length && !keepView) cnsMapInstance.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
         setTimeout(() => { try { cnsMapInstance.invalidateSize(); } catch (e) {} }, 350);   // ມືຖື: layout ຍັງລັງເລຕອນສະລັບແຖບ
         const nPts = (data.points || []).length;
         info.innerHTML = `ສະແດງ <b>${nPts.toLocaleString()}</b> ຕູ້ ໃນ <b>${groups.size.toLocaleString()}</b> ຈຸດ`
@@ -20288,7 +20309,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         cnsCloseCheck();
         await appAlert('ບັນທຶກຜົນການລົງກວດແລ້ວ — ເບິ່ງໄດ້ໃນແຖບ "ລົງກວດແລ້ວ"');
         cnsLoad(false);
-        if (cnsState.tab === 'map') cnsLoadMap();
+        if (cnsMapOpen()) cnsLoadMap();
       } catch (e) { d.saving = false; btn.disabled = false; btn.textContent = 'ບັນທຶກຜົນການລົງກວດ'; appAlert('ເຄືອຂ່າຍມີບັນຫາ ກະລຸນາລອງໃໝ່'); }
     }
 
@@ -20431,7 +20452,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
           if (failed) msg += `\nບໍ່ສຳເລັດ ${failed} ແຖວ:\n${errs.join('\n')}`;
           await appAlert(msg);
           cnsState.offset = 0; cnsLoad(true);
-          if (cnsState.tab === 'map') cnsLoadMap();
+          if (cnsMapOpen()) cnsLoadMap(true);
 
           const attention = [
             ...noQr.map(x => ({ row: x.row, why: 'ບໍ່ມີ QR Code' })),
@@ -20486,7 +20507,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         if (!res.ok) { appAlert(d.error || 'ຈັບຄູ່ໃໝ່ບໍ່ສຳເລັດ'); return; }
         await appAlert(`ຈັບຄູ່ໃໝ່ແລ້ວ — ບໍ່ພົບ Outlet Master ${Number(d.no_outlet || 0).toLocaleString()} · ບໍ່ພົບ Cooler Master ${Number(d.no_cooler || 0).toLocaleString()} (ຈາກ ${Number(d.total || 0).toLocaleString()} ຕູ້)`);
         cnsLoad(true);
-        if (cnsState.tab === 'map') cnsLoadMap();
+        if (cnsMapOpen()) cnsLoadMap();
       } catch (e) { appAlert('ຈັບຄູ່ໃໝ່ບໍ່ສຳເລັດ'); }
     }
 
@@ -20497,7 +20518,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const d = await res.json().catch(() => ({}));
         if (!res.ok) { appAlert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
         cnsLoad(true);
-        if (cnsState.tab === 'map') cnsLoadMap();
+        if (cnsMapOpen()) cnsLoadMap();
       } catch (e) { appAlert('ລຶບບໍ່ສຳເລັດ'); }
     }
 
@@ -20508,7 +20529,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         const d = await res.json().catch(() => ({}));
         if (!res.ok) { appAlert(d.error || 'ລຶບບໍ່ສຳເລັດ'); return; }
         cnsLoad(true);
-        if (cnsState.tab === 'map') cnsLoadMap();
+        if (cnsMapOpen()) cnsLoadMap();
       } catch (e) { appAlert('ລຶບບໍ່ສຳເລັດ'); }
     }
 
