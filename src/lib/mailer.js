@@ -117,3 +117,13 @@ export async function sendEmail(env, { to, subject, text, html, attachments }) {
   const sent = await res.json().catch(() => ({}));
   console.log("[mailer] Gmail accepted message id=" + (sent.id || "?") + " labels=" + JSON.stringify(sent.labelIds || []) + " to=" + toAddr);
 }
+
+// ກວດວ່າ refresh token ຍັງໃຊ້ໄດ້ບໍ (ຂໍ access token ໃໝ່ສະເໝີ ບໍ່ໃຊ້ຄ່າ cache) — ບໍ່ສົ່ງອີເມວ
+// ຖ້າໃຊ້ບໍ່ໄດ້ຈະ throw MAIL_NOT_CONFIGURED ຫຼື GMAIL_TOKEN_FAILED
+export async function checkGmailToken(env) {
+  const missing = ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER"].filter((k) => !env[k]);
+  if (missing.length) throw new Error("MAIL_NOT_CONFIGURED: " + missing.join(","));
+  cachedToken = null;
+  await getAccessToken(env);
+  return true;
+}

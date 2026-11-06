@@ -50,4 +50,6 @@ APP_URL = "https://cooler-system.xaisanasin.com"
 # - "0 1 * * *"  = ແຈ້ງເຕືອນປະຈຳວັນ (ຂ້າງເທິງ)
 # - "0 23 * * SUN" = ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ -> ສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ (MDE + DSM) ສະເພາະໃບທີ່ຄ້າງ >= 7 ມື້
 #   (ຕ້ອງໃຫ້ກົງກັບ SIGN_REMINDER_CRON ໃນ src/index.js)
-crons = ["0 1 * * *", "0 23 * * SUN"]
+# - "0 0 * * FRI" = ວັນສຸກ 00:00 UTC = 07:00 ເວລາລາວ -> ແຈ້ງເຕືອນ admin ໃຫ້ສ້າງ Gmail Refresh Token ໃໝ່
+#   (ຕ້ອງໃຫ້ກົງກັບ GMAIL_TOKEN_REMINDER_CRON ໃນ src/index.js)
+crons = ["0 1 * * *", "0 23 * * SUN", "0 0 * * FRI"]

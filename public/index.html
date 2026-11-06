@@ -626,7 +626,7 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic')?'class
     .page-header #btnUploadMde, .page-header #btnCreateDsmUsers, .page-header #btnUploadOutlet,
     .page-header #btnExportMde, .page-header #btnExportOutlet,
     .page-header #btnRunNotificationCheck, .page-header #btnMdeReminder, .page-header #btnMdeSignReminder,
-    .page-header #btnDsmSignReminder, .page-header #btnRunSignReminderAuto {
+    .page-header #btnDsmSignReminder, .page-header #btnRunSignReminderAuto, .page-header #btnTestEmail {
       background: rgba(255, 255, 255, 0.10) !important; color: #EAF4F6 !important;
       border: 1px solid rgba(255, 255, 255, 0.28) !important; box-shadow: none !important;
     }
@@ -634,7 +634,7 @@ try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic')?'class
       .page-header #btnUploadMde:hover, .page-header #btnCreateDsmUsers:hover, .page-header #btnUploadOutlet:hover,
       .page-header #btnExportMde:hover, .page-header #btnExportOutlet:hover,
       .page-header #btnRunNotificationCheck:hover, .page-header #btnMdeReminder:hover, .page-header #btnMdeSignReminder:hover,
-      .page-header #btnDsmSignReminder:hover, .page-header #btnRunSignReminderAuto:hover {
+      .page-header #btnDsmSignReminder:hover, .page-header #btnRunSignReminderAuto:hover, .page-header #btnTestEmail:hover {
         background: rgba(255, 255, 255, 0.20) !important;
       }
     }
@@ -3325,6 +3325,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </button>
           <button id="btnRunSignReminderAuto" class="btn-add" onclick="handleRunSignReminderAuto()" title="ສົ່ງອີເມວເຕືອນເອກະສານຄ້າງເຊັນ ຫາ MDE ແລະ DSM ທຸກຄົນທີ່ຍັງຄ້າງ ທັນທີ (ລະບົບຍັງສົ່ງເອງທຸກວັນຈັນ 06:00 ສຳລັບໃບທີ່ຄ້າງເກີນ 7 ມື້)" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
             <i class="fa-solid fa-envelope-circle-check mr-1"></i> ສົ່ງເມວເຕືອນຄ້າງເຊັນ (MDE + DSM)
+          </button>
+          <button id="btnTestEmail" class="btn-add" onclick="handleTestEmail()" title="ທົດສອບສົ່ງອີເມວຜ່ານ Gmail ເພື່ອກວດວ່າ token ຍັງໃຊ້ໄດ້" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">
+            <i class="fa-solid fa-envelope mr-1"></i> ທົດສອບສົ່ງອີເມວ
           </button>
         </div>
         <div id="notifCheckAlert" class="alert hidden" style="margin-bottom: 16px; white-space: pre-line;"></div>
@@ -10413,6 +10416,38 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         alertBox.textContent = data.sent
           ? `ສົ່ງແຈ້ງເຕືອນຫາ admin/warehouse ແລ້ວ:\n${data.summary}`
           : (data.summary || 'ບໍ່ມີລາຍການທີ່ຕ້ອງແຈ້ງເຕືອນໃນຕອນນີ້');
+        alertBox.className = 'alert alert-success';
+      } catch (e) {
+        alertBox.textContent = e.message || 'ເກີດຂໍ້ຜິດພາດ';
+        alertBox.className = 'alert alert-error';
+      }
+      alertBox.style.whiteSpace = 'pre-line';
+      alertBox.classList.remove('hidden');
+      btn.disabled = false;
+    }
+
+    /* ===== Admin: ທົດສອບສົ່ງອີເມວ (Gmail) — ສົ່ງຫາອີເມວຂອງຕົນເອງ ຫຼື ອີເມວທີ່ປ້ອນ ===== */
+    async function handleTestEmail() {
+      const to = await appPrompt('ປ້ອນອີເມວທີ່ຕ້ອງການສົ່ງທົດສອບ (ຄ່າເລີ່ມຕົ້ນ = ອີເມວຂອງທ່ານ)', {
+        title: 'ທົດສອບສົ່ງອີເມວ', defaultValue: (currentUser && currentUser.email) || '', type: 'email', okText: 'ສົ່ງ', placeholder: 'name@example.com'
+      });
+      if (to === null) return;
+      const btn = document.getElementById('btnTestEmail');
+      const alertBox = document.getElementById('notifCheckAlert');
+      btn.disabled = true;
+      alertBox.textContent = 'ກຳລັງສົ່ງອີເມວທົດສອບ...';
+      alertBox.className = 'alert';
+      alertBox.style.whiteSpace = 'pre-line';
+      alertBox.classList.remove('hidden');
+      try {
+        const res = await fetch('/api/admin/test-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUser.id, to: String(to || '').trim() })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error((data.error || 'ສົ່ງອີເມວບໍ່ສຳເລັດ') + (data.detail ? '\n(' + data.detail + ')' : ''));
+        alertBox.textContent = `ສົ່ງອີເມວທົດສອບສຳເລັດແລ້ວ ໄປທີ່ ${data.to}\nກະລຸນາກວດກ່ອງຈົດໝາຍ (ຖ້າບໍ່ເຫັນ ລອງເບິ່ງ Spam)`;
         alertBox.className = 'alert alert-success';
       } catch (e) {
         alertBox.textContent = e.message || 'ເກີດຂໍ້ຜິດພາດ';
@@ -28037,23 +28072,29 @@ function assetStatusBadgeClass(status) {
     ];
     /* nav -> ຄີ icon ຊຸດ premium/PNG (ຊຸດດຽວກັບເມນູຫຼັກ) ເພື່ອໃຫ້ທາງລັດໜ້າຫຼັກປ່ຽນຕາມ theme PNG */
 const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-asset': 'asset', 'nav-team-budget': 'teambudget', 'nav-vte-budget': 'vte', 'nav-prov-budget': 'prov', 'nav-loan-contract': 'loan', 'nav-history': 'history', 'nav-delivery-hub': 'delivery', 'nav-warehouse-stock': 'stock', 'nav-stock-count': 'count', 'nav-cooler-master': 'cmaster', 'nav-new-cooler': 'newcooler', 'nav-map': 'tab:map', 'nav-announcements': 'ann', 'nav-playbook': 'playbook', 'nav-user-guide': 'guide' };
-function wlChipIc(k) { return window.mmPr ? mmPr(k) : ''; }
+/* icon PNG ທີ່ອອກແບບເອງສຳລັບໜ້າຫຼັກ: /icons/png/home/<file>.png — ຖ້າໄຟລ໌ຍັງບໍ່ມີ ຈະໃຊ້ icon ຊຸດຫຼັກ (fallback key) ແທນ */
+    const WL_OWN_V = '1';
+    function wlOwnIc(file, fallbackKey) {
+      return `<img class="ic-pr" src="/icons/png/home/${file}.png?v=${WL_OWN_V}" alt="" aria-hidden="true" draggable="false" onerror="this.onerror=null;this.outerHTML=(window.mmPr?mmPr('${fallbackKey}'):'')">`;
+    }
+    function wlChipIc(file, fallbackKey) { return wlOwnIc(file, fallbackKey); }
+    const WL_OWN = { 'nav-dashboard': 'card-admin-management', 'nav-request': 'card-asset-request' };
     function renderWelcomeHome() {
       const u = currentUser || {};
       const h = new Date().getHours();
       document.getElementById('wlHello').textContent = h < 12 ? 'ສະບາຍດີຕອນເຊົ້າ' : (h < 17 ? 'ສະບາຍດີຕອນບ່າຍ' : 'ສະບາຍດີຕອນແລງ');
       document.getElementById('wlName').textContent = u.mde_name || u.email || '-';
       const chips = [];
-      if (u.team) chips.push(`<span class="tb-chip-id">${wlChipIc('teambudget')}<i class="fa-solid fa-users"></i>Team: ${esc(u.team)}</span>`);
-      if (u.mde_code) chips.push(`<span class="tb-chip-id">${wlChipIc('asset')}<i class="fa-solid fa-id-badge"></i>MDE: ${esc(u.mde_code)}</span>`);
+      if (u.team) chips.push(`<span class="tb-chip-id">${wlChipIc('chip-team','teambudget')}<i class="fa-solid fa-users"></i>Team: ${esc(u.team)}</span>`);
+      if (u.mde_code) chips.push(`<span class="tb-chip-id">${wlChipIc('chip-mde','asset')}<i class="fa-solid fa-id-badge"></i>MDE: ${esc(u.mde_code)}</span>`);
       const tiles = WL_TILES.filter(x => { if (x.roles && !x.roles.includes(u.role)) return false; const n = document.getElementById(x.nav); return n && !n.classList.contains('hidden'); });
-      if (u.isAssistantAdmin) chips.unshift('<span class="tb-chip-id">' + wlChipIc('adminmgmt') + '<i class="fa-solid fa-user-shield"></i>ຜູ້ຊ່ວຍ Admin</span>');
-      else if (u.role === 'admin') chips.unshift('<span class="tb-chip-id">' + wlChipIc('adminmgmt') + '<i class="fa-solid fa-user-shield"></i>Admin</span>');
-      else if (u.role === 'dsm') chips.unshift('<span class="tb-chip-id">' + wlChipIc('dsmsign') + '<i class="fa-solid fa-user-tie"></i>DSM' + (u.team ? ' · ' + esc(u.team) : '') + '</span>');
-      else if (u.role === 'warehouse') chips.unshift('<span class="tb-chip-id">' + wlChipIc('stock') + '<i class="fa-solid fa-warehouse"></i>ພະນັກງານສາງ</span>');
+      if (u.isAssistantAdmin) chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-assistant-admin','adminmgmt') + '<i class="fa-solid fa-user-shield"></i>ຜູ້ຊ່ວຍ Admin</span>');
+      else if (u.role === 'admin') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-admin','adminmgmt') + '<i class="fa-solid fa-user-shield"></i>Admin</span>');
+      else if (u.role === 'dsm') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-dsm','dsmsign') + '<i class="fa-solid fa-user-tie"></i>DSM' + (u.team ? ' · ' + esc(u.team) : '') + '</span>');
+      else if (u.role === 'warehouse') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-warehouse','stock') + '<i class="fa-solid fa-warehouse"></i>ພະນັກງານສາງ</span>');
       document.getElementById('wlChips').innerHTML = chips.join('');
       document.getElementById('wlGrid').innerHTML = tiles.map((x, i) =>
-        `<button type="button" class="wl-card" style="--i:${i}" onclick="switchView('${x.view}')"><span class="wl-ic">${(window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
+        `<button type="button" class="wl-card" style="--i:${i}" onclick="switchView('${x.view}')"><span class="wl-ic">${WL_OWN[x.nav] ? wlOwnIc(WL_OWN[x.nav], WL_PR[x.nav]) : (window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
     }
 
     /* ===== ມຸມມອງ "ພາບລວມ": card ຕໍ່ລາຍການ ເຫັນ % ການໃຊ້ໂຄຕ້າທັນທີ ເລີ່ມຈາກລາຍການທີ່ໃຊ້ໄປຫຼາຍສຸດ ===== */

@@ -5,7 +5,7 @@ import { PDFDocument } from "pdf-lib";
 import { buildLoanPdf } from "./lib/clpdf.js";
 import { buildCancelPdf } from "./lib/cancelpdf.js";
 import { buildTripDocPdf } from "./lib/tripdocpdf.js";
-import { sendEmail } from "./lib/mailer.js";
+import { sendEmail, checkGmailToken } from "./lib/mailer.js";
 import { officeOverview } from "./lib/office.js";
 
 // ອອກໃບສັນຍາຢືມ — ເດົາ handover_type ຈາກ assets.doc_type ອັດຕະໂນມັດ (ແກ້ໄຂໄດ້ຢູ່ໜ້າຟອມກ່ອນອອກໃບ)
@@ -3002,6 +3002,28 @@ async function tokenCanBypassMaintenance(env, request) {
 // ==========================================================================
 const SIGN_REMINDER_MIN_AGE_DAYS = 7;
 const SIGN_REMINDER_CRON = "0 23 * * SUN"; // ວັນອາທິດ 23:00 UTC = ວັນຈັນ 06:00 ເວລາລາວ (UTC+7)
+
+// ແຈ້ງເຕືອນ admin ໃຫ້ສ້າງ Gmail Refresh Token ໃໝ່ ທຸກວັນສຸກ 07:00 ເວລາລາວ (ວັນສຸກ 00:00 UTC = 07:00 UTC+7)
+// ຕ້ອງໃຫ້ກົງກັບ crons ໃນ wrangler.toml. ແນບສະຖານະ token ປັດຈຸບັນໄປນຳ (ກວດດ້ວຍການຂໍ access token — ບໍ່ສົ່ງອີເມວ)
+const GMAIL_TOKEN_REMINDER_CRON = "0 0 * * FRI";
+async function runGmailTokenReminder(env) {
+  let status;
+  try {
+    await checkGmailToken(env);
+    status = "ສະຖານະ token ດຽວນີ້: ໃຊ້ໄດ້ປົກກະຕິ";
+  } catch (e) {
+    const em = String((e && e.message) || e);
+    status = em.startsWith("MAIL_NOT_CONFIGURED")
+      ? "ສະຖານະ: ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Gmail (GMAIL_* secrets)"
+      : "ສະຖານະ: Token ໃຊ້ບໍ່ໄດ້ແລ້ວ (ໝົດອາຍຸ/ຖືກຖອນ) — ຕ້ອງສ້າງໃໝ່ດ່ວນ";
+  }
+  await sendWebPushToRoles(env, ["admin"], {
+    title: "ເຕືອນ: ສ້າງ Gmail Refresh Token ໃໝ່",
+    body: `ຮອດເວລາສ້າງ Gmail Refresh Token ໃໝ່ປະຈຳອາທິດ ແລ້ວອັບເດດ GMAIL_REFRESH_TOKEN ໃນ Cloudflare.\n${status}`,
+    url: "dashboard",
+  });
+  return { status };
+}
 async function runSignReminderEmails(env, { appUrl = "", minAgeDays = SIGN_REMINDER_MIN_AGE_DAYS, actor = "auto-weekly" } = {}) {
   const age = Math.max(0, Math.min(365, Number(minAgeDays) || 0));
   const ageBind = `-${age} days`;
@@ -8685,6 +8707,42 @@ export default {
       }
     }
 
+    // 2g-1. Admin: ກົດທົດສອບສົ່ງອີເມວ (Gmail API) — ສົ່ງແລ້ວລໍຖ້າຜົນ ເພື່ອໃຫ້ເຫັນ error ທັນທີ
+    if (url.pathname === "/api/admin/test-email" && request.method === "POST") {
+      try {
+        const { userId, to } = await request.json();
+        const requester = userId ? await env.DB.prepare("SELECT role, email FROM users WHERE id = ?").bind(userId).first() : null;
+        if (!requester || !isAdminLike(requester.role)) {
+          return Response.json({ error: "ບໍ່ມີສິດເຮັດລາຍການນີ້" }, { status: 403 });
+        }
+        const target = String(to || requester.email || "").trim().slice(0, 254);
+        if (!target) return Response.json({ error: "ບໍ່ພົບອີເມວຜູ້ຮັບ — ກະລຸນາປ້ອນອີເມວ" }, { status: 400 });
+        const when = new Date().toLocaleString("en-GB", { timeZone: "Asia/Vientiane" });
+        try {
+          await sendEmail(env, {
+            to: target,
+            subject: "ທົດສອບສົ່ງອີເມວ (Cooler System)",
+            text: `ນີ້ແມ່ນອີເມວທົດສອບຈາກລະບົບ.\nເວລາ: ${when} (ເວລາລາວ)\nຖ້າທ່ານເຫັນອີເມວນີ້ ແປວ່າ Gmail ສົ່ງໄດ້ປົກກະຕິ.`,
+            html: `<div style="font-family:Noto Sans Lao,Noto Sans Lao UI,Phetsarath OT,Saysettha OT,Leelawadee UI,Segoe UI,Tahoma,Arial,sans-serif;max-width:420px"><p><b>ທົດສອບສົ່ງອີເມວ</b></p><p>ນີ້ແມ່ນອີເມວທົດສອບຈາກລະບົບ Cooler System.</p><p>ເວລາ: ${when} (ເວລາລາວ)</p><p style="color:#16a34a">ຖ້າທ່ານເຫັນອີເມວນີ້ ແປວ່າ Gmail ສົ່ງໄດ້ປົກກະຕິ.</p></div>`,
+          });
+        } catch (e) {
+          const em = String((e && e.message) || e);
+          console.error("/api/admin/test-email", em);
+          let hint = "ສົ່ງອີເມວບໍ່ສຳເລັດ";
+          if (em.startsWith("MAIL_NOT_CONFIGURED")) hint = "ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ Gmail (ຂາດ " + (em.split(":")[1] || "GMAIL_* secrets").trim() + ")";
+          else if (em.startsWith("GMAIL_TOKEN_FAILED")) hint = "Gmail Refresh Token ໃຊ້ບໍ່ໄດ້ (ໝົດອາຍຸ/ຖືກຖອນ ຫຼື ບໍ່ກົງກັບ Client ID/Secret) — ສ້າງ token ໃໝ່ ແລ້ວອັບເດດ GMAIL_REFRESH_TOKEN";
+          else if (em.startsWith("MAIL_BAD_RECIPIENT")) hint = "ທີ່ຢູ່ອີເມວຜູ້ຮັບບໍ່ຖືກຕ້ອງ";
+          else if (em.startsWith("GMAIL_SEND_FAILED 403")) hint = "Gmail ປະຕິເສດ (403) — ກວດວ່າເປີດ Gmail API ແລ້ວ ແລະ token ມີສິດ gmail.send";
+          else if (em.startsWith("GMAIL_SEND_FAILED")) hint = "Gmail API ສົ່ງບໍ່ສຳເລັດ";
+          return Response.json({ ok: false, error: hint, detail: em.slice(0, 300) }, { status: 502 });
+        }
+        return Response.json({ ok: true, to: target });
+      } catch (e) {
+        console.error("/api/admin/test-email", e);
+        return Response.json({ error: `ທົດສອບສົ່ງອີເມວລົ້ມເຫລວ: ${e.message || e}` }, { status: 500 });
+      }
+    }
+
     // 3. Admin Users API (ดึงรายชื่อผู้ใช้ทั้งหมด)
     if (url.pathname === "/api/admin/users" && request.method === "GET") {
       const { results } = await env.DB.prepare(
@@ -13241,6 +13299,11 @@ export default {
   // Cron Trigger (ຕັ້ງເວລາໄວ້ໃນ wrangler.toml ຊ່ອງ [triggers] crons)
   // ຮັນອັດຕະໂນມັດທຸກເຊົ້າ ເພື່ອກວດ ແລະ ສົ່ງສະຫຼຸບແຈ້ງເຕືອນຫາ admin/warehouse
   async scheduled(event, env, ctx) {
+    if (event.cron === GMAIL_TOKEN_REMINDER_CRON) {
+      // ທຸກວັນສຸກ 07:00 ເວລາລາວ: ແຈ້ງເຕືອນ admin ໃຫ້ສ້າງ Gmail Refresh Token ໃໝ່
+      ctx.waitUntil(runGmailTokenReminder(env).catch((e) => console.error("scheduled runGmailTokenReminder", e)));
+      return;
+    }
     if (event.cron === SIGN_REMINDER_CRON) {
       // ທຸກວັນຈັນ 06:00 ເວລາລາວ: ສົ່ງເມວເຕືອນເອກະສານຄ້າງເຊັນ (MDE + DSM) ສະເພາະໃບທີ່ຄ້າງ >= 7 ມື້
       ctx.waitUntil(runSignReminderEmails(env, { appUrl: env.APP_URL || "", minAgeDays: SIGN_REMINDER_MIN_AGE_DAYS, actor: "auto-weekly" })
