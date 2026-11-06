@@ -1,9 +1,10 @@
 {
-  "version": "1.2.1",
-  "build": 8,
+  "version": "1.2.0",
+  "build": 9,
   "date": "2026-11-06",
   "notes": [
     "ເພີ່ມ icon theme beerlao cooler",
-    "ຫລຸດຄວາມເຂັ້ມ pattern background 70% ແລະ ໜ້າ Map ເປັນເຕັມຈໍ"
+    "ຫລຸດຄວາມເຂັ້ມ pattern background 70% ແລະ ໜ້າ Map ເປັນເຕັມຈໍ",
+    "ໜ້າຫຼັກ: ປ່ຽນ icon Admin Management, ຂໍລະຫັດຕູ້ແຊ່ ແລະ chip Admin/Team/MDE ເປັນຊຸດ SVG Premium"
   ]
 }

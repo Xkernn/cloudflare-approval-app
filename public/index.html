@@ -2611,6 +2611,9 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .wl-ic:has(> img.ic-pr) { width: 48px; height: 48px; background: transparent; border-radius: 0; }
     html[data-mm-style="premium"] .wl-ic > img.ic-pr { filter: drop-shadow(0 2px 3px rgba(7,91,53,.16)); }
     html[data-mm-style="premium"] .wl-ic > img.ic-pr ~ i { display: none; }
+    /* ໜ້າຫຼັກ: icon ໃນ chip (Admin / Team / MDE) ໃຊ້ຊຸດ SVG ຂອງ Premium */
+    html[data-mm-style="premium"] .tb-chip-id > img.ic-pr { display: inline-block; width: 20px; height: 20px; margin: -3px 6px -3px -3px; vertical-align: middle; }
+    html[data-mm-style="premium"] .tb-chip-id > img.ic-pr ~ i { display: none; }
     @media (max-width: 992px) {
       html[data-mm-style="premium"] .mobile-tabbar { background: rgba(255,251,234,.97); border: 1.5px solid #F5C21B; box-shadow: 0 14px 30px -10px rgba(7,91,53,.35), 0 4px 10px rgba(7,91,53,.12); }
       html[data-mm-style="premium"] .mobile-tab { color: #5A6A55; }
@@ -28033,20 +28036,21 @@ function assetStatusBadgeClass(status) {
       { nav: 'nav-user-guide',    view: 'userGuide',    icon: 'fa-book-open',          t: 'ຄູ່ມືການໃຊ້',          d: 'ວິທີໃຊ້ງານແຕ່ລະເມນູ' }
     ];
     /* nav -> ຄີ icon ຊຸດ premium/PNG (ຊຸດດຽວກັບເມນູຫຼັກ) ເພື່ອໃຫ້ທາງລັດໜ້າຫຼັກປ່ຽນຕາມ theme PNG */
-const WL_PR = { 'nav-asset': 'asset', 'nav-team-budget': 'teambudget', 'nav-vte-budget': 'vte', 'nav-prov-budget': 'prov', 'nav-loan-contract': 'loan', 'nav-history': 'history', 'nav-delivery-hub': 'delivery', 'nav-warehouse-stock': 'stock', 'nav-stock-count': 'count', 'nav-cooler-master': 'cmaster', 'nav-new-cooler': 'newcooler', 'nav-map': 'tab:map', 'nav-announcements': 'ann', 'nav-playbook': 'playbook', 'nav-user-guide': 'guide' };
-function renderWelcomeHome() {
+const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-asset': 'asset', 'nav-team-budget': 'teambudget', 'nav-vte-budget': 'vte', 'nav-prov-budget': 'prov', 'nav-loan-contract': 'loan', 'nav-history': 'history', 'nav-delivery-hub': 'delivery', 'nav-warehouse-stock': 'stock', 'nav-stock-count': 'count', 'nav-cooler-master': 'cmaster', 'nav-new-cooler': 'newcooler', 'nav-map': 'tab:map', 'nav-announcements': 'ann', 'nav-playbook': 'playbook', 'nav-user-guide': 'guide' };
+function wlChipIc(k) { return window.mmPr ? mmPr(k) : ''; }
+    function renderWelcomeHome() {
       const u = currentUser || {};
       const h = new Date().getHours();
       document.getElementById('wlHello').textContent = h < 12 ? 'ສະບາຍດີຕອນເຊົ້າ' : (h < 17 ? 'ສະບາຍດີຕອນບ່າຍ' : 'ສະບາຍດີຕອນແລງ');
       document.getElementById('wlName').textContent = u.mde_name || u.email || '-';
       const chips = [];
-      if (u.team) chips.push(`<span class="tb-chip-id"><i class="fa-solid fa-users"></i>Team: ${esc(u.team)}</span>`);
-      if (u.mde_code) chips.push(`<span class="tb-chip-id"><i class="fa-solid fa-id-badge"></i>MDE: ${esc(u.mde_code)}</span>`);
+      if (u.team) chips.push(`<span class="tb-chip-id">${wlChipIc('teambudget')}<i class="fa-solid fa-users"></i>Team: ${esc(u.team)}</span>`);
+      if (u.mde_code) chips.push(`<span class="tb-chip-id">${wlChipIc('asset')}<i class="fa-solid fa-id-badge"></i>MDE: ${esc(u.mde_code)}</span>`);
       const tiles = WL_TILES.filter(x => { if (x.roles && !x.roles.includes(u.role)) return false; const n = document.getElementById(x.nav); return n && !n.classList.contains('hidden'); });
-      if (u.isAssistantAdmin) chips.unshift('<span class="tb-chip-id"><i class="fa-solid fa-user-shield"></i>ຜູ້ຊ່ວຍ Admin</span>');
-      else if (u.role === 'admin') chips.unshift('<span class="tb-chip-id"><i class="fa-solid fa-user-shield"></i>Admin</span>');
-      else if (u.role === 'dsm') chips.unshift('<span class="tb-chip-id"><i class="fa-solid fa-user-tie"></i>DSM' + (u.team ? ' · ' + esc(u.team) : '') + '</span>');
-      else if (u.role === 'warehouse') chips.unshift('<span class="tb-chip-id"><i class="fa-solid fa-warehouse"></i>ພະນັກງານສາງ</span>');
+      if (u.isAssistantAdmin) chips.unshift('<span class="tb-chip-id">' + wlChipIc('adminmgmt') + '<i class="fa-solid fa-user-shield"></i>ຜູ້ຊ່ວຍ Admin</span>');
+      else if (u.role === 'admin') chips.unshift('<span class="tb-chip-id">' + wlChipIc('adminmgmt') + '<i class="fa-solid fa-user-shield"></i>Admin</span>');
+      else if (u.role === 'dsm') chips.unshift('<span class="tb-chip-id">' + wlChipIc('dsmsign') + '<i class="fa-solid fa-user-tie"></i>DSM' + (u.team ? ' · ' + esc(u.team) : '') + '</span>');
+      else if (u.role === 'warehouse') chips.unshift('<span class="tb-chip-id">' + wlChipIc('stock') + '<i class="fa-solid fa-warehouse"></i>ພະນັກງານສາງ</span>');
       document.getElementById('wlChips').innerHTML = chips.join('');
       document.getElementById('wlGrid').innerHTML = tiles.map((x, i) =>
         `<button type="button" class="wl-card" style="--i:${i}" onclick="switchView('${x.view}')"><span class="wl-ic">${(window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
