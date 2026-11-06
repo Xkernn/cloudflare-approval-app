@@ -7,7 +7,9 @@
   <script>try{var m=localStorage.getItem('lbcUiMode');if(m==='easy')document.documentElement.setAttribute('data-ui-mode',m)}catch(e){}
 /* ເປີດຜ່ານເວັບ (ບໍ່ແມ່ນແອັບທີ່ຕິດຕັ້ງ): ຄ່າເລີ່ມຕົ້ນ = ໂໝດທຳມະດາ + Theme ແບບເກົ່າ (classic) ທັງມືຖື/ຄອມ — ຖ້າຜູ້ໃຊ້ເລືອກເອງ (lbc_mm_style_set) ໃຊ້ຕາມທີ່ເລືອກ */
 window.__lbcInstalled=(function(){try{return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true||(document.referrer||'').indexOf('android-app://')===0}catch(e){return false}})();
-try{var u=localStorage.getItem('lbc_mm_style_set');var st=(u==='classic')?'classic':'premium';document.documentElement.setAttribute('data-mm-style',st);if(u==='png')document.documentElement.setAttribute('data-mm-icons','png')}catch(e){document.documentElement.setAttribute('data-mm-style','premium')}</script>
+/* ບັງຄັບໃຊ້ Theme Beerlao Premium PNG ເປັນ theme ຫຼັກດຽວ (theme ອື່ນຖືກປິດການໃຊ້ງານ) */
+document.documentElement.setAttribute('data-mm-style','premium');document.documentElement.setAttribute('data-mm-icons','png');
+try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
 
@@ -2489,6 +2491,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .mm-theme-seg button:hover { border-color: var(--primary); }
     .mm-theme-seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(12,140,166,.16); }
     .mm-theme-seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .mm-theme-seg button:disabled, .gs-opt:disabled { background: #EEEEEE !important; border-color: #D6D6D6 !important; box-shadow: none !important; color: #9A9A9A !important; cursor: not-allowed !important; filter: grayscale(1); opacity: .6; pointer-events: none; }
+    .mm-theme-seg button:disabled small, .gs-opt:disabled small, .mm-theme-seg button:disabled b, .gs-opt:disabled b { color: #9A9A9A !important; }
     @media (max-width: 480px) { .mm-theme-seg { grid-template-columns: 1fr; } }
     @media (max-width: 992px) {
       html:not([data-mm-style="classic"]) .mobile-tab-icon i.fa-solid,
@@ -6787,7 +6791,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         </div>
 
         <div class="profile-grid pf-grid hidden" id="pfGrid">
-          <div class="content-card" id="mmThemeCard" data-pf="display"><h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-palette" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນ Theme</h3><p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື (ຈື່ໄວ້ໃນເຄື່ອງນີ້)</p><div class="mm-theme-seg" role="group" aria-label="Theme"><button type="button" data-style="classic" aria-pressed="false" onclick="mmSetStyle('classic')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small></button><button type="button" data-style="premium" aria-pressed="false" onclick="mmSetStyle('premium')"><b>Beerlao Premium</b><small>ສີທອງ · ຂຽວ · ຄຣີມ ແລະ ໂລໂກ້ Beerlao</small></button><button type="button" data-style="png" aria-pressed="false" onclick="mmSetStyle('png')"><b>Beerlao Premium PNG</b><small>ສີ Premium ເດີມ · ໄອຄອນເປັນຊຸດຮູບ PNG</small></button></div></div>
+          <div class="content-card" id="mmThemeCard" data-pf="display"><h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);"><i class="fa-solid fa-palette" style="color: var(--primary); margin-right: 8px;"></i> ປ່ຽນ Theme</h3><p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">ໜ້າຕາເມນູ ແລະ ໄອຄອນໃນມືຖື — ໃຊ້ Beerlao Premium PNG ເປັນ Theme ຫຼັກ</p><div class="mm-theme-seg" role="group" aria-label="Theme"><button type="button" data-style="classic" aria-pressed="false" disabled aria-disabled="true" title="ປິດການໃຊ້ງານ"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ · ປິດການໃຊ້ງານ</small></button><button type="button" data-style="premium" aria-pressed="false" disabled aria-disabled="true" title="ປິດການໃຊ້ງານ"><b>Beerlao Premium</b><small>ສີທອງ · ຂຽວ · ຄຣີມ ແລະ ໂລໂກ້ Beerlao · ປິດການໃຊ້ງານ</small></button><button type="button" data-style="png" aria-pressed="true" onclick="mmSetStyle('png')"><b>Beerlao Premium PNG</b><small>ສີ Premium ເດີມ · ໄອຄອນເປັນຊຸດຮູບ PNG</small></button></div></div>
 
           <div class="content-card" id="uiModeCard" data-pf="display">
             <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">
@@ -11149,8 +11153,10 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     function mmSetStyle(mode, auto) {
       const r = document.documentElement;
       /* 'png' = Beerlao Premium PNG: ສີ/ໂຄງຮ່າງ premium ເດີມ ແຕ່ໄອຄອນເປັນຊຸດ PNG (/icons/png/) */
-      const png = (mode === 'png');
-      if (mode !== 'classic') mode = 'premium'; r.setAttribute('data-mm-style', mode);
+      /* ບັງຄັບ PNG ສະເໝີ — ບໍ່ວ່າຈະເອີ້ນດ້ວຍຄ່າໃດ (classic / premium ຖືກປິດການໃຊ້ງານ) */
+      mode = 'png';
+      const png = true;
+      mode = 'premium'; r.setAttribute('data-mm-style', mode);
       if (png) r.setAttribute('data-mm-icons', 'png'); else r.removeAttribute('data-mm-icons');
       const picked = png ? 'png' : mode;
       mmApplyBrand(mode === 'premium'); if (window.mmPrEmoji) mmPrEmoji(mode === 'premium');
@@ -11159,7 +11165,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.querySelectorAll('.mm-theme-seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.style === picked ? 'true' : 'false'));
       setTimeout(() => { if (typeof syncMobileTabbar === 'function') syncMobileTabbar(); }, 60);
     }
-    document.addEventListener('DOMContentLoaded', () => mmSetStyle(document.documentElement.getAttribute('data-mm-icons') === 'png' ? 'png' : (document.documentElement.getAttribute('data-mm-style') || 'premium'), true));
+    document.addEventListener('DOMContentLoaded', () => mmSetStyle('png', true));
     const MM_ITEMS = [
       { key: 'asset',     nav: 'nav-asset',          view: 'asset',          icon: 'fa-solid fa-clipboard-list',     label: 'ຕິດຕາມສະຖານະຕູ້ແຊ່',      badge: 'assetTrackingBadge',    tone: 'teal' },
       { key: 'request',   nav: 'nav-request',        view: 'request',        icon: 'fa-solid fa-file-medical',    label: 'ຂໍລະຫັດຕູ້ແຊ່',       badge: 'assetRequestBadge',     tone: 'orange' },
@@ -32944,7 +32950,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
     gsRender();
   };
   window.gsPickMode = function (m) { if (typeof setUiMode === 'function') setUiMode(m); gsRender(); };
-  window.gsPickStyle = function (s) { if (typeof mmSetStyle === 'function') mmSetStyle(s); gsRender(); };
+  window.gsPickStyle = function (s) { if (typeof mmSetStyle === 'function') mmSetStyle('png'); gsRender(); }; /* ບັງຄັບ PNG */
   window.gsToggleFav = function (key) {
     const i = gs.favs.indexOf(key);
     if (i >= 0) gs.favs.splice(i, 1); else gs.favs.push(key);
@@ -32957,7 +32963,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   }
 
   function gsCurMode() { return (typeof getUiMode === 'function') ? getUiMode() : 'normal'; }
-  function gsCurStyle() { const r = document.documentElement; return r.getAttribute('data-mm-style') === 'classic' ? 'classic' : (r.getAttribute('data-mm-icons') === 'png' ? 'png' : 'premium'); }
+  function gsCurStyle() { return 'png'; } /* Theme ຫຼັກ = Beerlao Premium PNG */
 
   // ---- Preview: ໜ້າຈໍເມນູຈຳລອງ ----
   function miniTile(i, opt) {
@@ -33000,12 +33006,12 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
     } else if (s === 2) {
       $('gsIcon').className = 'fa-solid fa-palette';
       $('gsTitle').textContent = 'ເລືອກ Theme';
-      $('gsSub').textContent = 'ໜ້າຕາເມນູ ແລະ ແຖບລຸ່ມໃນມືຖື — ເຫັນຕົວຢ່າງ ແລະ ໃຊ້ຜົນທັນທີ';
+      $('gsSub').textContent = 'ໃຊ້ Theme Beerlao Premium PNG ເປັນ Theme ຫຼັກ (Theme ອື່ນປິດການໃຊ້ງານ)';
       const t = gsCurStyle();
       body.innerHTML = '<div class="gs-opts">'
-        + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'premium') + '" onclick="gsPickStyle(\'premium\')"><b>Beerlao Premium</b><small>ສີທອງ · ຂຽວ · ຄຣີມ ແລະ ໄອຄອນ Beerlao</small>' + miniStyle('premium') + '</button>'
+        + '<button type="button" class="gs-opt" aria-pressed="false" disabled aria-disabled="true" title="ປິດການໃຊ້ງານ"><b>Beerlao Premium</b><small>ສີທອງ · ຂຽວ · ຄຣີມ ແລະ ໄອຄອນ Beerlao</small>' + miniStyle('premium') + '</button>'
         + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'png') + '" onclick="gsPickStyle(\'png\')"><b>Beerlao Premium PNG</b><small>ສີ Premium ເດີມ · ໄອຄອນເປັນຊຸດຮູບ PNG</small>' + miniStyle('png') + '</button>'
-        + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'classic') + '" onclick="gsPickStyle(\'classic\')"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small>' + miniStyle('classic') + '</button>'
+        + '<button type="button" class="gs-opt" aria-pressed="false" disabled aria-disabled="true" title="ປິດການໃຊ້ງານ"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small>' + miniStyle('classic') + '</button>'
         + '</div>';
       foot.innerHTML = backBtn + nextBtn;
     } else if (s === 3) {
