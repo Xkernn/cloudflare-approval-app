@@ -9037,6 +9037,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           'Admin ຢືນຢັນ': a.admin_verified ? 'ຢືນຢັນແລ້ວ' : 'ຍັງບໍ່ທັນຢືນຢັນ',
           'ຢືນຢັນໂດຍ': a.admin_verified_by || '',
           'ຢືນຢັນເວລາ': a.admin_verified_at || '',
+          'ສະຖານະ PowerApp': a.powerapp_skipped ? (a.powerapp_confirmed ? 'ຢືນຢັນ PowerApp ແລ້ວ' : 'ລໍຖ້າຢືນຢັນ PowerApp') : '',
           'ຕິດທຸງ': a.flagged ? 'ແມ່ນ' : '',
           'Last Update': a.last_update || ''
         }));
@@ -22336,6 +22337,7 @@ function assetStatusBadgeClass(status) {
               <span style="color:var(--primary); font-size:15.5px;"><i class="fa-solid fa-shop" style="margin-right:6px;"></i>${esc(a.outlet_name || '-')}</span>
               ${a.outlet_code ? `<span class="badge badge-default" style="font-weight:600;">${esc(a.outlet_code)}</span>` : ''}
               ${a.self_moved ? selfMovedBadgeHtml() : ''}
+              ${paStatusBadgeHtml(a)}
             </div>
             <div class="data-card-sub">
               <span>${docTypeBadgeHtml(a.doc_type)}</span>
@@ -22356,6 +22358,14 @@ function assetStatusBadgeClass(status) {
       `).join('');
     }
 
+        /* ສະຖານະ PowerApp ຂອງລາຍການທີ່ຂ້າມຂັ້ນຕອນ: ລໍຖ້າຢືນຢັນ (ສົ້ມ) -> ຢືນຢັນ PowerApp ແລ້ວ (ຂຽວ) ; ລາຍການປົກກະຕິບໍ່ມີ badge */
+    function paStatusBadgeHtml(a) {
+      if (!a || !a.powerapp_skipped) return '';
+      return a.powerapp_confirmed
+        ? '<span class="badge badge-approved"><i class="fa-solid fa-paper-plane mr-1"></i>ຢືນຢັນ PowerApp ແລ້ວ</span>'
+        : '<span class="badge badge-pending"><i class="fa-solid fa-forward mr-1"></i>ລໍຖ້າຢືນຢັນ PowerApp</span>';
+    }
+
     /* ค้นหา + กรองหลายแบบใน ปะหวัดการจัดส่ง (search text, brand, type, doc type, ช่วงวันที่จัดส่ง) */
     function filterDeliveryHistory() {
       const qRaw = document.getElementById('deliveryHistorySearchInput').value;
@@ -22372,12 +22382,12 @@ function assetStatusBadgeClass(status) {
       const isPaPending = (a) => !!a.powerapp_skipped && !a.powerapp_confirmed;
       const paAll = isAdminView ? allData.filter(isPaPending) : [];
       const onPaTab = isAdminView && deliveryHistoryTab === 'powerapp';
-      const all = !isAdminView ? allData : (onPaTab ? paAll : allData.filter(a => !isPaPending(a)));
+      const all = !isAdminView ? allData : (onPaTab ? paAll : allData); // ແທັບປະຫວັດ ສະແດງທຸກລາຍການ (ລວມອັນທີ່ລໍຖ້າຢືນຢັນ PowerApp ເປັນ badge)
       const tabPills = document.getElementById('deliveryHistoryTabPills');
       tabPills.classList.toggle('hidden', !isAdminView);
       if (isAdminView) {
         tabPills.innerHTML = atPillsHtml([
-          { value: 'main', label: 'ປະຫວັດການຈັດສົ່ງ', color: '', count: allData.length - paAll.length },
+          { value: 'main', label: 'ປະຫວັດການຈັດສົ່ງ', color: '', count: allData.length },
           { value: 'powerapp', label: 'ລໍຖ້າຢືນຢັນ PowerApp', color: '#A8630A', count: paAll.length }
         ], deliveryHistoryTab, 'setDeliveryHistoryTab');
       }
@@ -22506,7 +22516,7 @@ function assetStatusBadgeClass(status) {
 
     async function confirmPaIds(ids) {
       if (!ids.length) return;
-      if (!await appConfirm(`ຢືນຢັນວ່າ ${ids.length} ລາຍການນີ້ ໄດ້ຊັບມິດ PowerApp ແລ້ວ?\n(ລາຍການຈະກັບໄປຢູ່ໃນແທັບ "ປະຫວັດການຈັດສົ່ງ" ຕາມປົກກະຕິ)`, { title: 'ຢືນຢັນຊັບມິດ PowerApp', confirmText: `ຢືນຢັນ ${ids.length} ລາຍການ`, danger: false })) return;
+      if (!await appConfirm(`ຢືນຢັນວ່າ ${ids.length} ລາຍການນີ້ ໄດ້ຊັບມິດ PowerApp ແລ້ວ?\n(ລາຍການຈະຫາຍຈາກແທັບນີ້ ແລະ ສະຖານະໃນແທັບ "ປະຫວັດການຈັດສົ່ງ" ຈະປ່ຽນເປັນ "ຢືນຢັນ PowerApp ແລ້ວ")`, { title: 'ຢືນຢັນຊັບມິດ PowerApp', confirmText: `ຢືນຢັນ ${ids.length} ລາຍການ`, danger: false })) return;
       try {
         const res = await fetch('/api/asset-delivery-history/powerapp-confirm', {
           method: 'POST',
@@ -22681,6 +22691,7 @@ function assetStatusBadgeClass(status) {
         ['ອັບເດດລ່າສຸດ', fmtLaoTs(a.last_update)],
         ['ສະຖານະ', raw(`<span class="badge badge-default">${esc(assetStatusText(a))}</span>`)],
         ...(a.self_moved ? [['ການຈັດສົ່ງ', raw(selfMovedBadgeHtml())]] : []),
+        ...(a.powerapp_skipped ? [['PowerApp', raw(paStatusBadgeHtml(a) + (a.powerapp_confirmed && a.powerapp_confirmed_by ? ` <span style="color:var(--text-muted); font-size:12px;">(${esc(a.powerapp_confirmed_by)}${a.powerapp_confirmed_at ? ', ' + esc(fmtLaoTs(a.powerapp_confirmed_at)) : ''})</span>` : ''))]] : []),
         ['ເອກະສານສັນຍາຢືມ', raw(loanDocBadgeHtml(a))],
         ['ເອກະສານຈັດສົ່ງ', raw(deliveryDocBadgeHtml(a) || '-')],
         ['ການກວດສອບ', raw(a.admin_verified
