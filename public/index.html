@@ -1156,6 +1156,11 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     @media (prefers-reduced-motion: reduce) { .truck-marker { animation: none; } }
     .marker-count-badge { position: absolute; top: -9px; right: -11px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #0f172a; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; border: 1.5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); z-index: 5; }
     .truck-marker { position: relative; }
+    .map-myloc-btn { width: 40px; height: 40px; border-radius: 12px; border: 2px solid rgba(0,0,0,.2); background: #fff; color: #334155; font-size: 18px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+    .map-myloc-btn.active { color: #2563eb; }
+    .map-myloc-btn.loading { opacity: .6; animation: mapMyLocPulse 1s ease-in-out infinite; }
+    @keyframes mapMyLocPulse { 50% { opacity: .25; } }
+    .myloc-dot { width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.3), 0 2px 6px rgba(0,0,0,.4); }
     .mp-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
     .mp-tab { border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
     .mp-tab.active { background: #0A7890; border-color: #0A7890; color: #fff; }
@@ -20321,6 +20326,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
         if (!res.ok) { info.textContent = data.error || 'ໂຫລດແຜນທີ່ບໍ່ສຳເລັດ'; return; }
         if (!cnsMapInstance) {
           cnsMapInstance = L.map('cnsMapContainer', { preferCanvas: true });
+          addMyLocationControl(cnsMapInstance);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(cnsMapInstance);
           cnsMapLayer = L.layerGroup().addTo(cnsMapInstance);
           cnsMapInstance.setView([18.2, 103.9], 6); // ລາວ
@@ -22901,6 +22907,49 @@ function assetStatusBadgeClass(status) {
       });
     }
 
+    /* ===== ປຸ່ມ "ຕຳແໜ່ງຂອງຂ້ອຍ" (current location) ໃຫ້ແຜນທີ່ Leaflet ===== */
+    function addMyLocationControl(map) {
+      if (!map || map.__myLocCtl) return;
+      const Ctl = L.Control.extend({
+        options: { position: 'bottomright' },
+        onAdd: function () {
+          const btn = L.DomUtil.create('button', 'map-myloc-btn');
+          btn.type = 'button';
+          btn.title = 'ຕຳແໜ່ງຂອງຂ້ອຍ';
+          btn.setAttribute('aria-label', 'ຕຳແໜ່ງຂອງຂ້ອຍ');
+          btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+          L.DomEvent.disableClickPropagation(btn);
+          L.DomEvent.on(btn, 'click', (e) => { L.DomEvent.stop(e); locateMeOnMap(map, btn); });
+          return btn;
+        }
+      });
+      map.__myLocCtl = new Ctl().addTo(map);
+    }
+    function locateMeOnMap(map, btn) {
+      if (!navigator.geolocation) { alert('ອຸປະກອນນີ້ບໍ່ຮອງຮັບການຫາຕຳແໜ່ງ (GPS)'); return; }
+      btn.classList.add('loading');
+      navigator.geolocation.getCurrentPosition((pos) => {
+        btn.classList.remove('loading');
+        btn.classList.add('active');
+        const ll = [pos.coords.latitude, pos.coords.longitude];
+        const acc = pos.coords.accuracy || 0;
+        if (map.__myLocLayer) map.removeLayer(map.__myLocLayer);
+        const layer = L.layerGroup().addTo(map);
+        if (acc > 0) L.circle(ll, { radius: acc, color: '#2563eb', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.12, interactive: false }).addTo(layer);
+        L.marker(ll, {
+          icon: L.divIcon({ className: '', html: '<div class="myloc-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }),
+          zIndexOffset: 2000
+        }).addTo(layer).bindPopup('ຕຳແໜ່ງຂອງທ່ານ' + (acc ? ` (ຄວາມຄາດເຄື່ອນ ~${Math.round(acc)} ມ.)` : ''));
+        map.__myLocLayer = layer;
+        map.flyTo(ll, Math.max(map.getZoom(), 16));
+      }, (err) => {
+        btn.classList.remove('loading');
+        const msg = err && err.code === 1 ? 'ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ໃຊ້ຕຳແໜ່ງ - ກະລຸນາເປີດສິດ Location ໃຫ້ browser/ແອັບ ແລ້ວລອງໃໝ່'
+          : err && err.code === 3 ? 'ຫາຕຳແໜ່ງໃຊ້ເວລາດົນເກີນໄປ - ລອງໃໝ່ໃນບ່ອນທີ່ເຫັນທ້ອງຟ້າ'
+          : 'ຫາຕຳແໜ່ງບໍ່ໄດ້ - ກະລຸນາເປີດ GPS ແລ້ວລອງໃໝ່';
+        alert(msg);
+      }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+    }
     function mapPopupPick(btn, i) {
       const root = btn.closest('.mp-pager');
       if (!root) return;
@@ -22936,6 +22985,7 @@ function assetStatusBadgeClass(status) {
             attribution: '&copy; OpenStreetMap contributors'
           }).addTo(assetMapInstance);
           assetMapMarkersLayer = L.layerGroup().addTo(assetMapInstance);
+          addMyLocationControl(assetMapInstance);
         } else {
           assetMapMarkersLayer.clearLayers();
         }
