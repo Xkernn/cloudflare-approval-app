@@ -1154,6 +1154,13 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .marker-outlet-label-truck { background: #1d4ed8 !important; color: #fff !important; font-weight: 700; }
     @keyframes truckMarkerBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
     @media (prefers-reduced-motion: reduce) { .truck-marker { animation: none; } }
+    .marker-count-badge { position: absolute; top: -9px; right: -11px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #0f172a; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; border: 1.5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); z-index: 5; }
+    .truck-marker { position: relative; }
+    .mp-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .mp-tab { border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .mp-tab.active { background: #0A7890; border-color: #0A7890; color: #fff; }
+    .mp-slide { display: none; }
+    .mp-slide.active { display: block; }
     .pulse-marker-ring-urgent { animation: pulseMarkerRingUrgent 1s ease-out infinite !important; }
     @keyframes pulseMarkerRingUrgent {
       0%   { transform: scale(1);   opacity: 0.9; }
@@ -22862,13 +22869,14 @@ function assetStatusBadgeClass(status) {
       mapDoctypeColorCache[key] = color;
       return color;
     }
-    function pulseMarkerIcon(color, outletCode, urgent, onTruck) {
+    function pulseMarkerIcon(color, outletCode, urgent, onTruck, count) {
+      const cntBadge = count > 1 ? `<span class="marker-count-badge" title="${count} ສັນຍາ/Tracking">${count}</span>` : '';
       if (onTruck) {
         // ຕູ້ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ: ໝຸດໃຫຍ່ສີນ້ຳເງິນເຂັ້ມ + ໄອຄອນລົດ ເບິ່ງແຍກຈາກຕູ້ອື່ນງ່າຍ
         return L.divIcon({
           className: '',
           html: `<div class="marker-label-wrap">
-                   <div class="truck-marker${urgent ? ' truck-marker-urgent' : ''}">🚚</div>
+                   <div class="truck-marker${urgent ? ' truck-marker-urgent' : ''}">🚚${cntBadge}</div>
                    <span class="marker-outlet-label marker-outlet-label-truck">${urgent ? '🚩 ' : ''}${esc(outletCode || '')}</span>
                  </div>`,
           iconSize: [220, 34],
@@ -22883,6 +22891,7 @@ function assetStatusBadgeClass(status) {
                  <div class="pulse-marker-wrap">
                    <div class="pulse-marker-ring${urgent ? ' pulse-marker-ring-urgent' : ''}" style="background:${urgent ? '#DC2626' : color};"></div>
                    <div class="pulse-marker-dot" style="background:${urgent ? '#DC2626' : color};"></div>
+                   ${cntBadge}
                  </div>
                  ${label}
                </div>`,
@@ -22892,6 +22901,12 @@ function assetStatusBadgeClass(status) {
       });
     }
 
+    function mapPopupPick(btn, i) {
+      const root = btn.closest('.mp-pager');
+      if (!root) return;
+      root.querySelectorAll('.mp-tab').forEach((b, k) => b.classList.toggle('active', k === i));
+      root.querySelectorAll('.mp-slide').forEach((d, k) => d.classList.toggle('active', k === i));
+    }
     function mapTrackingGoBack() {
       let v = 'dashboard';
       try { const h = mmHomeFor(currentUser && currentUser.role); if (h && h.view) v = h.view; } catch (e) {}
@@ -22939,7 +22954,7 @@ function assetStatusBadgeClass(status) {
 
         const bounds = [];
         const docTypesSeen = new Set();
-        points.forEach(a => {
+        const popupFor = (a) => {
           // ໝຸດຕ້ອງຢູ່ທີ່ຮ້ານດຽວກັບຊື່ທີ່ສະແດງ: ໃຫ້ເຊື່ອພິກັດຈາກ Outlet Master Data ຕາມ Outlet Code ກ່ອນ
           // (ກັນກໍລະນີພິກັດໃນ Asset ຖືກບັນທຶກສະລັບຮ້ານໃໝ່/ຮ້ານເກົ່າ); ຖ້າບໍ່ພົບໃນ Master ຈຶ່ງໃຊ້ພິກັດທີ່ເກັບໃນ Asset
           const outletInfo = findOutletByCode(a.outlet_code);
@@ -22947,12 +22962,10 @@ function assetStatusBadgeClass(status) {
           const useMaster = outletInfo && hasNum(outletInfo.latitude) && hasNum(outletInfo.longitude);
           const lat = useMaster ? Number(outletInfo.latitude) : Number(a.latitude);
           const lng = useMaster ? Number(outletInfo.longitude) : Number(a.longitude);
-          bounds.push([lat, lng]);
           const mdeInfo = dbMdeList.find(m => m.mde_code === a.mde_code);
           const color = colorForDocType(a.doc_type);
           docTypesSeen.add(a.doc_type || 'ບໍ່ລະບຸ');
           const isOnTruck = a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && !!a.dispatched_at;
-          const marker = L.marker([lat, lng], { icon: pulseMarkerIcon(color, a.outlet_name, !!a.flagged, isOnTruck), zIndexOffset: isOnTruck ? 1000 : 0 }).addTo(assetMapMarkersLayer);
           const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
           const isRelocation = a.doc_type === RELOCATION_DOC_TYPE;
           const oldMaster = isRelocation ? findOutletByCode(a.old_outlet_code) : null;
@@ -22969,7 +22982,7 @@ function assetStatusBadgeClass(status) {
             return ` <a href="https://wa.me/${esc(dsmPhoneDigits(ph))}" target="_blank" rel="noopener" title="WhatsApp ${esc(ph)}" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:1px 8px; margin-left:4px; font-size: 12px; font-weight:700; line-height:1.6; color:#fff; background:#15803d; border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`;
           };
           const lbl = (text) => `<span style="color:#0f172a; font-weight:700;">${esc(text)}:</span>`;
-          marker.bindPopup(`
+          const html = (`
             ${isOnTruck ? `<span class="badge badge-info" style="margin-bottom:6px; display:inline-block;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</span><br>` : ''}
             ${a.flagged ? `<span class="badge badge-rejected" style="margin-bottom:6px; display:inline-block;">🚩 ດ່ວນ - ຕິດທຸງໄວ້</span><br>` : ''}
             <b>${esc(a.tracking_no || '-')}</b><br>
@@ -23000,6 +23013,35 @@ function assetStatusBadgeClass(status) {
               <i class="fa-solid fa-diamond-turn-right mr-1"></i> ນຳທາງໄປຮ້ານເດີມ (${esc(a.old_outlet_name || a.old_outlet_code || 'ຮ້ານເດີມ')})
             </a>` : ''}
           `);
+          return { lat, lng, html, color, isOnTruck };
+        };
+
+        // ຮ້ານ/ຈຸດດຽວກັນທີ່ມີຫຼາຍສັນຍາ (Tracking) -> ລວມເປັນໝຸດດຽວ ມີເລກຈຳນວນ ແລະ popup ສະຫຼັບເບິ່ງແຕ່ລະສັນຍາໄດ້
+        const groups = new Map();
+        points.forEach(a => {
+          const info = popupFor(a);
+          const key = Number(info.lat).toFixed(5) + ',' + Number(info.lng).toFixed(5);
+          if (!groups.has(key)) groups.set(key, { lat: info.lat, lng: info.lng, items: [] });
+          groups.get(key).items.push({ a, info });
+        });
+        groups.forEach(g => {
+          bounds.push([g.lat, g.lng]);
+          // ໂຕແທນໝຸດ: ຢູ່ເທິງລົດ > ຕິດທຸງ > ອັນທຳອິດ
+          const rep = g.items.find(x => x.info.isOnTruck) || g.items.find(x => x.a.flagged) || g.items[0];
+          const anyFlag = g.items.some(x => !!x.a.flagged);
+          const anyTruck = g.items.some(x => x.info.isOnTruck);
+          const n = g.items.length;
+          const marker = L.marker([g.lat, g.lng], {
+            icon: pulseMarkerIcon(rep.info.color, rep.a.outlet_name, anyFlag, anyTruck, n),
+            zIndexOffset: anyTruck ? 1000 : (n > 1 ? 500 : 0)
+          }).addTo(assetMapMarkersLayer);
+          if (n === 1) {
+            marker.bindPopup(rep.info.html);
+          } else {
+            const tabs = g.items.map((x, i) => `<button type="button" class="mp-tab${i === 0 ? ' active' : ''}" onclick="mapPopupPick(this, ${i})">${i + 1}. ${esc(x.a.tracking_no || x.a.doc_type || '-')}</button>`).join('');
+            const slides = g.items.map((x, i) => `<div class="mp-slide${i === 0 ? ' active' : ''}">${x.info.html}</div>`).join('');
+            marker.bindPopup(`<div class="mp-pager"><div style="font-weight:800; margin-bottom:6px;">ຮ້ານນີ້ມີ ${n} ສັນຍາ/Tracking</div><div class="mp-tabs">${tabs}</div>${slides}</div>`, { maxWidth: 340 });
+          }
         });
 
         assetMapInstance.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
