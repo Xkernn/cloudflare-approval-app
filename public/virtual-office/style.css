@@ -350,3 +350,6 @@ html,body{background:#0b1420}
 .syncside{border-top-color:rgba(208,174,105,.14)}
 @media(max-width:860px){.topbar{top:8px;left:8px;right:8px}.stage:before{background:radial-gradient(ellipse at 50% 46%,transparent 30%,rgba(3,9,15,.24) 100%)}}
 @media(prefers-reduced-motion:reduce){.nav-item{transition:none}}
+
+/* Premium Warehouse Phase 3 · Cooler Finder */
+.warehouse-search-card{border:1px solid rgba(201,164,94,.28);background:linear-gradient(145deg,#1b2a3a,#111c2a)}.warehouse-search-card h3{color:#f2d99e}.warehouse-search-card p{margin-bottom:9px}.wh-search{margin:8px 0 6px}.wh-search input{background:#0d1723;border-color:#5b4b30}.cooler-result{background:#243445;border:1px solid rgba(201,164,94,.14);color:#f3f5f7}.cooler-result:hover{background:#30465a}.cooler-result .tx span{color:#aebdca}

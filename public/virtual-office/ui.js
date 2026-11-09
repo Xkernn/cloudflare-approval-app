@@ -57,7 +57,7 @@
     if (view.tab === 'overview' && DASH) { var sc0 = el.scrollTop; el.innerHTML = DASH.renderSide(); el.setAttribute('data-ov', '1'); el.scrollTop = sc0; return; }
     el.removeAttribute('data-ov');
     var c = counts(), total = D.employees.length, max = Math.max.apply(null, D.departments.map(function (d) { return deptCount(d.id); }));
-    if (WORLD_TABS[view.tab]) { el.innerHTML = renderWorldSide(); return; }
+    if (WORLD_TABS[view.tab]) { el.innerHTML = renderWorldSide(); if (view.tab === 'warehouses') renderCoolerSearch(''); return; }
     if (view.tab === 'office') {
       h += '<div class="co-card"><h3>' + esc(D.company) + '</h3><p>Virtual Headquarters · Mock Data</p>' +
         '<div class="kv"><div><b>' + total + '</b><span>Employees</span></div><div><b>' + (c.work + c.meeting + c.walk) + '</b><span>Active now</span></div>' +
@@ -205,6 +205,7 @@
     if (!logi) return '<div class="empty">ກຳລັງໂຫຼດຂໍ້ມູນຄັງສິນຄ້າ...</div>';
     var h = '', s = logi.stats(), c = counts();
     if (view.tab === 'warehouses') {
+      h += '<div class="co-card warehouse-search-card"><h3>Cooler Finder</h3><p>Demo inventory · search a sample Cooler ID</p><div class="search wh-search"><input id="coolerSearch" type="search" placeholder="e.g. BL-WH1-0001" autocomplete="off"></div><div id="coolerSearchResults"></div></div>';
       h += '<div class="sec-title">' + LD.warehouses.length + ' Warehouses · ຄລິກເພື່ອຊູມ</div>';
       LD.warehouses.forEach(function (w) {
         var st = LD.WH_STATUS[logi.warehouses[w.id].status()];
@@ -334,8 +335,45 @@
       '<div class="fields" style="margin-top:12px">' + fields + '</div>' +
       '<div class="btns"><button class="btn" data-focus-shop="' + id + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
   }
-  function chooseWorld(type, id, focus) {
+  function renderCoolerSearch(q) {
+    var host = $('coolerSearchResults'); if (!host || !LD) return;
+    q = String(q || '').trim().toUpperCase(); var rows = [];
+    LD.warehouses.forEach(function (w) { for (var i = 1; i <= 3; i++) {
+      var id = 'BL-' + w.id.toUpperCase() + '-' + String(i).padStart(4, '0');
+      if (!q || id.indexOf(q) >= 0 || w.name.toUpperCase().indexOf(q) >= 0) rows.push({ id: id, wh: w.id, name: w.name });
+    }});
+    host.innerHTML = rows.length ? rows.slice(0, 5).map(function (r) {
+      return '<button class="mini cooler-result" data-cooler-id="' + r.id + '" data-cooler-wh="' + r.wh + '"><span class="avatar" style="width:30px;height:30px;background:#9b252d"><i class="fa-solid fa-temperature-low"></i></span><span class="tx"><b>' + r.id + '</b><span>' + esc(r.name) + ' · Demo record</span></span><i class="fa-solid fa-crosshairs"></i></button>';
+    }).join('') : '<div class="empty">No matching demo cooler ID</div>';
+  }
+  function renderCoolerPanel(meta) {
+    var w = whDef(meta.warehouseId); if (!w) return;
+    openInfo('<div class="hd" style="background:linear-gradient(135deg,#9b252d,#561a22)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
+      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.22)"><i class="fa-solid fa-temperature-low"></i></span><div><h2>' + esc(meta.id) + '</h2><p>Beerlao Cooler · ' + esc(w.short) + '</p></div></div></div>' +
+      '<div class="bd"><div class="row2"><span class="chip" style="background:#b58b42">DEMO INVENTORY</span><span class="chip" style="background:#16845b">Available</span></div>' +
+      '<div class="fields"><div><span>Cooler ID</span><b>' + esc(meta.id) + '</b></div><div><span>Warehouse</span><b>' + esc(w.short) + '</b></div><div><span>Model</span><b>Glass Door · 1 Door</b></div><div><span>Asset status</span><b>Available (sample)</b></div><div><span>Storage area</span><b>Inventory Display</b></div><div><span>Data source</span><b>Prototype data</b></div></div>' +
+      '<div class="task"><span>Integration note</span>Sample Cooler IDs are placeholders. Connect the cooler master / warehouse stock API to show live serial number, province, owner and movement history.</div>' +
+      '<div class="btns"><button class="btn" data-focus-cooler="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
+  }
+  function renderWarehouseZonePanel(meta) {
+    var titles = { storage: 'Storage racks · Zone A-C', inventory: 'Cooler inventory area', receiving: 'Receiving & loading area' };
+    var descriptions = { storage: 'Rack bays for stored assets and cooler units.', inventory: 'Display and staging area for cooler inventory.', receiving: 'Inbound inspection, loading and dispatch circulation.' };
+    openInfo('<div class="hd" style="background:linear-gradient(135deg,#243746,#101d29)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
+      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.2)"><i class="fa-solid fa-boxes-stacked"></i></span><div><h2>' + esc(titles[meta.zone] || meta.title) + '</h2><p>Warehouse zone · ' + esc(meta.warehouseId) + '</p></div></div></div>' +
+      '<div class="bd"><div class="task"><span>3D zone selection</span>' + esc(descriptions[meta.zone] || 'Warehouse operational area.') + '</div><div class="fields"><div><span>Zone</span><b>' + esc(meta.zone.toUpperCase()) + '</b></div><div><span>Warehouse</span><b>' + esc(meta.warehouseId) + '</b></div><div><span>Inventory data</span><b>Not connected</b></div><div><span>Mode</span><b>Interactive prototype</b></div></div><div class="task">Next integration: map real rack / bin codes to this 3D zone and load live stock quantities from the warehouse API.</div></div>');
+  }
+  function chooseWorld(type, id, focus, meta) {
     if (!logi) return;
+    if (type === 'cooler' && meta) {
+      if (api) api.clearSelection(); logi.clearSelection(); view.emp = null; view.dept = null; view.wh = meta.warehouseId; view.truck = null; view.route = null; view.shop = null;
+      var cw = whDef(meta.warehouseId); if (focus !== false && api && cw) api.ext.focusOn(new api.ext.THREE.Vector3(cw.x + meta.x, 1.1, cw.z + meta.z), 17, api.ext.HOME_DIR);
+      renderCoolerPanel(meta); renderSide(); closeSide(); return;
+    }
+    if (type === 'warehouseZone' && meta) {
+      if (api) api.clearSelection(); logi.clearSelection(); view.emp = null; view.dept = null; view.wh = meta.warehouseId; view.truck = null; view.route = null; view.shop = null;
+      var zw = whDef(meta.warehouseId); if (focus !== false && api && zw) api.ext.focusOn(new api.ext.THREE.Vector3(zw.x + meta.x, 0, zw.z + meta.z), 27, api.ext.HOME_DIR);
+      renderWarehouseZonePanel(meta); renderSide(); closeSide(); return;
+    }
     if (at && type === 'truck' && id === ADT.truck.id) {   // Phase 5: ລົດສົ່ງ Asset
       if (api) api.clearSelection(); view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null;
       logi.clearSelection(); if (town) town.clearSelection(); view.at = true; at.select(true); atSig = JSON.stringify(at.stats());
@@ -405,7 +443,7 @@
   // ---------- events ----------
   document.addEventListener('click', function (ev) {
     var t = ev.target;
-    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at]');
+    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at],[data-cooler-id],[data-focus-cooler]');
     if (!el) return;
     if (el.hasAttribute('data-close')) { closeInfo(); return; }
     if (el.hasAttribute('data-focus-emp')) { if (api) api.selectEmployee(el.getAttribute('data-focus-emp'), true); return; }
@@ -413,6 +451,11 @@
     if (el.hasAttribute('data-focus-truck')) { chooseWorld('truck', el.getAttribute('data-focus-truck'), true); return; }
     if (el.hasAttribute('data-focus-at')) { chooseWorld('truck', ADT.truck.id, true); return; }
     if (el.hasAttribute('data-focus-shop')) { chooseWorld('shop', el.getAttribute('data-focus-shop'), true); return; }
+    if (el.hasAttribute('data-cooler-id') || el.hasAttribute('data-focus-cooler')) {
+      var cid = el.getAttribute('data-cooler-id') || el.getAttribute('data-focus-cooler'), cwh = el.getAttribute('data-cooler-wh');
+      var cnum = Number(cid.slice(-4)) || 1, cdef = whDef(cwh), cmeta = { id: cid, warehouseId: cwh, x: 16.5 + (cnum - 1) * 1.5, z: 1.2 };
+      if (cdef) chooseWorld('cooler', cid, true, cmeta); return;
+    }
     if (el.hasAttribute('data-shop')) { chooseWorld('shop', el.getAttribute('data-shop'), true); return; }
     if (el.hasAttribute('data-tab')) {
       var prevTab = view.tab; view.tab = el.getAttribute('data-tab');
@@ -428,7 +471,7 @@
     if (el.hasAttribute('data-emp')) { chooseEmp(el.getAttribute('data-emp')); return; }
     if (el.hasAttribute('data-dept')) { chooseDept(el.getAttribute('data-dept')); return; }
   });
-  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { view.filter = ev.target.value; renderEmpList(); } });
+  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { view.filter = ev.target.value; renderEmpList(); } if (ev.target.id === 'coolerSearch') renderCoolerSearch(ev.target.value); });
   document.addEventListener('change', function (ev) { if (ev.target.id === 'st') { view.status = ev.target.value; renderEmpList(); } });
 
   function openSide() { $('sidebar').classList.add('open'); $('sideBackdrop').classList.add('open'); }
@@ -523,7 +566,7 @@
         api = window.VO3D.create($('scene'), D, {
           onSelectEmployee: function (id) { if (id) chooseEmp(id, false); else closeInfo(); },
           onSelectDepartment: function (id) { chooseDept(id, false); },
-          onSelectWorld: function (p) { chooseWorld(p.type, p.id, true); },
+          onSelectWorld: function (p) { chooseWorld(p.type, p.id, true, p); },
           onHover: onHover,
           onReady: function () { $('loading').classList.add('hide'); }
         });

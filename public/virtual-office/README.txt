@@ -95,3 +95,11 @@ Phase 8 — Premium Warehouse Visual Upgrade (2026-11)
 - ui.js warehouse module cache key bumped to premium2 so browsers fetch the revised model.
 - Visual/demo data only: no stock counts, workflow, API endpoints, database schema or operational behavior changed.
 - Desktop and mobile continue to use the existing responsive layout and Three.js renderer.
+
+
+PHASE 9 — PREMIUM WAREHOUSE INTERACTION
+- Selectable Beerlao cooler display units with sample IDs (BL-WH1-0001 etc.)
+- Cooler Finder search in Warehouses sidebar; camera focus and asset detail panel
+- Clickable storage, inventory and receiving zones with zone information panels
+- Refined forklift safety cage, seat, lights, wheel hubs and animated beacon
+- Inventory IDs and zone data are prototype placeholders; connect warehouse/cooler APIs before operational use.
