@@ -353,3 +353,10 @@ html,body{background:#0b1420}
 
 /* Premium Warehouse Phase 3 · Cooler Finder */
 .warehouse-search-card{border:1px solid rgba(201,164,94,.28);background:linear-gradient(145deg,#1b2a3a,#111c2a)}.warehouse-search-card h3{color:#f2d99e}.warehouse-search-card p{margin-bottom:9px}.wh-search{margin:8px 0 6px}.wh-search input{background:#0d1723;border-color:#5b4b30}.cooler-result{background:#243445;border:1px solid rgba(201,164,94,.14);color:#f3f5f7}.cooler-result:hover{background:#30465a}.cooler-result .tx span{color:#aebdca}
+
+/* Phase 4 · Smart Warehouse controls */
+.wh-demo-note{border:1px solid rgba(201,164,94,.28);background:linear-gradient(135deg,rgba(201,164,94,.12),rgba(17,28,42,.55));}
+.wh-demo-note span{color:#e7c982}.wh-stock-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+.wh-stock-actions .btn{padding:9px 6px;font-size:11px;white-space:nowrap}.wh-updated{margin-top:10px}
+.cooler-result .tx{min-width:0}.cooler-result .tx span{overflow-wrap:anywhere}
+@media(max-width:520px){.wh-stock-actions{grid-template-columns:1fr}.wh-stock-actions .btn{width:100%}}

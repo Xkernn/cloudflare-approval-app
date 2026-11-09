@@ -173,6 +173,27 @@
   function truckDef(id) { return LD && LD.trucks.filter(function (t) { return t.id === id; })[0]; }
   function routeDef(id) { return LD && LD.routes.filter(function (r) { return r.id === id; })[0]; }
   function num(n) { return Number(n).toLocaleString('en-US'); }
+  // Phase 4 · Smart Warehouse prototype state (session-only; no backend writes)
+  var WH_DEMO_STOCK = Object.create(null);
+  function coolerRecord(id, warehouseId) {
+    if (!WH_DEMO_STOCK[id]) {
+      var n = Number(String(id).slice(-4)) || 1;
+      WH_DEMO_STOCK[id] = { id: id, warehouseId: warehouseId, status: 'Available',
+        rack: 'R-' + String((n % 4) + 1).padStart(2, '0'), row: 'ROW-' + String((n % 3) + 1),
+        shelf: 'S' + String((n % 3) + 1), bin: 'B-' + String(n).padStart(3, '0'),
+        model: 'Glass Door · 1 Door', serial: 'DEMO-' + id.replace(/[^A-Z0-9]/g, ''),
+        updated: new Date().toLocaleString(), movement: 'Opening stock' };
+    }
+    return WH_DEMO_STOCK[id];
+  }
+  function stockAction(id, warehouseId, action) {
+    var r = coolerRecord(id, warehouseId);
+    if (action === 'receive') { r.status = 'Available'; r.movement = 'Received into warehouse'; }
+    else if (action === 'dispatch') { r.status = 'Dispatched'; r.movement = 'Issued from warehouse'; }
+    else if (action === 'inspect') { r.status = 'Inspection'; r.movement = 'Sent to inspection'; }
+    r.updated = new Date().toLocaleString(); return r;
+  }
+
   function goTab(tab, prev) {
     if (!api) return;
     var ex = api.ext;
@@ -343,17 +364,22 @@
       if (!q || id.indexOf(q) >= 0 || w.name.toUpperCase().indexOf(q) >= 0) rows.push({ id: id, wh: w.id, name: w.name });
     }});
     host.innerHTML = rows.length ? rows.slice(0, 5).map(function (r) {
-      return '<button class="mini cooler-result" data-cooler-id="' + r.id + '" data-cooler-wh="' + r.wh + '"><span class="avatar" style="width:30px;height:30px;background:#9b252d"><i class="fa-solid fa-temperature-low"></i></span><span class="tx"><b>' + r.id + '</b><span>' + esc(r.name) + ' · Demo record</span></span><i class="fa-solid fa-crosshairs"></i></button>';
+      var rec = coolerRecord(r.id, r.wh);
+      return '<button class="mini cooler-result" data-cooler-id="' + r.id + '" data-cooler-wh="' + r.wh + '"><span class="avatar" style="width:30px;height:30px;background:#9b252d"><i class="fa-solid fa-temperature-low"></i></span><span class="tx"><b>' + r.id + '</b><span>' + esc(r.name) + ' · ' + esc(rec.rack + ' / ' + rec.row + ' / ' + rec.shelf + ' / ' + rec.bin) + '</span></span><i class="fa-solid fa-crosshairs"></i></button>';
     }).join('') : '<div class="empty">No matching demo cooler ID</div>';
   }
   function renderCoolerPanel(meta) {
     var w = whDef(meta.warehouseId); if (!w) return;
+    var rec = coolerRecord(meta.id, meta.warehouseId);
+    var statusColor = rec.status === 'Available' ? '#16845b' : (rec.status === 'Inspection' ? '#b58b42' : '#64748b');
     openInfo('<div class="hd" style="background:linear-gradient(135deg,#9b252d,#561a22)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
       '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.22)"><i class="fa-solid fa-temperature-low"></i></span><div><h2>' + esc(meta.id) + '</h2><p>Beerlao Cooler · ' + esc(w.short) + '</p></div></div></div>' +
-      '<div class="bd"><div class="row2"><span class="chip" style="background:#b58b42">DEMO INVENTORY</span><span class="chip" style="background:#16845b">Available</span></div>' +
-      '<div class="fields"><div><span>Cooler ID</span><b>' + esc(meta.id) + '</b></div><div><span>Warehouse</span><b>' + esc(w.short) + '</b></div><div><span>Model</span><b>Glass Door · 1 Door</b></div><div><span>Asset status</span><b>Available (sample)</b></div><div><span>Storage area</span><b>Inventory Display</b></div><div><span>Data source</span><b>Prototype data</b></div></div>' +
-      '<div class="task"><span>Integration note</span>Sample Cooler IDs are placeholders. Connect the cooler master / warehouse stock API to show live serial number, province, owner and movement history.</div>' +
-      '<div class="btns"><button class="btn" data-focus-cooler="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
+      '<div class="bd"><div class="row2"><span class="chip" style="background:#b58b42">DEMO INVENTORY</span><span class="chip" style="background:' + statusColor + '">' + esc(rec.status) + '</span></div>' +
+      '<div class="sec-title">ASSET & STORAGE LOCATION</div><div class="fields"><div><span>Cooler ID</span><b>' + esc(rec.id) + '</b></div><div><span>Serial Number</span><b>' + esc(rec.serial) + '</b></div><div><span>Warehouse</span><b>' + esc(w.short) + '</b></div><div><span>Model</span><b>' + esc(rec.model) + '</b></div><div><span>Rack</span><b>' + esc(rec.rack) + '</b></div><div><span>Row / Shelf</span><b>' + esc(rec.row + ' / ' + rec.shelf) + '</b></div><div><span>Bin</span><b>' + esc(rec.bin) + '</b></div><div><span>Last movement</span><b>' + esc(rec.movement) + '</b></div></div>' +
+      '<div class="task wh-demo-note"><span>Smart Warehouse · Prototype mode</span>Actions below update this browser session only. They do not write to the company database or create official stock documents.</div>' +
+      '<div class="sec-title">QUICK STOCK ACTIONS</div><div class="btns wh-stock-actions"><button class="btn" data-wh-stock-action="receive" data-cooler-id="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-arrow-down"></i> Receive</button><button class="btn" data-wh-stock-action="dispatch" data-cooler-id="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-arrow-up"></i> Dispatch</button><button class="btn sec" data-wh-stock-action="inspect" data-cooler-id="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-clipboard-check"></i> Inspect</button></div>' +
+      '<div class="fields wh-updated"><div><span>Updated</span><b>' + esc(rec.updated) + '</b></div><div><span>Data source</span><b>Session demo data</b></div></div>' +
+      '<div class="btns"><button class="btn sec" data-focus-cooler="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
   }
   function renderWarehouseZonePanel(meta) {
     var titles = { storage: 'Storage racks · Zone A-C', inventory: 'Cooler inventory area', receiving: 'Receiving & loading area' };
@@ -443,9 +469,17 @@
   // ---------- events ----------
   document.addEventListener('click', function (ev) {
     var t = ev.target;
-    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at],[data-cooler-id],[data-focus-cooler]');
+    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at],[data-cooler-id],[data-focus-cooler],[data-wh-stock-action]');
     if (!el) return;
     if (el.hasAttribute('data-close')) { closeInfo(); return; }
+    if (el.hasAttribute('data-wh-stock-action')) {
+      var stockId = el.getAttribute('data-cooler-id'), stockWh = el.getAttribute('data-cooler-wh');
+      var stockType = el.getAttribute('data-wh-stock-action');
+      stockAction(stockId, stockWh, stockType);
+      var stockNum = Number(String(stockId).slice(-4)) || 1;
+      renderCoolerPanel({ id: stockId, warehouseId: stockWh, x: 16.5 + (stockNum - 1) * 1.5, z: 1.2 });
+      return;
+    }
     if (el.hasAttribute('data-focus-emp')) { if (api) api.selectEmployee(el.getAttribute('data-focus-emp'), true); return; }
     if (el.hasAttribute('data-focus-wh')) { chooseWorld('warehouse', el.getAttribute('data-focus-wh'), true); return; }
     if (el.hasAttribute('data-focus-truck')) { chooseWorld('truck', el.getAttribute('data-focus-truck'), true); return; }

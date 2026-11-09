@@ -103,3 +103,11 @@ PHASE 9 — PREMIUM WAREHOUSE INTERACTION
 - Clickable storage, inventory and receiving zones with zone information panels
 - Refined forklift safety cage, seat, lights, wheel hubs and animated beacon
 - Inventory IDs and zone data are prototype placeholders; connect warehouse/cooler APIs before operational use.
+
+
+PHASE 4 - SMART WAREHOUSE PROTOTYPE
+- Cooler Finder results now show Rack / Row / Shelf / Bin demo locations.
+- Cooler detail panel shows sample serial, model, status, storage coordinates and last movement.
+- Receive / Dispatch / Inspect quick actions update in-memory browser-session demo state only.
+- No database writes, stock documents, API endpoints or production inventory changes are performed.
+- Replace sample generator in ui.js with approved warehouse inventory API before production use.
