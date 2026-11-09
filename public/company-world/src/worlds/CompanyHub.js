@@ -7,7 +7,12 @@ const M = {
   blueLight: material(0x4d9bfa, .55), white: material(0xf8fbff), glass: new THREE.MeshStandardMaterial({color:0x9ed8f4,roughness:.2,metalness:.18,transparent:true,opacity:.72}),
   gold: material(0xf0c34f,.48), dark: material(0x243b59), wood: material(0xb98954), carton: material(0xd8b27b),
   green: material(0x55a76a), leaf: material(0x4eaa68), tire: material(0x263342), window: material(0x8dc8ed,.24,.08),
-  retailYellow: material(0xf2c34e), red: material(0xe94c4c)
+  retailYellow: material(0xf2c34e), red: material(0xe94c4c),
+  steel: material(0x9aacc0,.42,.42), navy: material(0x123a70,.5,.18),
+  glassDark: new THREE.MeshStandardMaterial({color:0x4f89b7,roughness:.18,metalness:.12}),
+  pavement: material(0xd6e0ea), whiteLine: material(0xffffff),
+  plant: material(0x72b879), soil: material(0xb2a27c),
+  light: new THREE.MeshStandardMaterial({color:0xfff0bf,emissive:0xffd36b,emissiveIntensity:.45})
 };
 const box = (parent,w,h,d,mat,x,y,z,opts={}) => {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
@@ -84,6 +89,44 @@ function makeForklift(parent,x,z,scale=1) {
   }
   return g;
 }
+function addWindowGrid(parent, x, y, z, cols, rows, width, height, gap=.16, frameMat=M.blueDark) {
+  const paneW=(width-gap*(cols-1))/cols, paneH=(height-gap*(rows-1))/rows;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) {
+    const px=x-width/2+c*(paneW+gap)+paneW/2, py=y-height/2+r*(paneH+gap)+paneH/2;
+    box(parent,paneW,paneH,.055,M.glassDark,px,py,z);
+    box(parent,.045,paneH+.08,.075,frameMat,px-paneW/2,py,z+.018);
+  }
+}
+function makeStreetLamp(parent,x,z) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  cylinder(g,.055,.075,3.5,M.steel,0,1.75,0,10);
+  box(g,.8,.08,.08,M.steel,.35,3.42,0);
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.16,12,10),M.light);bulb.position.set(.72,3.3,0);g.add(bulb);
+  const shade=new THREE.Mesh(new THREE.CylinderGeometry(.24,.34,.12,16),M.white);shade.position.set(.72,3.22,0);g.add(shade);
+  return g;
+}
+function makeFlowerBed(parent,x,z,w=3.2) {
+  box(parent,w,.18,1.25,M.soil,x,.1,z);
+  for(let i=0;i<7;i++) {
+    const plant=new THREE.Mesh(new THREE.IcosahedronGeometry(.25+(i%2)*.06,1),i%3===0?M.gold:M.plant);
+    plant.position.set(x-w*.42+i*w*.14,.38,z+(i%2?-.16:.16));plant.scale.set(.8,1.25,.8);plant.castShadow=true;parent.add(plant);
+  }
+}
+function addDockDetails(g,w,d) {
+  for(let i=-2;i<=2;i++) {
+    const x=i*w*.155;
+    box(g,2.35,.16,.35,M.steel,x,.18,d*.505);
+    box(g,2.05,2.28,.08,M.navy,x,1.62,d*.515);
+    box(g,1.86,2.08,.045,M.glassDark,x,1.62,d*.545);
+    for(let j=0;j<5;j++) box(g,1.82,.035,.05,M.steel,x,0.72+j*.38,d*.575);
+    box(g,.12,.18,.08,M.light,x-1.08,.42,d*.57);
+    box(g,.12,.18,.08,M.light,x+1.08,.42,d*.57);
+  }
+  for(let i=-3;i<=3;i++) {
+    box(g,.08,.16,.12,M.steel,i*w*.12,.1,d*.57);
+  }
+}
+
 function makeWarehouse(parent,x,z,w=19,d=14) {
   const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
   box(g,w,.6,d,M.concrete,0,.3,0);
@@ -92,12 +135,20 @@ function makeWarehouse(parent,x,z,w=19,d=14) {
   // Blue corrugated roof ribs and front facade.
   for(let i=-6;i<=6;i++) box(g,.09,.1,d*.88,M.blueLight,i*w/14,4.97,0);
   box(g,w*.98,.26,.3,M.retailYellow,0,4.68,d*.47);
+  // layered roof parapet, skylights and industrial ventilation units
+  box(g,w*.92,.18,d*.86,M.blueDark,0,5.12,0);
+  for(let i=-2;i<=2;i++) {
+    box(g,2.1,.12,1.25,M.glassDark,i*w*.16,5.22,-d*.12);
+    box(g,1.1,.48,.9,M.steel,i*w*.16,5.48,-d*.28);
+  }
   for(let i=-2;i<=2;i++) {
     const doorX=i*w*.155;
-    box(g,2.45,2.65,.12,M.blueDark,doorX,1.75,d*.455);
-    box(g,2.12,2.35,.08,M.white,doorX,1.72,d*.46);
-    box(g,1.88,2.1,.04,M.blue,doorX,1.65,d*.49);
-    box(g,.12,2.1,.04,M.gold,doorX-.88,1.65,d*.515);
+    box(g,2.55,2.78,.14,M.steel,doorX,1.72,d*.455);
+    box(g,2.28,2.48,.09,M.navy,doorX,1.72,d*.47);
+    box(g,2.02,2.22,.05,M.blue,doorX,1.68,d*.50);
+    for(let slat=0;slat<9;slat++) box(g,1.98,.035,.06,M.blueLight,doorX,0.7+slat*.23,d*.535);
+    box(g,.1,2.12,.05,M.gold,doorX-.98,1.66,d*.54);
+    box(g,.1,2.12,.05,M.gold,doorX+.98,1.66,d*.54);
   }
   const sign=textSprite('BEERLAO · WAREHOUSE','#125ec6');sign.position.set(0,5.95,d*.49);sign.scale.set(10,2.5,1);g.add(sign);
   // visible rack and cooler stock through the loading apron
@@ -111,7 +162,10 @@ function makeOffice(parent,x,z) {
   box(g,12.3,4.9,8.3,M.white,0,2.95,0);
   box(g,12.5,.42,8.5,M.blue,0,5.55,0);
   box(g,12.35,3.1,.1,M.glass,0,3.15,4.17);
-  for(let i=-4;i<=4;i++) box(g,.12,3.1,.12,M.blueDark,i*1.35,3.15,4.24);
+  addWindowGrid(g,0,3.15,4.24,8,2,11.7,2.75,.16,M.blueDark);
+  for(let i=-4;i<=4;i++) box(g,.12,3.1,.12,M.blueDark,i*1.35,3.15,4.3);
+  box(g,12.5,.16,.28,M.gold,0,1.52,4.3);
+  for(let i=-2;i<=2;i++) box(g,1.4,.12,.35,M.blueLight,i*2.2,5.78,0);
   box(g,3.2,1.2,.2,M.white,0,4.65,4.28);
   const sign=textSprite('HEAD OFFICE','#1768d8');sign.position.set(0,6.6,4.3);sign.scale.set(7.3,1.8,1);g.add(sign);
   box(g,2.4,2.8,.22,M.blueDark,0,1.65,4.25);
@@ -123,7 +177,9 @@ function makeRetail(parent,x,z) {
   box(g,9.5,3.2,6.5,M.white,0,1.9,0);
   box(g,9.7,.55,6.7,M.retailYellow,0,3.75,0);
   box(g,9.35,1.7,.12,M.glass,0,1.8,3.25);
-  for(let i=-3;i<=3;i++) box(g,.08,1.7,.1,M.blueDark,i*1.25,1.8,3.33);
+  addWindowGrid(g,0,1.8,3.34,6,1,9.05,1.55,.12,M.blueDark);
+  for(let i=-3;i<=3;i++) box(g,.08,1.7,.1,M.blueDark,i*1.25,1.8,3.4);
+  box(g,9.5,.12,.22,M.blueDark,0,.88,3.4);
   box(g,2.1,2.2,.15,M.blue,0,1.35,3.38);
   const sign=textSprite('BEERLAO RETAIL','#e4ae32');sign.position.set(0,4.7,3.6);sign.scale.set(7.5,1.85,1);g.add(sign);
   makeCooler(g,-3,.55,-.5,.8);makeCooler(g,-1.5,.55,-.5,.8);
@@ -135,7 +191,12 @@ function makeLogistics(parent,x,z) {
   box(g,13.4,4,8.3,M.white,0,2.3,0);
   box(g,13.6,.35,8.5,M.blue,0,4.48,0);
   box(g,13.4,2.5,.1,M.blueDark,0,1.9,4.18);
-  for(let i=-2;i<=2;i++) box(g,2,.12,.08,M.retailYellow,i*2.4,.65,4.25);
+  for(let i=-2;i<=2;i++) {
+    box(g,2.05,2.1,.12,M.navy,i*2.4,1.85,4.24);
+    box(g,1.82,1.85,.05,M.glassDark,i*2.4,1.85,4.32);
+    box(g,2,.12,.08,M.retailYellow,i*2.4,.65,4.4);
+  }
+  for(let i=-3;i<=3;i++) box(g,1.1,.18,1.2,M.steel,i*1.75,4.72,-2.8);
   const sign=textSprite('LOGISTICS HUB','#155fc5');sign.position.set(0,5.4,4.25);sign.scale.set(8,2,1);g.add(sign);
   return g;
 }
@@ -191,8 +252,23 @@ export class CompanyHub {
     const truck1=makeTruck(this.root,-25,34,1.05,0);
     const truck2=makeTruck(this.root,25,34,1.0,Math.PI);
     const truck3=makeTruck(this.root,39,-1,.78,Math.PI/2);
+    const truck4=makeTruck(this.root,7,29,.78,Math.PI);
+    // branded cooler display islands and warehouse handling detail
+    for(const [x,z] of [[-24,9],[-21,9],[22,18],[25,18],[30,13]]) makeCooler(this.root,x,.18,z,.72);
+    for(const [x,z] of [[-20,-3],[20,-5],[-4,20],[8,20]]) {
+      box(this.root,2.4,.12,2.1,M.white,x,.08,z);
+      for(let k=0;k<3;k++) box(this.root,.62,.85,.62,k%2?M.carton:M.wood,x-0.62+k*.62,.58,z);
+    }
+    // parking bays, pedestrian crossings, lamp posts and landscaped beds
+    for(let i=-4;i<=4;i++) {
+      box(this.root,.12,.025,5.5,M.white,-42+i*8.5,.1,26);
+      box(this.root,4.5,.025,.12,M.white,29+i*1.1,.1,12);
+    }
+    for(const [x,z] of [[-43,3],[-18,30],[16,29],[45,5],[-4,-29],[42,-28]]) makeStreetLamp(this.root,x,z);
+    for(const [x,z,w] of [[-45,-5,4],[-47,25,5],[0,30,5],[45,29,5],[48,-18,4],[-8,-30,4]]) makeFlowerBed(this.root,x,z,w);
     this.animated.push({object:truck1,baseZ:34,phase:0,kind:'truck'});
     this.animated.push({object:truck2,baseZ:34,phase:2.3,kind:'truck'});
+    this.animated.push({object:truck4,baseZ:29,phase:1.3,kind:'truck'});
     this.animated.push({object:forklift1,baseX:-9,phase:.2,kind:'forklift'});
     this.animated.push({object:forklift2,baseX:17,phase:2.1,kind:'forklift'});
     // green belt and ornamental trees
