@@ -85,3 +85,13 @@ Premium Visual Pass (2026-11)
 - Existing Virtual Office, Warehouses, Logistics, Shop Town, dashboard and data adapters remain in place.
 - office3d.js lighting/shadow balance tuned for richer depth; geometry and interaction contracts unchanged.
 - No new backend, database, or workflow introduced.
+
+
+Phase 8 — Premium Warehouse Visual Upgrade (2026-11)
+- warehouse3d.js: loading dock portals updated to deep navy / champagne gold with illuminated dock labels and premium safety guides.
+- Warehouse storage palette refined to graphite / steel / warm metallic accents.
+- Cooler display upgraded to Beerlao-inspired red crown, insulated cabinet, glass door, gold handle, internal shelves and can silhouettes.
+- Existing VOX.Warehouse API, bayPos / approachPos / setStatus / setSelected / update hooks, worldPick IDs, Logistics routing and UI panels are preserved.
+- ui.js warehouse module cache key bumped to premium2 so browsers fetch the revised model.
+- Visual/demo data only: no stock counts, workflow, API endpoints, database schema or operational behavior changed.
+- Desktop and mobile continue to use the existing responsive layout and Three.js renderer.
