@@ -1,5 +1,5 @@
-/* Virtual Company 3D — Dashboard UI + ໂຫຼດ Three.js + ເຊື່ອມກັບສາກ 3D (office3d.js)
-   ໃຊ້ Mock Data ຈາກ data.js ເທົ່ານັ້ນ — ບໍ່ເອີ້ນ API / Database */
+/* Virtual Company 3D — Dashboard UI + Three.js scene controls.
+   Phase 5 adds a separate read-only bridge to existing warehouse stock APIs. */
 (function () {
   'use strict';
 
@@ -24,6 +24,7 @@
 
   var view = { tab: 'office', emp: null, dept: null, wh: null, truck: null, route: null, shop: null, filter: '', status: 'all' };
   var api = null, logi = null, town = null, at = null, ADT = window.VO_ASSETS || null, LD = window.VO_LOGISTICS || null, SD = window.VO_SHOPS || null, WORLD_TABS = { warehouses: 1, logistics: 1, overview: 1, shops: 1 };
+  var WHLIVE = window.VO_WAREHOUSE_LIVE || null, whSearchSeq = 0, whSearchTimer = null;
   var DASH = null;   // Phase 3: window.VODash (ໂຫຼດແບບ lazy — ຖ້າໂຫຼດບໍ່ໄດ້ ແຖບ Company Overview ຈະກັບໄປໃຊ້ແບບ Phase 2)
   // ຂຽນ #stats ສະເພາະເມື່ອເນື້ອຫາປ່ຽນ (ບໍ່ວາດຊ້ຳທຸກວິນາທີ)
   function setStats(cls, html) { var el = $('stats'); el.__kh = null; if (el.className !== cls) el.className = cls; if (el.__h !== html) { el.innerHTML = html; el.__h = html; } }
@@ -226,7 +227,7 @@
     if (!logi) return '<div class="empty">ກຳລັງໂຫຼດຂໍ້ມູນຄັງສິນຄ້າ...</div>';
     var h = '', s = logi.stats(), c = counts();
     if (view.tab === 'warehouses') {
-      h += '<div class="co-card warehouse-search-card"><h3>Cooler Finder</h3><p>Demo inventory · search a sample Cooler ID</p><div class="search wh-search"><input id="coolerSearch" type="search" placeholder="e.g. BL-WH1-0001" autocomplete="off"></div><div id="coolerSearchResults"></div></div>';
+      h += '<div class="co-card warehouse-search-card"><div class="wh-live-head"><div><h3>Live Cooler Finder</h3><p>Connected to company Warehouse Stock · read-only</p></div><button class="wh-refresh" data-live-stock-refresh title="Refresh live stock"><i class="fa-solid fa-rotate"></i></button></div><div id="liveWarehouseSummary" class="wh-live-summary">Loading live stock…</div><select id="liveWarehouseFilter" class="wh-filter"><option value="">All warehouses</option></select><div class="search wh-search"><input id="coolerSearch" type="search" placeholder="Search QR / Serial / CapEx / Model" autocomplete="off"></div><div id="coolerSearchResults"><div class="empty wh-empty">Enter at least 2 characters to search live stock.</div></div></div>';
       h += '<div class="sec-title">' + LD.warehouses.length + ' Warehouses · ຄລິກເພື່ອຊູມ</div>';
       LD.warehouses.forEach(function (w) {
         var st = LD.WH_STATUS[logi.warehouses[w.id].status()];
@@ -356,17 +357,69 @@
       '<div class="fields" style="margin-top:12px">' + fields + '</div>' +
       '<div class="btns"><button class="btn" data-focus-shop="' + id + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
   }
+  function renderLiveWarehouseSummary(force) {
+    var host = $('liveWarehouseSummary'); if (!host || !WHLIVE) return;
+    host.textContent = 'Loading live stock…';
+    Promise.all([WHLIVE.getWarehouses(!!force), WHLIVE.getStock(!!force)]).then(function (res) {
+      if (!host.isConnected) return;
+      var warehouses = res[0], rows = res[1], inWh = rows.filter(function (r) { return r.status === 'in_warehouse'; }).length;
+      var reserved = rows.filter(function (r) { return r.status === 'reserved'; }).length;
+      var onTruck = rows.filter(function (r) { return r.status === 'on_truck'; }).length;
+      host.innerHTML = '<div class="wh-live-kpis"><div><b>' + num(rows.length) + '</b><span>Total assets</span></div><div><b>' + num(inWh) + '</b><span>In warehouse</span></div><div><b>' + num(reserved) + '</b><span>Reserved</span></div></div><div class="wh-live-foot">' + warehouses.length + ' active warehouses · synced ' + esc(new Date().toLocaleTimeString()) + '</div>';
+      var select = $('liveWarehouseFilter');
+      if (select && select.options.length <= 1) {
+        select.innerHTML = '<option value="">All warehouses</option>' + warehouses.map(function (w) { return '<option value="' + esc(w.id) + '">' + esc(w.code + ' · ' + w.name) + '</option>'; }).join('');
+      }
+    }).catch(function (err) {
+      if (!host.isConnected) return;
+      host.innerHTML = '<div class="wh-live-error"><i class="fa-solid fa-triangle-exclamation"></i> Live data unavailable (' + esc(err.message) + '). Sign in with an authorized account and retry.</div>';
+    });
+  }
   function renderCoolerSearch(q) {
-    var host = $('coolerSearchResults'); if (!host || !LD) return;
-    q = String(q || '').trim().toUpperCase(); var rows = [];
-    LD.warehouses.forEach(function (w) { for (var i = 1; i <= 3; i++) {
-      var id = 'BL-' + w.id.toUpperCase() + '-' + String(i).padStart(4, '0');
-      if (!q || id.indexOf(q) >= 0 || w.name.toUpperCase().indexOf(q) >= 0) rows.push({ id: id, wh: w.id, name: w.name });
-    }});
-    host.innerHTML = rows.length ? rows.slice(0, 5).map(function (r) {
-      var rec = coolerRecord(r.id, r.wh);
-      return '<button class="mini cooler-result" data-cooler-id="' + r.id + '" data-cooler-wh="' + r.wh + '"><span class="avatar" style="width:30px;height:30px;background:#9b252d"><i class="fa-solid fa-temperature-low"></i></span><span class="tx"><b>' + r.id + '</b><span>' + esc(r.name) + ' · ' + esc(rec.rack + ' / ' + rec.row + ' / ' + rec.shelf + ' / ' + rec.bin) + '</span></span><i class="fa-solid fa-crosshairs"></i></button>';
-    }).join('') : '<div class="empty">No matching demo cooler ID</div>';
+    var host = $('coolerSearchResults'); if (!host || !WHLIVE) return;
+    q = String(q || '').trim();
+    if (q.length < 2) { host.innerHTML = '<div class="empty wh-empty">Enter at least 2 characters to search QR, Serial, CapEx or Model.</div>'; renderLiveWarehouseSummary(false); return; }
+    var seq = ++whSearchSeq, filter = $('liveWarehouseFilter'), warehouseId = filter ? filter.value : '';
+    host.innerHTML = '<div class="empty wh-empty"><span class="spinner sm"></span> Searching live stock…</div>';
+    WHLIVE.search(q, warehouseId).then(function (rows) {
+      if (!host.isConnected || seq !== whSearchSeq) return;
+      host.innerHTML = rows.length ? rows.slice(0, 20).map(function (r) {
+        var id = r.qr_code || r.serial_number || r.capex || ('STOCK-' + r.id);
+        var label = [r.cooler_brand, r.cooler_type, r.cooler_model].filter(Boolean).join(' · ');
+        return '<button class="mini cooler-result" data-live-stock-id="' + esc(r.id) + '"><span class="avatar" style="width:30px;height:30px;background:#9b252d"><i class="fa-solid fa-temperature-low"></i></span><span class="tx"><b>' + esc(id) + '</b><span>' + esc((r.warehouse_code || '') + ' · ' + (r.warehouse_name || 'Warehouse') + ' · ' + label) + '</span></span><span class="wh-status-tag">' + esc(WHLIVE.statusLabel(r.status)) + '</span></button>';
+      }).join('') : '<div class="empty wh-empty">No matching live stock records.</div>';
+      // Search results may not be part of the initial all-stock cache; keep exact records in a local lookup.
+      window.VO_WAREHOUSE_SEARCH_ROWS = window.VO_WAREHOUSE_SEARCH_ROWS || Object.create(null);
+      rows.forEach(function (r) { window.VO_WAREHOUSE_SEARCH_ROWS[String(r.id)] = r; });
+    }).catch(function (err) {
+      if (!host.isConnected || seq !== whSearchSeq) return;
+      host.innerHTML = '<div class="wh-live-error">Search failed: ' + esc(err.message) + '</div>';
+    });
+  }
+  function renderLiveCoolerPanel(record) {
+    if (!record || !WHLIVE) return;
+    var identity = record.qr_code || record.serial_number || record.capex || ('STOCK-' + record.id);
+    var status = WHLIVE.statusLabel(record.status), coolerStatus = WHLIVE.coolerStatusLabel(record.cooler_status);
+    var fields = '<div class="fields"><div><span>Stock record</span><b>' + esc(record.id) + '</b></div><div><span>Warehouse</span><b>' + esc((record.warehouse_code || '') + ' · ' + (record.warehouse_name || '—')) + '</b></div>' +
+      '<div><span>QR Code</span><b>' + esc(record.qr_code || '—') + '</b></div><div><span>Serial Number</span><b>' + esc(record.serial_number || '—') + '</b></div>' +
+      '<div><span>CapEx</span><b>' + esc(record.capex || '—') + '</b></div><div><span>Brand / Type</span><b>' + esc([record.cooler_brand, record.cooler_type].filter(Boolean).join(' / ') || '—') + '</b></div>' +
+      '<div><span>Model</span><b>' + esc(record.cooler_model || '—') + '</b></div><div><span>Cooler condition</span><b>' + esc(coolerStatus) + '</b></div>' +
+      '<div><span>Stock status</span><b>' + esc(status) + '</b></div><div><span>Last updated</span><b>' + esc(record.updated_at || '—') + '</b></div>' +
+      '<div style="grid-column:1/-1"><span>Notes</span><b>' + esc(record.notes || '—') + '</b></div></div>';
+    openInfo('<div class="hd" style="background:linear-gradient(135deg,#9b252d,#561a22)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
+      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.22)"><i class="fa-solid fa-temperature-low"></i></span><div><h2>' + esc(identity) + '</h2><p>Live Beerlao Cooler Stock · ' + esc(record.warehouse_name || 'Warehouse') + '</p></div></div></div>' +
+      '<div class="bd"><div class="row2"><span class="chip" style="background:#16845b">LIVE DATABASE</span><span class="chip" style="background:#334155">' + esc(status) + '</span></div>' +
+      '<div class="sec-title">ASSET & WAREHOUSE RECORD</div>' + fields +
+      '<div class="task wh-demo-note"><span>3D location mapping</span>Current warehouse stock records do not contain Rack / Row / Shelf / Bin coordinates. This asset is shown as a live database record; its exact physical position is not inferred.</div>' +
+      '<div class="sec-title">STOCK MOVEMENT HISTORY</div><div id="liveStockHistory" class="wh-history"><div class="empty">Loading history…</div></div>' +
+      '<div class="btns"><button class="btn sec" data-close>Close</button></div></div>');
+    var historyHost = $('liveStockHistory');
+    WHLIVE.history(record).then(function (rows) {
+      if (!historyHost || !historyHost.isConnected) return;
+      historyHost.innerHTML = rows.length ? rows.slice(0, 8).map(function (r) {
+        return '<div class="wh-history-row"><b>' + esc(String(r.action || 'Movement').replace(/_/g, ' ')) + '</b><span>' + esc(WHLIVE.statusLabel(r.old_status) + ' → ' + WHLIVE.statusLabel(r.new_status)) + '</span><small>' + esc(r.changed_at || '—') + ' · ' + esc(r.changed_by || 'System') + '</small></div>';
+      }).join('') : '<div class="empty">No movement history found for this identifier.</div>';
+    }).catch(function (err) { if (historyHost && historyHost.isConnected) historyHost.innerHTML = '<div class="wh-live-error">History unavailable: ' + esc(err.message) + '</div>'; });
   }
   function renderCoolerPanel(meta) {
     var w = whDef(meta.warehouseId); if (!w) return;
@@ -469,8 +522,15 @@
   // ---------- events ----------
   document.addEventListener('click', function (ev) {
     var t = ev.target;
-    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at],[data-cooler-id],[data-focus-cooler],[data-wh-stock-action]');
+    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at],[data-cooler-id],[data-focus-cooler],[data-wh-stock-action],[data-live-stock-id],[data-live-stock-refresh]');
     if (!el) return;
+    if (el.hasAttribute('data-live-stock-refresh')) { if (WHLIVE) WHLIVE.refresh().then(function () { renderLiveWarehouseSummary(true); var q = $('coolerSearch'); if (q && q.value) renderCoolerSearch(q.value); }); return; }
+    if (el.hasAttribute('data-live-stock-id')) {
+      var liveId = el.getAttribute('data-live-stock-id');
+      var liveRecord = (window.VO_WAREHOUSE_SEARCH_ROWS || {})[String(liveId)] || (WHLIVE && WHLIVE.find(liveId));
+      if (liveRecord) renderLiveCoolerPanel(liveRecord);
+      return;
+    }
     if (el.hasAttribute('data-close')) { closeInfo(); return; }
     if (el.hasAttribute('data-wh-stock-action')) {
       var stockId = el.getAttribute('data-cooler-id'), stockWh = el.getAttribute('data-cooler-wh');
@@ -505,8 +565,8 @@
     if (el.hasAttribute('data-emp')) { chooseEmp(el.getAttribute('data-emp')); return; }
     if (el.hasAttribute('data-dept')) { chooseDept(el.getAttribute('data-dept')); return; }
   });
-  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { view.filter = ev.target.value; renderEmpList(); } if (ev.target.id === 'coolerSearch') renderCoolerSearch(ev.target.value); });
-  document.addEventListener('change', function (ev) { if (ev.target.id === 'st') { view.status = ev.target.value; renderEmpList(); } });
+  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { view.filter = ev.target.value; renderEmpList(); } if (ev.target.id === 'coolerSearch') { clearTimeout(whSearchTimer); var value = ev.target.value; whSearchTimer = setTimeout(function () { renderCoolerSearch(value); }, 260); } });
+  document.addEventListener('change', function (ev) { if (ev.target.id === 'st') { view.status = ev.target.value; renderEmpList(); } if (ev.target.id === 'liveWarehouseFilter') { var q = $('coolerSearch'); renderCoolerSearch(q ? q.value : ''); } });
 
   function openSide() { $('sidebar').classList.add('open'); $('sideBackdrop').classList.add('open'); }
   function closeSide() { $('sidebar').classList.remove('open'); $('sideBackdrop').classList.remove('open'); }

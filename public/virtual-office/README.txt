@@ -111,3 +111,14 @@ PHASE 4 - SMART WAREHOUSE PROTOTYPE
 - Receive / Dispatch / Inspect quick actions update in-memory browser-session demo state only.
 - No database writes, stock documents, API endpoints or production inventory changes are performed.
 - Replace sample generator in ui.js with approved warehouse inventory API before production use.
+
+
+PHASE 5 — LIVE WAREHOUSE READ INTEGRATION (2026-11-09)
+- Added warehouse-live.js as a read-only service adapter.
+- Uses existing GET /api/warehouses, GET /api/warehouse-stock, and GET /api/warehouse-stock/history endpoints.
+- Cooler Finder searches live QR / Serial / CapEx / Model values and displays real stock status, condition, warehouse, and movement history.
+- Added a live stock summary and active warehouse filter.
+- No new database tables, migrations, or stock mutation requests were added.
+- Rack / Row / Shelf / Bin are intentionally not fabricated: current warehouse_stock schema/API does not expose physical bin coordinates.
+- The 3D warehouse layout remains a visual map; live inventory records are shown as database records until real rack coordinates are added to the source system.
+- Requires an authenticated admin session and existing warehouse-stock API permissions.
