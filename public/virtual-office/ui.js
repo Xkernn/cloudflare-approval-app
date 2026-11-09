@@ -1,5 +1,5 @@
-/* Virtual Company 3D — Dashboard UI + Three.js scene controls.
-   Phase 5 adds a separate read-only bridge to existing warehouse stock APIs. */
+/* Virtual Company 3D — Dashboard UI + ໂຫຼດ Three.js + ເຊື່ອມກັບສາກ 3D (office3d.js)
+   ໃຊ້ Mock Data ຈາກ data.js ເທົ່ານັ້ນ — ບໍ່ເອີ້ນ API / Database */
 (function () {
   'use strict';
 
@@ -24,7 +24,6 @@
 
   var view = { tab: 'office', emp: null, dept: null, wh: null, truck: null, route: null, shop: null, filter: '', status: 'all' };
   var api = null, logi = null, town = null, at = null, ADT = window.VO_ASSETS || null, LD = window.VO_LOGISTICS || null, SD = window.VO_SHOPS || null, WORLD_TABS = { warehouses: 1, logistics: 1, overview: 1, shops: 1 };
-  var WHLIVE = window.VO_WAREHOUSE_LIVE || null, whSearchSeq = 0, whSearchTimer = null;
   var DASH = null;   // Phase 3: window.VODash (ໂຫຼດແບບ lazy — ຖ້າໂຫຼດບໍ່ໄດ້ ແຖບ Company Overview ຈະກັບໄປໃຊ້ແບບ Phase 2)
   // ຂຽນ #stats ສະເພາະເມື່ອເນື້ອຫາປ່ຽນ (ບໍ່ວາດຊ້ຳທຸກວິນາທີ)
   function setStats(cls, html) { var el = $('stats'); el.__kh = null; if (el.className !== cls) el.className = cls; if (el.__h !== html) { el.innerHTML = html; el.__h = html; } }
@@ -58,7 +57,7 @@
     if (view.tab === 'overview' && DASH) { var sc0 = el.scrollTop; el.innerHTML = DASH.renderSide(); el.setAttribute('data-ov', '1'); el.scrollTop = sc0; return; }
     el.removeAttribute('data-ov');
     var c = counts(), total = D.employees.length, max = Math.max.apply(null, D.departments.map(function (d) { return deptCount(d.id); }));
-    if (WORLD_TABS[view.tab]) { el.innerHTML = renderWorldSide(); if (view.tab === 'warehouses') renderCoolerSearch(''); return; }
+    if (WORLD_TABS[view.tab]) { el.innerHTML = renderWorldSide(); return; }
     if (view.tab === 'office') {
       h += '<div class="co-card"><h3>' + esc(D.company) + '</h3><p>Virtual Headquarters · Mock Data</p>' +
         '<div class="kv"><div><b>' + total + '</b><span>Employees</span></div><div><b>' + (c.work + c.meeting + c.walk) + '</b><span>Active now</span></div>' +
@@ -174,27 +173,6 @@
   function truckDef(id) { return LD && LD.trucks.filter(function (t) { return t.id === id; })[0]; }
   function routeDef(id) { return LD && LD.routes.filter(function (r) { return r.id === id; })[0]; }
   function num(n) { return Number(n).toLocaleString('en-US'); }
-  // Phase 4 · Smart Warehouse prototype state (session-only; no backend writes)
-  var WH_DEMO_STOCK = Object.create(null);
-  function coolerRecord(id, warehouseId) {
-    if (!WH_DEMO_STOCK[id]) {
-      var n = Number(String(id).slice(-4)) || 1;
-      WH_DEMO_STOCK[id] = { id: id, warehouseId: warehouseId, status: 'Available',
-        rack: 'R-' + String((n % 4) + 1).padStart(2, '0'), row: 'ROW-' + String((n % 3) + 1),
-        shelf: 'S' + String((n % 3) + 1), bin: 'B-' + String(n).padStart(3, '0'),
-        model: 'Glass Door · 1 Door', serial: 'DEMO-' + id.replace(/[^A-Z0-9]/g, ''),
-        updated: new Date().toLocaleString(), movement: 'Opening stock' };
-    }
-    return WH_DEMO_STOCK[id];
-  }
-  function stockAction(id, warehouseId, action) {
-    var r = coolerRecord(id, warehouseId);
-    if (action === 'receive') { r.status = 'Available'; r.movement = 'Received into warehouse'; }
-    else if (action === 'dispatch') { r.status = 'Dispatched'; r.movement = 'Issued from warehouse'; }
-    else if (action === 'inspect') { r.status = 'Inspection'; r.movement = 'Sent to inspection'; }
-    r.updated = new Date().toLocaleString(); return r;
-  }
-
   function goTab(tab, prev) {
     if (!api) return;
     var ex = api.ext;
@@ -227,7 +205,6 @@
     if (!logi) return '<div class="empty">ກຳລັງໂຫຼດຂໍ້ມູນຄັງສິນຄ້າ...</div>';
     var h = '', s = logi.stats(), c = counts();
     if (view.tab === 'warehouses') {
-      h += '<div class="co-card warehouse-search-card"><div class="wh-live-head"><div><h3>Live Cooler Finder</h3><p>Connected to company Warehouse Stock · read-only</p></div><button class="wh-refresh" data-live-stock-refresh title="Refresh live stock"><i class="fa-solid fa-rotate"></i></button></div><div id="liveWarehouseSummary" class="wh-live-summary">Loading live stock…</div><select id="liveWarehouseFilter" class="wh-filter"><option value="">All warehouses</option></select><div class="search wh-search"><input id="coolerSearch" type="search" placeholder="Search QR / Serial / CapEx / Model" autocomplete="off"></div><div id="coolerSearchResults"><div class="empty wh-empty">Enter at least 2 characters to search live stock.</div></div></div>';
       h += '<div class="sec-title">' + LD.warehouses.length + ' Warehouses · ຄລິກເພື່ອຊູມ</div>';
       LD.warehouses.forEach(function (w) {
         var st = LD.WH_STATUS[logi.warehouses[w.id].status()];
@@ -357,102 +334,8 @@
       '<div class="fields" style="margin-top:12px">' + fields + '</div>' +
       '<div class="btns"><button class="btn" data-focus-shop="' + id + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
   }
-  function renderLiveWarehouseSummary(force) {
-    var host = $('liveWarehouseSummary'); if (!host || !WHLIVE) return;
-    host.textContent = 'Loading live stock…';
-    Promise.all([WHLIVE.getWarehouses(!!force), WHLIVE.getStock(!!force)]).then(function (res) {
-      if (!host.isConnected) return;
-      var warehouses = res[0], rows = res[1], inWh = rows.filter(function (r) { return r.status === 'in_warehouse'; }).length;
-      var reserved = rows.filter(function (r) { return r.status === 'reserved'; }).length;
-      var onTruck = rows.filter(function (r) { return r.status === 'on_truck'; }).length;
-      host.innerHTML = '<div class="wh-live-kpis"><div><b>' + num(rows.length) + '</b><span>Total assets</span></div><div><b>' + num(inWh) + '</b><span>In warehouse</span></div><div><b>' + num(reserved) + '</b><span>Reserved</span></div></div><div class="wh-live-foot">' + warehouses.length + ' active warehouses · synced ' + esc(new Date().toLocaleTimeString()) + '</div>';
-      var select = $('liveWarehouseFilter');
-      if (select && select.options.length <= 1) {
-        select.innerHTML = '<option value="">All warehouses</option>' + warehouses.map(function (w) { return '<option value="' + esc(w.id) + '">' + esc(w.code + ' · ' + w.name) + '</option>'; }).join('');
-      }
-    }).catch(function (err) {
-      if (!host.isConnected) return;
-      host.innerHTML = '<div class="wh-live-error"><i class="fa-solid fa-triangle-exclamation"></i> Live data unavailable (' + esc(err.message) + '). Sign in with an authorized account and retry.</div>';
-    });
-  }
-  function renderCoolerSearch(q) {
-    var host = $('coolerSearchResults'); if (!host || !WHLIVE) return;
-    q = String(q || '').trim();
-    if (q.length < 2) { host.innerHTML = '<div class="empty wh-empty">Enter at least 2 characters to search QR, Serial, CapEx or Model.</div>'; renderLiveWarehouseSummary(false); return; }
-    var seq = ++whSearchSeq, filter = $('liveWarehouseFilter'), warehouseId = filter ? filter.value : '';
-    host.innerHTML = '<div class="empty wh-empty"><span class="spinner sm"></span> Searching live stock…</div>';
-    WHLIVE.search(q, warehouseId).then(function (rows) {
-      if (!host.isConnected || seq !== whSearchSeq) return;
-      host.innerHTML = rows.length ? rows.slice(0, 20).map(function (r) {
-        var id = r.qr_code || r.serial_number || r.capex || ('STOCK-' + r.id);
-        var label = [r.cooler_brand, r.cooler_type, r.cooler_model].filter(Boolean).join(' · ');
-        return '<button class="mini cooler-result" data-live-stock-id="' + esc(r.id) + '"><span class="avatar" style="width:30px;height:30px;background:#9b252d"><i class="fa-solid fa-temperature-low"></i></span><span class="tx"><b>' + esc(id) + '</b><span>' + esc((r.warehouse_code || '') + ' · ' + (r.warehouse_name || 'Warehouse') + ' · ' + label) + '</span></span><span class="wh-status-tag">' + esc(WHLIVE.statusLabel(r.status)) + '</span></button>';
-      }).join('') : '<div class="empty wh-empty">No matching live stock records.</div>';
-      // Search results may not be part of the initial all-stock cache; keep exact records in a local lookup.
-      window.VO_WAREHOUSE_SEARCH_ROWS = window.VO_WAREHOUSE_SEARCH_ROWS || Object.create(null);
-      rows.forEach(function (r) { window.VO_WAREHOUSE_SEARCH_ROWS[String(r.id)] = r; });
-    }).catch(function (err) {
-      if (!host.isConnected || seq !== whSearchSeq) return;
-      host.innerHTML = '<div class="wh-live-error">Search failed: ' + esc(err.message) + '</div>';
-    });
-  }
-  function renderLiveCoolerPanel(record) {
-    if (!record || !WHLIVE) return;
-    var identity = record.qr_code || record.serial_number || record.capex || ('STOCK-' + record.id);
-    var status = WHLIVE.statusLabel(record.status), coolerStatus = WHLIVE.coolerStatusLabel(record.cooler_status);
-    var fields = '<div class="fields"><div><span>Stock record</span><b>' + esc(record.id) + '</b></div><div><span>Warehouse</span><b>' + esc((record.warehouse_code || '') + ' · ' + (record.warehouse_name || '—')) + '</b></div>' +
-      '<div><span>QR Code</span><b>' + esc(record.qr_code || '—') + '</b></div><div><span>Serial Number</span><b>' + esc(record.serial_number || '—') + '</b></div>' +
-      '<div><span>CapEx</span><b>' + esc(record.capex || '—') + '</b></div><div><span>Brand / Type</span><b>' + esc([record.cooler_brand, record.cooler_type].filter(Boolean).join(' / ') || '—') + '</b></div>' +
-      '<div><span>Model</span><b>' + esc(record.cooler_model || '—') + '</b></div><div><span>Cooler condition</span><b>' + esc(coolerStatus) + '</b></div>' +
-      '<div><span>Stock status</span><b>' + esc(status) + '</b></div><div><span>Last updated</span><b>' + esc(record.updated_at || '—') + '</b></div>' +
-      '<div style="grid-column:1/-1"><span>Notes</span><b>' + esc(record.notes || '—') + '</b></div></div>';
-    openInfo('<div class="hd" style="background:linear-gradient(135deg,#9b252d,#561a22)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
-      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.22)"><i class="fa-solid fa-temperature-low"></i></span><div><h2>' + esc(identity) + '</h2><p>Live Beerlao Cooler Stock · ' + esc(record.warehouse_name || 'Warehouse') + '</p></div></div></div>' +
-      '<div class="bd"><div class="row2"><span class="chip" style="background:#16845b">LIVE DATABASE</span><span class="chip" style="background:#334155">' + esc(status) + '</span></div>' +
-      '<div class="sec-title">ASSET & WAREHOUSE RECORD</div>' + fields +
-      '<div class="task wh-demo-note"><span>3D location mapping</span>Current warehouse stock records do not contain Rack / Row / Shelf / Bin coordinates. This asset is shown as a live database record; its exact physical position is not inferred.</div>' +
-      '<div class="sec-title">STOCK MOVEMENT HISTORY</div><div id="liveStockHistory" class="wh-history"><div class="empty">Loading history…</div></div>' +
-      '<div class="btns"><button class="btn sec" data-close>Close</button></div></div>');
-    var historyHost = $('liveStockHistory');
-    WHLIVE.history(record).then(function (rows) {
-      if (!historyHost || !historyHost.isConnected) return;
-      historyHost.innerHTML = rows.length ? rows.slice(0, 8).map(function (r) {
-        return '<div class="wh-history-row"><b>' + esc(String(r.action || 'Movement').replace(/_/g, ' ')) + '</b><span>' + esc(WHLIVE.statusLabel(r.old_status) + ' → ' + WHLIVE.statusLabel(r.new_status)) + '</span><small>' + esc(r.changed_at || '—') + ' · ' + esc(r.changed_by || 'System') + '</small></div>';
-      }).join('') : '<div class="empty">No movement history found for this identifier.</div>';
-    }).catch(function (err) { if (historyHost && historyHost.isConnected) historyHost.innerHTML = '<div class="wh-live-error">History unavailable: ' + esc(err.message) + '</div>'; });
-  }
-  function renderCoolerPanel(meta) {
-    var w = whDef(meta.warehouseId); if (!w) return;
-    var rec = coolerRecord(meta.id, meta.warehouseId);
-    var statusColor = rec.status === 'Available' ? '#16845b' : (rec.status === 'Inspection' ? '#b58b42' : '#64748b');
-    openInfo('<div class="hd" style="background:linear-gradient(135deg,#9b252d,#561a22)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
-      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.22)"><i class="fa-solid fa-temperature-low"></i></span><div><h2>' + esc(meta.id) + '</h2><p>Beerlao Cooler · ' + esc(w.short) + '</p></div></div></div>' +
-      '<div class="bd"><div class="row2"><span class="chip" style="background:#b58b42">DEMO INVENTORY</span><span class="chip" style="background:' + statusColor + '">' + esc(rec.status) + '</span></div>' +
-      '<div class="sec-title">ASSET & STORAGE LOCATION</div><div class="fields"><div><span>Cooler ID</span><b>' + esc(rec.id) + '</b></div><div><span>Serial Number</span><b>' + esc(rec.serial) + '</b></div><div><span>Warehouse</span><b>' + esc(w.short) + '</b></div><div><span>Model</span><b>' + esc(rec.model) + '</b></div><div><span>Rack</span><b>' + esc(rec.rack) + '</b></div><div><span>Row / Shelf</span><b>' + esc(rec.row + ' / ' + rec.shelf) + '</b></div><div><span>Bin</span><b>' + esc(rec.bin) + '</b></div><div><span>Last movement</span><b>' + esc(rec.movement) + '</b></div></div>' +
-      '<div class="task wh-demo-note"><span>Smart Warehouse · Prototype mode</span>Actions below update this browser session only. They do not write to the company database or create official stock documents.</div>' +
-      '<div class="sec-title">QUICK STOCK ACTIONS</div><div class="btns wh-stock-actions"><button class="btn" data-wh-stock-action="receive" data-cooler-id="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-arrow-down"></i> Receive</button><button class="btn" data-wh-stock-action="dispatch" data-cooler-id="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-arrow-up"></i> Dispatch</button><button class="btn sec" data-wh-stock-action="inspect" data-cooler-id="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-clipboard-check"></i> Inspect</button></div>' +
-      '<div class="fields wh-updated"><div><span>Updated</span><b>' + esc(rec.updated) + '</b></div><div><span>Data source</span><b>Session demo data</b></div></div>' +
-      '<div class="btns"><button class="btn sec" data-focus-cooler="' + esc(meta.id) + '" data-cooler-wh="' + esc(meta.warehouseId) + '"><i class="fa-solid fa-crosshairs"></i> Focus</button><button class="btn sec" data-close>Close</button></div></div>');
-  }
-  function renderWarehouseZonePanel(meta) {
-    var titles = { storage: 'Storage racks · Zone A-C', inventory: 'Cooler inventory area', receiving: 'Receiving & loading area' };
-    var descriptions = { storage: 'Rack bays for stored assets and cooler units.', inventory: 'Display and staging area for cooler inventory.', receiving: 'Inbound inspection, loading and dispatch circulation.' };
-    openInfo('<div class="hd" style="background:linear-gradient(135deg,#243746,#101d29)"><button class="x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>' +
-      '<div class="who"><span class="avatar" style="width:58px;height:58px;font-size:24px;background:rgba(255,255,255,.2)"><i class="fa-solid fa-boxes-stacked"></i></span><div><h2>' + esc(titles[meta.zone] || meta.title) + '</h2><p>Warehouse zone · ' + esc(meta.warehouseId) + '</p></div></div></div>' +
-      '<div class="bd"><div class="task"><span>3D zone selection</span>' + esc(descriptions[meta.zone] || 'Warehouse operational area.') + '</div><div class="fields"><div><span>Zone</span><b>' + esc(meta.zone.toUpperCase()) + '</b></div><div><span>Warehouse</span><b>' + esc(meta.warehouseId) + '</b></div><div><span>Inventory data</span><b>Not connected</b></div><div><span>Mode</span><b>Interactive prototype</b></div></div><div class="task">Next integration: map real rack / bin codes to this 3D zone and load live stock quantities from the warehouse API.</div></div>');
-  }
-  function chooseWorld(type, id, focus, meta) {
+  function chooseWorld(type, id, focus) {
     if (!logi) return;
-    if (type === 'cooler' && meta) {
-      if (api) api.clearSelection(); logi.clearSelection(); view.emp = null; view.dept = null; view.wh = meta.warehouseId; view.truck = null; view.route = null; view.shop = null;
-      var cw = whDef(meta.warehouseId); if (focus !== false && api && cw) api.ext.focusOn(new api.ext.THREE.Vector3(cw.x + meta.x, 1.1, cw.z + meta.z), 17, api.ext.HOME_DIR);
-      renderCoolerPanel(meta); renderSide(); closeSide(); return;
-    }
-    if (type === 'warehouseZone' && meta) {
-      if (api) api.clearSelection(); logi.clearSelection(); view.emp = null; view.dept = null; view.wh = meta.warehouseId; view.truck = null; view.route = null; view.shop = null;
-      var zw = whDef(meta.warehouseId); if (focus !== false && api && zw) api.ext.focusOn(new api.ext.THREE.Vector3(zw.x + meta.x, 0, zw.z + meta.z), 27, api.ext.HOME_DIR);
-      renderWarehouseZonePanel(meta); renderSide(); closeSide(); return;
-    }
     if (at && type === 'truck' && id === ADT.truck.id) {   // Phase 5: ລົດສົ່ງ Asset
       if (api) api.clearSelection(); view.emp = null; view.dept = null; view.wh = null; view.truck = null; view.route = null; view.shop = null;
       logi.clearSelection(); if (town) town.clearSelection(); view.at = true; at.select(true); atSig = JSON.stringify(at.stats());
@@ -522,34 +405,14 @@
   // ---------- events ----------
   document.addEventListener('click', function (ev) {
     var t = ev.target;
-    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at],[data-cooler-id],[data-focus-cooler],[data-wh-stock-action],[data-live-stock-id],[data-live-stock-refresh]');
+    var el = t.closest && t.closest('[data-emp],[data-dept],[data-close],[data-focus-emp],[data-tab],[data-wh],[data-truck],[data-route],[data-focus-wh],[data-focus-truck],[data-shop],[data-focus-shop],[data-focus-at]');
     if (!el) return;
-    if (el.hasAttribute('data-live-stock-refresh')) { if (WHLIVE) WHLIVE.refresh().then(function () { renderLiveWarehouseSummary(true); var q = $('coolerSearch'); if (q && q.value) renderCoolerSearch(q.value); }); return; }
-    if (el.hasAttribute('data-live-stock-id')) {
-      var liveId = el.getAttribute('data-live-stock-id');
-      var liveRecord = (window.VO_WAREHOUSE_SEARCH_ROWS || {})[String(liveId)] || (WHLIVE && WHLIVE.find(liveId));
-      if (liveRecord) renderLiveCoolerPanel(liveRecord);
-      return;
-    }
     if (el.hasAttribute('data-close')) { closeInfo(); return; }
-    if (el.hasAttribute('data-wh-stock-action')) {
-      var stockId = el.getAttribute('data-cooler-id'), stockWh = el.getAttribute('data-cooler-wh');
-      var stockType = el.getAttribute('data-wh-stock-action');
-      stockAction(stockId, stockWh, stockType);
-      var stockNum = Number(String(stockId).slice(-4)) || 1;
-      renderCoolerPanel({ id: stockId, warehouseId: stockWh, x: 16.5 + (stockNum - 1) * 1.5, z: 1.2 });
-      return;
-    }
     if (el.hasAttribute('data-focus-emp')) { if (api) api.selectEmployee(el.getAttribute('data-focus-emp'), true); return; }
     if (el.hasAttribute('data-focus-wh')) { chooseWorld('warehouse', el.getAttribute('data-focus-wh'), true); return; }
     if (el.hasAttribute('data-focus-truck')) { chooseWorld('truck', el.getAttribute('data-focus-truck'), true); return; }
     if (el.hasAttribute('data-focus-at')) { chooseWorld('truck', ADT.truck.id, true); return; }
     if (el.hasAttribute('data-focus-shop')) { chooseWorld('shop', el.getAttribute('data-focus-shop'), true); return; }
-    if (el.hasAttribute('data-cooler-id') || el.hasAttribute('data-focus-cooler')) {
-      var cid = el.getAttribute('data-cooler-id') || el.getAttribute('data-focus-cooler'), cwh = el.getAttribute('data-cooler-wh');
-      var cnum = Number(cid.slice(-4)) || 1, cdef = whDef(cwh), cmeta = { id: cid, warehouseId: cwh, x: 16.5 + (cnum - 1) * 1.5, z: 1.2 };
-      if (cdef) chooseWorld('cooler', cid, true, cmeta); return;
-    }
     if (el.hasAttribute('data-shop')) { chooseWorld('shop', el.getAttribute('data-shop'), true); return; }
     if (el.hasAttribute('data-tab')) {
       var prevTab = view.tab; view.tab = el.getAttribute('data-tab');
@@ -565,8 +428,8 @@
     if (el.hasAttribute('data-emp')) { chooseEmp(el.getAttribute('data-emp')); return; }
     if (el.hasAttribute('data-dept')) { chooseDept(el.getAttribute('data-dept')); return; }
   });
-  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { view.filter = ev.target.value; renderEmpList(); } if (ev.target.id === 'coolerSearch') { clearTimeout(whSearchTimer); var value = ev.target.value; whSearchTimer = setTimeout(function () { renderCoolerSearch(value); }, 260); } });
-  document.addEventListener('change', function (ev) { if (ev.target.id === 'st') { view.status = ev.target.value; renderEmpList(); } if (ev.target.id === 'liveWarehouseFilter') { var q = $('coolerSearch'); renderCoolerSearch(q ? q.value : ''); } });
+  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { view.filter = ev.target.value; renderEmpList(); } });
+  document.addEventListener('change', function (ev) { if (ev.target.id === 'st') { view.status = ev.target.value; renderEmpList(); } });
 
   function openSide() { $('sidebar').classList.add('open'); $('sideBackdrop').classList.add('open'); }
   function closeSide() { $('sidebar').classList.remove('open'); $('sideBackdrop').classList.remove('open'); }
@@ -647,9 +510,9 @@
           'https://unpkg.com/three@' + V + '/examples/js/controls/OrbitControls.js'
         ], function () { return !!(window.THREE && THREE.OrbitControls); });
       })
-      .then(function () { return loadScript(['./office3d.js?v=premium1'], function () { return !!window.VO3D; }); })
+      .then(function () { return loadScript(['./office3d.js?v=2'], function () { return !!window.VO3D; }); })
       .then(function () {   // Phase 2 modules — ຖ້າໂຫຼດບໍ່ໄດ້ ຫ້ອງການ (Phase 1) ຍັງໃຊ້ງານໄດ້
-        return loadScript(['./warehouse3d.js?v=premium2'], function () { return !!(window.VOX && VOX.Warehouse); })
+        return loadScript(['./warehouse3d.js?v=1'], function () { return !!(window.VOX && VOX.Warehouse); })
           .then(function () { return loadScript(['./truck3d.js?v=1'], function () { return !!(window.VOX && VOX.Truck); }); })
           .then(function () { return loadScript(['./route3d.js?v=1'], function () { return !!(window.VOX && VOX.Logistics); }); })
           .then(function () { return loadScript(['./town3d.js?v=1'], function () { return !!(window.VOX && VOX.Town); }); })   // Phase 4: Shop Town
@@ -660,7 +523,7 @@
         api = window.VO3D.create($('scene'), D, {
           onSelectEmployee: function (id) { if (id) chooseEmp(id, false); else closeInfo(); },
           onSelectDepartment: function (id) { chooseDept(id, false); },
-          onSelectWorld: function (p) { chooseWorld(p.type, p.id, true, p); },
+          onSelectWorld: function (p) { chooseWorld(p.type, p.id, true); },
           onHover: onHover,
           onReady: function () { $('loading').classList.add('hide'); }
         });

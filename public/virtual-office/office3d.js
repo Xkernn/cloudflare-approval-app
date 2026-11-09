@@ -29,7 +29,7 @@
 
     // ---------- renderer / scene / camera ----------
     var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, (window.innerWidth < 860 ? 1.35 : (window.innerWidth < 1200 ? 1.5 : 1.85)))); // Premium pass: balanced DPR for mobile/tablet/desktop
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, (window.innerWidth < 1100 ? 1.5 : 2))); // Phase 3: ຈຳກັດ DPR ໃນ tablet ເພື່ອລື່ນໄຫຼ
     renderer.setClearColor(0x000000, 0);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -40,20 +40,16 @@
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(30, 1, 0.5, 700);
 
-    var ambient = new THREE.AmbientLight(0xfff4df, 0.66);
-    var hemi = new THREE.HemisphereLight(0xdcecff, 0x7b6b55, 0.42);
-    var sun = new THREE.DirectionalLight(0xffe5b4, 0.82);
-    var rim = new THREE.DirectionalLight(0x8db6d2, 0.28);
-    rim.position.set(24, 18, -26);
-    scene.add(rim);
+    var ambient = new THREE.AmbientLight(0xffffff, 0.52);
+    var hemi = new THREE.HemisphereLight(0xffffff, 0xd9d2c5, 0.26);
+    var sun = new THREE.DirectionalLight(0xfff4e0, 0.55);
     sun.position.set(-18, 34, 22);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
     sun.shadow.camera.top = 24; sun.shadow.camera.bottom = -24;
     sun.shadow.camera.near = 5; sun.shadow.camera.far = 90;
-    sun.shadow.bias = -0.00045;
-    sun.shadow.radius = 3;
+    sun.shadow.bias = -0.0006;
     scene.add(ambient); scene.add(hemi); scene.add(sun); scene.add(sun.target);
 
     // ---------- material / geometry helpers ----------

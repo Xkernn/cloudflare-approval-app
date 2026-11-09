@@ -11357,10 +11357,10 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     }
 
     function mmIsOpen() { const p = document.getElementById('mobileMenuPage'); return !!p && p.classList.contains('open'); }
-    // Virtual Company 3D = Company Hub (public/company-world/) — admin ເທົ່ານັ້ນ
+    // Virtual Company 3D = ໜ້າແຍກ (public/virtual-office/) — admin ເທົ່ານັ້ນ, ໃຊ້ Mock Data, ບໍ່ແຕະ API/DB
     function openVirtualOffice() {
       if (!currentUser || currentUser.role !== 'admin') return;
-      window.location.href = '/company-world/';
+      window.location.href = '/virtual-office/';
     }
     function openMenuPage() {
       const p = document.getElementById('mobileMenuPage');
