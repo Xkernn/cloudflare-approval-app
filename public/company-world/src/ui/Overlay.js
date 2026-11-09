@@ -14,9 +14,10 @@ export class Overlay {
     this.toastTimer = null;
     this.worldButtons = [...document.querySelectorAll('[data-world]')];
   }
-  bind({ onWorld, onHome, onZoomIn, onZoomOut, onAtmosphere, onExplore }) {
+  bind({ onWorld, onHome, onBack, onZoomIn, onZoomOut, onAtmosphere, onExplore }) {
     this.worldButtons.forEach((button) => button.addEventListener('click', () => onWorld(button.dataset.world)));
     $('reset-camera').addEventListener('click', onHome);
+    $('return-hub').addEventListener('click', onBack);
     $('camera-home').addEventListener('click', onHome);
     $('zoom-in').addEventListener('click', onZoomIn);
     $('zoom-out').addEventListener('click', onZoomOut);
@@ -26,11 +27,12 @@ export class Overlay {
   }
   selectWorld(world, isGateway = true) {
     this.worldButtons.forEach((button) => button.classList.toggle('active', button.dataset.world === world.id));
+    $('return-hub').hidden = world.id === 'hub';
     const copy = WORLD_COPY[world.id] || WORLD_COPY.hub;
     $('detail-kicker').textContent = copy.kicker;
     $('detail-title').textContent = copy.title;
     $('detail-description').textContent = copy.description;
-    $('detail-status').textContent = isGateway ? 'GATEWAY PREVIEW · WORLD SCENE IN NEXT PHASE' : 'COMPANY HUB';
+    $('detail-status').textContent = isGateway ? 'WORLD ENVIRONMENT · INTERACTIVE 3D SCENE' : 'COMPANY HUB';
     if (world.id === 'hub') this.detail.classList.remove('show'); else this.detail.classList.add('show');
     $('scene-label')?.remove();
   }
