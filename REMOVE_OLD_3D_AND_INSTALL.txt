@@ -1,0 +1,44 @@
+BEERLAO VIRTUAL COMPANY 3D — MENU INTEGRATION PATCH V3
+
+SCOPE
+- The existing "Virtual Company 3D" menu item and Admin-only visibility are preserved.
+- Its click destination changes from /virtual-office/ to /company-world/.
+- New Company Hub is served from public/company-world/.
+- The old 3D runtime is removed from public/virtual-office/.
+- No backend, API, database, schema, authentication, role, or other business workflows are changed.
+
+APPLY
+1. Extract this ZIP into the project root, preserving folder paths.
+2. Review public/index.html diff. Only the Virtual Company 3D destination/comment should differ.
+3. Run `apply-patch.ps1` (Windows PowerShell) or `sh apply-patch.sh` (Linux/macOS) from the project root. It deletes only `public/virtual-office/`.
+   Alternatively, delete that directory manually.
+4. Deploy the normal application static assets.
+
+OLD DIRECTORY TO DELETE
+public/virtual-office/
+
+Files found in the old directory:
+- public/virtual-office/warehouse3d.js
+- public/virtual-office/data-adapter.js
+- public/virtual-office/data.js
+- public/virtual-office/README.txt
+- public/virtual-office/dashboard.js
+- public/virtual-office/charts.js
+- public/virtual-office/town3d.js
+- public/virtual-office/ui.js
+- public/virtual-office/dashboard-data.js
+- public/virtual-office/style.css
+- public/virtual-office/shops-data.js
+- public/virtual-office/index.html
+- public/virtual-office/truck3d.js
+- public/virtual-office/asset-delivery.js
+- public/virtual-office/asset-data.js
+- public/virtual-office/route3d.js
+- public/virtual-office/logistics-data.js
+- public/virtual-office/office3d.js
+
+SAFETY
+- Keep public/office.html and src/lib/office.js; they are outside the old 3D runtime and are not deleted.
+- Keep the existing /api/admin/office-overview endpoint; the new Company Hub reads it using GET only.
+- Do not replace the full project with this patch; it contains only changed/new 3D integration files.
+- Rollback: restore the original public/index.html and public/virtual-office/ from the project backup.
