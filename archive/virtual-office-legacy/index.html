@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Beerlao · Virtual Company 3D</title>
+  <meta name="description" content="Beerlao premium interactive 3D company world — office, warehouse and logistics.">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/png" href="/icons/icon-192.png?v=2">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="./style.css?v=premium5">
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== Sidebar Navigation ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-ic"><i class="fa-solid fa-building"></i></div>
+      <div class="brand-tx"><b>Virtual Company</b><span>3D Interactive Dashboard</span></div>
+      <button class="icon-btn only-mobile" id="btnCloseSide" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <nav class="nav" id="nav">
+      <a class="nav-item" href="./hub.html" style="text-decoration:none"><i class="fa-solid fa-globe"></i><span>Company Hub 3D Preview</span></a>
+      <button class="nav-item active" data-tab="office"><i class="fa-solid fa-building"></i><span>Virtual Office</span></button>
+      <button class="nav-item" data-tab="warehouses"><i class="fa-solid fa-warehouse"></i><span>Warehouses</span></button>
+      <button class="nav-item" data-tab="logistics"><i class="fa-solid fa-truck-fast"></i><span>Logistics</span></button>
+      <button class="nav-item" data-tab="shops"><i class="fa-solid fa-store"></i><span>Shop Town</span></button>
+      <button class="nav-item" data-tab="overview"><i class="fa-solid fa-chart-pie"></i><span>Company Overview</span></button>
+      <button class="nav-item" data-tab="departments"><i class="fa-solid fa-sitemap"></i><span>Departments</span></button>
+      <button class="nav-item" data-tab="employees"><i class="fa-solid fa-users"></i><span>Employees</span></button>
+      <button class="nav-item" data-tab="activities"><i class="fa-solid fa-bolt"></i><span>Current Activities</span></button>
+    </nav>
+    <div class="side-body" id="sideBody"></div>
+    <div class="syncside" id="syncSide"></div>
+    <a class="back-link" href="/"><i class="fa-solid fa-arrow-left"></i> ກັບຄືນໄປແອັບຫຼັກ</a>
+  </aside>
+  <div class="side-backdrop" id="sideBackdrop"></div>
+
+  <!-- ===== 3D Stage ===== -->
+  <main class="stage" id="stage">
+    <div class="topbar">
+      <button class="icon-btn only-mobile" id="btnOpenSide" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="scene" id="scene"></div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p id="loadingText">ກຳລັງໂຫຼດສາກ 3D...</p>
+    </div>
+
+    <!-- Camera controls -->
+    <div class="camctl" id="camctl" aria-label="Camera controls">
+      <button data-act="rotL" title="ໝຸນຊ້າຍ (Q)"><i class="fa-solid fa-rotate-left"></i></button>
+      <button data-act="rotR" title="ໝຸນຂວາ (E)"><i class="fa-solid fa-rotate-right"></i></button>
+      <span class="sep"></span>
+      <button data-act="panL" title="Pan ຊ້າຍ (←)"><i class="fa-solid fa-arrow-left"></i></button>
+      <button data-act="panR" title="Pan ຂວາ (→)"><i class="fa-solid fa-arrow-right"></i></button>
+      <span class="sep"></span>
+      <button data-act="zIn" title="Zoom In (+)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+      <button data-act="zOut" title="Zoom Out (-)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+      <span class="sep"></span>
+      <button id="btnReset" title="ມຸມມອງເລີ່ມຕົ້ນ (R)"><i class="fa-solid fa-expand"></i></button>
+    </div>
+    <div class="hint" id="hint"><i class="fa-solid fa-computer-mouse"></i> ລາກເພື່ອໝຸນ · Scroll ເພື່ອ Zoom · ລາກຂວາເພື່ອ Pan · ຄລິກຕົວລະຄອນ/ແຜນກ/ຄັງສິນຄ້າ/ລົດ ເພື່ອເບິ່ງຂໍ້ມູນ</div>
+    <div class="tip" id="tip"></div>
+
+    <!-- ===== Phase 3: Company Overview layer (ສະແດງສະເພາະແຖບ Company Overview) ===== -->
+    <div class="ovtools" id="ovTools">
+      <button class="tbtn" id="btnFeed" aria-pressed="false"><i class="fa-solid fa-tower-broadcast"></i><span>Live feed</span></button>
+      <button class="tbtn" id="btnDock" aria-pressed="false"><i class="fa-solid fa-chart-column"></i><span>Analytics</span></button>
+      <div class="ovsync" id="ovSync"></div>
+    </div>
+    <aside class="feed" id="feed" aria-label="Live activity feed">
+      <div class="feed-hd"><b><i class="fa-solid fa-tower-broadcast"></i> Live Activity</b><span class="cnt" id="feedCount">0</span><button class="icon-x" id="feedClose" aria-label="Hide live feed"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="feed-body" id="feedBody"><div class="empty"><div class="spinner sm"></div>Loading events…</div></div>
+    </aside>
+    <section class="dock" id="dock" aria-label="Analytics charts">
+      <div class="dock-hd"><b><i class="fa-solid fa-chart-column"></i> Analytics</b><button class="icon-x" id="dockClose" aria-label="Hide analytics"><i class="fa-solid fa-chevron-down"></i></button></div>
+      <div class="dock-body">
+        <div class="chcard"><div class="cht"><b>Employee Activity Overview</b><span class="lgd" id="lg-activity"></span></div><div class="chv" id="ch-activity"><div class="chmsg">Charts load when this panel opens</div></div></div>
+        <div class="chcard"><div class="cht"><b>Warehouse Inbound / Outbound</b><span class="lgd"><span><i style="background:#2563eb"></i>Inbound</span><span><i style="background:#16a34a"></i>Outbound</span></span></div><div class="chv" id="ch-flow"></div></div>
+        <div class="chcard"><div class="cht"><b>Logistics Performance</b><span class="lgd"><span><i style="background:#0ea5e9"></i>On-time %</span><span><i style="background:#bae6fd"></i>Deliveries</span></span></div><div class="chv" id="ch-perf"></div></div>
+        <div class="chcard"><div class="cht"><b>Department Status Distribution</b></div><div class="chv" id="ch-dist"></div></div>
+      </div>
+    </section>
+
+    <!-- Employee / Department Information Panel -->
+    <aside class="info" id="info" aria-live="polite"></aside>
+  </main>
+</div>
+
+<script src="./data.js"></script>
+<script src="./logistics-data.js"></script>
+<script src="./shops-data.js"></script>
+<script src="./asset-data.js"></script>
+<script src="./warehouse-live.js?v=phase5"></script>
+<script src="./ui.js?v=phase5"></script>
+</body>
+</html>
