@@ -37,7 +37,7 @@ export class WorldManager {
     const target = id === 'hub'
       ? world.group.getWorldPosition(new THREE.Vector3())
       : new THREE.Vector3(0, 5.2, 0);
-    this.focus(target, id === 'hub' ? 48 : 43);
+    this.focus(target, id === 'hub' ? 98 : 43);
     this.onSelect(world);
   }
   focus(target, distance = 40) {

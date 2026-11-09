@@ -1,131 +1,67 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a1720" />
-  <title>Beerlao · Company World</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#f4f8ff"/>
+  <title>Beerlao · Company World 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./styles.css"/>
   <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
-      }
-    }
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}
   </script>
 </head>
 <body>
-  <main id="app" class="app-shell">
-    <div id="world-canvas" aria-label="Interactive Beerlao company 3D world"></div>
-    <div class="scene-vignette"></div>
+<main id="app" class="app-shell">
+  <div id="world-canvas" aria-label="Interactive Beerlao isometric company world"></div>
+  <header class="topbar">
+    <a class="brand" href="#overview" aria-label="Beerlao Company World">
+      <span class="brand-seal">B</span>
+      <span class="brand-name"><strong>Beerlao</strong><i></i></span>
+      <span class="brand-divider"></span>
+      <span class="brand-title"><b>COMPANY WORLD 3D</b><small>Virtual Company 3D</small></span>
+    </a>
+    <div class="search-wrap"><span>⌕</span><input id="world-search" type="search" placeholder="Search a world: office, warehouse, retail, logistics..." aria-label="Search world"/></div>
+    <div class="top-actions">
+      <span class="live-state"><i></i><span id="data-status">CONNECTING</span></span>
+      <button id="atmosphere-toggle" class="top-icon" title="Toggle daylight" aria-label="Toggle daylight">☼</button>
+      <button id="camera-home" class="top-icon" title="Reset camera" aria-label="Reset camera">⌂</button>
+      <button id="return-hub" class="user-pill" hidden>← Company Hub</button>
+    </div>
+  </header>
 
-    <header class="topbar">
-      <a class="brand" href="#overview" aria-label="Beerlao Company World home">
-        <span class="brand-mark"><span></span><span></span><span></span></span>
-        <span class="brand-copy"><strong>BEERLAO</strong><small>COMPANY WORLD</small></span>
-      </a>
-      <div class="topbar-center"><span class="live-dot"></span><span>VIRTUAL COMPANY</span><i></i><span id="clock">--:-- · LOADING</span></div>
-      <div class="topbar-actions"><button class="return-hub-button" id="return-hub" hidden>← COMPANY HUB</button><span class="status-chip"><b></b><span id="data-status">CONNECTING DATA</span></span><button class="icon-button" id="atmosphere-toggle" aria-label="Toggle night atmosphere" title="Toggle day / night">◐</button></div>
-    </header>
+  <section class="kpi-strip" aria-label="Company overview metrics">
+    <article class="kpi-card"><span class="kpi-icon blue">▣</span><div><small>OPEN ATTENTION</small><strong id="metric-attention">—</strong><em>Items requiring attention</em></div></article>
+    <article class="kpi-card"><span class="kpi-icon sky">◷</span><div><small>NEW ACTIVITY · 24H</small><strong id="metric-new">—</strong><em>Recent operational activity</em></div></article>
+    <div class="kpi-worlds" id="world-summary">
+      <div class="kpi-world"><span class="world-mini-icon">⌂</span><div><small>HEAD OFFICE</small><b>—</b></div></div>
+      <div class="kpi-world"><span class="world-mini-icon">▤</span><div><small>WAREHOUSE</small><b>—</b></div></div>
+      <div class="kpi-world"><span class="world-mini-icon">⇢</span><div><small>LOGISTICS</small><b>—</b></div></div>
+    </div>
+  </section>
 
-    <aside class="left-rail" id="world-nav">
-      <div class="rail-label">WORLDS</div>
-      <button class="rail-item active" data-world="hub"><span class="rail-icon">⌂</span><span>Company Hub</span></button>
-      <button class="rail-item" data-world="office"><span class="rail-icon">▥</span><span>Head Office</span></button>
-      <button class="rail-item" data-world="warehouse"><span class="rail-icon">▤</span><span>Warehouses</span></button>
-      <button class="rail-item" data-world="retail"><span class="rail-icon">⌑</span><span>Retail Network</span></button>
-      <button class="rail-item" data-world="logistics"><span class="rail-icon">⇢</span><span>Logistics</span></button>
-      <button class="rail-item" data-world="province"><span class="rail-icon">⌖</span><span>Province Network</span></button>
-      <div class="rail-bottom"><span class="rail-help">DRAG TO EXPLORE</span><span class="mouse-glyph">⌖</span></div>
-    </aside>
+  <div class="scene-caption"><span class="caption-dot"></span><b id="scene-title">COMPANY HUB</b><small>ISOMETRIC OPERATIONS CAMPUS</small></div>
+  <section class="world-detail" id="world-detail" aria-live="polite">
+    <button class="detail-close" id="detail-close" aria-label="Close details">×</button>
+    <small id="detail-kicker">WORLD GATEWAY</small><h2 id="detail-title">Company Hub</h2>
+    <p id="detail-description">Explore the connected Beerlao operation.</p>
+    <div class="detail-status"><i></i><span id="detail-status">INTERACTIVE 3D ENVIRONMENT</span></div>
+  </section>
 
-    <section class="hero-copy" id="overview">
-      <div class="eyebrow"><span></span> COMPANY OVERVIEW <small>01 / 06</small></div>
-      <h1>One company.<br/><em>One connected</em><br/>world.</h1>
-      <p>Explore the Beerlao operation — from the central office to warehouses, retail outlets and provincial logistics.</p>
-      <div class="hero-actions"><button id="explore-world" class="primary-button">EXPLORE THE WORLD <span>↗</span></button><button id="reset-camera" class="text-button">RESET VIEW <span>⟲</span></button></div>
-    </section>
-
-    <section class="overview-card glass-panel">
-      <div class="panel-heading"><div><span class="eyebrow-small">LIVE OPERATIONS</span><h2>Company Overview</h2></div><span class="panel-orbit">◌</span></div>
-      <div class="metric-grid">
-        <div class="metric"><span class="metric-label">OPEN ATTENTION</span><strong id="metric-attention">—</strong><small>Items requiring attention</small></div>
-        <div class="metric"><span class="metric-label">NEW · 24 HOURS</span><strong id="metric-new">—</strong><small>Recent operational activity</small></div>
-      </div>
-      <div class="world-summary" id="world-summary">
-        <div class="summary-row"><span class="summary-icon">▥</span><span class="summary-name">Head Office</span><span class="summary-value">—</span><span class="summary-state pending">WAITING</span></div>
-        <div class="summary-row"><span class="summary-icon">▤</span><span class="summary-name">Warehouses</span><span class="summary-value">—</span><span class="summary-state pending">WAITING</span></div>
-        <div class="summary-row"><span class="summary-icon">⌑</span><span class="summary-name">Retail Network</span><span class="summary-value">—</span><span class="summary-state pending">WAITING</span></div>
-        <div class="summary-row"><span class="summary-icon">⇢</span><span class="summary-name">Logistics</span><span class="summary-value">—</span><span class="summary-state pending">WAITING</span></div>
-        <div class="summary-row"><span class="summary-icon">⌖</span><span class="summary-name">Province Network</span><span class="summary-value">—</span><span class="summary-state pending">WAITING</span></div>
-      </div>
-      <div class="panel-footer"><span id="updated-at">Waiting for authorized API response</span><span class="read-only-tag">READ ONLY</span></div>
-    </section>
-
-    <section class="world-detail glass-panel" id="world-detail" aria-live="polite">
-      <button class="detail-close" id="detail-close" aria-label="Close details">×</button>
-      <span class="eyebrow-small" id="detail-kicker">WORLD GATEWAY</span>
-      <h2 id="detail-title">Company Hub</h2>
-      <p id="detail-description">The central gateway to every Beerlao business world.</p>
-      <div class="detail-meta"><span class="detail-dot"></span><span id="detail-status">SELECT A WORLD TO EXPLORE</span></div>
-      <div class="world-live-data" id="world-live-data" aria-live="polite">
-        <div class="live-data-empty">Live operational details appear when authorized data is available.</div>
-      </div>
-    </section>
-
-    <div class="camera-controls"><button id="zoom-in" aria-label="Zoom in">＋</button><button id="zoom-out" aria-label="Zoom out">－</button><span></span><button id="camera-home" aria-label="Reset camera">⌂</button></div>
-    <div class="bottom-hint"><span class="hint-line"></span><span>INTERACTIVE 3D ENVIRONMENT</span><span class="hint-divider"></span><span>DRAG · PAN · ZOOM</span></div>
-    <div class="toast" id="toast"></div>
-    <div class="loading-screen" id="loading-screen"><div class="loader-mark"><i></i><i></i><i></i></div><strong>BUILDING COMPANY WORLD</strong><span>INITIALIZING THREE.JS ENGINE</span></div>
-  </main>
-  <script>
-    // Keep the startup screen from hanging forever when a module, CDN, or WebGL setup fails.
-    (function () {
-      const showStartupError = (message) => {
-        const screen = document.getElementById('loading-screen');
-        if (!screen || screen.dataset.failed === '1') return;
-        screen.dataset.failed = '1';
-        screen.style.opacity = '1';
-        screen.style.pointerEvents = 'auto';
-        screen.innerHTML = '';
-        const title = document.createElement('strong');
-        title.textContent = 'COMPANY WORLD COULD NOT START';
-        title.style.cssText = 'font-size:12px;color:#f0d8a3;letter-spacing:.12em;text-align:center;padding:0 20px';
-        const detail = document.createElement('span');
-        detail.textContent = String(message || 'Unknown startup error').slice(0, 260);
-        detail.style.cssText = 'max-width:min(560px,86vw);font-size:10px;line-height:1.7;text-align:center;color:#b8c6c3;overflow-wrap:anywhere';
-        const hint = document.createElement('span');
-        hint.textContent = 'Check the deployed files and refresh after the update.';
-        hint.style.cssText = 'margin-top:8px;font-size:9px;color:#8da19e;text-align:center';
-        const button = document.createElement('button');
-        button.textContent = 'RELOAD';
-        button.style.cssText = 'margin-top:12px;padding:10px 18px;border:1px solid #b99557;background:#b99557;color:#102027;cursor:pointer;font-weight:700;letter-spacing:.12em';
-        button.addEventListener('click', () => location.reload());
-        screen.append(title, detail, hint, button);
-      };
-      window.addEventListener('error', (event) => {
-        if (event.target && event.target !== window) {
-          showStartupError('Failed to load a 3D resource: ' + (event.target.src || event.target.href || event.message || 'resource'));
-        } else {
-          showStartupError(event.message || 'JavaScript startup error');
-        }
-      }, true);
-      window.addEventListener('unhandledrejection', (event) => {
-        const reason = event.reason;
-        showStartupError(reason && (reason.stack || reason.message) || String(reason || 'Module startup rejected'));
-      });
-      window.setTimeout(() => {
-        const screen = document.getElementById('loading-screen');
-        if (screen && !screen.classList.contains('done') && screen.dataset.failed !== '1') {
-          showStartupError('Startup timed out. A 3D module or WebGL resource did not finish loading.');
-        }
-      }, 20000);
-    })();
-  </script>
-  <script type="module" src="./src/main.js"></script>
+  <div class="camera-controls"><button id="zoom-in" aria-label="Zoom in">＋</button><button id="zoom-out" aria-label="Zoom out">－</button></div>
+  <nav class="bottom-nav" id="world-nav" aria-label="Company worlds">
+    <button class="nav-item active" data-world="hub"><span>⌂</span><b>Company Hub</b></button>
+    <button class="nav-item" data-world="office"><span>▥</span><b>Head Office</b></button>
+    <button class="nav-item" data-world="warehouse"><span>▤</span><b>Warehouse</b></button>
+    <button class="nav-item" data-world="retail"><span>⌑</span><b>Retail Network</b></button>
+    <button class="nav-item" data-world="logistics"><span>⇢</span><b>Logistics</b></button>
+    <button class="nav-item" data-world="province"><span>⌖</span><b>Province Network</b></button>
+  </nav>
+  <div class="toast" id="toast"></div>
+  <div class="loading-screen" id="loading-screen"><div class="loader-mark"><i></i><i></i><i></i></div><strong>BEERLAO COMPANY WORLD</strong><span>PREPARING ISOMETRIC 3D CAMPUS</span></div>
+</main>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>

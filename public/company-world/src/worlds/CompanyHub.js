@@ -1,195 +1,230 @@
 import * as THREE from 'three';
 
-const mat = (color, roughness = 0.72, metalness = 0.08, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra });
+const material = (color, roughness = 0.78, metalness = 0.02) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 const M = {
-  grass: mat(0x718b67), grass2: mat(0x8b9b72), stone: mat(0xb8b9a8), road: mat(0x596b6c, 0.94),
-  dark: mat(0x1a303b, 0.38, 0.48), glass: mat(0x8bb7bd, 0.2, 0.42, { transparent: true, opacity: 0.72 }),
-  gold: mat(0xc5a15d, 0.3, 0.7), white: mat(0xe5e5d9), wood: mat(0x70543d), leaf: mat(0x3f684e),
-  water: mat(0x6faaa9, 0.17, 0.55), concrete: mat(0xc4c6ba, 0.82),
-  office: mat(0x7899a0), warehouse: mat(0xb99a67), retail: mat(0x6e9a7d), logistics: mat(0xb77d5f), province: mat(0x8292b1)
+  lawn: material(0xd9edc9), lawn2: material(0xc8e4b9), concrete: material(0xe9eef4), road: material(0xb8c8d9),
+  roadLine: material(0xffd66e), blue: material(0x1768d8, .62), blueDark: material(0x0d4eaa, .66),
+  blueLight: material(0x4d9bfa, .55), white: material(0xf8fbff), glass: new THREE.MeshStandardMaterial({color:0x9ed8f4,roughness:.2,metalness:.18,transparent:true,opacity:.72}),
+  gold: material(0xf0c34f,.48), dark: material(0x243b59), wood: material(0xb98954), carton: material(0xd8b27b),
+  green: material(0x55a76a), leaf: material(0x4eaa68), tire: material(0x263342), window: material(0x8dc8ed,.24,.08),
+  retailYellow: material(0xf2c34e), red: material(0xe94c4c)
 };
-
-function addMesh(group, geometry, material, position, scale = null) {
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.set(...position);
-  if (scale) mesh.scale.set(...scale);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  group.add(mesh);
-  return mesh;
+const box = (parent,w,h,d,mat,x,y,z,opts={}) => {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  mesh.position.set(x,y,z); mesh.castShadow=opts.castShadow!==false; mesh.receiveShadow=true;
+  if(opts.rotationY) mesh.rotation.y=opts.rotationY;
+  parent.add(mesh); return mesh;
+};
+const cylinder = (parent,rTop,rBottom,h,mat,x,y,z,segments=20) => {
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(rTop,rBottom,h,segments),mat);
+  mesh.position.set(x,y,z); mesh.castShadow=true; mesh.receiveShadow=true; parent.add(mesh); return mesh;
+};
+function textSprite(text, bg='#155fc5') {
+  const canvas=document.createElement('canvas'); canvas.width=512; canvas.height=128;
+  const c=canvas.getContext('2d'); c.clearRect(0,0,512,128);
+  c.fillStyle=bg; c.beginPath(); c.roundRect(14,15,484,98,30); c.fill();
+  c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=5; c.stroke();
+  c.fillStyle='#fff'; c.font='700 42px Arial'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(text,256,65,450);
+  const tex=new THREE.CanvasTexture(canvas); tex.colorSpace=THREE.SRGBColorSpace;
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+  sprite.scale.set(10,2.5,1); return sprite;
 }
-function box(group, w, h, d, material, x, y, z) { return addMesh(group, new THREE.BoxGeometry(w, h, d), material, [x, y, z]); }
-function cylinder(group, r1, r2, h, material, x, y, z, segments = 48) { return addMesh(group, new THREE.CylinderGeometry(r1, r2, h, segments), material, [x, y, z]); }
-function label(text, color = '#f4e4bd') {
-  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 512, 128);
-  ctx.fillStyle = 'rgba(7,22,28,.72)';
-  ctx.beginPath(); ctx.roundRect(18, 20, 476, 88, 18); ctx.fill();
-  ctx.strokeStyle = 'rgba(214,179,107,.7)'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.fillStyle = color; ctx.font = '600 34px Manrope, Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text.toUpperCase(), 256, 65, 440);
-  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false }));
-  sprite.scale.set(8.4, 2.1, 1); return sprite;
-}
-function makeTree(scene, x, z, size = 1) {
-  const group = new THREE.Group(); group.position.set(x, 0, z); scene.add(group);
-  cylinder(group, .14 * size, .2 * size, 1.35 * size, M.wood, 0, .68 * size, 0, 10);
-  for (let i = 0; i < 3; i++) {
-    const crown = addMesh(group, new THREE.IcosahedronGeometry(.8 * size - i * .08, 1), M.leaf, [0, (1.35 + i * .43) * size, 0], [1.05, .95, 1.0]);
-    crown.castShadow = true;
+function makeTree(parent,x,z,s=1) {
+  const g=new THREE.Group(); g.position.set(x,0,z); parent.add(g);
+  cylinder(g,.16*s,.23*s,1.25*s,M.wood,0,.62*s,0,10);
+  for(let i=0;i<3;i++){
+    const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.8*s-i*.09,1),M.leaf);
+    crown.position.set(0,(1.35+i*.38)*s,0); crown.scale.set(1.05,.92,1); crown.castShadow=true; g.add(crown);
   }
-  return group;
+  return g;
 }
-function makeBuilding(group, style, x, z, width = 7, depth = 5) {
-  const g = new THREE.Group(); g.position.set(x, 0, z); group.add(g);
-  const base = box(g, width, .6, depth, M.concrete, 0, .3, 0);
-  const bodyMat = style === 'warehouse' ? M.warehouse : style === 'retail' ? M.retail : style === 'logistics' ? M.logistics : style === 'province' ? M.province : M.office;
-  box(g, width * .92, 3.4, depth * .9, bodyMat, 0, 2.3, 0);
-  box(g, width * .98, .22, depth * .98, M.dark, 0, 4.1, 0);
-  for (let i = -1; i <= 1; i++) {
-    box(g, width * .19, 1.6, .08, M.glass, i * width * .27, 2.35, depth * .455);
+function makePallet(parent,x,z,scale=1) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  box(g,1.55*scale,.16*scale,1.25*scale,M.wood,0,.1*scale,0);
+  for(let i=0;i<3;i++) box(g,.13*scale,.16*scale,1.28*scale,M.carton,(-.55+i*.55)*scale,.11*scale,0);
+  const cartons=[[0,.58,0],[-.32,.58,-.22],[.32,.58,-.22],[0,1.02,-.1]];
+  cartons.slice(0,scale>1?4:3).forEach(([cx,cy,cz],i)=>{
+    box(g,.52*scale,.55*scale,.48*scale,i%2?M.carton:M.wood,cx*scale,cy*scale,cz*scale);
+    box(g,.54*scale,.035*scale,.5*scale,M.gold,cx*scale,(cy+.2)*scale,cz*scale);
+  });
+  return g;
+}
+function makeCooler(parent,x,y,z,scale=1) {
+  const g=new THREE.Group();g.position.set(x,y,z);parent.add(g);
+  box(g,.82*scale,1.65*scale,.72*scale,M.white,0,.83*scale,0);
+  box(g,.76*scale,1.52*scale,.05*scale,M.blue,0,.84*scale,.38*scale);
+  box(g,.65*scale,.09*scale,.035*scale,M.white,0,1.48*scale,.415*scale);
+  box(g,.035*scale,.22*scale,.035*scale,M.gold,.27*scale,.9*scale,.42*scale);
+  return g;
+}
+function makeTruck(parent,x,z,scale=1,rotation=0) {
+  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rotation;g.scale.setScalar(scale);parent.add(g);
+  box(g,3.1,.18,1.55,M.dark,0,.12,0);
+  box(g,2.05,1.42,1.48,M.white,-.35,1.0,0);
+  box(g,1.05,1.25,1.42,M.blue,.95,.9,0);
+  box(g,.65,.58,.045,M.window,1.02,1.15,.735);
+  box(g,.12,.2,.05,M.gold,1.48,.48,.75);
+  // Beerlao-style gold side stripe (generic company fleet livery).
+  box(g,1.75,.12,.025,M.retailYellow,-.32,1.1,.755);
+  for(const wx of [-1.05,.95]) for(const wz of [-.78,.78]) {
+    const wheel=cylinder(g,.34,.34,.18,M.tire,wx,.36,wz,18);wheel.rotation.z=Math.PI/2;
+    cylinder(g,.15,.15,.19,M.road,wx,.36,wz,14).rotation.z=Math.PI/2;
   }
-  box(g, width * .24, 2.1, .12, M.dark, 0, 1.75, depth * .46);
-  base.receiveShadow = true;
+  return g;
+}
+function makeForklift(parent,x,z,scale=1) {
+  const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(scale);parent.add(g);
+  box(g,1.55,.55,1.05,M.retailYellow,0,.62,0);
+  box(g,.58,.95,.9,M.dark,-.28,1.3,0);
+  box(g,.06,1.75,.08,M.dark,.78,1.05,.4);
+  box(g,.06,1.75,.08,M.dark,.78,1.05,-.4);
+  box(g,.75,.09,.1,M.dark,1.1,.45,0);
+  for(const wx of [-.45,.48]) for(const wz of [-.52,.52]) {
+    const w=cylinder(g,.22,.22,.15,M.tire,wx,.25,wz,16);w.rotation.z=Math.PI/2;
+  }
+  return g;
+}
+function makeWarehouse(parent,x,z,w=19,d=14) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  box(g,w,.6,d,M.concrete,0,.3,0);
+  box(g,w*.94,4.2,d*.9,M.blue,0,2.65,0);
+  box(g,w*.98,.34,d*.94,M.blueDark,0,4.92,0);
+  // Blue corrugated roof ribs and front facade.
+  for(let i=-6;i<=6;i++) box(g,.09,.1,d*.88,M.blueLight,i*w/14,4.97,0);
+  box(g,w*.98,.26,.3,M.retailYellow,0,4.68,d*.47);
+  for(let i=-2;i<=2;i++) {
+    const doorX=i*w*.155;
+    box(g,2.45,2.65,.12,M.blueDark,doorX,1.75,d*.455);
+    box(g,2.12,2.35,.08,M.white,doorX,1.72,d*.46);
+    box(g,1.88,2.1,.04,M.blue,doorX,1.65,d*.49);
+    box(g,.12,2.1,.04,M.gold,doorX-.88,1.65,d*.515);
+  }
+  const sign=textSprite('BEERLAO · WAREHOUSE','#125ec6');sign.position.set(0,5.95,d*.49);sign.scale.set(10,2.5,1);g.add(sign);
+  // visible rack and cooler stock through the loading apron
+  for(let row=0;row<2;row++) for(let col=0;col<4;col++) makePallet(g,-7.2+col*4.8,-d*.7+row*2.4,.8);
+  for(let i=0;i<3;i++) makeCooler(g,-7+i*1.5,.6,d*.68,.8);
+  return g;
+}
+function makeOffice(parent,x,z) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  box(g,13,.55,9,M.concrete,0,.28,0);
+  box(g,12.3,4.9,8.3,M.white,0,2.95,0);
+  box(g,12.5,.42,8.5,M.blue,0,5.55,0);
+  box(g,12.35,3.1,.1,M.glass,0,3.15,4.17);
+  for(let i=-4;i<=4;i++) box(g,.12,3.1,.12,M.blueDark,i*1.35,3.15,4.24);
+  box(g,3.2,1.2,.2,M.white,0,4.65,4.28);
+  const sign=textSprite('HEAD OFFICE','#1768d8');sign.position.set(0,6.6,4.3);sign.scale.set(7.3,1.8,1);g.add(sign);
+  box(g,2.4,2.8,.22,M.blueDark,0,1.65,4.25);
+  return g;
+}
+function makeRetail(parent,x,z) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  box(g,10,.45,7,M.concrete,0,.23,0);
+  box(g,9.5,3.2,6.5,M.white,0,1.9,0);
+  box(g,9.7,.55,6.7,M.retailYellow,0,3.75,0);
+  box(g,9.35,1.7,.12,M.glass,0,1.8,3.25);
+  for(let i=-3;i<=3;i++) box(g,.08,1.7,.1,M.blueDark,i*1.25,1.8,3.33);
+  box(g,2.1,2.2,.15,M.blue,0,1.35,3.38);
+  const sign=textSprite('BEERLAO RETAIL','#e4ae32');sign.position.set(0,4.7,3.6);sign.scale.set(7.5,1.85,1);g.add(sign);
+  makeCooler(g,-3,.55,-.5,.8);makeCooler(g,-1.5,.55,-.5,.8);
+  return g;
+}
+function makeLogistics(parent,x,z) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  box(g,14,.5,9,M.concrete,0,.25,0);
+  box(g,13.4,4,8.3,M.white,0,2.3,0);
+  box(g,13.6,.35,8.5,M.blue,0,4.48,0);
+  box(g,13.4,2.5,.1,M.blueDark,0,1.9,4.18);
+  for(let i=-2;i<=2;i++) box(g,2,.12,.08,M.retailYellow,i*2.4,.65,4.25);
+  const sign=textSprite('LOGISTICS HUB','#155fc5');sign.position.set(0,5.4,4.25);sign.scale.set(8,2,1);g.add(sign);
+  return g;
+}
+function makeProvinceDisplay(parent,x,z) {
+  const g=new THREE.Group();g.position.set(x,0,z);parent.add(g);
+  box(g,10,.4,7,M.concrete,0,.2,0);
+  box(g,8.8,4.5,.32,M.white,0,2.65,-1.7);
+  box(g,8.4,4.1,.1,M.blue,0,2.65,-1.48);
+  // Abstract stylized Laos-shaped network, deliberately schematic, not geographic data.
+  const pts=[[-1.1,4.1],[-.3,3.4],[-.7,2.8],[.3,2.1],[-.2,1.5],[.7,.7],[.3,.1],[1.1,-.7],[.4,-1.4],[1.1,-2.2],[.2,-2.8],[-.6,-2.1],[-.9,-1.2],[-1.5,-.5],[-1.2,.6],[-1.7,1.5],[-1.3,2.6]];
+  for(let i=0;i<pts.length-1;i++){
+    const [ax,ay]=pts[i],[bx,by]=pts[i+1];
+    const dx=bx-ax,dy=by-ay;
+    const line=box(g,.12,Math.hypot(dx,dy),.1,M.retailYellow,(ax+bx)/2,2.7+(ay+by)/2,-1.38);
+    line.rotation.z=-Math.atan2(dx,dy);
+  }
+  pts.filter((_,i)=>i%3===0).forEach(([px,py])=>{const p=new THREE.Mesh(new THREE.SphereGeometry(.16,12,10),M.white);p.position.set(px,2.9+py,-1.28);g.add(p)});
+  const sign=textSprite('PROVINCE NETWORK','#155fc5');sign.position.set(0,5.3,-1.4);sign.scale.set(8,2,1);g.add(sign);
   return g;
 }
 
 export class CompanyHub {
-  constructor(scene) {
-    this.scene = scene;
-    this.worlds = [];
-    this.animated = [];
-    this.buildGround();
-    this.buildCentralTower();
-    this.buildGateways();
-    this.buildLandscape();
+  constructor(root) {
+    this.root=root;this.worlds=[];this.animated=[];this.buildCampus();
   }
-  buildGround() {
-    const ground = addMesh(this.scene, new THREE.CircleGeometry(76, 96), M.grass, [0, -0.65, 0]);
-    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
-    const plaza = cylinder(this.scene, 38, 38, .35, M.stone, 0, -.35, 0, 96);
-    const inner = cylinder(this.scene, 27, 27, .16, M.concrete, 0, -.08, 0, 96);
-    const roadRing = addMesh(this.scene, new THREE.RingGeometry(31.5, 34.2, 96), M.road, [0, -.12, 0]); roadRing.rotation.x = -Math.PI / 2;
-    const pool = cylinder(this.scene, 11.8, 11.8, .14, M.water, 0, .03, 0, 72);
-    const poolTrim = addMesh(this.scene, new THREE.TorusGeometry(12.3, .24, 10, 72), M.gold, [0, .15, 0]); poolTrim.rotation.x = Math.PI / 2;
-    // Five radial stone promenades.
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
-      const path = box(this.scene, 3.2, .08, 20, M.concrete, Math.sin(a) * 18, -.02, Math.cos(a) * 18);
-      path.rotation.y = a;
+  buildCampus() {
+    const ground=box(this.root,118,.5,94,M.lawn,0,-.45,0);ground.receiveShadow=true;
+    // landscaped raised campus pads
+    box(this.root,108,.28,84,M.concrete,0,-.12,0);
+    // Loop road around the main distribution campus.
+    box(this.root,106,.16,9,M.road,0,-.01,34);
+    box(this.root,106,.16,9,M.road,0,-.01,-34);
+    box(this.root,9,.16,60,M.road,48,-.01,0);
+    box(this.root,9,.16,60,M.road,-48,-.01,0);
+    for(let i=-8;i<=8;i++) {
+      box(this.root,2.2,.025,.13,M.roadLine,i*6.2,.09,34);
+      box(this.root,2.2,.025,.13,M.roadLine,i*6.2,.09,-34);
     }
-    // Small landscape terraces around the campus.
-    for (let i = 0; i < 24; i++) {
-      const a = i * Math.PI * 2 / 24; const r = 47 + (i % 3) * 1.2;
-      const mound = addMesh(this.scene, new THREE.SphereGeometry(1, 18, 12), i % 2 ? M.grass2 : M.grass, [Math.sin(a) * r, -.15, Math.cos(a) * r], [5.5, 1.5 + (i % 4) * .3, 4.2]);
-      mound.castShadow = false;
+    // campus plaza and parking aprons
+    box(this.root,75,.18,53,M.white,0,-.02,0);
+    for(let i=-5;i<=5;i++) box(this.root,.12,.025,12,M.roadLine,-42+i*8.2,.09,24);
+    // main warehouse, deliberately central and visually dominant
+    const warehouse=makeWarehouse(this.root,0,-1,29,22);
+    const office=makeOffice(this.root,-34,-15);
+    const retail=makeRetail(this.root,-31,22);
+    const logistics=makeLogistics(this.root,34,-16);
+    const province=makeProvinceDisplay(this.root,37,19);
+    // outdoor stock, coolers and handling equipment
+    for(const [x,z,s] of [[-18,13,1],[-12,14,.9],[18,13,1],[23,10,.9],[13,-22,.8],[-17,-21,.8]]) makePallet(this.root,x,z,s);
+    for(const [x,z] of [[-17,4],[-14,4],[16,4],[19,4]]) makeCooler(this.root,x,.2,z,.82);
+    const forklift1=makeForklift(this.root,-9,16,.9);
+    const forklift2=makeForklift(this.root,17,-24,.8);
+    const truck1=makeTruck(this.root,-25,34,1.05,0);
+    const truck2=makeTruck(this.root,25,34,1.0,Math.PI);
+    const truck3=makeTruck(this.root,39,-1,.78,Math.PI/2);
+    this.animated.push({object:truck1,baseZ:34,phase:0,kind:'truck'});
+    this.animated.push({object:truck2,baseZ:34,phase:2.3,kind:'truck'});
+    this.animated.push({object:forklift1,baseX:-9,phase:.2,kind:'forklift'});
+    this.animated.push({object:forklift2,baseX:17,phase:2.1,kind:'forklift'});
+    // green belt and ornamental trees
+    for(let i=0;i<26;i++){
+      const x=-52+(i%13)*8.6,z=i<13?-39:39;
+      makeTree(this.root,x,z,.75+(i%3)*.12);
     }
-  }
-  buildCentralTower() {
-    const g = new THREE.Group(); this.scene.add(g);
-    cylinder(g, 8, 8.5, .8, M.dark, 0, .45, 0, 64);
-    cylinder(g, 7.3, 7.3, .22, M.gold, 0, .95, 0, 64);
-    cylinder(g, 6.9, 6.9, .22, M.dark, 0, 1.15, 0, 64);
-    box(g, 5.8, 17.5, 5.8, M.glass, 0, 10, 0);
-    box(g, 6.25, .34, 6.25, M.gold, 0, 1.55, 0);
-    box(g, 6.2, .32, 6.2, M.dark, 0, 18.85, 0);
-    for (let i = 0; i < 16; i++) {
-      const a = i * Math.PI / 8; const radius = 3.08;
-      const fin = box(g, .14, 17.1, .2, M.gold, Math.sin(a) * radius, 10, Math.cos(a) * radius);
-      fin.rotation.y = -a;
+    for(let i=0;i<12;i++){
+      const x=i<6?-53:53,z=-25+(i%6)*10;
+      makeTree(this.root,x,z,.75+(i%2)*.16);
     }
-    for (const y of [4.2, 7.6, 11, 14.4, 18.65]) {
-      const ring = addMesh(g, new THREE.TorusGeometry(4.0, .075, 8, 64), M.gold, [0, y, 0]); ring.rotation.x = Math.PI / 2;
-    }
-    cylinder(g, 3.7, 3.7, .55, M.dark, 0, 19.2, 0, 48);
-    cylinder(g, 1.55, 2.1, .45, M.gold, 0, 19.65, 0, 40);
-    box(g, .2, 2.1, .2, M.gold, 0, 20.9, 0);
-    const beacon = addMesh(g, new THREE.SphereGeometry(.36, 24, 16), new THREE.MeshStandardMaterial({ color: 0xf2d58f, emissive: 0xd59b43, emissiveIntensity: 1.7 }), [0, 22.1, 0]);
-    this.animated.push({ object: beacon, y: 22.1, phase: 0 });
-    // Main entrance and forecourt steps.
-    box(g, 7.8, .24, 2.2, M.gold, 0, 1.9, 4.0);
-    box(g, 7.2, .18, 1.8, M.dark, 0, 1.72, 4.0);
-    for (let i = 0; i < 4; i++) box(g, 6.6 - i * .38, .13, .65, M.concrete, 0, 1.5 - i * .14, 4.65 + i * .46);
-    const sign = label('Beerlao Central Tower'); sign.position.set(0, 5.2, 3.03); sign.scale.set(7.8, 1.95, 1); g.add(sign);
-    this.tower = g;
-  }
-  buildGateways() {
-    const defs = [
-      { id: 'office', name: 'Head Office', desc: 'Departments, executive workspace and daily reporting.', color: 0x83b6c2, material: M.office },
-      { id: 'warehouse', name: 'Warehouses', desc: 'Cooler inventory, stock visibility and storage operations.', color: 0xd2ad68, material: M.warehouse },
-      { id: 'retail', name: 'Retail Network', desc: 'Outlet coverage, installed coolers and shop network.', color: 0x83b58f, material: M.retail },
-      { id: 'logistics', name: 'Logistics', desc: 'Truck movements, delivery routes and cooler transfers.', color: 0xc18a68, material: M.logistics },
-      { id: 'province', name: 'Province Network', desc: 'Provincial distribution and regional operations.', color: 0x91a3cb, material: M.province }
+    this.addWorld('office','Head Office','Departments, executive workspace and company administration.',office);
+    this.addWorld('warehouse','Warehouse','Cooler inventory, storage zones and warehouse operations.',warehouse);
+    this.addWorld('retail','Retail Network','Retail outlets and cooler installation locations.',retail);
+    this.addWorld('logistics','Logistics','Truck fleet, dispatch yard and cooler transfers.',logistics);
+    this.addWorld('province','Province Network','Provincial network overview and regional distribution.',province);
+    // soft floating labels at gateway anchors
+    const labels=[
+      ['HEAD OFFICE',-34,9,-10],['WAREHOUSE',0,10,-1],['RETAIL NETWORK',-31,7,22],
+      ['LOGISTICS',34,8,-11],['PROVINCE NETWORK',37,8,19]
     ];
-    defs.forEach((def, i) => {
-      const angle = -Math.PI / 2 + i * Math.PI * 2 / 5;
-      const x = Math.sin(angle) * 25; const z = Math.cos(angle) * 25;
-      const group = new THREE.Group(); group.position.set(x, 0, z); this.scene.add(group);
-      cylinder(group, 4.5, 4.8, .48, M.dark, 0, .24, 0, 40);
-      cylinder(group, 4.1, 4.1, .12, M.gold, 0, .53, 0, 40);
-      box(group, 5.0, .35, 4.0, M.dark, 0, .83, 0);
-      box(group, 4.3, 2.9, .18, M.glass, 0, 2.35, -1.7);
-      box(group, 4.3, 2.9, .18, M.glass, 0, 2.35, 1.7);
-      box(group, .18, 2.8, 3.35, M.gold, -2.12, 2.35, 0);
-      box(group, .18, 2.8, 3.35, M.gold, 2.12, 2.35, 0);
-      box(group, 4.9, .22, 4.2, def.material, 0, 3.86, 0);
-      const portalMat = new THREE.MeshStandardMaterial({ color: def.color, emissive: def.color, emissiveIntensity: .24, metalness: .55, roughness: .28 });
-      const portal = addMesh(group, new THREE.TorusGeometry(1.12, .09, 10, 48), portalMat, [0, 2.25, 1.83]); portal.scale.set(1.05, 1.28, 1);
-      const marker = addMesh(group, new THREE.SphereGeometry(.2, 20, 14), new THREE.MeshStandardMaterial({ color: def.color, emissive: def.color, emissiveIntensity: .8 }), [0, 4.45, 0]);
-      this.animated.push({ object: marker, y: 4.45, phase: i * .9 });
-      const sign = label(def.name, '#f2e4c3'); sign.position.set(0, 5.25, 0); sign.scale.set(6.4, 1.6, 1); group.add(sign);
-      // Decorative building beyond each gateway.
-      if (def.id === 'warehouse') {
-        makeBuilding(group, 'warehouse', 0, -7.3, 9.4, 7.2);
-        for (let j = -1; j <= 1; j++) box(group, 1.7, 2.1, .13, M.dark, j * 2.7, 1.65, -3.55);
-      } else if (def.id === 'office') {
-        makeBuilding(group, 'office', 0, -7.3, 7.5, 5.8);
-        for (let j = 0; j < 3; j++) box(group, .22, 3.1, .22, M.gold, -2.8 + j * 2.8, 2.0, -4.2);
-      } else if (def.id === 'retail') {
-        for (let j = -1; j <= 1; j++) makeBuilding(group, 'retail', j * 4.0, -7.4, 3.3, 4.2);
-      } else if (def.id === 'logistics') {
-        makeBuilding(group, 'logistics', 0, -7.5, 9.0, 5.6);
-        this.addTruck(group, 5.8, .25, -4.7);
-      } else {
-        makeBuilding(group, 'province', -2.6, -7.4, 4.5, 4.2);
-        makeBuilding(group, 'province', 3.0, -8.1, 4.0, 3.7);
-        for (let j = 0; j < 4; j++) cylinder(group, .12, .18, 1.4, M.wood, -5 + j * 3.1, .7, -11, 8);
-      }
-      group.userData.worldId = def.id;
-      this.worlds.push({ ...def, group });
-    });
+    labels.forEach(([name,x,y,z])=>{const s=textSprite(name);s.position.set(x,y,z);s.scale.set(8.8,2.2,1);this.root.add(s)});
   }
-  addTruck(group, x, y, z) {
-    const truck = new THREE.Group(); truck.position.set(x, y, z); group.add(truck);
-    box(truck, 2.4, 1.05, 1.25, M.white, 0, .75, 0);
-    box(truck, .95, .9, 1.15, M.logistics, 1.55, .78, 0);
-    box(truck, .65, .52, .035, M.glass, 1.75, .92, .59);
-    for (const wx of [-.65, 1.35]) { const wheel = cylinder(truck, .28, .28, .18, M.dark, wx, .3, .66, 20); wheel.rotation.x = Math.PI / 2; }
-  }
-  buildLandscape() {
-    for (let i = 0; i < 32; i++) {
-      const a = i * Math.PI * 2 / 32; const r = 40 + (i % 4) * 1.4;
-      makeTree(this.scene, Math.sin(a) * r, Math.cos(a) * r, .78 + (i % 4) * .08);
-    }
-    // Plaza lights.
-    for (let i = 0; i < 12; i++) {
-      const a = i * Math.PI * 2 / 12; const x = Math.sin(a) * 16; const z = Math.cos(a) * 16;
-      cylinder(this.scene, .055, .08, 2.7, M.dark, x, 1.35, z, 8);
-      box(this.scene, .48, .08, .16, M.gold, x, 2.68, z);
-    }
-    // Thin road markings around the plaza.
-    for (let i = 0; i < 40; i++) {
-      const a = i * Math.PI * 2 / 40; const r = 33;
-      const dash = box(this.scene, .16, .035, 1.0, M.white, Math.sin(a) * r, .08, Math.cos(a) * r);
-      dash.rotation.y = a;
-    }
+  addWorld(id,name,desc,group) {
+    group.userData.worldId=id;
+    this.worlds.push({id,name,desc,description:desc,group});
   }
   update(elapsed) {
-    for (const item of this.animated) item.object.position.y = item.y + Math.sin(elapsed * 1.3 + item.phase) * .13;
-    for (const world of this.worlds) {
-      const portal = world.group.children.find((child) => child.geometry?.type === 'TorusGeometry');
-      if (portal) portal.rotation.z = Math.sin(elapsed * .5 + world.group.position.x) * .035;
-    }
+    this.animated.forEach((item)=>{
+      if(item.kind==='truck') item.object.position.z=item.baseZ+Math.sin(elapsed*.18+item.phase)*.45;
+      if(item.kind==='forklift') item.object.position.x=item.baseX+Math.sin(elapsed*.32+item.phase)*.55;
+    });
   }
+  get tower(){return this.root;}
 }
