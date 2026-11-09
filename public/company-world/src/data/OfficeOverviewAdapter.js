@@ -7,6 +7,7 @@ const WORLD_MAP = {
   province: ['budget', 'checks']
 };
 const WORLD_LABELS = { office: 'Head Office', warehouse: 'Warehouses', retail: 'Retail Network', logistics: 'Logistics', province: 'Province Network' };
+const WORLD_SOURCES = { office: ['admin', 'contracts', 'announce'], warehouse: ['stock', 'newcoolers'], retail: ['requests', 'assets'], logistics: ['delivery', 'trips'], province: ['budget', 'checks'] };
 
 export class OfficeOverviewAdapter {
   constructor(endpoint = '/api/admin/office-overview') { this.endpoint = endpoint; this.last = null; }
@@ -31,7 +32,10 @@ export class OfficeOverviewAdapter {
         const attention = parts.reduce((sum, room) => sum + (Number(room.attention) || 0), 0);
         const new24 = parts.reduce((sum, room) => sum + (Number(room.new24) || 0), 0);
         const status = parts.some((room) => room.error) ? 'pending' : new24 > 0 ? 'working' : attention > 0 ? 'pending' : 'available';
-        return { id, name: WORLD_LABELS[id], attention, new24, status, available: parts.length > 0 };
+        const stats = parts.flatMap((room) => Array.isArray(room.stats) ? room.stats.map((stat) => ({ label: String(stat.label || 'Metric'), value: Number(stat.value) || 0, source: room.title || room.id })) : []);
+        const items = parts.flatMap((room) => Array.isArray(room.items) ? room.items.map((item) => ({ text: String(item.text || '—'), sub: String(item.sub || ''), at: item.at || null, state: item.state || 'working', source: room.title || room.id })) : [])
+          .sort((a, b) => String(b.at || '').localeCompare(String(a.at || ''))).slice(0, 8);
+        return { id, name: WORLD_LABELS[id], attention, new24, status, available: parts.length > 0, stats, items, sources: WORLD_SOURCES[id] || [], hasErrors: parts.some((room) => Boolean(room.error)) };
       })
     };
     this.last = result;
