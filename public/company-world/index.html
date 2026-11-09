@@ -82,6 +82,50 @@
     <div class="toast" id="toast"></div>
     <div class="loading-screen" id="loading-screen"><div class="loader-mark"><i></i><i></i><i></i></div><strong>BUILDING COMPANY WORLD</strong><span>INITIALIZING THREE.JS ENGINE</span></div>
   </main>
+  <script>
+    // Keep the startup screen from hanging forever when a module, CDN, or WebGL setup fails.
+    (function () {
+      const showStartupError = (message) => {
+        const screen = document.getElementById('loading-screen');
+        if (!screen || screen.dataset.failed === '1') return;
+        screen.dataset.failed = '1';
+        screen.style.opacity = '1';
+        screen.style.pointerEvents = 'auto';
+        screen.innerHTML = '';
+        const title = document.createElement('strong');
+        title.textContent = 'COMPANY WORLD COULD NOT START';
+        title.style.cssText = 'font-size:12px;color:#f0d8a3;letter-spacing:.12em;text-align:center;padding:0 20px';
+        const detail = document.createElement('span');
+        detail.textContent = String(message || 'Unknown startup error').slice(0, 260);
+        detail.style.cssText = 'max-width:min(560px,86vw);font-size:10px;line-height:1.7;text-align:center;color:#b8c6c3;overflow-wrap:anywhere';
+        const hint = document.createElement('span');
+        hint.textContent = 'Check the deployed files and refresh after the update.';
+        hint.style.cssText = 'margin-top:8px;font-size:9px;color:#8da19e;text-align:center';
+        const button = document.createElement('button');
+        button.textContent = 'RELOAD';
+        button.style.cssText = 'margin-top:12px;padding:10px 18px;border:1px solid #b99557;background:#b99557;color:#102027;cursor:pointer;font-weight:700;letter-spacing:.12em';
+        button.addEventListener('click', () => location.reload());
+        screen.append(title, detail, hint, button);
+      };
+      window.addEventListener('error', (event) => {
+        if (event.target && event.target !== window) {
+          showStartupError('Failed to load a 3D resource: ' + (event.target.src || event.target.href || event.message || 'resource'));
+        } else {
+          showStartupError(event.message || 'JavaScript startup error');
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', (event) => {
+        const reason = event.reason;
+        showStartupError(reason && (reason.stack || reason.message) || String(reason || 'Module startup rejected'));
+      });
+      window.setTimeout(() => {
+        const screen = document.getElementById('loading-screen');
+        if (screen && !screen.classList.contains('done') && screen.dataset.failed !== '1') {
+          showStartupError('Startup timed out. A 3D module or WebGL resource did not finish loading.');
+        }
+      }, 20000);
+    })();
+  </script>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
