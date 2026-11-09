@@ -51,6 +51,8 @@ function makePallet(parent,x,z,scale=1) {
   cartons.slice(0,scale>1?4:3).forEach(([cx,cy,cz],i)=>{
     box(g,.52*scale,.55*scale,.48*scale,i%2?M.carton:M.wood,cx*scale,cy*scale,cz*scale);
     box(g,.54*scale,.035*scale,.5*scale,M.gold,cx*scale,(cy+.2)*scale,cz*scale);
+    box(g,.12*scale,.18*scale,.018*scale,M.white,(cx-.12)*scale,(cy-.02)*scale,(cz+.246)*scale);
+    box(g,.23*scale,.025*scale,.02*scale,M.blueDark,cx*scale,(cy-.2)*scale,(cz+.25)*scale);
   });
   return g;
 }
@@ -64,17 +66,48 @@ function makeCooler(parent,x,y,z,scale=1) {
 }
 function makeTruck(parent,x,z,scale=1,rotation=0) {
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rotation;g.scale.setScalar(scale);parent.add(g);
-  box(g,3.1,.18,1.55,M.dark,0,.12,0);
-  box(g,2.05,1.42,1.48,M.white,-.35,1.0,0);
-  box(g,1.05,1.25,1.42,M.blue,.95,.9,0);
-  box(g,.65,.58,.045,M.window,1.02,1.15,.735);
-  box(g,.12,.2,.05,M.gold,1.48,.48,.75);
-  // Beerlao-style gold side stripe (generic company fleet livery).
-  box(g,1.75,.12,.025,M.retailYellow,-.32,1.1,.755);
-  for(const wx of [-1.05,.95]) for(const wz of [-.78,.78]) {
-    const wheel=cylinder(g,.34,.34,.18,M.tire,wx,.36,wz,18);wheel.rotation.z=Math.PI/2;
-    cylinder(g,.15,.15,.19,M.road,wx,.36,wz,14).rotation.z=Math.PI/2;
+  box(g,3.35,.2,1.62,M.dark,0,.13,0);
+  // Refrigerated cargo body with raised roof cap and ribbed side panels.
+  box(g,2.12,1.55,1.5,M.white,-.42,1.08,0);
+  box(g,2.08,.12,1.54,M.steel,-.42,1.88,0);
+  for(let i=0;i<9;i++) box(g,.035,1.35,.025,M.pavement,-1.39+i*.24,1.08,.765);
+  box(g,2.12,.16,.035,M.retailYellow,-.42,.72,.785);
+  box(g,2.12,.07,.035,M.gold,-.42,1.83,.785);
+  // Cab, panoramic windshield, side window and bumper.
+  box(g,1.08,1.3,1.46,M.blue,.98,.94,0);
+  box(g,.76,.56,.045,M.window,1.05,1.22,.748);
+  box(g,.06,.55,.05,M.blueDark,.62,1.18,.75);
+  box(g,.08,.48,.06,M.blueDark,1.46,1.15,.75);
+  box(g,1.02,.16,1.5,M.blueDark,1.0,.34,0);
+  box(g,.95,.13,1.55,M.white,1.02,.25,0);
+  // Headlamps, grille, mirrors and running lights.
+  for(const side of [-1,1]) {
+    box(g,.18,.2,.07,M.light,1.52,.55,side*.55);
+    box(g,.1,.24,.06,M.dark,1.48,.37,side*.59);
+    const mirror=box(g,.12,.12,.12,M.dark,.72,1.42,side*.82);
+    mirror.rotation.y=side*.18;
+    box(g,.12,.12,.07,M.white,-1.5,.58,side*.58);
   }
+  box(g,.22,.32,.04,M.navy,1.54,.83,0);
+  // Side brand panel, designed as a crisp in-world decal rather than 3D billboard text.
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=160;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,512,160);
+  ctx.fillStyle='#ffffff';ctx.font='italic 900 82px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(12,54,102,.28)';ctx.shadowBlur=5;ctx.fillText('Beerlao',256,78);
+  ctx.lineWidth=5;ctx.strokeStyle='#08733d';ctx.strokeText('Beerlao',256,78);
+  const decalTexture=new THREE.CanvasTexture(canvas);decalTexture.colorSpace=THREE.SRGBColorSpace;
+  const decal=new THREE.Mesh(new THREE.PlaneGeometry(1.55,.48),new THREE.MeshBasicMaterial({map:decalTexture,transparent:true,depthWrite:false}));
+  decal.position.set(-.43,1.28,.795);g.add(decal);
+  const wheelGroups=[];
+  for(const wx of [-1.12,.98]) for(const wz of [-.82,.82]) {
+    const wg=new THREE.Group();wg.position.set(wx,.36,wz);g.add(wg);
+    const wheel=cylinder(wg,.34,.34,.2,M.tire,0,0,0,24);wheel.rotation.z=Math.PI/2;
+    const hub=cylinder(wg,.16,.16,.215,M.steel,0,0,0,20);hub.rotation.z=Math.PI/2;
+    const hubCap=cylinder(wg,.075,.075,.225,M.blueDark,0,0,0,16);hubCap.rotation.z=Math.PI/2;
+    wheelGroups.push(wg);
+  }
+  g.userData.wheels=wheelGroups;
   return g;
 }
 function makeForklift(parent,x,z,scale=1) {
@@ -298,7 +331,10 @@ export class CompanyHub {
   }
   update(elapsed) {
     this.animated.forEach((item)=>{
-      if(item.kind==='truck') item.object.position.z=item.baseZ+Math.sin(elapsed*.18+item.phase)*.45;
+      if(item.kind==='truck') {
+        item.object.position.z=item.baseZ+Math.sin(elapsed*.18+item.phase)*.45;
+        item.object.userData.wheels?.forEach((wheel)=>{wheel.rotation.x=Math.sin(elapsed*.18+item.phase)*.08;});
+      }
       if(item.kind==='forklift') item.object.position.x=item.baseX+Math.sin(elapsed*.32+item.phase)*.55;
     });
   }
