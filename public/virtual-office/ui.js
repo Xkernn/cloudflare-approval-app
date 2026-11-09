@@ -510,9 +510,9 @@
           'https://unpkg.com/three@' + V + '/examples/js/controls/OrbitControls.js'
         ], function () { return !!(window.THREE && THREE.OrbitControls); });
       })
-      .then(function () { return loadScript(['./office3d.js?v=2'], function () { return !!window.VO3D; }); })
+      .then(function () { return loadScript(['./office3d.js?v=premium1'], function () { return !!window.VO3D; }); })
       .then(function () {   // Phase 2 modules — ຖ້າໂຫຼດບໍ່ໄດ້ ຫ້ອງການ (Phase 1) ຍັງໃຊ້ງານໄດ້
-        return loadScript(['./warehouse3d.js?v=1'], function () { return !!(window.VOX && VOX.Warehouse); })
+        return loadScript(['./warehouse3d.js?v=premium1'], function () { return !!(window.VOX && VOX.Warehouse); })
           .then(function () { return loadScript(['./truck3d.js?v=1'], function () { return !!(window.VOX && VOX.Truck); }); })
           .then(function () { return loadScript(['./route3d.js?v=1'], function () { return !!(window.VOX && VOX.Logistics); }); })
           .then(function () { return loadScript(['./town3d.js?v=1'], function () { return !!(window.VOX && VOX.Town); }); })   // Phase 4: Shop Town

@@ -78,3 +78,10 @@ Phase 7 — ຕໍ່ສະຖິຕິຈິງ (ອ່ານຢ່າງດຽ
   ຖ້າ endpoint ຕອບ 401/403/5xx ແລະ ຍັງບໍ່ມີຂໍ້ມູນ → ສະແດງ error (ບໍ່ fallback ໄປ mock ແບບງຽບໆ)
 - ຈິງ: ສະຖານະແຜນກ · ກິດຈະກຳ (ລາຍການລ່າສຸດ 6 ລາຍການ/ຫ້ອງ) · Live feed · ແຜງ "Live data" ໃນ panel ແຕ່ລະຫ້ອງ (dashboard.js, ລວມ Admin)
 - ຍັງ mock: ພະນັກງານ (data.js) · ຄັງ/ລົດ/ເສັ້ນທາງ (logistics-data.js) · ງົບເປັນເງິນ ₭ (ແຖບ "Budget used (sample ₭)") · assets · metrics · ແຜນກ Logistics (dashboard-data.js)
+
+
+Premium Visual Pass (2026-11)
+- Presentation layer updated to Navy / Champagne Gold with glass-style information panels.
+- Existing Virtual Office, Warehouses, Logistics, Shop Town, dashboard and data adapters remain in place.
+- office3d.js lighting/shadow balance tuned for richer depth; geometry and interaction contracts unchanged.
+- No new backend, database, or workflow introduced.
