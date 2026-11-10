@@ -2678,6 +2678,59 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html[data-mm-style="premium"] .mobile-tab-label { font-size: 10px; }
     }
 
+    /* ===== Home v2: green hero + search/scan + stat cards + 2-column menu cards ===== */
+    html[data-mm-style="premium"] .wl-hero {
+      color: #fff; border-radius: 22px; padding: 24px 22px 20px;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255, 195, 0, .30), transparent 42%),
+        radial-gradient(circle at 0% 100%, rgba(255, 255, 255, .10), transparent 45%),
+        linear-gradient(160deg, #12894B 0%, #0B6B3A 58%, #085530 100%);
+      box-shadow: 0 14px 30px -16px rgba(11, 107, 58, .65);
+    }
+    html[data-mm-style="premium"] .wl-hello { color: #D8F0DF; font-size: 14px; }
+    html[data-mm-style="premium"] .wl-name { color: #fff; }
+    html[data-mm-style="premium"] .wl-sub { color: #E3F4E8; }
+    html[data-mm-style="premium"] .wl-acc { color: #CFE9D6; }
+    html[data-mm-style="premium"] .wl-hero .tb-chip-id { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28); color: #fff; }
+    .wl-search { display: flex; align-items: center; gap: 10px; margin-top: 16px; position: relative; }
+    .wl-search input {
+      flex: 1 1 auto; min-width: 0; height: 46px; padding: 0 14px 0 42px; border: 0; border-radius: 14px;
+      background: #fff; color: var(--text-main); font: 500 14px var(--font-ui); box-shadow: 0 4px 12px -6px rgba(0,0,0,.25);
+    }
+    .wl-search input:focus { outline: 3px solid rgba(255, 195, 0, .7); outline-offset: 0; }
+    .wl-search-ic { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #0B6B3A; font-size: 15px; pointer-events: none; }
+    .wl-scan {
+      flex: none; width: 46px; height: 46px; border-radius: 14px; border: 2px solid #fff; background: rgba(255,255,255,.16);
+      color: #fff; font-size: 20px; cursor: pointer; display: grid; place-items: center; transition: transform .15s, background .15s;
+    }
+    .wl-scan:active { transform: scale(.94); background: rgba(255,255,255,.3); }
+    .wl-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px; margin-top: 14px; }
+    .wl-stats:empty { display: none; }
+    .wl-stat {
+      display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px 10px; border: 0; border-radius: 16px;
+      background: #fff; font-family: var(--font-ui); color: var(--text-main); text-align: center;
+      box-shadow: 0 6px 16px -10px rgba(11, 107, 58, .35);
+    }
+    button.wl-stat { cursor: pointer; transition: transform .15s; } button.wl-stat:active { transform: scale(.97); }
+    .wl-stat i { font-size: 22px; margin-bottom: 4px; }
+    .wl-stat b { font-size: 20px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+    .wl-stat span { font-size: 11.5px; color: var(--text-muted); line-height: 1.3; }
+    .wl-stat.total i { color: #0B6B3A; } .wl-stat.prov i { color: #E59A1F; } .wl-stat.lost i { color: #D93025; } .wl-stat.lost b { color: #D93025; }
+    .wl-empty { margin: 18px 4px; text-align: center; font-size: 13px; color: var(--text-muted); }
+    html[data-mm-style="premium"] .wl-sec { font-size: 16px; margin: 20px 2px 10px; color: #0B6B3A; }
+    html[data-mm-style="premium"] .wl-card { border: 0; border-radius: 18px; box-shadow: var(--shadow-card); background: #fff; }
+    html[data-mm-style="premium"] .wl-card b { color: #0B3D24; }
+    @media (max-width: 560px) {
+      html[data-mm-style="premium"] .wl-sub { display: none; }
+      html[data-mm-style="premium"] .wl-card { align-items: center; text-align: center; padding: 16px 10px 14px; gap: 8px; }
+      html[data-mm-style="premium"] .wl-card > span:last-child { display: block; }
+      html[data-mm-style="premium"] .wl-card .wl-ic:has(> img.ic-pr) { width: 64px; height: 64px; }
+      html[data-mm-style="premium"] .wl-card span.wl-d { font-size: 11px; }
+      .wl-stats { grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); gap: 8px; }
+      .wl-stat b { font-size: 18px; }
+    }
+    @media (min-width: 993px) { .wl-stats { max-width: 640px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
+
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
     html[data-mm-style="premium"] { --pr-green:#0B6B3A; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#FFC300; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
     html[data-mm-style="premium"] body { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
@@ -3280,10 +3333,17 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <div class="wl-name" id="wlName">-</div>
           <p class="wl-sub">ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບຂໍ ແລະ ຕິດຕາມຕູ້ແຊ່ — ເລືອກທາງລັດດ້ານລຸ່ມເພື່ອເລີ່ມໃຊ້ງານໄດ້ທັນທີ.</p>
           <div class="tb-chips" id="wlChips"></div>
-          <p class="wl-acc" id="userWelcomeText"></p>
+<p class="wl-acc" id="userWelcomeText"></p>
+          <div class="wl-search">
+            <i class="fa-solid fa-magnifying-glass wl-search-ic" aria-hidden="true"></i>
+            <input id="wlSearch" type="search" placeholder="ຄົ້ນຫາເມນູ..." autocomplete="off" oninput="wlFilter(this.value)" aria-label="ຄົ້ນຫາເມນູ">
+            <button type="button" class="wl-scan" onclick="wlScan()" aria-label="ສະແກນ QR"><i class="fa-solid fa-qrcode"></i></button>
+          </div>
         </section>
-        <div class="wl-sec">ທາງລັດ</div>
+        <div class="wl-stats" id="wlStats" aria-live="polite"></div>
+        <div class="wl-sec">ເມນູຫຼັກ</div>
         <div class="wl-grid" id="wlGrid"></div>
+        <div class="wl-empty hidden" id="wlEmpty">ບໍ່ພົບເມນູທີ່ຄົ້ນຫາ</div>
       </div>
 
       <!-- VIEW 1b: ງົບປະມານຕູ້ຂອງທີມ (User) -->
@@ -28272,6 +28332,57 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       document.getElementById('wlChips').innerHTML = chips.join('');
       document.getElementById('wlGrid').innerHTML = tiles.map((x, i) =>
         `<button type="button" class="wl-card" style="--i:${i}" onclick="switchView('${x.view}')"><span class="wl-ic">${WL_OWN[x.nav] ? wlOwnIc(WL_OWN[x.nav], WL_PR[x.nav]) : (window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
+      wlFilter((document.getElementById('wlSearch')||{}).value||'');
+      wlLoadStats();
+    }
+
+
+    /* ===== ໜ້າຫຼັກ (design v2): ຊ່ອງຄົ້ນຫາເມນູ + ປຸ່ມສະແກນ + ການ໌ດສະຖິຕິ ===== */
+    function wlFilter(q) {
+      q = String(q || '').trim().toLowerCase();
+      const cards = document.querySelectorAll('#wlGrid .wl-card');
+      let shown = 0;
+      cards.forEach((c) => { const on = !q || c.textContent.toLowerCase().includes(q); c.classList.toggle('hidden', !on); if (on) shown++; });
+      const empty = document.getElementById('wlEmpty');
+      if (empty) empty.classList.toggle('hidden', !(q && cards.length && !shown));
+    }
+    function wlScan() {
+      // ໄປໜ້າຄົ້ນຫາ/ສະແກນຕູ້ ຖ້າ role ນີ້ເຂົ້າໄດ້
+      const order = [['nav-cooler-master', 'coolerMaster'], ['nav-asset', 'asset']];
+      for (const [nav, view] of order) {
+        const n = document.getElementById(nav);
+        if (n && !n.classList.contains('hidden')) { switchView(view); return; }
+      }
+    }
+    let wlStatsCache = { t: 0, uid: null, html: '' };
+    async function wlLoadStats() {
+      const box = document.getElementById('wlStats');
+      if (!box) return;
+      const u = currentUser || {};
+      const uid = u.id || u.email || '';
+      if (wlStatsCache.html && wlStatsCache.uid === uid && Date.now() - wlStatsCache.t < 60000) { box.innerHTML = wlStatsCache.html; return; }
+      const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+      const canGo = (nav) => { const n = document.getElementById(nav); return !!(n && !n.classList.contains('hidden')); };
+      const items = [];
+      try {
+        const r = await fetch('/api/cooler-master/stats');
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.total) {
+          items.push({ cls: 'total', ic: 'fa-snowflake', n: d.total, l: 'ຕູ້ແຊ່ທັງໝົດ', go: canGo('nav-cooler-master') ? 'coolerMaster' : '' });
+          if (Array.isArray(d.provinces) && d.provinces.length) items.push({ cls: 'prov', ic: 'fa-map-location-dot', n: d.provinces.length, l: 'ແຂວງ', go: canGo('nav-map') ? 'map' : '' });
+        }
+      } catch (e) {}
+      /* TODO(backend): ເພີ່ມ endpoint ສະຫຼຸບ "ຢູ່ໃນສາຂາ" / "ຢູ່ໜ້າງານ" ແລ້ວ push ເຂົ້າ items ຢູ່ບ່ອນນີ້ (ຕອນນີ້ຍັງບໍ່ມີຂໍ້ມູນ ຈຶ່ງບໍ່ສະແດງ) */
+      if (u.role === 'admin') {
+        try {
+          const r = await fetch('/api/admin/lost-coolers/list?status=active&limit=1');
+          const d = await r.json().catch(() => ({}));
+          if (r.ok && typeof d.total === 'number') items.push({ cls: 'lost', ic: 'fa-triangle-exclamation', n: d.total, l: 'ສູນຫາຍ', go: canGo('nav-lost-cooler') ? 'lostCooler' : '' });
+        } catch (e) {}
+      }
+      const html = items.map((x) => `<${x.go ? 'button type="button"' : 'div'} class="wl-stat ${x.cls}"${x.go ? ` onclick="switchView('${x.go}')"` : ''}><i class="fa-solid ${x.ic}"></i><b>${fmt(x.n)}</b><span>${x.l}</span></${x.go ? 'button' : 'div'}>`).join('');
+      box.innerHTML = html;
+      wlStatsCache = { t: Date.now(), uid, html };
     }
 
     /* ===== ມຸມມອງ "ພາບລວມ": card ຕໍ່ລາຍການ ເຫັນ % ການໃຊ້ໂຄຕ້າທັນທີ ເລີ່ມຈາກລາຍການທີ່ໃຊ້ໄປຫຼາຍສຸດ ===== */
