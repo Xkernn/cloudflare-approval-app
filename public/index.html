@@ -28832,13 +28832,26 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       const fmt = (n) => Number(n || 0).toLocaleString('en-US');
       const canGo = (nav) => { const n = document.getElementById(nav); return !!(n && !n.classList.contains('hidden')); };
       const items = [];
-      try {
-        const r = await fetch('/api/cooler-master/stats');
-        const d = await r.json().catch(() => ({}));
-        if (r.ok && d.total) {
-          items.push({ cls: 'total', ic: 'fa-snowflake', n: d.total, l: 'ຕູ້ແຊ່ທັງໝົດ', go: canGo('nav-cooler-master') ? 'coolerMaster' : '' });
-        }
-      } catch (e) {}
+      // role MDE (user): ຕົວເລກຕູ້ + ສູນຫາຍ ຕາມ MDE code ຂອງຕົນເອງ; role ອື່ນ: ຕົວເລກລວມເດີມ
+      let mine = null;
+      if (u.role === 'user') {
+        try {
+          const r = await fetch('/api/my-overview-counts');
+          const d = await r.json().catch(() => ({}));
+          if (r.ok && d.scope === 'mde') mine = d;
+        } catch (e) {}
+      }
+      if (mine) {
+        items.push({ cls: 'total', ic: 'fa-snowflake', n: mine.total, l: 'ຕູ້ແຊ່ທັງໝົດ', go: canGo('nav-cooler-master') ? 'coolerMaster' : '' });
+      } else {
+        try {
+          const r = await fetch('/api/cooler-master/stats');
+          const d = await r.json().catch(() => ({}));
+          if (r.ok && d.total) {
+            items.push({ cls: 'total', ic: 'fa-snowflake', n: d.total, l: 'ຕູ້ແຊ່ທັງໝົດ', go: canGo('nav-cooler-master') ? 'coolerMaster' : '' });
+          }
+        } catch (e) {}
+      }
       // ຍອດ Asset Request ທີ່ຍັງຄ້າງ (ລໍຖ້າອະນຸມັດ) - COUNT ຈາກ /api/badge-counts
       try {
         const r = await fetch(`/api/badge-counts?userId=${encodeURIComponent(u.id || '')}`);
@@ -28846,7 +28859,9 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
         if (r.ok && typeof d.assetRequest === 'number') items.push({ cls: 'pend', ic: 'fa-hourglass-half', n: d.assetRequest, l: 'Asset Request ທີ່ຍັງຄ້າງ', go: canGo('nav-request') ? 'request' : '' });
       } catch (e) {}
       /* TODO(backend): ເພີ່ມ endpoint ສະຫຼຸບ "ຢູ່ໃນສາຂາ" / "ຢູ່ໜ້າງານ" ແລະ ແນວໂນ້ມລາຍເດືອນ ແລ້ວເພີ່ມເຂົ້າ items / charts ຢູ່ບ່ອນນີ້ (ຕອນນີ້ຍັງບໍ່ມີຂໍ້ມູນ ຈຶ່ງບໍ່ສະແດງ) */
-      if (u.role === 'admin') {
+      if (mine) {
+        items.push({ cls: 'lost', ic: 'fa-triangle-exclamation', n: mine.lost, l: 'ສູນຫາຍ', go: '' });
+      } else if (u.role === 'admin') {
         try {
           const r = await fetch('/api/admin/lost-coolers/list?status=active&limit=1');
           const d = await r.json().catch(() => ({}));

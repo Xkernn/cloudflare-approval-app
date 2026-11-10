@@ -8094,6 +8094,33 @@ export default {
       }
     }
 
+    // ຕົວເລກໜ້າ Overview ຂອງ role MDE (user): ຕູ້ແຊ່ທັງໝົດ + ຕູ້ສູນຫາຍ ສະເພາະ MDE code ຂອງຜູ້ທີ່ login (userId ມາຈາກ session ເທົ່ານັ້ນ)
+    // role ອື່ນ -> scope "all" (Frontend ໃຊ້ຕົວເລກລວມເດີມຈາກ /api/cooler-master/stats ແລະ /api/admin/lost-coolers/list)
+    // ໃຊ້ index UPPER(TRIM(mde)) (migration_add_mde_overview_indexes.sql) ເພື່ອບໍ່ໃຫ້ scan ທັງຕາຕະລາງ
+    if (url.pathname === "/api/my-overview-counts" && request.method === "GET") {
+      try {
+        const userId = url.searchParams.get("userId");
+        if (!userId) return Response.json({ error: "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ງານ" }, { status: 400 });
+        const me = await env.DB.prepare("SELECT role, mde_code FROM users WHERE id = ?").bind(userId).first();
+        if (!me) return Response.json({ error: "ບໍ່ພົບຜູ້ໃຊ້ງານນີ້ໃນລະບົບ" }, { status: 404 });
+        if (me.role !== "user") return Response.json({ scope: "all" });
+        const mde = String(me.mde_code || "").trim().toUpperCase();
+        if (!mde) return Response.json({ scope: "mde", mde_code: "", total: 0, lost: 0 });
+        const [tot, lost] = await env.DB.batch([
+          env.DB.prepare("SELECT COUNT(*) AS n FROM cooler_master WHERE UPPER(TRIM(mde)) = ?").bind(mde),
+          env.DB.prepare(`SELECT COUNT(*) AS n FROM lost_coolers WHERE UPPER(TRIM(mde)) = ? AND status IN (${LOST_ACTIVE.map(() => "?").join(",")})`).bind(mde, ...LOST_ACTIVE),
+        ]);
+        return Response.json({
+          scope: "mde", mde_code: mde,
+          total: (tot.results[0] && tot.results[0].n) || 0,
+          lost: (lost.results[0] && lost.results[0].n) || 0,
+        });
+      } catch (e) {
+        console.error("/api/my-overview-counts", e);
+        return Response.json({ error: "ໂຫລດຂໍ້ມູນບໍ່ສຳເລັດ" }, { status: 500 });
+      }
+    }
+
     // 2f-1. Badge counts ລວມ (ໃຊ້ສຳລັບ polling ທຸກ 60 ວິນາທີແທນການເອີ້ນ /api/assets, /api/asset-requests,
     // /api/cooler-event, /api/notifications, /api/announcements ແຍກກັນ - ອັນເກົ່າດຶງ SELECT * ທັງແຖວ
     // (ລວມ column ຮູບ base64) ມາທັງໝົດພຽງແຕ່ຢາກໄດ້ "ຈຳນວນ" ເຮັດໃຫ້ Rows Read ຂອງ D1 ສູງຜິດປົກກະຕິ.

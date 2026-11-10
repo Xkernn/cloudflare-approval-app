@@ -884,3 +884,7 @@ CREATE INDEX IF NOT EXISTS idx_cns_checks_at   ON cooler_not_scan_checks(checked
 -- ເລັ່ງໜ້າສະຕັອກສາງ (ຄືກັບ migration_add_warehouse_stock_perf_index.sql)
 CREATE INDEX IF NOT EXISTS idx_warehouse_stock_updated ON warehouse_stock(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_asset_requests_status_team_brand_type ON asset_requests(status, team, cooler_brand, cooler_type);
+
+-- Overview ຂອງ role MDE (ເບິ່ງ migration_add_mde_overview_indexes.sql)
+CREATE INDEX IF NOT EXISTS idx_cooler_master_mde_norm ON cooler_master(UPPER(TRIM(mde)));
+CREATE INDEX IF NOT EXISTS idx_lost_coolers_mde_norm  ON lost_coolers(UPPER(TRIM(mde)), status);
