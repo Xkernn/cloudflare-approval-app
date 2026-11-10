@@ -687,6 +687,11 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .profile-info-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #F5FAFA; border-radius: 10px; border: 1px solid var(--border-color); }
     .profile-info-item span:first-child { font-size: 13px; color: var(--text-muted); font-weight: 500; }
     .profile-info-item span:last-child { font-size: 14px; color: var(--text-main); font-weight: 600; }
+    /* ປຸ່ມ copy ດ່ວນ (Outlet Code / QR Code) */
+    .copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-left: 6px; padding: 0; vertical-align: middle; flex: 0 0 auto; background: #ffffff; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; font-size: 12px; line-height: 1; transition: background .15s, color .15s, border-color .15s; }
+    .copy-btn:hover { background: #E6F4F1; color: #0f766e; border-color: #0f766e; }
+    .copy-btn.copied { background: #dcfce7; color: #166534; border-color: #86efac; }
+    button.copy-btn i { width: auto; margin: 0; color: inherit; font-size: 12px; }
 
     /* ລາຍການແບບ Card (ແທນ table) — ໂຊລາຍລະອຽດຫຼັກ, ກົດເຂົ້າໄປເບິ່ງລາຍລະອຽດທັງໝົດ */
     .card-list { display: flex; flex-direction: column; gap: 10px; }
@@ -8798,6 +8803,53 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       ));
     }
     function jsq(v) { return esc(JSON.stringify(String(v ?? ''))); }
+
+    /* ==================== ປຸ່ມ Copy ດ່ວນ ====================
+       - copyBtn(text, label) : HTML ຂອງປຸ່ມ copy (ປອດໄພ — ຜ່ານ jsq) ໃຊ້ຕໍ່ທ້າຍຄ່າທີ່ຕ້ອງການ copy
+       - copyVal(text, label) : ສຳລັບ fields ຂອງ openDetailModal -> raw(ຄ່າ + ປຸ່ມ copy); ຖ້າຄ່າຫວ່າງຈະບໍ່ສະແດງປຸ່ມ
+       - copyText(text, btn)  : copy ລົງ clipboard (fallback execCommand ສຳລັບ http / browser ເກົ່າ) ແລ້ວສະແດງ ✓ ຊົ່ວຄາວ */
+    async function copyText(text, btn) {
+      text = String(text ?? '');
+      if (!text) return;
+      let ok = false;
+      try {
+        if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); ok = true; }
+      } catch (e) { ok = false; }
+      if (!ok) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed; top:0; left:0; opacity:0; pointer-events:none;';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+          ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+        } catch (e2) { ok = false; }
+      }
+      if (!ok) { appAlert('ກັອບປີ້ບໍ່ໄດ້ — ກົດຄ້າງທີ່ຂໍ້ຄວາມ ແລ້ວເລືອກ Copy'); return; }
+      if (btn) {
+        const icon = btn.querySelector('i');
+        btn.classList.add('copied');
+        if (icon) { icon.dataset.prev = icon.dataset.prev || icon.className; icon.className = 'fa-solid fa-check'; }
+        clearTimeout(btn._copyT);
+        btn._copyT = setTimeout(() => {
+          btn.classList.remove('copied');
+          if (icon && icon.dataset.prev) icon.className = icon.dataset.prev;
+        }, 1200);
+      }
+    }
+    function copyBtn(text, label) {
+      const t = String(text ?? '').trim();
+      if (!t) return '';
+      const tip = esc('Copy ' + (label || t));
+      return `<button type="button" class="copy-btn" title="${tip}" aria-label="${tip}" onclick="event.stopPropagation(); copyText(${jsq(t)}, this)"><i class="fa-regular fa-copy"></i></button>`;
+    }
+    function copyVal(text, label) {
+      const t = String(text ?? '').trim();
+      if (!t) return text;
+      return raw(`${esc(t)}${copyBtn(t, label)}`);
+    }
 
     /* ==================== ຄວາມປອດໄພ: ແນບ Token ໃຫ້ທຸກ API ອັດຕະໂນມັດ ====================
        ແຕ່ກ່ອນ browser ສົ່ງ userId ດິບໆ ໄປໃຫ້ server -> ປອມເປັນ Admin ໄດ້
@@ -18380,7 +18432,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <div style="display:flex; gap:6px; flex-wrap:wrap;">${acts}</div>
             </div>
             <div class="mgmt-card-sub">
-              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}${copyBtn(n.qr_code, 'QR Code')}</span>
               <span><i class="fa-solid fa-hashtag"></i>Serial: ${esc(n.serial_number || '-')}</span>
               <span><i class="fa-solid fa-file-invoice-dollar"></i>CapEx: ${esc(n.capex || '-')}</span>
               ${n.kind === 'stock' && n.warehouse_name ? `<span><i class="fa-solid fa-warehouse"></i>${esc(n.warehouse_name)}</span>` : ''}
@@ -19636,7 +19688,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <span class="badge ${st.cls}">${esc(st.label)}</span>
             </div>
             <div class="data-card-sub" style="margin-top:6px;">
-              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}${copyBtn(it.qr_code, 'QR Code')}</span>
               <span><i class="fa-solid fa-barcode"></i>${esc(it.serial_number || '-')}</span>
               <span><i class="fa-solid fa-coins"></i>${esc(it.capex || '-')}</span>
             </div>
@@ -22163,7 +22215,7 @@ function assetStatusBadgeClass(status) {
       const isWarehouse = currentUser.role === 'warehouse';
 
       const fields = [
-        ['Outlet Code', a.outlet_code],
+        ['Outlet Code', copyVal(a.outlet_code, 'Outlet Code')],
         ['Outlet Name', a.outlet_name],
         ['Tracking No', a.tracking_no],
         ['Cooler Brand', a.cooler_brand],
@@ -22171,7 +22223,7 @@ function assetStatusBadgeClass(status) {
         ['MDE Code', a.mde_code],
         ['MDE Name', mdeNameFor(a.mde_code)],
         ['Doc Type', raw(docTypeBadgeHtml(a.doc_type))],
-        ['QR Code', a.qr_code],
+        ['QR Code', copyVal(a.qr_code, 'QR Code')],
         ['Serial Number', a.serial_number],
         ['CapEx', a.capex],
         ['ສະຖານະ', raw(`<span class="badge ${assetStatusBadgeClass(a.status)}">${esc(assetStatusText(a))}</span>`)],
@@ -22675,7 +22727,7 @@ function assetStatusBadgeClass(status) {
 
       const fields = [
         ['Tracking No', a.tracking_no],
-        ['Outlet Code', a.outlet_code],
+        ['Outlet Code', copyVal(a.outlet_code, 'Outlet Code')],
         ['Outlet Name', a.outlet_name],
         ['Cooler Brand', a.cooler_brand],
         ['Cooler Type', a.cooler_type],
@@ -22683,7 +22735,7 @@ function assetStatusBadgeClass(status) {
         ['MDE Name', mdeNameFor(a.mde_code)],
         ['Doc Type', raw(docTypeBadgeHtml(a.doc_type))],
         ['ສະພາບ', raw(`<span class="badge ${a.asset_condition === 'used' ? 'badge-pending' : 'badge-approved'}">${a.asset_condition === 'used' ? 'ມືສອງ' : 'ໃໝ່'}</span>`)],
-        ['QR Code', a.qr_code],
+        ['QR Code', copyVal(a.qr_code, 'QR Code')],
         ['Serial Number', a.serial_number],
         ['CapEx', a.capex],
         ['ວັນທີ່ຈັດສົ່ງ', fmtLaoTs(a.delivered_at)],
