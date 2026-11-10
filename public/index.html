@@ -10,7 +10,7 @@ window.__lbcInstalled=(function(){try{return (window.matchMedia&&window.matchMed
 /* ບັງຄັບໃຊ້ Theme Beerlao Premium PNG ເປັນ theme ຫຼັກດຽວ (theme ອື່ນຖືກປິດການໃຊ້ງານ) */
 document.documentElement.setAttribute('data-mm-style','premium');document.documentElement.setAttribute('data-mm-icons','png');
 try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
 
   <script src="/premium-icons.js?v=5"></script>
@@ -2829,7 +2829,12 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .auth-welcome, .auth-backdrop, .auth-sheet-grip, .auth-sheet-close { display: none; }
     @media (max-width: 992px) {
       #authContainer.auth-wrapper {
-        padding: 0; align-items: stretch; min-height: 100vh; min-height: 100dvh;
+        padding: 0; align-items: stretch; min-height: 100vh; min-height: 100dvh; position: relative;
+        background: #7CC98A;
+      }
+      /* ພື້ນຫຼັງຕິດຈໍເຕັມ (ລວມຂອບເທິງ/status bar ແລະ ຂອບລຸ່ມ) */
+      #authContainer.auth-wrapper::before {
+        content: ""; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none;
         background:
           url("/icons/login/bg.png?v=1") center top / cover no-repeat,
           url("/icons/login/bg.jpg?v=1") center top / cover no-repeat,
@@ -2838,7 +2843,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       #authContainer .auth-shell {
         max-width: none; width: 100%; margin: 0; min-height: 100vh; min-height: 100dvh;
         border-radius: 0; box-shadow: none; background: transparent; overflow: visible;
-        flex-direction: column; position: relative; animation: none;
+        flex-direction: column; position: relative; z-index: 1; animation: none;
       }
       #authContainer .auth-hero { display: none; }
 
@@ -2855,7 +2860,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       }
       .aw-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
       .aw-title { font-size: 34px; font-weight: 800; line-height: 1.15; color: #0B3D24; letter-spacing: -.01em; text-shadow: 0 1px 10px rgba(255, 255, 255, .7); }
-      .aw-title small { display: block; margin-top: 4px; font-size: 19px; font-weight: 600; letter-spacing: 0; color: #0B5A31; }
+      .aw-wordmark { display: block; width: min(74vw, 300px); height: auto; margin: 0 auto; filter: drop-shadow(0 4px 10px rgba(3, 40, 22, .28)); }
+      .aw-title small { display: block; margin-top: 2px; font-size: 19px; font-weight: 600; letter-spacing: 0; color: #0B5A31; }
       .aw-bottom {
         padding: 70px 26px calc(22px + env(safe-area-inset-bottom, 0px));
         background: linear-gradient(to top, rgba(255, 255, 255, .97) 0%, rgba(255, 255, 255, .94) 55%, rgba(255, 255, 255, 0) 100%);
@@ -3364,7 +3370,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     <div class="auth-welcome">
       <div class="aw-top">
         <div class="aw-logo"><img src="/icons/login/logo.png?v=1" alt="Beerlao" onerror="this.onerror=null;this.src='/icons/logo.png?v=2'"></div>
-        <h1 class="aw-title">Beerlao<small>Cooler Tracking &amp; Management</small></h1>
+        <h1 class="aw-title"><img class="aw-wordmark" src="/icons/login/title.png?v=1" alt="Beerlao" onerror="this.onerror=null;this.replaceWith(document.createTextNode('Beerlao'))"><small>Cooler Tracking &amp; Management</small></h1>
       </div>
       <div class="aw-bottom">
         <h2 class="aw-hello">ຍິນດີຕ້ອນຮັບ<small>ເຂົ້າສູ່ລະບົບ</small></h2>
@@ -10293,6 +10299,14 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       document.getElementById('authContainer').classList.remove('sheet-open');
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     }
+    (function syncAuthThemeColor() {
+      const meta = document.querySelector('meta[name="theme-color"]'), box = document.getElementById('authContainer');
+      if (!meta || !box) return;
+      const orig = meta.getAttribute('content');
+      const apply = () => meta.setAttribute('content', (!box.classList.contains('hidden') && window.matchMedia('(max-width: 992px)').matches) ? '#7CC98A' : orig);
+      new MutationObserver(apply).observe(box, { attributes: true, attributeFilter: ['class'] });
+      window.addEventListener('resize', apply); apply();
+    })();
     (function showAuthVersion() {
       const el = document.getElementById('awVersion');
       if (!el) return;
