@@ -3079,6 +3079,230 @@ body.admin-ux-v2 .mobile-tab:active .mobile-tab-icon { transform: scale(.94); }
   body.admin-ux-v2 .mobile-tab,
   body.admin-ux-v2 .mm-tile { transition: none; }
 }
+\n</style>\n<style id="beerlao-admin-dashboard-phase2">\n
+/* ==========================================================
+   Phase 2 — Admin Dashboard visual hierarchy
+   Existing dashboard actions, tabs, tables and data IDs retained.
+   Admin-only scope: no impact to other roles or workflows.
+   ========================================================== */
+body.admin-ux-v2 #view-admin-dashboard {
+  gap: 14px;
+  color: #18382A;
+}
+body.admin-ux-v2 #view-admin-dashboard .page-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 22px;
+  margin-bottom: 2px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(255,195,0,.22), transparent 34%),
+    linear-gradient(120deg, #075B32 0%, #087743 58%, #0C8650 100%);
+  box-shadow: 0 10px 24px rgba(6,75,40,.16);
+}
+body.admin-ux-v2 #view-admin-dashboard .page-header h1 {
+  font-size: clamp(19px, 2vw, 25px);
+  font-weight: 800;
+  letter-spacing: -.45px;
+}
+body.admin-ux-v2 #view-admin-dashboard .page-header p {
+  max-width: 650px;
+  color: rgba(244,255,247,.82);
+  font-size: 13px;
+}
+body.admin-ux-v2 #view-admin-dashboard .page-header::before {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  color: #FFFFFF;
+  background: rgba(255,255,255,.13);
+  border-color: rgba(255,255,255,.25);
+}
+body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add {
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.32) !important;
+  border-radius: 11px;
+  background: #FFFFFF !important;
+  color: #075B32 !important;
+  box-shadow: 0 3px 9px rgba(0,0,0,.09);
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add:hover {
+  background: #FFF4CC !important;
+  transform: translateY(-1px);
+}
+body.admin-ux-v2 #view-admin-dashboard #btnRunNotificationCheck,
+body.admin-ux-v2 #view-admin-dashboard #btnMdeReminder,
+body.admin-ux-v2 #view-admin-dashboard #btnMdeSignReminder,
+body.admin-ux-v2 #view-admin-dashboard #btnDsmSignReminder,
+body.admin-ux-v2 #view-admin-dashboard #btnRunSignReminderAuto,
+body.admin-ux-v2 #view-admin-dashboard #btnTestEmail {
+  background: rgba(255,255,255,.12) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255,255,255,.28) !important;
+  box-shadow: none;
+}
+body.admin-ux-v2 #view-admin-dashboard #btnRunNotificationCheck:hover,
+body.admin-ux-v2 #view-admin-dashboard #btnMdeReminder:hover,
+body.admin-ux-v2 #view-admin-dashboard #btnMdeSignReminder:hover,
+body.admin-ux-v2 #view-admin-dashboard #btnDsmSignReminder:hover,
+body.admin-ux-v2 #view-admin-dashboard #btnRunSignReminderAuto:hover,
+body.admin-ux-v2 #view-admin-dashboard #btnTestEmail:hover {
+  background: rgba(255,255,255,.22) !important;
+}
+body.admin-ux-v2 #view-admin-dashboard .pt-wrap {
+  position: sticky;
+  top: 8px;
+  z-index: 25;
+  padding: 7px;
+  border: 1px solid #E7EBDD;
+  border-radius: 16px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 5px 16px rgba(24,56,42,.07);
+  backdrop-filter: blur(12px);
+}
+body.admin-ux-v2 #view-admin-dashboard .pt-bar {
+  display: flex;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+body.admin-ux-v2 #view-admin-dashboard .pt-bar .pt-ind { display: none; }
+body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
+  flex: 0 0 auto;
+  min-height: 39px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #627267;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn i {
+  color: #648B70;
+  font-size: 14px;
+}
+body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn.active {
+  color: #075B32;
+  background: #EAF4E9;
+  border-color: #D3E7D4;
+  box-shadow: inset 0 0 0 1px rgba(8,107,58,.025);
+}
+body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn.active i { color: #087743; }
+body.admin-ux-v2 #view-admin-dashboard .content-card {
+  border: 1px solid #E8E5D9;
+  border-radius: 17px;
+  background: #FFFFFF;
+  box-shadow: 0 4px 15px rgba(31,53,37,.055);
+  overflow: hidden;
+}
+body.admin-ux-v2 #view-admin-dashboard .content-card > div:first-child {
+  padding-top: 18px !important;
+}
+body.admin-ux-v2 #view-admin-dashboard .form-control,
+body.admin-ux-v2 #view-admin-dashboard select.form-control {
+  min-height: 40px;
+  border: 1px solid #DCE5DA;
+  border-radius: 11px;
+  background-color: #FFFEFB;
+  color: #1B382A;
+  box-shadow: none;
+}
+body.admin-ux-v2 #view-admin-dashboard .form-control:focus {
+  border-color: #68A77A;
+  box-shadow: 0 0 0 3px rgba(8,107,58,.10);
+}
+body.admin-ux-v2 #view-admin-dashboard .btn-add,
+body.admin-ux-v2 #view-admin-dashboard .btn-submit,
+body.admin-ux-v2 #view-admin-dashboard .btn-act {
+  border-radius: 10px;
+  font-weight: 700;
+}
+body.admin-ux-v2 #view-admin-dashboard table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+body.admin-ux-v2 #view-admin-dashboard thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #F1F6EF;
+  color: #315541;
+  font-size: 11.5px;
+  font-weight: 800;
+  border-bottom: 1px solid #DCE8D9;
+}
+body.admin-ux-v2 #view-admin-dashboard tbody tr:nth-child(even) { background: #FCFDF9; }
+body.admin-ux-v2 #view-admin-dashboard tbody tr:hover { background: #F3F8EF; }
+body.admin-ux-v2 #view-admin-dashboard .alert {
+  border-radius: 12px;
+}
+body.admin-ux-v2 #view-admin-dashboard .maint-card {
+  border: 1px solid #E8E1CA;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #FFF9E9, #FFFFFF);
+  box-shadow: 0 3px 12px rgba(90,70,20,.06);
+}
+@media (max-width: 992px) {
+  body.admin-ux-v2 #view-admin-dashboard .page-header {
+    padding: 16px;
+    border-radius: 16px;
+    gap: 9px;
+  }
+  body.admin-ux-v2 #view-admin-dashboard .page-header > div:first-child {
+    flex: 1 1 100%;
+  }
+  body.admin-ux-v2 #view-admin-dashboard .pt-wrap {
+    top: 4px;
+    margin-left: -2px;
+    margin-right: -2px;
+  }
+  body.admin-ux-v2 #view-admin-dashboard .pt-bar {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.admin-ux-v2 #view-admin-dashboard .pt-bar::-webkit-scrollbar { display: none; }
+  body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
+    min-height: 37px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+  }
+  body.admin-ux-v2 #view-admin-dashboard .content-card {
+    border-radius: 14px;
+  }
+}
+@media (max-width: 560px) {
+  body.admin-ux-v2 #view-admin-dashboard .page-header::before { display: none; }
+  body.admin-ux-v2 #view-admin-dashboard .page-header h1 { font-size: 18px; }
+  body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add {
+    flex: 1 1 calc(50% - 8px);
+    white-space: normal;
+    justify-content: center;
+    line-height: 1.25;
+  }
+  body.admin-ux-v2 #view-admin-dashboard .pt-wrap { padding: 5px; }
+  body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
+    min-height: 35px;
+    padding: 7px 9px;
+  }
+}
 \n</style>\n</head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol><symbol id="ic-map" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0112 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></symbol><symbol id="ic-bell" viewBox="0 0 24 24"><path d="M6 17v-6a6 6 0 1112 0v6l1.5 2h-15L6 17z"/><path d="M10 21.5h4"/></symbol><symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 7h9"/><path d="M19 7h1"/><circle cx="16" cy="7" r="2"/><path d="M4 17h1"/><path d="M11 17h9"/><circle cx="8" cy="17" r="2"/></symbol><symbol id="ic-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol><symbol id="ic-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></symbol><symbol id="ic-file-plus" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 11.5v5"/><path d="M9.5 14h5"/></symbol><symbol id="ic-history" viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8 8 8 0 00-5.7 2.4L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M12 8v4l3 2"/></symbol><symbol id="ic-handoff" viewBox="0 0 24 24"><path d="M4 8h13"/><path d="M13 4l4 4-4 4"/><path d="M20 16H7"/><path d="M11 12l-4 4 4 4"/></symbol><symbol id="ic-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v9h-11z"/><path d="M13.5 10h4.2l2.8 3.2v2.3h-7"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/></symbol><symbol id="ic-scan" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 012-2h2"/><path d="M16 4h2a2 2 0 012 2v2"/><path d="M20 16v2a2 2 0 01-2 2h-2"/><path d="M8 20H6a2 2 0 01-2-2v-2"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="ic-file-sign" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 16c.9-1.8 1.6-1.8 2 0s1.1 1.2 2.2-.3"/></symbol><symbol id="ic-warehouse" viewBox="0 0 24 24"><path d="M3 9.5L12 4l9 5.5V20H3z"/><path d="M8 20v-6h8v6"/><path d="M8 17h8"/></symbol><symbol id="ic-count" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5v-1h6v1"/><path d="M9 13.5l2.2 2.2 3.8-4.2"/></symbol><symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="1.6"/><path d="M15.5 15.5l5 5"/></symbol><symbol id="ic-alert" viewBox="0 0 24 24"><path d="M12 3.8l9 15.7H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/></symbol><symbol id="ic-snowflake" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M4.2 7.5l15.6 9"/><path d="M4.2 16.5l15.6-9"/><path d="M9.5 4.5L12 7l2.5-2.5"/><path d="M9.5 19.5L12 17l2.5 2.5"/></symbol><symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 016.5 5H18v3"/><path d="M4 7.5V18a2 2 0 002 2h13a1 1 0 001-1V9a1 1 0 00-1-1H6.5A2.5 2.5 0 014 7.5z"/><path d="M16 14h.01"/></symbol><symbol id="ic-shield-user" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 7.7-7 9.5-4-1.8-7-5.1-7-9.5V6z"/><circle cx="12" cy="10" r="2"/><path d="M8.8 16c.6-1.6 1.9-2.4 3.2-2.4s2.6.8 3.2 2.4"/></symbol><symbol id="ic-sign" viewBox="0 0 24 24"><path d="M15 5l4 4L9 19H5v-4z"/><path d="M13 7l4 4"/><path d="M13 20h7"/></symbol><symbol id="ic-pie" viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9h-9V3z"/><path d="M15 3.5a9 9 0 015.5 5.5H15z"/></symbol><symbol id="ic-city" viewBox="0 0 24 24"><path d="M4 21V9l6-3v15"/><path d="M10 21V4l10 4v13"/><path d="M3 21h18"/><path d="M14 11h2"/><path d="M14 15h2"/></symbol><symbol id="ic-megaphone" viewBox="0 0 24 24"><path d="M4 10v4a1 1 0 001 1h2l7 4V5L7 9H5a1 1 0 00-1 1z"/><path d="M17.5 9a4.2 4.2 0 010 6"/></symbol><symbol id="ic-book" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 016.5 3H19v15H6.5A1.5 1.5 0 005 19.5z"/><path d="M5 19.5A1.5 1.5 0 006.5 21H19v-3"/><path d="M13.5 3v6l-2-1.5-2 1.5V3"/></symbol><symbol id="ic-book-open" viewBox="0 0 24 24"><path d="M3 5.5c3-1 6-.8 9 1.5 3-2.3 6-2.5 9-1.5V18c-3-1-6-.8-9 1.5-3-2.3-6-2.5-9-1.5z"/><path d="M12 7v11.5"/></symbol><symbol id="ic-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2"/><path d="M12 17h.01"/></symbol><symbol id="ic-bars" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20v-6"/><path d="M12 20V6"/><path d="M17 20v-9"/></symbol><symbol id="ic-archive" viewBox="0 0 24 24"><path d="M3.5 5h17v4h-17z"/><path d="M5 9v10h14V9"/><path d="M10 13h4"/></symbol><symbol id="ic-file-up" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-5"/><path d="M9.5 14.2l2.5-2.5 2.5 2.5"/></symbol><symbol id="ic-file-down" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v5"/><path d="M9.5 14.8l2.5 2.5 2.5-2.5"/></symbol><symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></symbol><symbol id="ic-file-check" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M9 15l2.2 2.2L15 13"/></symbol><symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></symbol><symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M8 3.5v4"/><path d="M16 3.5v4"/></symbol><symbol id="ic-trash" viewBox="0 0 24 24"><path d="M5 7h14"/><path d="M9 7V4.5h6V7"/><path d="M7 7l.8 12.5h8.4L17 7"/><path d="M10.2 11v5"/><path d="M13.8 11v5"/></symbol><symbol id="ic-tray-in" viewBox="0 0 24 24"><path d="M12 4v10"/><path d="M8.5 10.5L12 14l3.5-3.5"/><path d="M4.5 15v3.5h15V15"/></symbol><symbol id="ic-inbox" viewBox="0 0 24 24"><path d="M3.5 13l2.7-7.5h11.6L20.5 13v5.5h-17z"/><path d="M3.5 13h5l1 2h5l1-2h5"/></symbol><symbol id="ic-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M18 18h2v2h-2z"/></symbol><symbol id="ic-calculator" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8" y="6" width="8" height="3.5" rx=".5"/><path d="M8.5 13.5h.01"/><path d="M12 13.5h.01"/><path d="M15.5 13.5h.01"/><path d="M8.5 17h.01"/><path d="M12 17h.01"/><path d="M15.5 17h.01"/></symbol><symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6.5a3.5 3.5 0 000-7h-5a3.5 3.5 0 010-7H16"/></symbol><symbol id="ic-chev2" viewBox="0 0 24 24"><path d="M7 7l5 5-5 5"/><path d="M13 7l5 5-5 5"/></symbol><symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol><symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol></defs></svg>
