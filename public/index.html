@@ -11,7 +11,46 @@ window.__lbcInstalled=(function(){try{return (window.matchMedia&&window.matchMed
 document.documentElement.setAttribute('data-mm-style','premium');document.documentElement.setAttribute('data-mm-icons','png');
 try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }</style>
+<style>/* ມືຖື: ບໍ່ໃຫ້ຊູມ (pinch / double-tap) — ໂຕ canvas ລາຍເຊັນທີ່ກຳນົດ touch-action:none ຂອງຕົນເອງຍັງຄືເກົ່າ */ * { touch-action: manipulation; } html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    /* ===== Premium Admin Home — isolated to the admin dashboard ===== */
+    #view-admin-dashboard .adm-home { --adm-green:#075532; --adm-deep:#064326; --adm-gold:#f5c400; --adm-cream:#fbf8ed; margin:0 0 24px; color:#173b2b; }
+    #view-admin-dashboard .adm-hero { position:relative; overflow:hidden; display:flex; align-items:center; justify-content:space-between; gap:20px; min-height:190px; padding:28px 32px; border-radius:24px; color:#fff; background:radial-gradient(circle at 82% 15%,rgba(255,214,54,.30),transparent 25%),linear-gradient(115deg,#064326 0%,#08713e 68%,#0b8b4b 100%); box-shadow:0 12px 30px rgba(5,76,43,.16); }
+    #view-admin-dashboard .adm-hero:after { content:""; position:absolute; width:330px; height:330px; right:8%; top:-205px; border:1px solid rgba(255,255,255,.16); border-radius:50%; box-shadow:0 0 0 28px rgba(255,255,255,.035),0 0 0 58px rgba(255,255,255,.025); pointer-events:none; }
+    #view-admin-dashboard .adm-hero-copy { position:relative; z-index:1; max-width:650px; }
+    #view-admin-dashboard .adm-eyebrow { display:flex; align-items:center; gap:8px; color:#d8f0dc; font-size:11px; font-weight:800; letter-spacing:.13em; }
+    #view-admin-dashboard .adm-live-dot { width:8px;height:8px;border-radius:50%;background:#f5c400;box-shadow:0 0 0 4px rgba(245,196,0,.16); }
+    #view-admin-dashboard .adm-hero h1 { margin:10px 0 5px; color:#fff; font-size:clamp(24px,3vw,34px); line-height:1.15; font-weight:850; letter-spacing:-.03em; }
+    #view-admin-dashboard .adm-hero p { margin:0; color:rgba(255,255,255,.82); font-size:14px; }
+    #view-admin-dashboard .adm-hero-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:20px; }
+    #view-admin-dashboard .adm-hero-actions button { min-height:40px; padding:0 15px; border-radius:12px; font-size:13px; font-weight:750; cursor:pointer; }
+    #view-admin-dashboard .adm-primary-action { border:1px solid #f5c400; background:#f5c400; color:#173b2b; }
+    #view-admin-dashboard .adm-secondary-action { border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.10); color:#fff; }
+    #view-admin-dashboard .adm-hero-art { position:relative; z-index:1; flex:0 0 170px; width:170px; height:150px; display:grid; place-items:center; }
+    #view-admin-dashboard .adm-hero-art img { width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(0,0,0,.22)); }
+    #view-admin-dashboard .adm-section-head { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:25px 2px 12px; }
+    #view-admin-dashboard .adm-section-head h2 { margin:0; color:#173b2b; font-size:18px; font-weight:850; }
+    #view-admin-dashboard .adm-section-head p { margin:3px 0 0; color:#748276; font-size:12.5px; }
+    #view-admin-dashboard .adm-section-tag { padding:6px 10px; border-radius:999px; color:#17623b; background:#eaf4e9; font-size:10px; font-weight:800; letter-spacing:.08em; white-space:nowrap; }
+    #view-admin-dashboard .adm-quick-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+    #view-admin-dashboard .adm-quick-card { display:flex; align-items:center; gap:11px; min-width:0; min-height:88px; padding:12px; text-align:left; border:1px solid #e9e8dc; border-radius:17px; background:linear-gradient(180deg,#fff 0%,#fffdf7 100%); box-shadow:0 3px 12px rgba(27,54,37,.045); cursor:pointer; transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+    #view-admin-dashboard .adm-quick-card:hover { transform:translateY(-2px); border-color:#b8d7bd; box-shadow:0 9px 20px rgba(27,84,49,.10); }
+    #view-admin-dashboard .adm-quick-card img { flex:0 0 54px; width:54px;height:54px;object-fit:contain; }
+    #view-admin-dashboard .adm-quick-card span { display:flex; flex:1; min-width:0; flex-direction:column; gap:3px; }
+    #view-admin-dashboard .adm-quick-card b { color:#183c2b; font-size:12.5px; line-height:1.25; }
+    #view-admin-dashboard .adm-quick-card small { color:#7b887d; font-size:11px; line-height:1.25; }
+    #view-admin-dashboard .adm-quick-card > i { color:#7b9b83; font-size:11px; }
+    #view-admin-dashboard .adm-manage-head { margin-top:27px; }
+    #view-admin-dashboard .adm-admin-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
+    #view-admin-dashboard .adm-admin-grid button { display:flex; align-items:center; gap:12px; min-width:0; padding:12px 14px; border:1px solid #e8eadf; border-radius:14px; background:#fff; text-align:left; cursor:pointer; transition:background .18s,border-color .18s; }
+    #view-admin-dashboard .adm-admin-grid button:hover { background:#f5faf3; border-color:#b8d7bd; }
+    #view-admin-dashboard .adm-admin-grid button > i { display:grid; place-items:center; flex:0 0 36px; width:36px;height:36px; border-radius:11px; color:#08713e; background:#edf6e9; font-size:16px; }
+    #view-admin-dashboard .adm-admin-grid button span { display:flex; flex-direction:column; gap:2px; min-width:0; }
+    #view-admin-dashboard .adm-admin-grid b { color:#214331; font-size:12px; }
+    #view-admin-dashboard .adm-admin-grid small { color:#829087; font-size:11px; }
+    @media(max-width:1100px) { #view-admin-dashboard .adm-quick-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+    @media(max-width:700px) { #view-admin-dashboard .adm-hero { min-height:0; padding:22px 20px; border-radius:19px; } #view-admin-dashboard .adm-hero-art { flex-basis:96px;width:96px;height:100px; } #view-admin-dashboard .adm-hero p { max-width:430px; font-size:12px; } #view-admin-dashboard .adm-quick-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } #view-admin-dashboard .adm-quick-card { min-height:78px; padding:9px; gap:8px; border-radius:14px; } #view-admin-dashboard .adm-quick-card img { flex-basis:42px;width:42px;height:42px; } #view-admin-dashboard .adm-quick-card b { font-size:11.5px; } #view-admin-dashboard .adm-quick-card small { font-size:10px; } #view-admin-dashboard .adm-admin-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } #view-admin-dashboard .adm-section-head h2 { font-size:16px; } #view-admin-dashboard .adm-section-tag { display:none; } }
+    @media(max-width:390px) { #view-admin-dashboard .adm-hero-art { display:none; } #view-admin-dashboard .adm-quick-card img { flex-basis:36px;width:36px;height:36px; } }
+</style>
 
   <script src="/premium-icons.js?v=5"></script>
   <title>Cooler Tracking System LBC</title>
@@ -687,11 +726,6 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .profile-info-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #F5FAFA; border-radius: 10px; border: 1px solid var(--border-color); }
     .profile-info-item span:first-child { font-size: 13px; color: var(--text-muted); font-weight: 500; }
     .profile-info-item span:last-child { font-size: 14px; color: var(--text-main); font-weight: 600; }
-    /* ປຸ່ມ copy ດ່ວນ (Outlet Code / QR Code) */
-    .copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-left: 6px; padding: 0; vertical-align: middle; flex: 0 0 auto; background: #ffffff; color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 7px; cursor: pointer; font-size: 12px; line-height: 1; transition: background .15s, color .15s, border-color .15s; }
-    .copy-btn:hover { background: #E6F4F1; color: #0f766e; border-color: #0f766e; }
-    .copy-btn.copied { background: #dcfce7; color: #166534; border-color: #86efac; }
-    button.copy-btn i { width: auto; margin: 0; color: inherit; font-size: 12px; }
 
     /* ລາຍການແບບ Card (ແທນ table) — ໂຊລາຍລະອຽດຫຼັກ, ກົດເຂົ້າໄປເບິ່ງລາຍລະອຽດທັງໝົດ */
     .card-list { display: flex; flex-direction: column; gap: 10px; }
@@ -3285,6 +3319,54 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
 
       <!-- VIEW 2: ADMIN DASHBOARD -->
       <div id="view-admin-dashboard" class="hidden">
+      <!-- ADMIN PREMIUM HOME: role admin only (keeps existing admin workflows and handlers) -->
+      <section class="adm-home" aria-label="Admin home">
+        <div class="adm-hero">
+          <div class="adm-hero-copy">
+            <div class="adm-eyebrow"><span class="adm-live-dot"></span> BEERLAO COOLER MANAGEMENT</div>
+            <h1>Admin Control Center</h1>
+            <p>ສູນກາງຈັດການຕູ້ແຊ່, ຄັງສິນຄ້າ, ເອກະສານ ແລະ ຂໍ້ມູນລະບົບ</p>
+            <div class="adm-hero-actions">
+              <button type="button" class="adm-primary-action" onclick="switchView('asset')"><i class="fa-solid fa-boxes-stacked"></i> Cooler Tracking</button>
+              <button type="button" class="adm-secondary-action" onclick="switchAdminTab('users'); document.getElementById('admin-tab-users').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-user-shield"></i> Admin Management</button>
+            </div>
+          </div>
+          <div class="adm-hero-art" aria-hidden="true"><img src="/icons/png/main-menu/asset_tracking.png" alt=""></div>
+        </div>
+
+        <div class="adm-section-head">
+          <div><h2>Quick Access</h2><p>ເຂົ້າເຖິງວຽກຫຼັກໄດ້ຢ່າງວ່ອງໄວ</p></div>
+          <span class="adm-section-tag">ADMIN WORKSPACE</span>
+        </div>
+        <div class="adm-quick-grid">
+          <button class="adm-quick-card" type="button" onclick="switchView('asset')"><img src="/icons/png/main-menu/asset_tracking.png" alt=""><span><b>Cooler Tracking</b><small>ຕິດຕາມຕູ້ແຊ່</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('map')"><img src="/icons/png/main-menu/asset_tracking.png" alt=""><span><b>Map Tracking</b><small>ຕິດຕາມຕຳແໜ່ງ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('request')"><img src="/icons/png/main-menu/asset_request.png" alt=""><span><b>Asset Request</b><small>ຈັດການຄຳຂໍເບີກ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('historyHub')"><img src="/icons/png/main-menu/asset_history.png" alt=""><span><b>Asset History</b><small>ປະຫວັດຊັບສິນ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('deliveryHub')"><img src="/icons/png/main-menu/delivery_report.png" alt=""><span><b>Delivery Report</b><small>ລາຍງານການຈັດສົ່ງ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('loanContract')"><img src="/icons/png/main-menu/loan_document.png" alt=""><span><b>Cooler Documents</b><small>ສັນຍາຢືມ / ຍົກເລີກ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('warehouseStock')"><img src="/icons/png/main-menu/warehouse_stock.png" alt=""><span><b>Warehouse Stock</b><small>ສະຕັອກສາງ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('stockCount')"><img src="/icons/png/main-menu/warehouse_count.png" alt=""><span><b>Stock Count</b><small>ກວດນັບສາງ</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="openVirtualOffice()"><img src="/icons/png/main-menu/virtual_company.png" alt=""><span><b>Virtual Company 3D</b><small>ສຳຫຼວດບໍລິສັດ 3D</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+          <button class="adm-quick-card" type="button" onclick="switchView('provBudget')"><img src="/icons/png/main-menu/province_budget.png" alt=""><span><b>Cooler Budget</b><small>ງົບປະມານຕູ້ແຊ່</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+        </div>
+
+        <div class="adm-section-head adm-manage-head">
+          <div><h2>System Administration</h2><p>ຈັດການຜູ້ໃຊ້, Master Data ແລະ ການຕັ້ງຄ່າ</p></div>
+          <span class="adm-section-tag">SYSTEM CONTROL</span>
+        </div>
+        <div class="adm-admin-grid">
+          <button type="button" onclick="switchAdminTab('users'); document.getElementById('admin-tab-users').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-user-check"></i><span><b>User Approval</b><small>ອະນຸມັດຜູ້ໃຊ້</small></span></button>
+          <button type="button" onclick="switchAdminTab('mde'); document.getElementById('admin-tab-mde').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-id-card"></i><span><b>MDE List</b><small>ຈັດການ MDE</small></span></button>
+          <button type="button" onclick="switchAdminTab('dsm'); document.getElementById('admin-tab-dsm').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-user-tie"></i><span><b>DSM List</b><small>ຈັດການ DSM</small></span></button>
+          <button type="button" onclick="switchAdminTab('budget'); document.getElementById('admin-tab-budget').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-wallet"></i><span><b>Budget Setup</b><small>ຈັດການງົບ</small></span></button>
+          <button type="button" onclick="switchAdminTab('catalog'); document.getElementById('admin-tab-catalog').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-tags"></i><span><b>Brand / Type</b><small>ຂໍ້ມູນປະເພດຕູ້</small></span></button>
+          <button type="button" onclick="switchAdminTab('warehouse'); document.getElementById('admin-tab-warehouse').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-warehouse"></i><span><b>Warehouse Setup</b><small>ຈັດການສາງ</small></span></button>
+          <button type="button" onclick="switchAdminTab('outlet'); document.getElementById('admin-tab-outlet').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-shop"></i><span><b>Outlet Master</b><small>ຂໍ້ມູນຮ້ານຄ້າ</small></span></button>
+          <button type="button" onclick="switchAdminTab('loginlog'); document.getElementById('admin-tab-loginlog').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-clock-rotate-left"></i><span><b>User Activity</b><small>ສະຖານະ / Login Log</small></span></button>
+          <button type="button" onclick="switchAdminTab('announcements'); document.getElementById('admin-tab-announcements').scrollIntoView({behavior:'smooth',block:'center'})"><i class="fa-solid fa-bullhorn"></i><span><b>Announcements</b><small>ຈັດການປະກາດ</small></span></button>
+        </div>
+      </section>
       <div id="maintenanceCard" class="maint-card hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
@@ -8803,53 +8885,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       ));
     }
     function jsq(v) { return esc(JSON.stringify(String(v ?? ''))); }
-
-    /* ==================== ປຸ່ມ Copy ດ່ວນ ====================
-       - copyBtn(text, label) : HTML ຂອງປຸ່ມ copy (ປອດໄພ — ຜ່ານ jsq) ໃຊ້ຕໍ່ທ້າຍຄ່າທີ່ຕ້ອງການ copy
-       - copyVal(text, label) : ສຳລັບ fields ຂອງ openDetailModal -> raw(ຄ່າ + ປຸ່ມ copy); ຖ້າຄ່າຫວ່າງຈະບໍ່ສະແດງປຸ່ມ
-       - copyText(text, btn)  : copy ລົງ clipboard (fallback execCommand ສຳລັບ http / browser ເກົ່າ) ແລ້ວສະແດງ ✓ ຊົ່ວຄາວ */
-    async function copyText(text, btn) {
-      text = String(text ?? '');
-      if (!text) return;
-      let ok = false;
-      try {
-        if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); ok = true; }
-      } catch (e) { ok = false; }
-      if (!ok) {
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.setAttribute('readonly', '');
-          ta.style.cssText = 'position:fixed; top:0; left:0; opacity:0; pointer-events:none;';
-          document.body.appendChild(ta);
-          ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
-          ok = document.execCommand('copy');
-          document.body.removeChild(ta);
-        } catch (e2) { ok = false; }
-      }
-      if (!ok) { appAlert('ກັອບປີ້ບໍ່ໄດ້ — ກົດຄ້າງທີ່ຂໍ້ຄວາມ ແລ້ວເລືອກ Copy'); return; }
-      if (btn) {
-        const icon = btn.querySelector('i');
-        btn.classList.add('copied');
-        if (icon) { icon.dataset.prev = icon.dataset.prev || icon.className; icon.className = 'fa-solid fa-check'; }
-        clearTimeout(btn._copyT);
-        btn._copyT = setTimeout(() => {
-          btn.classList.remove('copied');
-          if (icon && icon.dataset.prev) icon.className = icon.dataset.prev;
-        }, 1200);
-      }
-    }
-    function copyBtn(text, label) {
-      const t = String(text ?? '').trim();
-      if (!t) return '';
-      const tip = esc('Copy ' + (label || t));
-      return `<button type="button" class="copy-btn" title="${tip}" aria-label="${tip}" onclick="event.stopPropagation(); copyText(${jsq(t)}, this)"><i class="fa-regular fa-copy"></i></button>`;
-    }
-    function copyVal(text, label) {
-      const t = String(text ?? '').trim();
-      if (!t) return text;
-      return raw(`${esc(t)}${copyBtn(t, label)}`);
-    }
 
     /* ==================== ຄວາມປອດໄພ: ແນບ Token ໃຫ້ທຸກ API ອັດຕະໂນມັດ ====================
        ແຕ່ກ່ອນ browser ສົ່ງ userId ດິບໆ ໄປໃຫ້ server -> ປອມເປັນ Admin ໄດ້
@@ -18432,7 +18467,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <div style="display:flex; gap:6px; flex-wrap:wrap;">${acts}</div>
             </div>
             <div class="mgmt-card-sub">
-              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}${copyBtn(n.qr_code, 'QR Code')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}</span>
               <span><i class="fa-solid fa-hashtag"></i>Serial: ${esc(n.serial_number || '-')}</span>
               <span><i class="fa-solid fa-file-invoice-dollar"></i>CapEx: ${esc(n.capex || '-')}</span>
               ${n.kind === 'stock' && n.warehouse_name ? `<span><i class="fa-solid fa-warehouse"></i>${esc(n.warehouse_name)}</span>` : ''}
@@ -19688,7 +19723,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <span class="badge ${st.cls}">${esc(st.label)}</span>
             </div>
             <div class="data-card-sub" style="margin-top:6px;">
-              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}${copyBtn(it.qr_code, 'QR Code')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}</span>
               <span><i class="fa-solid fa-barcode"></i>${esc(it.serial_number || '-')}</span>
               <span><i class="fa-solid fa-coins"></i>${esc(it.capex || '-')}</span>
             </div>
@@ -22215,7 +22250,7 @@ function assetStatusBadgeClass(status) {
       const isWarehouse = currentUser.role === 'warehouse';
 
       const fields = [
-        ['Outlet Code', copyVal(a.outlet_code, 'Outlet Code')],
+        ['Outlet Code', a.outlet_code],
         ['Outlet Name', a.outlet_name],
         ['Tracking No', a.tracking_no],
         ['Cooler Brand', a.cooler_brand],
@@ -22223,7 +22258,7 @@ function assetStatusBadgeClass(status) {
         ['MDE Code', a.mde_code],
         ['MDE Name', mdeNameFor(a.mde_code)],
         ['Doc Type', raw(docTypeBadgeHtml(a.doc_type))],
-        ['QR Code', copyVal(a.qr_code, 'QR Code')],
+        ['QR Code', a.qr_code],
         ['Serial Number', a.serial_number],
         ['CapEx', a.capex],
         ['ສະຖານະ', raw(`<span class="badge ${assetStatusBadgeClass(a.status)}">${esc(assetStatusText(a))}</span>`)],
@@ -22727,7 +22762,7 @@ function assetStatusBadgeClass(status) {
 
       const fields = [
         ['Tracking No', a.tracking_no],
-        ['Outlet Code', copyVal(a.outlet_code, 'Outlet Code')],
+        ['Outlet Code', a.outlet_code],
         ['Outlet Name', a.outlet_name],
         ['Cooler Brand', a.cooler_brand],
         ['Cooler Type', a.cooler_type],
@@ -22735,7 +22770,7 @@ function assetStatusBadgeClass(status) {
         ['MDE Name', mdeNameFor(a.mde_code)],
         ['Doc Type', raw(docTypeBadgeHtml(a.doc_type))],
         ['ສະພາບ', raw(`<span class="badge ${a.asset_condition === 'used' ? 'badge-pending' : 'badge-approved'}">${a.asset_condition === 'used' ? 'ມືສອງ' : 'ໃໝ່'}</span>`)],
-        ['QR Code', copyVal(a.qr_code, 'QR Code')],
+        ['QR Code', a.qr_code],
         ['Serial Number', a.serial_number],
         ['CapEx', a.capex],
         ['ວັນທີ່ຈັດສົ່ງ', fmtLaoTs(a.delivered_at)],
