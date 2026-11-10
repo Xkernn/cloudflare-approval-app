@@ -2771,6 +2771,59 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       }
     }
 
+    /* ===== Login v2: green gradient page, white sheet, green brand band (mobile), green pill tabs + CTA ===== */
+    .brand-header h1 small { display: block; margin-top: 2px; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+    html[data-mm-style="premium"] .auth-wrapper {
+      background:
+        radial-gradient(circle at 90% 4%, rgba(255, 195, 0, .30), transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(255, 255, 255, .10), transparent 45%),
+        var(--pr-pattern),
+        linear-gradient(160deg, #12894B 0%, #0B6B3A 55%, #063D24 100%);
+      background-size: auto, auto, 96px 96px, auto;
+    }
+    html[data-mm-style="premium"] .auth-shell { box-shadow: 0 30px 70px -24px rgba(3, 40, 22, .75); border-radius: 26px; }
+    html[data-mm-style="premium"] .brand-header h1 { color: #0B3D24; }
+    html[data-mm-style="premium"] .brand-header h1 small { color: #0B6B3A; }
+    html[data-mm-style="premium"] .tab-nav { background: #E6F2E8; border-radius: 14px; }
+    html[data-mm-style="premium"] .tab-btn { border-radius: 11px; color: #3F6B50; font-weight: 600; }
+    html[data-mm-style="premium"] .tab-btn.active { background: linear-gradient(135deg, #12894B, #0B6B3A); color: #fff; box-shadow: 0 6px 14px -8px rgba(11, 107, 58, .8); }
+    html[data-mm-style="premium"] .tab-btn:not(.active):hover { background: rgba(255, 255, 255, .7); color: #0B3D24; }
+    html[data-mm-style="premium"] .card-auth .form-control { height: 48px; border-radius: 14px; border: 1.5px solid #D3E3D7; background: #F7FBF8; }
+    html[data-mm-style="premium"] .card-auth .form-control:focus { background: #fff; border-color: #0B6B3A; box-shadow: 0 0 0 3px rgba(255, 195, 0, .35); }
+    html[data-mm-style="premium"] .card-auth select.form-control { height: 48px; }
+    html[data-mm-style="premium"] .card-auth .btn-submit {
+      padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 700;
+      background: linear-gradient(135deg, #12894B 0%, #0B6B3A 100%);
+      box-shadow: 0 10px 20px -10px rgba(11, 107, 58, .85);
+    }
+    html[data-mm-style="premium"] .card-auth .btn-submit:hover:not(:disabled) { background: linear-gradient(135deg, #0F7A42, #085530); box-shadow: 0 12px 22px -10px rgba(11, 107, 58, .9); }
+    html[data-mm-style="premium"] .card-auth .btn-submit:focus-visible { outline: 3px solid #FFC300; outline-offset: 2px; }
+    @media (max-width: 992px) {
+      html[data-mm-style="premium"] .auth-wrapper { padding: 14px; padding-top: calc(14px + env(safe-area-inset-top, 0px)); padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+      html[data-mm-style="premium"] .auth-shell { max-width: 480px; }
+      html[data-mm-style="premium"] .card-auth { padding: 0 22px 28px; }
+      /* brand band: bleeds to the card edges (cancels the card padding) */
+      html[data-mm-style="premium"] .card-auth .brand-header {
+        margin: 0 -22px 22px; padding: 30px 22px 24px; text-align: center; color: #fff;
+        background:
+          radial-gradient(circle at 88% 0%, rgba(255, 195, 0, .38), transparent 46%),
+          linear-gradient(160deg, #12894B 0%, #0B6B3A 62%, #085530 100%);
+        border-radius: 0 0 30px 30px;
+      }
+      html[data-mm-style="premium"] .card-auth .brand-header .brand-icon.logo {
+        width: 88px; height: 88px; margin: 0 auto 12px; padding: 5px; background: #fff; border: 0;
+        box-shadow: 0 10px 24px -8px rgba(3, 40, 22, .6), 0 0 0 4px rgba(255, 255, 255, .25);
+      }
+      html[data-mm-style="premium"] .card-auth .brand-header h1 { color: #fff; font-size: 28px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
+      html[data-mm-style="premium"] .card-auth .brand-header h1 small { color: #FFE27A; font-size: 15px; }
+      html[data-mm-style="premium"] .card-auth .brand-header p { color: rgba(255, 255, 255, .92); margin-top: 8px; }
+    }
+    @media (max-width: 360px) {
+      html[data-mm-style="premium"] .card-auth { padding: 0 16px 24px; }
+      html[data-mm-style="premium"] .card-auth .brand-header { margin: 0 -16px 18px; padding: 24px 16px 20px; }
+      html[data-mm-style="premium"] .card-auth .brand-header h1 { font-size: 24px; }
+    }
+
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
     html[data-mm-style="premium"] { --pr-green:#0B6B3A; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#FFC300; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
     html[data-mm-style="premium"] body { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
@@ -3099,7 +3152,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     <div class="card-auth">
       <div class="brand-header">
         <div class="brand-icon logo"><img src="/icons/logo.png?v=2" alt="LBC Cooler"></div>
-        <h1>LBC Cooler System - VTE Login</h1>
+        <h1>Beerlao<small>Cooler Tracking &amp; Management</small></h1>
         <p>ລະບົບຕິດຕາມການຈັດສົ່ງ ແລະ ຂໍ Cooler</p>
       </div>
 
