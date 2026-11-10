@@ -10233,6 +10233,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         document.getElementById('nav-dashboard').classList.add('active');
         if (currentUser.role === 'admin') {
           document.getElementById('view-admin-dashboard').classList.remove('hidden');
+          const premiumAdminHome = document.querySelector('#view-admin-dashboard .adm-home');
+          if (premiumAdminHome) premiumAdminHome.classList.toggle('hidden', !!currentUser.isAssistantAdmin);
           switchAdminTab(currentUser && currentUser.isAssistantAdmin ? 'mde' : 'users');
         } else {
           document.getElementById('view-user-dashboard').classList.remove('hidden');
@@ -12497,7 +12499,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
 
       // role user: ໜ້າເລີ່ມຕົ້ນ = ງົບປະມານຂອງທີມ (dashboard) · role ອື່ນ ຄົງເດີມ = ແຈ້ງເຕືອນ
-      const defaultView = currentUser.role === 'dsm' || currentUser.role === 'user' ? 'dashboard' : ((currentUser.role === 'admin' || currentUser.role === 'warehouse') ? 'home' : 'notifications');
+      const defaultView = currentUser.role === 'dsm' || currentUser.role === 'user' ? 'dashboard' : (currentUser.role === 'admin' ? 'dashboard' : (currentUser.role === 'warehouse' ? 'home' : 'notifications'));
       switchView(consumePendingDeepLink() || defaultView);
       // ຜູ້ໃຊ້ໃໝ່ (ຍັງບໍ່ເຄີຍເບິ່ງ): ເປີດທົວແນະນຳການໃຊ້ງານອັດຕະໂນມັດ
       setTimeout(() => { if (!(typeof startGetStarted === 'function' && startGetStarted(false))) startOnboardingTour(false); }, 900);
@@ -33283,8 +33285,8 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
 </div>
 <script>
 (function () {
-  const APP_BUILD = 6;
-  const APP_VERSION_FALLBACK = '1.1.0';
+  const APP_BUILD = 15;
+  const APP_VERSION_FALLBACK = '1.2.1';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

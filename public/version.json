@@ -1,8 +1,9 @@
 {
-  "version": "1.2.0",
-  "build": 14,
-  "date": "2026-11-09",
+  "version": "1.2.1",
+  "build": 15,
+  "date": "2026-11-10",
   "notes": [
+    "Admin: ເພີ່ມ Premium Admin Control Center ແລະຕັ້ງໃຫ້ Admin ເຂົ້າໜ້າໃໝ່ຫຼັງ Login; Role ອື່ນຄົງເດີມ",
     "DSM: ເພີ່ມເມນູ \"ເຊັນເອກະສານ DSM\" ເປັນເມນູເຕັມໃນແຖບຂ້າງຂອງຄອມ (ເມື່ອກ່ອນເປັນໄອຄອນນ້ອຍຢູ່ແຖວ Profile)",
     "ແກ້ icon ຂອງ sub menu ໃນໜ້າ hub (ປະຫວັດ, ລາຍງານການຈັດສົ່ງ, ສ້າງເອກະສານ, ຕູ້ແຊ່ເຂົ້າໃຫມ່, ແຜນສົ່ງຕູ້) ແລະແຖບ Stock ໃຫ້ໃຊ້ icon PNG ຊຸດ sub-menu ຕາມ theme Premium",
     "Theme: ໃຊ້ Beerlao Premium PNG ເປັນ theme ຫຼັກດຽວ — theme ເກົ່າ ແລະ Beerlao Premium (SVG) ຖືກປິດການໃຊ້ງານ ແລະ ເປັນສີເທົາ ບໍ່ໃຫ້ກົດປ່ຽນ",
