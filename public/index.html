@@ -28832,13 +28832,13 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       const fmt = (n) => Number(n || 0).toLocaleString('en-US');
       const canGo = (nav) => { const n = document.getElementById(nav); return !!(n && !n.classList.contains('hidden')); };
       const items = [];
-      // role MDE (user): ຕົວເລກຕູ້ + ສູນຫາຍ ຕາມ MDE code ຂອງຕົນເອງ; role ອື່ນ: ຕົວເລກລວມເດີມ
+      // role MDE (user): ຕາມ MDE code ຂອງຕົນເອງ, role DSM: ທັງ Team; role ອື່ນ: ຕົວເລກລວມເດີມ
       let mine = null;
-      if (u.role === 'user') {
+      if (u.role === 'user' || u.role === 'dsm') {
         try {
           const r = await fetch('/api/my-overview-counts');
           const d = await r.json().catch(() => ({}));
-          if (r.ok && d.scope === 'mde') mine = d;
+          if (r.ok && (d.scope === 'mde' || d.scope === 'team')) mine = d;
         } catch (e) {}
       }
       if (mine) {

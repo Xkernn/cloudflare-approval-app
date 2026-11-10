@@ -8101,8 +8101,23 @@ export default {
       try {
         const userId = url.searchParams.get("userId");
         if (!userId) return Response.json({ error: "ບໍ່ພົບຂໍ້ມູນຜູ້ໃຊ້ງານ" }, { status: 400 });
-        const me = await env.DB.prepare("SELECT role, mde_code FROM users WHERE id = ?").bind(userId).first();
+        const me = await env.DB.prepare("SELECT role, mde_code, team FROM users WHERE id = ?").bind(userId).first();
         if (!me) return Response.json({ error: "ບໍ່ພົບຜູ້ໃຊ້ງານນີ້ໃນລະບົບ" }, { status: 404 });
+        if (me.role === "dsm") {
+          // DSM: ນັບທັງ Team (MDE code ທັງໝົດໃນ mde_list ທີ່ team ຕົງກັນ, ເຊັ່ນ MDE-A1 -> TEAM A)
+          const team = String(me.team || "").trim();
+          if (!team) return Response.json({ scope: "team", team: "", total: 0, lost: 0 });
+          const sub = "(SELECT UPPER(TRIM(mde_code)) FROM mde_list WHERE team = ?)";
+          const [tot, lost] = await env.DB.batch([
+            env.DB.prepare(`SELECT COUNT(*) AS n FROM cooler_master WHERE UPPER(TRIM(mde)) IN ${sub}`).bind(team),
+            env.DB.prepare(`SELECT COUNT(*) AS n FROM lost_coolers WHERE UPPER(TRIM(mde)) IN ${sub} AND status IN (${LOST_ACTIVE.map(() => "?").join(",")})`).bind(team, ...LOST_ACTIVE),
+          ]);
+          return Response.json({
+            scope: "team", team,
+            total: (tot.results[0] && tot.results[0].n) || 0,
+            lost: (lost.results[0] && lost.results[0].n) || 0,
+          });
+        }
         if (me.role !== "user") return Response.json({ scope: "all" });
         const mde = String(me.mde_code || "").trim().toUpperCase();
         if (!mde) return Response.json({ scope: "mde", mde_code: "", total: 0, lost: 0 });
