@@ -2824,6 +2824,9 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html[data-mm-style="premium"] .card-auth .brand-header h1 { font-size: 24px; }
     }
 
+    /* ເອົາ "ລາຍການທີ່ມັກ" ອອກຈາກໜ້າເມນູມືຖື (ລວມປຸ່ມແກ້ໄຂ/ປັກໝຸດ) */
+    #mmFavTitle, #mmFavPanel, #mmEditBtn, #mmHint { display: none !important; }
+
     /* ===== Login v3 (ມືຖື): ໜ້າ welcome ເຕັມຈໍ + ພື້ນຫຼັງຮູບ, ກົດປຸ່ມແລ້ວຟອມເລື່ອນຂຶ້ນເປັນ bottom sheet =====
        ວາງໄຟລ໌ຂອງທ່ານເອງ:  /icons/login/bg.jpg (ພື້ນຫຼັງ)  ແລະ  /icons/login/logo.png (logo) — ບໍ່ມີໄຟລ໌ = ໃຊ້ gradient ສີຂຽວ / logo ເດີມ */
     .auth-welcome, .auth-backdrop, .auth-sheet-grip, .auth-sheet-close { display: none; }
@@ -3658,7 +3661,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       </div>
       <div class="mm-body" id="mmBody">
         <div id="mmHint" class="mm-hint hidden">ກົດ + / − ທີ່ມຸມໄອຄອນ ເພື່ອປັກໝຸດ ຫຼືເອົາອອກ (ເມນູ ແລະ ເມນູຍ່ອຍ) · ກົດຄ້າງແລ້ວລາກເພື່ອຈັດລຽງ</div>
-        <div class="mm-sec-title">ລາຍການທີ່ມັກ <span id="mmFavCount" class="mm-count">0</span></div>
+        <div class="mm-sec-title" id="mmFavTitle">ລາຍການທີ່ມັກ <span id="mmFavCount" class="mm-count">0</span></div>
         <div class="mm-fav-panel" id="mmFavPanel"><div id="mmFavGrid" class="mm-grid"></div></div>
         <div class="mm-sec-title">ເມນູທັງໝົດ <span id="mmAllCount" class="mm-count">0</span></div>
         <div id="mmAllGrid" class="mm-grid"></div>
@@ -12286,7 +12289,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       if (window.innerWidth <= 992) {
         const labels = [...document.querySelectorAll('#mobileTabbar .mobile-tab-label')].map((e) => e.textContent.trim()).filter(Boolean).join(' · ');
         steps.push({ voice: 'tabbar', target: 'mobileTabbar', icon: 'fa-table-cells-large', title: 'ແຖບເມນູດ້ານລຸ່ມ',
-          text: (labels ? labels + '\n' : '') + 'ກົດ "ເມນູ" ເພື່ອເບິ່ງທຸກເມນູ ແລະ ກົດ "ແກ້ໄຂ" ເພື່ອປັກໝຸດເມນູທີ່ໃຊ້ບໍ່ອີກໄວ້ໃນ "ລາຍການທີ່ມັກ".' });
+          text: (labels ? labels + '\n' : '') + 'ກົດ "ເມນູ" ເພື່ອເບິ່ງທຸກເມນູ.' });
       }
       TOUR_NAV_STEPS.forEach(([id, icon, title, text]) => {
         const el = document.getElementById(id);
@@ -12413,12 +12416,10 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           { sel: '#teamBudgetCard .tb-refresh', icon: 'fa-rotate', title: 'ໂຫລດຂໍ້ມູນໃໝ່', text: 'ກົດເມື່ອຕ້ອງການດຶງຕົວເລກງົບລ່າສຸດ.' }
         ] },
       mobileMenu: { icon: 'fa-table-cells-large', title: 'ໜ້າເມນູ',
-        intro: 'ໜ້ານີ້ລວມທຸກເມນູໄວ້ບ່ອນດຽວ. ເມນູທີ່ໃຊ້ບໍ່ອີກ ປັກໝຸດໄວ້ເທິງສຸດ ເພື່ອເຂົ້າໄດ້ໄວຂຶ້ນ.',
+        intro: 'ໜ້ານີ້ລວມທຸກເມນູໄວ້ບ່ອນດຽວ ກົດໄອຄອນເພື່ອເຂົ້າໄດ້ທັນທີ.',
         steps: [
-          { target: 'mmFavPanel', icon: 'fa-star', title: 'ລາຍການທີ່ມັກ', text: 'ເມນູທີ່ປັກໝຸດໄວ້ຈະຢູ່ບ່ອນນີ້ ກົດເພື່ອເຂົ້າໄດ້ທັນທີ.' },
-          { target: 'mmEditBtn', icon: 'fa-pen', title: 'ປຸ່ມແກ້ໄຂ', text: 'ກົດ "ແກ້ໄຂ" ແລ້ວກົດ + ເພື່ອປັກໝຸດ ຫຼື − ເພື່ອເອົາອອກ. ກົດຄ້າງແລ້ວລາກເພື່ອຈັດລຽງໄດ້. ເມື່ອສຳເລັດກົດ "ແລ້ວ".' },
           { target: 'mmAllGrid', icon: 'fa-table-cells-large', title: 'ເມນູທັງໝົດ', text: 'ທຸກເມນູທີ່ທ່ານມີສິດໃຊ້. ເລກແດງ = ມີລາຍການຄ້າງ.' },
-          { target: 'mmSubGrid', icon: 'fa-angles-right', title: 'ເມນູຍ່ອຍ (ແຖບດ້ານໃນ)', text: 'ທາງລັດໄປຫາແຖບ/ໜ້າດ້ານໃນ ເຊັ່ນ ເອກະສານຍັງບໍ່ເຊັນ ຫຼື ພາບລວມສະຕັອກ. ກົດ "ແກ້ໄຂ" ແລ້ວກົດ + ເພື່ອປັກໝຸດໄວ້ໃນ "ລາຍການທີ່ມັກ" ໄດ້ຄືກັນ.', optional: true }
+          { target: 'mmSubGrid', icon: 'fa-angles-right', title: 'ເມນູຍ່ອຍ (ແຖບດ້ານໃນ)', text: 'ທາງລັດໄປຫາແຖບ/ໜ້າດ້ານໃນ ເຊັ່ນ ເອກະສານຍັງບໍ່ເຊັນ ຫຼື ພາບລວມສະຕັອກ.', optional: true }
         ] },
       asset: { icon: 'fa-boxes-stacked', title: 'Asset Tracking',
         intro: 'ໜ້ານີ້ໃຊ້ຕິດຕາມຕູ້ແຊ່ທຸກໜ່ວຍ ຕັ້ງແຕ່ຍັງບໍ່ສົ່ງເອກະສານ ຈົນຈັດສົ່ງສຳເລັດ.',
@@ -33700,11 +33701,11 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
     if (typeof currentUser === 'undefined' || !currentUser) return false;
     const favs = (typeof mmCurrentFavs === 'function' ? mmCurrentFavs() : []).slice();
     if (force) {
-      gs = { step: 1, favs, total: 4, tourOnly: false };
+      gs = { step: 1, favs, total: 3, tourOnly: false };
     } else if (gsEligible()) {
       // ມືຖື + ຕິດຕັ້ງແອັບແລ້ວ: ຖາມຄົບ ໂໝດ → Theme → ເມນູທີ່ມັກ → (ເບິ່ງວິທີການນຳໃຊ້ ຖ້າຍັງບໍ່ເຄີຍຕອບ)
       if (gsDone()) return false;
-      gs = { step: 1, favs, total: gsTourSeen() ? 3 : 4, tourOnly: false };
+      gs = { step: 1, favs, total: gsTourSeen() ? 2 : 3, tourOnly: false };
     } else {
       // browser / ຄອມ: ຖາມສະເພາະ "ເບິ່ງວິທີການນຳໃຊ້ບໍ?" (ຖ້າຍັງບໍ່ເຄີຍເບິ່ງທົວ)
       if (gsTourSeen()) return false;
@@ -33731,7 +33732,9 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   };
 
   window.gsGo = function (d) {
-    gs.step = Math.min(gs.total, Math.max(1, gs.step + d));
+    let n = gs.step + d;
+    if (n === 3) n += d; /* ຂ້າມຂັ້ນ "ເລືອກເມນູທີ່ມັກ" (ເອົາອອກແລ້ວ) */
+    gs.step = Math.min(4, Math.max(1, n));
     gsRender();
   };
   window.gsPickMode = function (m) { if (typeof setUiMode === 'function') setUiMode(m); gsRender(); };
@@ -33772,8 +33775,9 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
 
   function gsRender() {
     const s = gs.step;
-    $('gsStepTxt').textContent = gs.tourOnly ? '' : s + '/' + gs.total;
-    $('gsDots').innerHTML = gs.tourOnly ? '' : Array.from({ length: gs.total }, (_, i) => '<i class="' + (i < s ? 'on' : '') + '"></i>').join('');
+    const sd = s > 3 ? s - 1 : s; /* ເລກຂັ້ນທີ່ສະແດງ (ບໍ່ນັບຂັ້ນທີ 3 ທີ່ຖືກເອົາອອກ) */
+    $('gsStepTxt').textContent = gs.tourOnly ? '' : sd + '/' + gs.total;
+    $('gsDots').innerHTML = gs.tourOnly ? '' : Array.from({ length: gs.total }, (_, i) => '<i class="' + (i < sd ? 'on' : '') + '"></i>').join('');
     const body = $('gsBody'), foot = $('gsFoot');
     const nextBtn = '<button type="button" class="gs-btn primary" onclick="gsGo(1)">ຕໍ່ໄປ</button>';
     const backBtn = '<button type="button" class="gs-btn" onclick="gsGo(-1)">ກັບຄືນ</button>';
@@ -33791,14 +33795,14 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
     } else if (s === 2) {
       $('gsIcon').className = 'fa-solid fa-palette';
       $('gsTitle').textContent = 'ເລືອກ Theme';
-      $('gsSub').textContent = 'ໃຊ້ Theme Beerlao Premium PNG ເປັນ Theme ຫຼັກ (Theme ອື່ນປິດການໃຊ້ງານ)';
+      $('gsSub').textContent = 'ໃຊ້ Theme Beerlao Premium PNG ເປັນ Theme ຫຼັກ';
       const t = gsCurStyle();
       body.innerHTML = '<div class="gs-opts">'
-        + '<button type="button" class="gs-opt" aria-pressed="false" disabled aria-disabled="true" title="ປິດການໃຊ້ງານ"><b>Beerlao Premium</b><small>ສີທອງ · ຂຽວ · ຄຣີມ ແລະ ໄອຄອນ Beerlao</small>' + miniStyle('premium') + '</button>'
         + '<button type="button" class="gs-opt" aria-pressed="' + (t === 'png') + '" onclick="gsPickStyle(\'png\')"><b>Beerlao Premium PNG</b><small>ສີ Premium ເດີມ · ໄອຄອນເປັນຊຸດຮູບ PNG</small>' + miniStyle('png') + '</button>'
-        + '<button type="button" class="gs-opt" aria-pressed="false" disabled aria-disabled="true" title="ປິດການໃຊ້ງານ"><b>ເກົ່າ</b><small>ກະເບື້ອງສີ ແລະ ແຖບລຸ່ມແບບເດີມ</small>' + miniStyle('classic') + '</button>'
         + '</div>';
-      foot.innerHTML = backBtn + nextBtn;
+      foot.innerHTML = gs.total === 2
+        ? backBtn + '<button type="button" class="gs-btn primary" onclick="gsFinish(false)">ສຳເລັດ</button>'
+        : backBtn + nextBtn;
     } else if (s === 3) {
       $('gsIcon').className = 'fa-solid fa-star';
       $('gsTitle').textContent = 'ເລືອກເມນູທີ່ມັກ';
