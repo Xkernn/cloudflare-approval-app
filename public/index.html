@@ -16,7 +16,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
   <script src="/premium-icons.js?v=5"></script>
   <title>Cooler Tracking System LBC</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0A7890">
+  <meta name="theme-color" content="#0B6B3A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -34,13 +34,18 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
 
   <style>
     :root {
-      --ink: #0A1F2B;
-      --ink-soft: #12303F;
-      --primary: #0A7890;
-      --primary-hover: #065F73;
-      --primary-soft: #E3F3F5;
-      --amber: #A8630A;
-      --amber-soft: #FBF0DE;
+      /* Beerlao Premium palette (design system v2) */
+      --ink: #063D24;
+      --ink-soft: #0B5233;
+      --primary: #0B6B3A;
+      --primary-hover: #085530;
+      --primary-soft: #E6F2E8;
+      --accent: #FFC300;
+      --accent-soft: #FFF3C4;
+      --surface: #FFFFFF;
+      --soft: #E6F2E8;
+      --amber: #9A6B00;
+      --amber-soft: #FFF3C4;
       --success: #15803d;
       --success-soft: #E4F5EA;
       --danger: #C0311A;
@@ -49,13 +54,15 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       --info-soft: #E5EEFE;
       --purple: #7C3AED;
       --purple-soft: #F1E9FE;
-      --bg-body: #EFF5F6;
-      --sidebar-bg: #0A1F2B;
-      --card-bg: #ffffff;
-      --text-main: #0E2530;
-      --text-muted: #4F6B75;
-      --border-color: #D9E6E8;
+      --bg-body: #FFF8E6;
+      --sidebar-bg: #0B6B3A;
+      --card-bg: #FFFFFF;
+      --text-main: #10301F;
+      --text-muted: #5A6A55;
+      --border-color: #EADFB4;
       --sidebar-width: 264px;
+      --radius-card: 18px;
+      --shadow-card: 0 6px 20px -8px rgba(11, 107, 58, 0.18);
       --font-ui: 'Noto Sans', 'Noto Sans Thai', 'Noto Sans Lao', sans-serif;
       --font-mono: 'JetBrains Mono', 'Noto Sans Thai', monospace;
     }
@@ -99,7 +106,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       flex: 1 1 46%;
       position: relative;
       background:
-        radial-gradient(circle at 18% 20%, rgba(12, 140, 166, 0.55), transparent 42%),
+        radial-gradient(circle at 18% 20%, rgba(11, 107, 58, 0.55), transparent 42%),
         radial-gradient(circle at 82% 78%, rgba(196, 120, 15, 0.25), transparent 45%),
         linear-gradient(165deg, #0A1F2B 0%, #0F3140 65%, #0C4152 100%);
       color: #EAF4F6;
@@ -453,7 +460,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       #ncPanelConfirm .nc-cam-btn {
         order: -1; flex: 1 1 100%; justify-content: center; gap: 10px;
         min-height: 60px; font-size: 18px; font-weight: 700; border-radius: 14px; border: none;
-        background: var(--primary); color: #fff; box-shadow: 0 8px 18px -10px rgba(12,140,166,.7);
+        background: var(--primary); color: #fff; box-shadow: 0 8px 18px -10px rgba(11, 107, 58,.7);
       }
       #ncPanelConfirm .nc-cam-btn i { font-size: 24px; margin-right: 0; }
       #ncPanelConfirm .nc-cam-btn:active { transform: scale(.98); background: var(--primary-hover); }
@@ -481,8 +488,8 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       animation: loanCheckPop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
     @keyframes loanDotPulse {
-      0%, 100% { box-shadow: 0 0 0 5px var(--primary-soft), 0 4px 10px rgba(12, 140, 166, 0.28); }
-      50% { box-shadow: 0 0 0 8px rgba(12, 140, 166, 0.12), 0 4px 14px rgba(12, 140, 166, 0.35); }
+      0%, 100% { box-shadow: 0 0 0 5px var(--primary-soft), 0 4px 10px rgba(11, 107, 58, 0.28); }
+      50% { box-shadow: 0 0 0 8px rgba(11, 107, 58, 0.12), 0 4px 14px rgba(11, 107, 58, 0.35); }
     }
     @keyframes loanCheckPop { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
     .loan-step-label { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.3; font-weight: 600; transition: color 0.25s ease, transform 0.25s ease; }
@@ -498,7 +505,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     @keyframes loanStepIn { from { opacity: 0; transform: translateX(14px) scale(0.99); } to { opacity: 1; transform: translateX(0) scale(1); } }
     .loan-nav-btns { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 20px; }
     .loan-nav-btns .btn-add, .loan-nav-btns .btn-submit { margin-left: auto; transition: all 0.2s ease; }
-    .loan-nav-btns .btn-add:hover, .loan-nav-btns .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(12, 140, 166, 0.28); }
+    .loan-nav-btns .btn-add:hover, .loan-nav-btns .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(11, 107, 58, 0.28); }
     .loan-nav-btns .btn-add:active, .loan-nav-btns .btn-submit:active { transform: translateY(0); box-shadow: none; }
     .btn-back {
       background: #fff; color: var(--text-main); padding: 10px 18px; border-radius: 9px; border: 1px solid var(--border-color);
@@ -587,7 +594,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       transition: background 0.15s, transform 0.12s ease-out, box-shadow 0.15s;
     }
     .confirm-btn:active { transform: scale(0.97); }
-    .confirm-btn:focus-visible { outline: 3px solid rgba(12, 140, 166, 0.35); outline-offset: 2px; }
+    .confirm-btn:focus-visible { outline: 3px solid rgba(11, 107, 58, 0.35); outline-offset: 2px; }
     .confirm-btn.cancel { background: #E8EFF1; color: #3F5761; }
     .confirm-btn.ok { background: var(--primary); color: #fff; }
     .confirm-box.danger .confirm-btn.ok { background: var(--danger); }
@@ -612,7 +619,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       border: 1.5px solid var(--border-color, #D5E2E6); font-size: 15px; font-family: inherit;
       box-sizing: border-box; outline: none;
     }
-    .prompt-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(12, 140, 166, 0.18); }
+    .prompt-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(11, 107, 58, 0.18); }
 
 
     /* ============================================================
@@ -651,7 +658,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       overflow: hidden; margin: 16px 0 10px;
     }
     .import-progress-fill {
-      height: 100%; border-radius: 999px; background: var(--primary, #0A7890);
+      height: 100%; border-radius: 999px; background: var(--primary, #0B6B3A);
       width: 0%; transition: width 0.2s ease-out;
     }
     .import-progress-text {
@@ -666,10 +673,10 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     /* ===== ໜ້າ ຕັ້ງຄ່າ: card ຫົວຂໍ້ → ກົດເຂົ້າໄປເຫັນລາຍລະອຽດ ===== */
     .pf-hub { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
     .pf-tile { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; cursor: pointer; font-family: inherit; color: var(--text-main); transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
-    .pf-tile:hover { border-color: var(--primary); box-shadow: 0 6px 18px rgba(10,120,144,.12); transform: translateY(-1px); }
+    .pf-tile:hover { border-color: var(--primary); box-shadow: 0 6px 18px rgba(11, 107, 58,.12); transform: translateY(-1px); }
     .pf-tile:active { transform: scale(.985); }
     .pf-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-    .pf-ico { flex: 0 0 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(10,120,144,.10); color: var(--primary); font-size: 19px; }
+    .pf-ico { flex: 0 0 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(11, 107, 58,.10); color: var(--primary); font-size: 19px; }
     .pf-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
     .pf-txt b { font-size: 15px; font-weight: 700; }
     .pf-txt small { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -726,7 +733,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .at-btn.hidden { display: none !important; }
     .at-btn-ghost { background: #fff; color: var(--text-main); border-color: var(--border-color); }
     .at-btn-ghost:hover { border-color: var(--primary); color: var(--primary); background: #FAFDFD; }
-    .at-btn-primary { background: var(--primary); color: #fff; box-shadow: 0 1px 3px rgba(12,140,166,0.35); }
+    .at-btn-primary { background: var(--primary); color: #fff; box-shadow: 0 1px 3px rgba(11, 107, 58,0.35); }
 
     /* ເລືອກຫຼາຍລາຍການເພື່ອຢືນຢັນ (ປະຫວັດການຈັດສົ່ງ - Admin) */
     .dh-bulkbar { display: none; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: #F6FAFB; }
@@ -797,7 +804,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     /* ຫົວ card ຖ້ຽວລົດ: ຊື່ແຂວງປາຍທາງເດັ່ນ (chip ໃຫຍ່) + ເລກຖ້ຽວ/ທະບຽນລົດ ເປັນແຖວຮອງ */
     .trip-title-wrap { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
     .trip-prov-row { display: flex; flex-wrap: wrap; gap: 6px; }
-    .trip-prov-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 16px; font-weight: 800; line-height: 1.3; box-shadow: 0 2px 6px rgba(12,140,166,.28); }
+    .trip-prov-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 999px; background: var(--primary); color: #fff; font-size: 16px; font-weight: 800; line-height: 1.3; box-shadow: 0 2px 6px rgba(11, 107, 58,.28); }
     .trip-prov-chip i { font-size: 13px; opacity: .9; }
     .trip-wh-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: var(--primary-soft, #E0F2F6); color: var(--primary); border: 1px solid var(--primary); font-size: 13px; font-weight: 700; line-height: 1.3; }
     .trip-wh-chip i { font-size: 11px; opacity: .85; }
@@ -920,7 +927,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       .mobile-tab-indicator {
         position: absolute; left: 0; top: calc(var(--lift) * -1 - 4px); width: var(--ind); height: var(--ind);
         border-radius: 50%; box-sizing: border-box; pointer-events: none; z-index: 0;
-        background: linear-gradient(135deg, #22D3BF, #0A7890);
+        background: linear-gradient(135deg, #22D3BF, #0B6B3A);
         border: 5px solid var(--ink);
         box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
         transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
@@ -988,8 +995,8 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       .mm-head {
         position: relative; flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; min-height: 56px;
         padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 16px;
-        background: linear-gradient(135deg, #0A7890 0%, #22B8A5 100%);
-        border-radius: 0 0 30px 30px; box-shadow: 0 10px 24px -14px rgba(12, 140, 166, 0.7);
+        background: linear-gradient(135deg, #0B6B3A 0%, #22B8A5 100%);
+        border-radius: 0 0 30px 30px; box-shadow: 0 10px 24px -14px rgba(11, 107, 58, 0.7);
       }
       .mm-head h2 {
         position: absolute; left: 0; right: 0; bottom: 18px; margin: 0; text-align: center;
@@ -1047,7 +1054,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       .mm-t-green  { --tbg: linear-gradient(145deg, #E0F7E2, #BEEBC4); --tfg: #2E9E48; }
       .mm-t-amber  { --tbg: linear-gradient(145deg, #FFF3CF, #FFE190); --tfg: #C48A06; }
       .mm-t-pink   { --tbg: linear-gradient(145deg, #FFE3E9, #FFC6D2); --tfg: #D6455F; }
-      .mm-t-sky    { --tbg: linear-gradient(145deg, #DAF4FC, #B3E7F6); --tfg: #0A7890; }
+      .mm-t-sky    { --tbg: linear-gradient(145deg, #DAF4FC, #B3E7F6); --tfg: #0B6B3A; }
       .mm-t-red    { --tbg: linear-gradient(145deg, #FFE4DF, #FFC7BE); --tfg: #D9483B; }
       .mm-t-slate  { --tbg: linear-gradient(145deg, #E6ECEF, #CDD8DE); --tfg: #44606E; }
 
@@ -1084,7 +1091,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       .notif-fab {
         display: flex; align-items: center; justify-content: center;
         position: fixed; left: 0; top: 0; width: 52px; height: 52px; border-radius: 50%;
-        border: none; background: var(--primary, #0A7890); color: #fff; font-size: 20px;
+        border: none; background: var(--primary, #0B6B3A); color: #fff; font-size: 20px;
         box-shadow: 0 6px 18px rgba(6, 20, 27, 0.35); z-index: 225; cursor: grab;
         touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
         transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, left 0.32s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1098,7 +1105,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       .notif-fab:has(.menu-badge:not(.hidden)) > i { animation-duration: 2.6s; animation-delay: .4s; }
       .notif-fab::before {
         content: ''; position: absolute; inset: 0; border-radius: 50%; z-index: -1; pointer-events: none;
-        border: 2px solid var(--primary, #0A7890); opacity: 0; transform: scale(1);
+        border: 2px solid var(--primary, #0B6B3A); opacity: 0; transform: scale(1);
       }
       .notif-fab:has(.menu-badge:not(.hidden))::before { animation: notifRipple 2.6s ease-out .4s infinite; }
       .notif-fab:has(.menu-badge:not(.hidden)) .menu-badge { animation: notifBadgePop 2.6s ease-in-out .4s infinite; }
@@ -1163,7 +1170,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .myloc-dot { width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(37,99,235,.3), 0 2px 6px rgba(0,0,0,.4); }
     .mp-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
     .mp-tab { border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
-    .mp-tab.active { background: #0A7890; border-color: #0A7890; color: #fff; }
+    .mp-tab.active { background: #0B6B3A; border-color: #0B6B3A; color: #fff; }
     .mp-slide { display: none; }
     .mp-slide.active { display: block; }
     .pulse-marker-ring-urgent { animation: pulseMarkerRingUrgent 1s ease-out infinite !important; }
@@ -1414,7 +1421,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     #ncHub .loan-type-card-sub:empty, #spHub .loan-type-card-sub:empty { display: none; }
     #ncHub [id^="ncHubCount"], #spHub [id^="spHubCount"] { color: var(--primary); font-weight: 700; margin-top: 10px; }
     @media (hover: hover) {
-      #ncHub .loan-type-card:hover, #spHub .loan-type-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 14px 28px -16px rgba(12,140,166,.45); }
+      #ncHub .loan-type-card:hover, #spHub .loan-type-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 14px 28px -16px rgba(11, 107, 58,.45); }
       #ncHub .loan-type-card:hover::after, #spHub .loan-type-card:hover::after { transform: translateX(4px); color: var(--primary); }
       #ncHub .loan-type-card:hover .loan-type-card-title i, #spHub .loan-type-card:hover .loan-type-card-title i { background: var(--primary); color: #fff; transform: scale(1.08) rotate(-4deg); }
     }
@@ -1435,7 +1442,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     @media (hover: hover) { .pb-kpi:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -16px rgba(10,31,43,.35); } }
     .pb-pill { transition: background .2s, color .2s, border-color .2s, transform .12s var(--ease-out), box-shadow .2s; }
     .pb-pill:hover { border-color: var(--primary); } .pb-pill:active { transform: scale(.96); }
-    .pb-pill.active { box-shadow: 0 6px 14px -6px rgba(12,140,166,.6); }
+    .pb-pill.active { box-shadow: 0 6px 14px -6px rgba(11, 107, 58,.6); }
 
     /* ງົບ: ແຂວງ = accordion card, ແຖວ Brand/Type = ແຖວກະທັດຮັດ + bar ທີ່ຂະຫຍາຍອອກ */
     .pb-list { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
@@ -1510,14 +1517,14 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     #loanMenuPage .loan-type-card.disabled { opacity: .55; filter: grayscale(.4); }
     #loanMenuPage .loan-type-card.disabled .loan-type-card-title i { background: #F1F3F4; color: #8FA6AB; }
     @media (hover: hover) {
-      #loanMenuPage .loan-type-card:not(.disabled):hover, #view-delivery-hub .loan-type-card:hover , #view-history-hub .loan-type-card:hover , #view-new-cooler-hub .loan-type-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 14px 28px -16px rgba(12,140,166,.45); }
+      #loanMenuPage .loan-type-card:not(.disabled):hover, #view-delivery-hub .loan-type-card:hover , #view-history-hub .loan-type-card:hover , #view-new-cooler-hub .loan-type-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 14px 28px -16px rgba(11, 107, 58,.45); }
       #loanMenuPage .loan-type-card:not(.disabled):hover::after, #view-delivery-hub .loan-type-card:hover::after , #view-history-hub .loan-type-card:hover::after , #view-new-cooler-hub .loan-type-card:hover::after { transform: translateX(4px); color: var(--primary); }
       #loanMenuPage .loan-type-card:not(.disabled):hover .loan-type-card-title i, #view-delivery-hub .loan-type-card:hover .loan-type-card-title i , #view-history-hub .loan-type-card:hover .loan-type-card-title i , #view-new-cooler-hub .loan-type-card:hover .loan-type-card-title i { background: var(--primary); color: #fff; transform: scale(1.08) rotate(-4deg); }
     }
 
     /* Stepper: ກະທັດຮັດ ແລະ ບໍ່ກະພິບຕະຫຼອດ */
     #view-loan-contract .loan-stepper, #view-delivery-confirm .loan-stepper { padding: 4px 4px 0; margin-bottom: 24px; }
-    #view-loan-contract .loan-step.active .loan-step-dot, #view-delivery-confirm .loan-step.active .loan-step-dot { animation: none; box-shadow: 0 0 0 5px var(--primary-soft), 0 6px 14px -6px rgba(12,140,166,.6); }
+    #view-loan-contract .loan-step.active .loan-step-dot, #view-delivery-confirm .loan-step.active .loan-step-dot { animation: none; box-shadow: 0 0 0 5px var(--primary-soft), 0 6px 14px -6px rgba(11, 107, 58,.6); }
     #view-loan-contract .loan-step-line, #view-delivery-confirm .loan-step-line { height: 3px; }
 
     /* ຟອມ */
@@ -1533,7 +1540,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     #cancelNewPanel label:has(> input[type="checkbox"]), #cancelNewPanel label:has(> input[type="radio"]),
     #loanNewPanel label:has(> input[type="radio"]) { transition: background .2s, border-color .2s, box-shadow .2s, transform .12s var(--ease-out); border-radius: 12px !important; }
     #cancelNewPanel label:has(> input[type="checkbox"]:checked), #cancelNewPanel label:has(> input[type="radio"]:checked),
-    #loanNewPanel label:has(> input[type="radio"]:checked) { background: var(--primary-soft); border-color: var(--primary) !important; box-shadow: 0 6px 14px -10px rgba(12,140,166,.7); }
+    #loanNewPanel label:has(> input[type="radio"]:checked) { background: var(--primary-soft); border-color: var(--primary) !important; box-shadow: 0 6px 14px -10px rgba(11, 107, 58,.7); }
     #cancelNewPanel label:has(> input:active), #loanNewPanel label:has(> input[type="radio"]:active) { transform: scale(.985); }
     #cancelNewPanel input[type="checkbox"], #loanNewPanel input[type="radio"] { accent-color: var(--primary); width: 17px; height: 17px; }
 
@@ -1578,7 +1585,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .pb-chip { flex: 0 0 auto; border: 1px solid var(--border-color); background: #fff; color: var(--text-main); font-family: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .2s, color .2s, border-color .2s, box-shadow .2s, transform .12s var(--ease-out); }
     .pb-chip:hover { border-color: var(--primary); }
     .pb-chip:active { transform: scale(.95); }
-    .pb-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 6px 14px -6px rgba(12,140,166,.65); }
+    .pb-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 6px 14px -6px rgba(11, 107, 58,.65); }
 
     /* ພາບລວມຕາມພາກ */
     .pb-regions { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -1755,7 +1762,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     /* active = ວົງກົມ gradient ດຽວກັບ indicator ຂອງແຖບລຸ່ມ (ມີວົງຂອບ ink + glow) */
     .menu-item.active { background: rgba(111, 227, 214, 0.08); color: #6FE3D6; border: none; }
     .menu-item.active i {
-      background: linear-gradient(135deg, #22D3BF, #0A7890); color: #fff;
+      background: linear-gradient(135deg, #22D3BF, #0B6B3A); color: #fff;
       box-shadow: 0 0 0 3px var(--ink), 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: scale(1);
     }
@@ -1945,10 +1952,10 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     :root {
       --ctl-h: 38px;
       --ctl-r: 11px;
-      --ctl-bg: #F4F9FA;
-      --ctl-bd: #D5E3E6;
+      --ctl-bg: #F4F9F5;
+      --ctl-bd: #D3E3D7;
       --ctl-bd-hover: #B3CACE;
-      --ctl-ring: 0 0 0 3px rgba(12, 140, 166, 0.16);
+      --ctl-ring: 0 0 0 3px rgba(11, 107, 58, 0.16);
       --ctl-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%234F6B75' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     }
 
@@ -2033,7 +2040,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .tb-pill { color: var(--text-muted); }
     .tb-pill.on, .pb-pill.active, .pb-chip.on {
       background: var(--primary); border-color: var(--primary); color: #fff;
-      box-shadow: 0 6px 14px -6px rgba(12, 140, 166, 0.65);
+      box-shadow: 0 6px 14px -6px rgba(11, 107, 58, 0.65);
     }
     .tb-pill.on:hover, .pb-pill.active:hover, .pb-chip.on:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #fff; }
     .pb-chip span { opacity: .7; }
@@ -2045,7 +2052,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .loan-chip:hover { border-color: var(--primary); color: var(--primary-hover); background: #F4FBFC; }
     .loan-chip.active, .loan-chip.active:hover {
       background: var(--primary); border-color: var(--primary); color: #fff;
-      box-shadow: 0 6px 14px -6px rgba(12, 140, 166, 0.65);
+      box-shadow: 0 6px 14px -6px rgba(11, 107, 58, 0.65);
     }
 
     /* ---- Segmented control (Brand / Type toggle) ---- */
@@ -2089,7 +2096,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       padding: 22px 24px; border-radius: 18px; margin-bottom: 14px; color: #EAF4F6;
       background:
         radial-gradient(circle at 12% 0%, rgba(111, 227, 214, 0.28), transparent 46%),
-        radial-gradient(circle at 96% 100%, rgba(12, 140, 166, 0.55), transparent 50%),
+        radial-gradient(circle at 96% 100%, rgba(11, 107, 58, 0.55), transparent 50%),
         linear-gradient(150deg, #0A1F2B 0%, #0F3140 62%, #0C4152 100%);
       box-shadow: 0 14px 30px -18px rgba(6, 20, 27, 0.6);
     }
@@ -2105,7 +2112,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .nf-btn:active { transform: scale(.97); }
     .nf-btn[disabled] { opacity: .4; cursor: not-allowed; }
     .nf-btn-light { background: #fff; color: var(--ink); }
-    .nf-btn-light:hover:not([disabled]) { background: #E3F3F5; }
+    .nf-btn-light:hover:not([disabled]) { background: #E6F2E8; }
     .nf-btn-ghost { background: rgba(255,255,255,.08); color: #D5E8EB; border-color: rgba(255,255,255,.2); }
     .nf-btn-ghost:hover:not([disabled]) { background: rgba(245, 80, 58, .22); border-color: rgba(245, 80, 58, .55); color: #fff; }
     .nf-btn:focus-visible { outline: 2px solid #6FE3D6; outline-offset: 2px; }
@@ -2157,7 +2164,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .nf-more { font-size: 12px; font-weight: 600; color: var(--text-muted); }
 
     .nf-empty { text-align: center; padding: 56px 20px; background: #fff; border: 1px dashed var(--border-color); border-radius: 18px; }
-    .nf-empty-ico { width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 10px rgba(12, 140, 166, .07); }
+    .nf-empty-ico { width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 10px rgba(11, 107, 58, .07); }
     .nf-empty b { display: block; font-size: 16px; color: var(--text-main); }
     .nf-empty span { display: block; margin-top: 6px; font-size: 13px; color: var(--text-muted); }
     .nf-skel { height: 84px; border-radius: 16px; background: linear-gradient(90deg,#E6EEF0,#F3F8F8,#E6EEF0); background-size: 200% 100%; animation: tbsk 1.2s linear infinite; }
@@ -2189,7 +2196,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       padding: 18px 22px; margin-bottom: 18px; border-radius: 18px; color: #EAF4F6;
       background:
         radial-gradient(circle at 12% 0%, rgba(111, 227, 214, 0.26), transparent 46%),
-        radial-gradient(circle at 96% 100%, rgba(12, 140, 166, 0.55), transparent 50%),
+        radial-gradient(circle at 96% 100%, rgba(11, 107, 58, 0.55), transparent 50%),
         linear-gradient(150deg, #0A1F2B 0%, #0F3140 62%, #0C4152 100%);
       box-shadow: 0 14px 30px -18px rgba(6, 20, 27, 0.6);
     }
@@ -2244,7 +2251,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .pb-img img { width:100%; height:100%; object-fit:contain; background:#f8fafc; }
     .pb-body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
     .pb-title { font-size:16px; font-weight:700; color:#0f172a; line-height:1.3; }
-    .pb-cat { font-size:12px; font-weight:600; color:#0A7890; background:#e6f6f9; padding:2px 10px; border-radius:999px; align-self:flex-start; }
+    .pb-cat { font-size:12px; font-weight:600; color:#0B6B3A; background:#e6f6f9; padding:2px 10px; border-radius:999px; align-self:flex-start; }
     .pb-specs { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:13px; }
     .pb-specs div { background:#f8fafc; border-radius:10px; padding:6px 10px; }
     .pb-specs span { display:block; font-size:11px; color:#64748b; }
@@ -2389,7 +2396,7 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
       display: block; position: absolute; left: 0; top: calc(var(--lift) * -1 - 4px);
       width: var(--ind); height: var(--ind); border-radius: 50%; box-sizing: border-box;
       pointer-events: none; z-index: 0;
-      background: linear-gradient(135deg, #22D3BF, #0A7890); border: 5px solid var(--bg-body);
+      background: linear-gradient(135deg, #22D3BF, #0B6B3A); border: 5px solid var(--bg-body);
       box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
       transition: transform .55s cubic-bezier(0.22, 1, 0.36, 1), opacity .2s ease;
@@ -2501,7 +2508,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .mm-theme-seg button b { font-size: 15px; font-weight: 700; }
     .mm-theme-seg button small { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
     .mm-theme-seg button:hover { border-color: var(--primary); }
-    .mm-theme-seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(12,140,166,.16); }
+    .mm-theme-seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(11, 107, 58,.16); }
     .mm-theme-seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     .mm-theme-seg button:disabled, .gs-opt:disabled { background: #EEEEEE !important; border-color: #D6D6D6 !important; box-shadow: none !important; color: #9A9A9A !important; cursor: not-allowed !important; filter: grayscale(1); opacity: .6; pointer-events: none; }
     .mm-theme-seg button:disabled small, .gs-opt:disabled small, .mm-theme-seg button:disabled b, .gs-opt:disabled b { color: #9A9A9A !important; }
@@ -2584,18 +2591,21 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html:not([data-mm-style="classic"]) .mm-ic > .ic { width: 24px; height: 24px; }
     }
   
-    /* ===== Theme: Beerlao Premium (gold #F5C21B / green #087A45 / cream #FFF8DF) - uses the clean layout with a new palette ===== */
+    /* ===== Theme: Beerlao Premium (gold #FFC300 / green #0B6B3A / cream #FFF8DF) - uses the clean layout with a new palette ===== */
     html[data-mm-style="premium"] {
-      --primary: #087A45; --primary-hover: #065F37; --primary-soft: #E8F5EC;
-      --amber: #9A6B00; --amber-soft: #FFF4CC;
-      --ink: #063D24; --ink-soft: #0B5233; --sidebar-bg: #063D24;
-      --bg-body: #FBF7E6; --border-color: #EADFB4; --text-main: #10301F; --text-muted: #5A6A55;
+      --primary: #0B6B3A; --primary-hover: #085530; --primary-soft: #E6F2E8;
+      --accent: #FFC300; --accent-soft: #FFF3C4; --surface: #FFFFFF; --soft: #E6F2E8;
+      --amber: #9A6B00; --amber-soft: #FFF3C4;
+      --ink: #063D24; --ink-soft: #0B5233; --sidebar-bg: #0B6B3A;
+      --bg-body: #FFF8E6; --border-color: #EADFB4; --text-main: #10301F; --text-muted: #5A6A55;
+      --ctl-bg: #F4F9F5; --ctl-bd: #D3E3D7; --ctl-bd-hover: #B2CDB8; --ctl-ring: 0 0 0 3px rgba(11, 107, 58, 0.16);
     }
-    html[data-mm-style="premium"] .mobile-tab-indicator { background: #F5C21B; }
+    html[data-mm-style="premium"] .data-card, html[data-mm-style="premium"] .card { border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+    html[data-mm-style="premium"] .mobile-tab-indicator { background: #FFC300; }
     html[data-mm-style="premium"] .mobile-tab-icon { color: #A9C9B3; }
     html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon,
-    html[data-mm-style="premium"] .mobile-tab.active:active .mobile-tab-icon { color: #F5C21B; }
-    html[data-mm-style="premium"] .mm-theme-seg button[aria-pressed="true"] { border-color: #F5C21B; background: #FFF8DF; box-shadow: 0 0 0 3px rgba(245,194,27,.3); }
+    html[data-mm-style="premium"] .mobile-tab.active:active .mobile-tab-icon { color: #FFC300; }
+    html[data-mm-style="premium"] .mm-theme-seg button[aria-pressed="true"] { border-color: #FFC300; background: #FFF8DF; box-shadow: 0 0 0 3px rgba(255, 195, 0,.3); }
   
     /* Premium icon pack: tiles for menu/tab, emoji -> SVG (inline FA masks are injected by premium-icons.js) */
     .ic-pr { display: none; width: 100%; height: 100%; max-width: 100%; stroke: none; }
@@ -2607,7 +2617,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .pr-emo { width: 1.15em; height: 1.15em; vertical-align: -.2em; }
     /* ===== ເຄື່ອງໝາຍ "ປິ້ນເອກະສານອອກແລ້ວ" ໃນແຖບເອກະສານທີ່ເຊັນຄົບ ===== */
     .badge-printed { background: #E3F6EA; color: #0B6B3A; border: 1px solid #9AD9B4; }
-    .badge-unprinted { background: #FFF4D6; color: #8A5A00; border: 1px solid #F5C21B; }
+    .badge-unprinted { background: #FFF4D6; color: #8A5A00; border: 1px solid #FFC300; }
     .badge-printed i, .badge-unprinted i { margin-right: 3px; font-size: .9em; }
     .loan-doc-card.is-printed { box-shadow: inset 5px 0 0 #12915d; }
     .loan-doc-card.not-printed { box-shadow: inset 5px 0 0 #F5A800; }
@@ -2618,8 +2628,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .print-tabs button.on b { background: rgba(255,255,255,.25); }
     .btn-act.btn-print { background: #E3F6EA; color: #0B6B3A; }
     .btn-act.btn-unprint { background: #F1F5F6; color: #4B6469; }
-    html[data-mm-style="premium"] .print-tabs button.on { background: #075B35; border-color: #F5C21B; color: #FFD84A; }
-    html[data-mm-style="premium"] .print-tabs button.on b { background: rgba(245,194,27,.25); }
+    html[data-mm-style="premium"] .print-tabs button.on { background: #075B35; border-color: #FFC300; color: #FFD84A; }
+    html[data-mm-style="premium"] .print-tabs button.on b { background: rgba(255, 195, 0,.25); }
     html[data-mm-style="premium"] .badge-printed { background: #075B35; color: #FFD84A; border-color: #075B35; }
     /* Custom SVG pack: icons are full-colour (green outline), so use a cream floating tab bar + crisp <img> sizing */
     html[data-mm-style="premium"] img.ic-pr { object-fit: contain; pointer-events: none; -webkit-user-drag: none; user-select: none; }
@@ -2631,7 +2641,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .tb-chip-id > img.ic-pr { display: inline-block; width: 20px; height: 20px; margin: -3px 6px -3px -3px; vertical-align: middle; }
     html[data-mm-style="premium"] .tb-chip-id > img.ic-pr ~ i { display: none; }
     @media (max-width: 992px) {
-      html[data-mm-style="premium"] .mobile-tabbar { background: rgba(255,251,234,.97); border: 1.5px solid #F5C21B; box-shadow: 0 14px 30px -10px rgba(7,91,53,.35), 0 4px 10px rgba(7,91,53,.12); }
+      html[data-mm-style="premium"] .mobile-tabbar { background: rgba(255,251,234,.97); border: 1.5px solid #FFC300; box-shadow: 0 14px 30px -10px rgba(7,91,53,.35), 0 4px 10px rgba(7,91,53,.12); }
       html[data-mm-style="premium"] .mobile-tab { color: #5A6A55; }
       html[data-mm-style="premium"] .mobile-tab.active { color: #075B35; }
       html[data-mm-style="premium"] .mobile-tab-label { color: #5A6A55; }
@@ -2639,46 +2649,46 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
 
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
-    html[data-mm-style="premium"] { --pr-green:#087A45; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#F5C21B; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
-    html[data-mm-style="premium"] body { background-color: #FBF7E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
-    html[data-mm-style="premium"] .mm-page { background-color: #FBF7E6; background-image: var(--pr-pattern); background-size: 96px 96px; }
+    html[data-mm-style="premium"] { --pr-green:#0B6B3A; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#FFC300; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
+    html[data-mm-style="premium"] body { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
+    html[data-mm-style="premium"] .mm-page { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; }
     html[data-mm-style="premium"] .content-card { border-color: #EADFB4; box-shadow: 0 6px 18px -12px rgba(7,91,53,.28); }
     /* hero page header */
     html[data-mm-style="premium"] .page-header {
       color: #F2FBEF;
       background:
-        radial-gradient(circle at 12% 0%, rgba(245,194,27,.32), transparent 46%),
+        radial-gradient(circle at 12% 0%, rgba(255, 195, 0,.32), transparent 46%),
         radial-gradient(circle at 96% 100%, rgba(13,153,88,.60), transparent 52%),
-        linear-gradient(150deg, #063D24 0%, #075B35 58%, #087A45 100%);
-      box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); border: 1px solid rgba(245,194,27,.28);
+        linear-gradient(150deg, #063D24 0%, #075B35 58%, #0B6B3A 100%);
+      box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); border: 1px solid rgba(255, 195, 0,.28);
     }
-    html[data-mm-style="premium"] .page-header::before { color: var(--pr-gold-lt); background: rgba(245,194,27,.14); border: 1px solid rgba(245,194,27,.45); }
+    html[data-mm-style="premium"] .page-header::before { color: var(--pr-gold-lt); background: rgba(255, 195, 0,.14); border: 1px solid rgba(255, 195, 0,.45); }
     html[data-mm-style="premium"] .page-header p { color: #CFE6D4; }
-    html[data-mm-style="premium"] .page-header .btn-add { background: var(--pr-gold); color: #063D24; box-shadow: 0 6px 14px -8px rgba(245,194,27,.8); }
+    html[data-mm-style="premium"] .page-header .btn-add { background: var(--pr-gold); color: #063D24; box-shadow: 0 6px 14px -8px rgba(255, 195, 0,.8); }
     html[data-mm-style="premium"] .page-header .btn-add:hover { background: var(--pr-gold-lt); }
     html[data-mm-style="premium"] .page-header .btn-add:focus-visible { outline-color: var(--pr-gold-lt); }
     /* sidebar / slide-out menu */
-    html[data-mm-style="premium"] .sidebar::before { background: linear-gradient(170deg, #075B35 0%, #063D24 100%); border: 1px solid rgba(245,194,27,.28); box-shadow: 0 14px 30px -10px rgba(6,61,36,.6), 0 4px 10px rgba(6,61,36,.2); }
-    html[data-mm-style="premium"] .sidebar-brand { border-bottom-color: rgba(245,194,27,.2); }
+    html[data-mm-style="premium"] .sidebar::before { background: linear-gradient(170deg, #075B35 0%, #063D24 100%); border: 1px solid rgba(255, 195, 0,.28); box-shadow: 0 14px 30px -10px rgba(6,61,36,.6), 0 4px 10px rgba(6,61,36,.2); }
+    html[data-mm-style="premium"] .sidebar-brand { border-bottom-color: rgba(255, 195, 0,.2); }
     html[data-mm-style="premium"] .sidebar-brand-title { color: var(--pr-cream); }
     html[data-mm-style="premium"] .sidebar-brand-sub { color: #A9C9B3; }
     html[data-mm-style="premium"] .menu-item { color: #CFE6D4; }
     html[data-mm-style="premium"] .menu-item i { background: var(--pr-cream); }
-    html[data-mm-style="premium"] .menu-item:hover { background: rgba(245,194,27,.09); color: #fff; }
+    html[data-mm-style="premium"] .menu-item:hover { background: rgba(255, 195, 0,.09); color: #fff; }
     html[data-mm-style="premium"] .menu-item:hover i { background: #fff; }
-    html[data-mm-style="premium"] .menu-item.active { background: rgba(245,194,27,.14); color: var(--pr-gold-lt); }
-    html[data-mm-style="premium"] .menu-item.active i { background: linear-gradient(135deg, var(--pr-gold-lt), var(--pr-gold)); box-shadow: 0 0 0 3px var(--pr-forest), 0 8px 18px -6px rgba(245,194,27,.65); }
-    html[data-mm-style="premium"] .sidebar-footer { border-top-color: rgba(245,194,27,.2); }
+    html[data-mm-style="premium"] .menu-item.active { background: rgba(255, 195, 0,.14); color: var(--pr-gold-lt); }
+    html[data-mm-style="premium"] .menu-item.active i { background: linear-gradient(135deg, var(--pr-gold-lt), var(--pr-gold)); box-shadow: 0 0 0 3px var(--pr-forest), 0 8px 18px -6px rgba(255, 195, 0,.65); }
+    html[data-mm-style="premium"] .sidebar-footer { border-top-color: rgba(255, 195, 0,.2); }
     /* login hero + notification hero */
     html[data-mm-style="premium"] .auth-hero { color: #F2FBEF; background:
         radial-gradient(circle at 18% 20%, rgba(13,153,88,.60), transparent 44%),
-        radial-gradient(circle at 82% 78%, rgba(245,194,27,.30), transparent 46%),
+        radial-gradient(circle at 82% 78%, rgba(255, 195, 0,.30), transparent 46%),
         var(--pr-pattern),
-        linear-gradient(165deg, #063D24 0%, #075B35 62%, #087A45 100%); }
+        linear-gradient(165deg, #063D24 0%, #075B35 62%, #0B6B3A 100%); }
     html[data-mm-style="premium"] .nf-hero { color: #F2FBEF; background:
-        radial-gradient(circle at 12% 0%, rgba(245,194,27,.32), transparent 46%),
+        radial-gradient(circle at 12% 0%, rgba(255, 195, 0,.32), transparent 46%),
         radial-gradient(circle at 96% 100%, rgba(13,153,88,.60), transparent 52%),
-        linear-gradient(150deg, #063D24 0%, #075B35 58%, #087A45 100%); box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); }
+        linear-gradient(150deg, #063D24 0%, #075B35 58%, #0B6B3A 100%); box-shadow: 0 14px 30px -18px rgba(6,61,36,.7); }
 
     /* ===== Premium: card-head icons that were Font Awesome glyphs in CSS (::before / ::after) -> custom SVG ===== */
     html[data-mm-style="premium"] #view-user-dashboard { --ph-img: url("/icons/premium/svg/tab-bar/home.svg?v=1"); }
@@ -2709,7 +2719,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] #view-user-guide { --ph-img: url("/icons/premium/svg/main-menu/user_guide.svg?v=1"); }
     html[data-mm-style="premium"] #view-playbook { --ph-img: url("/icons/premium/svg/main-menu/cooler_size_guide.svg?v=1"); }
     html[data-mm-style="premium"] #view-profile { --ph-img: url("/icons/premium/svg/tab-bar/profile.svg?v=1"); }
-    html[data-mm-style="premium"] .page-header::before { content: ""; font-size: 0; background: #FFF8DF var(--ph-img, url("/icons/premium/svg/mini/bars.svg?v=1")) center / 64% no-repeat; border: 1.5px solid #F5C21B; box-shadow: 0 6px 14px -8px rgba(0,0,0,.45); }
+    html[data-mm-style="premium"] .page-header::before { content: ""; font-size: 0; background: #FFF8DF var(--ph-img, url("/icons/premium/svg/mini/bars.svg?v=1")) center / 64% no-repeat; border: 1.5px solid #FFC300; box-shadow: 0 6px 14px -8px rgba(0,0,0,.45); }
     html[data-mm-style="premium"] #assetCardList { --dc-img: url("/icons/premium/svg/main-menu/asset_tracking.svg?v=1"); }
     html[data-mm-style="premium"] #deliveryHistoryCardList { --dc-img: url("/icons/premium/svg/main-menu/delivery_report.svg?v=1"); }
     html[data-mm-style="premium"] #requestCardList { --dc-img: url("/icons/premium/svg/main-menu/asset_request.svg?v=1"); }
@@ -2731,7 +2741,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .mm-pin.on { background-image: url("/icons/premium/svg/ui/pin-on.svg?v=1"); }
     html[data-mm-style="premium"] .mm-pin.rm { background-image: url("/icons/premium/svg/ui/pin-remove.svg?v=1"); }
     html[data-mm-style="premium"] .mm-pin > i, html[data-mm-style="premium"] .mm-pin > .ic { display: none !important; }
-    html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-ic { outline: 3px solid #F5C21B; outline-offset: 3px; border-radius: 18px; background: rgba(245,194,27,.18); }
+    html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-ic { outline: 3px solid #FFC300; outline-offset: 3px; border-radius: 18px; background: rgba(255, 195, 0,.18); }
     html[data-mm-style="premium"] .mm-page.editing .mm-tile:has(.mm-pin.on) .mm-lbl { color: #075B35; font-weight: 700; }
     /* Asset Tracking flag toggle: hollow grey = not flagged, solid red = flagged */
     html[data-mm-style="premium"] i.fa-flag.af-off::before { background-image: url("/icons/premium/svg/ui/flag-off.svg?v=2"); width: 1.35em; height: 1.35em; opacity: .85; }
@@ -2770,7 +2780,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"][data-mm-icons="png"] #view-user-guide { --ph-img: url("/icons/png/main-menu/user_guide.png?v=1"); }
     html[data-mm-style="premium"][data-mm-icons="png"] #view-playbook { --ph-img: url("/icons/png/main-menu/cooler_size_guide.png?v=1"); }
     html[data-mm-style="premium"][data-mm-icons="png"] #view-profile { --ph-img: url("/icons/png/tab-bar/profile.png?v=1"); }
-    html[data-mm-style="premium"][data-mm-icons="png"] .page-header::before { content: ""; font-size: 0; background: #FFF8DF var(--ph-img, url("/icons/png/mini/bars.png?v=1")) center / 64% no-repeat; border: 1.5px solid #F5C21B; box-shadow: 0 6px 14px -8px rgba(0,0,0,.45); }
+    html[data-mm-style="premium"][data-mm-icons="png"] .page-header::before { content: ""; font-size: 0; background: #FFF8DF var(--ph-img, url("/icons/png/mini/bars.png?v=1")) center / 64% no-repeat; border: 1.5px solid #FFC300; box-shadow: 0 6px 14px -8px rgba(0,0,0,.45); }
     html[data-mm-style="premium"][data-mm-icons="png"] #assetCardList { --dc-img: url("/icons/png/main-menu/asset_tracking.png?v=1"); }
     html[data-mm-style="premium"][data-mm-icons="png"] #deliveryHistoryCardList { --dc-img: url("/icons/png/main-menu/delivery_report.png?v=1"); }
     html[data-mm-style="premium"][data-mm-icons="png"] #requestCardList { --dc-img: url("/icons/png/main-menu/asset_request.png?v=1"); }
@@ -2843,14 +2853,14 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
 /* ລາຍງານການຈັດສົ່ງແບບ popup (ມືຖື): wizard ເດີມ ແຕ່ເດັ້ງທັບໜ້າເມນູ ບໍ່ຕ້ອງເຂົ້າໄປໃນເມນູ */
 #view-delivery-confirm.dlv-popup, #view-no-doc-delivery.dlv-popup {
   position: fixed; inset: 0; z-index: 300; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  background: var(--bg-body, #EFF5F6);
+  background: var(--bg-body, #FFF8E6);
   padding: calc(12px + env(safe-area-inset-top, 0px)) 14px calc(28px + env(safe-area-inset-bottom, 0px));
   animation: dlvPopIn .22s ease-out;
 }
 #view-delivery-confirm.dlv-popup .content-card, #view-no-doc-delivery.dlv-popup .content-card { margin-left: auto; margin-right: auto; }
 /* ແຖບປຸ່ມປິດ: ບໍ່ໃຫ້ຍືດຍາວ/ຂາວໃຫຍ່ — ຕິດຂອບເທິງຂອງ popup ແລະກະທັດຮັດ */
 #view-delivery-confirm.dlv-popup > .loan-subbar, #view-no-doc-delivery.dlv-popup > .loan-subbar {
-  position: sticky; top: 0; z-index: 5; margin: 0 0 8px; padding: 0 0 6px; background: var(--bg-body, #EFF5F6); min-height: 0;
+  position: sticky; top: 0; z-index: 5; margin: 0 0 8px; padding: 0 0 6px; background: var(--bg-body, #FFF8E6); min-height: 0;
 }
 #view-delivery-confirm.dlv-popup .loan-subbar .btn-back, #view-no-doc-delivery.dlv-popup .loan-subbar .btn-back {
   min-height: 34px; padding: 6px 14px; font-size: 13px; border-radius: 999px;
@@ -2871,7 +2881,7 @@ body.dlv-popup-open { overflow: hidden; }
 .ui-mode-seg button b { font-size: 15px; font-weight: 700; }
 .ui-mode-seg button small { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
 .ui-mode-seg button:hover { border-color: var(--primary); }
-.ui-mode-seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(12,140,166,.16); }
+.ui-mode-seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(11, 107, 58,.16); }
 .ui-mode-seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 @media (max-width: 480px) { .ui-mode-seg { grid-template-columns: 1fr; } }
 
@@ -2918,989 +2928,6 @@ html[data-ui-mode="easy"] .mm-page .lite-more-btn { margin: 14px 0 6px; border-c
 html[data-ui-mode="easy"]:not([data-lite-more]) .sidebar-menu .menu-item.lite-hide { display: none !important; }
 html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import Excel = ຟັງຊັນຂັ້ນສູງ ເຊື່ອງໃນໂໝດງ່າຍ */
 </style>
-<style id="beerlao-admin-navigation-v2">\n
-/* ==========================================================
-   Premium Beerlao Admin Navigation — simplified preview pass
-   Scoped to Admin only. Other roles retain the existing UI.
-   ========================================================== */
-body.admin-ux-v2 {
-  --admin-green: #086B3A;
-  --admin-green-dark: #064D2D;
-  --admin-gold: #FFC300;
-  --admin-cream: #FFF8E6;
-  --admin-line: #E8E2D3;
-  --admin-ink: #17352A;
-}
-body.admin-ux-v2 .sidebar .menu-item {
-  min-height: 44px;
-  margin: 3px 10px;
-  padding: 10px 13px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  color: #EAF6EE;
-  font-weight: 600;
-  transition: background .18s ease, transform .18s ease;
-}
-body.admin-ux-v2 .sidebar .menu-item:hover {
-  background: rgba(255,255,255,.10);
-  transform: translateX(2px);
-}
-body.admin-ux-v2 .sidebar .menu-item.active {
-  color: var(--admin-green-dark);
-  background: #F5F8EE;
-  border-color: rgba(255,195,0,.55);
-  box-shadow: 0 3px 10px rgba(0,0,0,.10);
-}
-body.admin-ux-v2 .sidebar .menu-item > i {
-  width: 21px;
-  margin-right: 8px;
-  text-align: center;
-  color: var(--admin-gold);
-}
-body.admin-ux-v2 .sidebar .menu-item.active > i { color: var(--admin-green); }
-
-/* In-page title icon: one quiet, consistent duotone treatment */
-body.admin-ux-v2 .page-header {
-  border-radius: 18px;
-}
-body.admin-ux-v2 .page-header::before {
-  flex-basis: 42px;
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
-  color: var(--admin-green);
-  background: #E5F2E8;
-  border: 1px solid #C9E1CF;
-  font-size: 19px;
-}
-body.admin-ux-v2 .page-header h1 { letter-spacing: -.2px; }
-body.admin-ux-v2 .page-header p { color: #D5E8DA; }
-
-/* Sub-menu / mobile menu: simple, readable icon tiles like the preview */
-body.admin-ux-v2 .mm-body { padding-left: 14px; padding-right: 14px; }
-body.admin-ux-v2 .mm-sec-title {
-  color: var(--admin-green-dark);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: .1px;
-  margin: 18px 2px 10px;
-}
-body.admin-ux-v2 .mm-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 9px;
-}
-body.admin-ux-v2 .mm-tile {
-  min-height: 112px;
-  padding: 10px 6px 9px;
-  gap: 7px;
-  border: 1px solid var(--admin-line);
-  border-radius: 15px;
-  background: #FFFFFF;
-  box-shadow: 0 3px 9px rgba(34, 56, 39, .07);
-}
-body.admin-ux-v2 .mm-ic {
-  width: 56px;
-  border-radius: 15px;
-  background: linear-gradient(145deg, #F2F8EE, #E1F0E2);
-  color: var(--admin-green);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 3px 7px rgba(8,107,58,.10);
-  font-size: 23px;
-}
-body.admin-ux-v2 .mm-lbl {
-  color: var(--admin-ink);
-  font-size: 11.5px;
-  font-weight: 700;
-  line-height: 1.28;
-}
-body.admin-ux-v2 .mm-tile:active { transform: scale(.98); }
-body.admin-ux-v2 .mm-tile.mm-is-sub .mm-ic {
-  background: linear-gradient(145deg, #FFF8E6, #FFF0C5);
-  color: #A66A00;
-}
-body.admin-ux-v2 .mm-sub-mark { color: var(--admin-green); }
-
-/* Tab bar: clean white dock, compact icons, one green active state */
-body.admin-ux-v2 .mobile-tabbar {
-  --tab-h: 64px;
-  --ind: 0px;
-  --lift: 0px;
-  left: 12px;
-  right: 12px;
-  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  height: var(--tab-h);
-  padding: 5px 7px;
-  border: 1px solid #E5E8DF;
-  border-radius: 19px;
-  background: rgba(255,255,255,.97);
-  box-shadow: 0 7px 22px rgba(20,48,31,.14);
-  backdrop-filter: blur(16px);
-}
-body.admin-ux-v2 .mobile-tab-indicator { display: none; }
-body.admin-ux-v2 .mobile-tab {
-  height: 100%;
-  padding: 5px 2px 4px;
-  gap: 3px;
-  color: #6C7C70;
-}
-body.admin-ux-v2 .mobile-tab-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  color: #587261;
-  font-size: 18px;
-}
-body.admin-ux-v2 .mobile-tab-label {
-  height: auto;
-  font-size: 10px;
-  line-height: 1.15;
-  color: #596A5E;
-}
-body.admin-ux-v2 .mobile-tab.active { color: var(--admin-green); }
-body.admin-ux-v2 .mobile-tab.active .mobile-tab-icon {
-  transform: none;
-  color: #FFFFFF;
-  background: var(--admin-green);
-  box-shadow: 0 3px 8px rgba(8,107,58,.22);
-}
-body.admin-ux-v2 .mobile-tab.active .mobile-tab-label {
-  color: var(--admin-green-dark);
-  font-weight: 800;
-}
-body.admin-ux-v2 .mobile-tab:active .mobile-tab-icon { transform: scale(.94); }
-@media (max-width: 380px) {
-  body.admin-ux-v2 .mobile-tabbar { left: 8px; right: 8px; height: 62px; }
-  body.admin-ux-v2 .mobile-tab-label { font-size: 9px; }
-}
-@media (min-width: 993px) {
-  body.admin-ux-v2 .mm-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-@media (prefers-reduced-motion: reduce) {
-  body.admin-ux-v2 .sidebar .menu-item,
-  body.admin-ux-v2 .mobile-tab,
-  body.admin-ux-v2 .mm-tile { transition: none; }
-}
-\n</style>\n<style id="beerlao-admin-dashboard-phase2">\n
-/* ==========================================================
-   Phase 2 — Admin Dashboard visual hierarchy
-   Existing dashboard actions, tabs, tables and data IDs retained.
-   Admin-only scope: no impact to other roles or workflows.
-   ========================================================== */
-body.admin-ux-v2 #view-admin-dashboard {
-  gap: 14px;
-  color: #18382A;
-}
-body.admin-ux-v2 #view-admin-dashboard .page-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 20px 22px;
-  margin-bottom: 2px;
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 90% 0%, rgba(255,195,0,.22), transparent 34%),
-    linear-gradient(120deg, #075B32 0%, #087743 58%, #0C8650 100%);
-  box-shadow: 0 10px 24px rgba(6,75,40,.16);
-}
-body.admin-ux-v2 #view-admin-dashboard .page-header h1 {
-  font-size: clamp(19px, 2vw, 25px);
-  font-weight: 800;
-  letter-spacing: -.45px;
-}
-body.admin-ux-v2 #view-admin-dashboard .page-header p {
-  max-width: 650px;
-  color: rgba(244,255,247,.82);
-  font-size: 13px;
-}
-body.admin-ux-v2 #view-admin-dashboard .page-header::before {
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
-  color: #FFFFFF;
-  background: rgba(255,255,255,.13);
-  border-color: rgba(255,255,255,.25);
-}
-body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add {
-  min-height: 36px;
-  padding: 8px 12px;
-  border: 1px solid rgba(255,255,255,.32) !important;
-  border-radius: 11px;
-  background: #FFFFFF !important;
-  color: #075B32 !important;
-  box-shadow: 0 3px 9px rgba(0,0,0,.09);
-  font-size: 12px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add:hover {
-  background: #FFF4CC !important;
-  transform: translateY(-1px);
-}
-body.admin-ux-v2 #view-admin-dashboard #btnRunNotificationCheck,
-body.admin-ux-v2 #view-admin-dashboard #btnMdeReminder,
-body.admin-ux-v2 #view-admin-dashboard #btnMdeSignReminder,
-body.admin-ux-v2 #view-admin-dashboard #btnDsmSignReminder,
-body.admin-ux-v2 #view-admin-dashboard #btnRunSignReminderAuto,
-body.admin-ux-v2 #view-admin-dashboard #btnTestEmail {
-  background: rgba(255,255,255,.12) !important;
-  color: #FFFFFF !important;
-  border-color: rgba(255,255,255,.28) !important;
-  box-shadow: none;
-}
-body.admin-ux-v2 #view-admin-dashboard #btnRunNotificationCheck:hover,
-body.admin-ux-v2 #view-admin-dashboard #btnMdeReminder:hover,
-body.admin-ux-v2 #view-admin-dashboard #btnMdeSignReminder:hover,
-body.admin-ux-v2 #view-admin-dashboard #btnDsmSignReminder:hover,
-body.admin-ux-v2 #view-admin-dashboard #btnRunSignReminderAuto:hover,
-body.admin-ux-v2 #view-admin-dashboard #btnTestEmail:hover {
-  background: rgba(255,255,255,.22) !important;
-}
-body.admin-ux-v2 #view-admin-dashboard .pt-wrap {
-  position: sticky;
-  top: 8px;
-  z-index: 25;
-  padding: 7px;
-  border: 1px solid #E7EBDD;
-  border-radius: 16px;
-  background: rgba(255,255,255,.94);
-  box-shadow: 0 5px 16px rgba(24,56,42,.07);
-  backdrop-filter: blur(12px);
-}
-body.admin-ux-v2 #view-admin-dashboard .pt-bar {
-  display: flex;
-  gap: 5px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-body.admin-ux-v2 #view-admin-dashboard .pt-bar .pt-ind { display: none; }
-body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
-  flex: 0 0 auto;
-  min-height: 39px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 8px 12px;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  background: transparent;
-  color: #627267;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: background .16s ease, color .16s ease, border-color .16s ease;
-}
-body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn i {
-  color: #648B70;
-  font-size: 14px;
-}
-body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn.active {
-  color: #075B32;
-  background: #EAF4E9;
-  border-color: #D3E7D4;
-  box-shadow: inset 0 0 0 1px rgba(8,107,58,.025);
-}
-body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn.active i { color: #087743; }
-body.admin-ux-v2 #view-admin-dashboard .content-card {
-  border: 1px solid #E8E5D9;
-  border-radius: 17px;
-  background: #FFFFFF;
-  box-shadow: 0 4px 15px rgba(31,53,37,.055);
-  overflow: hidden;
-}
-body.admin-ux-v2 #view-admin-dashboard .content-card > div:first-child {
-  padding-top: 18px !important;
-}
-body.admin-ux-v2 #view-admin-dashboard .form-control,
-body.admin-ux-v2 #view-admin-dashboard select.form-control {
-  min-height: 40px;
-  border: 1px solid #DCE5DA;
-  border-radius: 11px;
-  background-color: #FFFEFB;
-  color: #1B382A;
-  box-shadow: none;
-}
-body.admin-ux-v2 #view-admin-dashboard .form-control:focus {
-  border-color: #68A77A;
-  box-shadow: 0 0 0 3px rgba(8,107,58,.10);
-}
-body.admin-ux-v2 #view-admin-dashboard .btn-add,
-body.admin-ux-v2 #view-admin-dashboard .btn-submit,
-body.admin-ux-v2 #view-admin-dashboard .btn-act {
-  border-radius: 10px;
-  font-weight: 700;
-}
-body.admin-ux-v2 #view-admin-dashboard table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-body.admin-ux-v2 #view-admin-dashboard thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #F1F6EF;
-  color: #315541;
-  font-size: 11.5px;
-  font-weight: 800;
-  border-bottom: 1px solid #DCE8D9;
-}
-body.admin-ux-v2 #view-admin-dashboard tbody tr:nth-child(even) { background: #FCFDF9; }
-body.admin-ux-v2 #view-admin-dashboard tbody tr:hover { background: #F3F8EF; }
-body.admin-ux-v2 #view-admin-dashboard .alert {
-  border-radius: 12px;
-}
-body.admin-ux-v2 #view-admin-dashboard .maint-card {
-  border: 1px solid #E8E1CA;
-  border-radius: 15px;
-  background: linear-gradient(135deg, #FFF9E9, #FFFFFF);
-  box-shadow: 0 3px 12px rgba(90,70,20,.06);
-}
-@media (max-width: 992px) {
-  body.admin-ux-v2 #view-admin-dashboard .page-header {
-    padding: 16px;
-    border-radius: 16px;
-    gap: 9px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .page-header > div:first-child {
-    flex: 1 1 100%;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-wrap {
-    top: 4px;
-    margin-left: -2px;
-    margin-right: -2px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar::-webkit-scrollbar { display: none; }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
-    min-height: 37px;
-    padding: 8px 10px;
-    font-size: 11.5px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .content-card {
-    border-radius: 14px;
-  }
-}
-@media (max-width: 560px) {
-  body.admin-ux-v2 #view-admin-dashboard .page-header::before { display: none; }
-  body.admin-ux-v2 #view-admin-dashboard .page-header h1 { font-size: 18px; }
-  body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add {
-    flex: 1 1 calc(50% - 8px);
-    white-space: normal;
-    justify-content: center;
-    line-height: 1.25;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-wrap { padding: 5px; }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
-    min-height: 35px;
-    padding: 7px 9px;
-  }
-}
-\n</style>\n<style id="beerlao-admin-management-phase3">\n
-/* ==========================================================
-   Phase 3 — Admin Management workspace
-   User / MDE / DSM / Warehouse / Outlet / Catalog sections
-   Visual-only layer. Existing data rendering and action handlers
-   remain untouched; all selectors are scoped to Admin.
-   ========================================================== */
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-users,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-mde,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-dsm,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-budget,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-catalog,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-warehouse,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-outlet,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-loginlog,
-body.admin-ux-v2 #view-admin-dashboard > #admin-sec-announcements {
-  border: 1px solid #E4E9DD;
-  border-radius: 18px;
-  background: #FFFFFF;
-  box-shadow: 0 5px 18px rgba(23,53,42,.055);
-  overflow: hidden;
-}
-body.admin-ux-v2 #view-admin-dashboard > [id^="admin-sec-"] > div:first-child:not(.mgmt-card-list):not(.pt-wrap) {
-  background: linear-gradient(180deg, #FBFDF9, #FFFFFF);
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-list {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
-  gap: 13px;
-  padding: 14px;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card {
-  position: relative;
-  min-width: 0;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid #E5EBDD;
-  border-radius: 15px;
-  background: linear-gradient(155deg, #FFFFFF 0%, #FCFDF9 100%);
-  box-shadow: 0 2px 8px rgba(23,53,42,.035);
-  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card:hover {
-  border-color: #A8CDAE;
-  box-shadow: 0 7px 17px rgba(8,107,58,.09);
-  transform: translateY(-1px);
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-top {
-  align-items: center;
-  padding-bottom: 9px;
-  border-bottom: 1px solid #EEF1E9;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-title {
-  min-width: 0;
-  color: #173F2B;
-  font-size: 14px;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-sub {
-  gap: 7px;
-  color: #647468;
-  font-size: 12px;
-  line-height: 1.45;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-sub span {
-  align-items: flex-start;
-  overflow-wrap: anywhere;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-sub i {
-  flex: 0 0 15px;
-  margin-top: 2px;
-  color: #16804A;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  padding-top: 10px;
-  border-top: 1px solid #EEF1E9;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls .form-control {
-  flex: 1 1 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls .btn-act {
-  min-height: 34px;
-  padding: 7px 10px;
-  border-radius: 9px;
-  font-size: 11.5px;
-}
-body.admin-ux-v2 #view-admin-dashboard .mgmt-card-list-empty {
-  grid-column: 1 / -1;
-  padding: 36px 16px;
-  border: 1px dashed #D8E4D6;
-  border-radius: 13px;
-  background: #FBFDF9;
-  color: #718075;
-  text-align: center;
-  font-size: 13px;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-users > div:first-child,
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-mde > div:first-child,
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-dsm > div:first-child,
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-outlet > div:first-child {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px 12px !important;
-  border-bottom: 1px solid #EEF1E9;
-}
-body.admin-ux-v2 #view-admin-dashboard #userSearchInput,
-body.admin-ux-v2 #view-admin-dashboard #mdeSearchInput,
-body.admin-ux-v2 #view-admin-dashboard #dsmSearchInput,
-body.admin-ux-v2 #view-admin-dashboard #outletSearchInput {
-  width: min(100%, 440px);
-  max-width: 100% !important;
-  min-height: 40px;
-  padding-left: 13px;
-  background: #FFFFFF;
-}
-body.admin-ux-v2 #view-admin-dashboard .table-container {
-  margin: 12px;
-  border: 1px solid #E6EBDD;
-  border-radius: 13px;
-  background: #FFFFFF;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-body.admin-ux-v2 #view-admin-dashboard .table-container table {
-  min-width: 620px;
-  width: 100%;
-}
-body.admin-ux-v2 #view-admin-dashboard .table-container th,
-body.admin-ux-v2 #view-admin-dashboard .table-container td {
-  padding: 10px 12px;
-  vertical-align: middle;
-  border-bottom: 1px solid #EEF1E9;
-}
-body.admin-ux-v2 #view-admin-dashboard .table-container tbody tr:last-child td { border-bottom: 0; }
-body.admin-ux-v2 #view-admin-dashboard .table-container td {
-  color: #43594A;
-  font-size: 12px;
-}
-body.admin-ux-v2 #view-admin-dashboard .table-container td .btn-act {
-  min-height: 30px;
-  padding: 6px 9px;
-  border-radius: 8px;
-  font-size: 11px;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog > div:first-child {
-  gap: 14px !important;
-  padding: 14px !important;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog > div:first-child > div {
-  min-width: min(100%, 260px) !important;
-  padding: 14px;
-  border: 1px solid #E7EDE2;
-  border-radius: 14px;
-  background: #FCFDF9;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog h2,
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #145B35;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog .table-container {
-  margin: 8px 0 0;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-warehouse .table-container,
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-outlet .table-container {
-  margin-top: 12px;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-budget > div:first-child {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 9px !important;
-  padding: 14px 16px !important;
-  border-bottom: 1px solid #EEF1E9;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-budget .form-control {
-  max-width: 100%;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-loginlog #userStatusSummary > div {
-  border: 1px solid #E4EBDD;
-  border-radius: 13px;
-  background: linear-gradient(145deg, #FFFFFF, #F8FBF5);
-  box-shadow: 0 2px 8px rgba(23,53,42,.04);
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-announcements .mgmt-card-list {
-  padding-top: 16px;
-}
-body.admin-ux-v2 #view-admin-dashboard #admin-sec-announcements > div[style*="border-top"] {
-  border-top-color: #E7EDE2 !important;
-}
-@media (max-width: 700px) {
-  body.admin-ux-v2 #view-admin-dashboard > [id^="admin-sec-"] {
-    border-radius: 14px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-list {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-    padding: 10px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card {
-    padding: 13px;
-    border-radius: 13px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls .btn-act {
-    flex: 1 1 auto;
-    min-width: 100px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog > div:first-child {
-    padding: 10px !important;
-  }
-  body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog > div:first-child > div {
-    flex-basis: 100%;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .table-container {
-    margin: 8px;
-    border-radius: 11px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .table-container table {
-    min-width: 600px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card { transition: none; }
-}
-\n</style>\n<style id="beerlao-admin-mobile-phase4">\n
-/* ==========================================================
-   Phase 4 — Admin mobile-first interaction refinement
-   Scoped to Admin only. No changes to business logic.
-   ========================================================== */
-@media (max-width: 760px) {
-  body.admin-ux-v2 #view-admin-dashboard {
-    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
-    overflow-x: clip;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .page-header {
-    gap: 10px;
-    padding: 15px;
-    margin-bottom: 8px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .page-header > div:first-child {
-    flex-basis: 100%;
-    min-width: 0;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add {
-    flex: 1 1 calc(50% - 8px);
-    min-height: 42px;
-    width: auto;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.25;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-wrap {
-    position: sticky;
-    top: 3px;
-    z-index: 30;
-    margin-bottom: 10px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar::-webkit-scrollbar { display: none; }
-  body.admin-ux-v2 #view-admin-dashboard .pt-bar .tab-btn {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
-    min-height: 42px;
-    padding: 9px 12px;
-    font-size: 12px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .content-card {
-    overflow: visible;
-    min-width: 0;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card {
-    width: 100%;
-    min-width: 0;
-    padding: 13px;
-    gap: 10px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-top {
-    align-items: flex-start;
-    gap: 8px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-title {
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls .form-control {
-    grid-column: 1 / -1;
-    min-height: 44px;
-    font-size: 14px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls .btn-act {
-    min-height: 40px;
-    width: 100%;
-    margin: 0;
-    padding: 8px 7px;
-    font-size: 11px;
-    white-space: normal;
-    line-height: 1.25;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .form-control,
-  body.admin-ux-v2 #view-admin-dashboard input,
-  body.admin-ux-v2 #view-admin-dashboard select,
-  body.admin-ux-v2 #view-admin-dashboard textarea {
-    font-size: 16px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .form-control {
-    min-height: 44px;
-    border-radius: 11px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .table-container {
-    max-width: calc(100% - 16px);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .table-container table {
-    min-width: 650px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .table-container th,
-  body.admin-ux-v2 #view-admin-dashboard .table-container td {
-    padding: 10px 11px;
-    white-space: nowrap;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .table-container td .btn-act {
-    min-height: 36px;
-    padding: 7px 10px;
-  }
-  body.admin-ux-v2 #view-admin-dashboard #admin-sec-catalog > div:first-child > div {
-    flex: 1 1 100%;
-    min-width: 0 !important;
-  }
-  body.admin-ux-v2 #view-admin-dashboard #admin-sec-budget > div:first-child {
-    align-items: stretch;
-  }
-  body.admin-ux-v2 #view-admin-dashboard #admin-sec-budget > div:first-child > * {
-    max-width: 100%;
-  }
-  body.admin-ux-v2 #view-admin-dashboard #admin-sec-budget .btn-act {
-    min-height: 40px;
-  }
-  /* Large touch targets for dashboard actions */
-  body.admin-ux-v2 #view-admin-dashboard .btn-add,
-  body.admin-ux-v2 #view-admin-dashboard .btn-submit {
-    min-height: 42px;
-  }
-  /* Modal surfaces */
-  body.admin-ux-v2 .modal-overlay {
-    align-items: flex-end;
-    padding: 10px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-  }
-  body.admin-ux-v2 .modal-card {
-    width: 100%;
-    max-width: 100%;
-    max-height: min(88dvh, 760px);
-    overflow-y: auto;
-    border-radius: 20px 20px 14px 14px;
-    padding: 19px 15px calc(18px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -8px 35px rgba(8,35,20,.18);
-  }
-  body.admin-ux-v2 .confirm-overlay {
-    align-items: center;
-    padding: 16px;
-  }
-  body.admin-ux-v2 .confirm-overlay > * {
-    max-width: 100%;
-  }
-}
-@media (max-width: 390px) {
-  body.admin-ux-v2 #view-admin-dashboard .page-header .btn-add {
-    flex-basis: 100%;
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-controls .btn-act {
-    min-height: 42px;
-  }
-}
-@media (min-width: 761px) and (max-width: 1100px) {
-  body.admin-ux-v2 #view-admin-dashboard .mgmt-card-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  body.admin-ux-v2 #view-admin-dashboard *,
-  body.admin-ux-v2 .modal-card {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-\n</style>\n
-<style id="beerlao-admin-premium-rebuild-v1">
-/* New Admin information architecture. Kept strictly inside admin-ux-v2. */
-body.admin-ux-v2 { --admin-green:#0B6B3A; --admin-green-deep:#064B2A; --admin-gold:#FFC300; --admin-cream:#FFF8E6; --admin-soft:#E6F2E8; --admin-ink:#15372A; --admin-border:#E8E3D6; }
-body.admin-ux-v2 #view-admin-dashboard { gap:18px; }
-body.admin-ux-v2 #adminPremiumOverview { display:block; width:100%; margin:0 0 10px; color:var(--admin-ink); }
-body.admin-ux-v2 .admin-premium-hero { position:relative; display:flex; align-items:center; justify-content:space-between; min-height:218px; overflow:hidden; padding:28px 34px; border-radius:22px; background:linear-gradient(112deg,#07552F 0%,#0B6B3A 54%,#16834B 100%); color:#fff; box-shadow:0 12px 28px rgba(5,74,40,.16); }
-body.admin-ux-v2 .admin-premium-hero:after { content:""; position:absolute; width:440px; height:440px; right:12%; top:-300px; border:1px solid rgba(255,255,255,.18); border-radius:50%; box-shadow:0 0 0 34px rgba(255,255,255,.035),0 0 0 70px rgba(255,255,255,.025); }
-body.admin-ux-v2 .admin-premium-hero-copy { position:relative; z-index:2; max-width:680px; }
-body.admin-ux-v2 .admin-premium-eyebrow, body.admin-ux-v2 .admin-premium-kicker { font-size:10px; letter-spacing:.15em; font-weight:800; opacity:.78; }
-body.admin-ux-v2 .admin-premium-hero h2 { margin:10px 0 5px; color:#fff; font-size:clamp(24px,3vw,34px); font-weight:850; letter-spacing:-.035em; }
-body.admin-ux-v2 .admin-premium-hero p { color:rgba(255,255,255,.84); font-size:14px; }
-body.admin-ux-v2 .admin-premium-hero-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
-body.admin-ux-v2 .admin-premium-hero-actions button { border:1px solid var(--admin-gold); border-radius:10px; padding:10px 15px; background:var(--admin-gold); color:#183A25; font-weight:800; cursor:pointer; }
-body.admin-ux-v2 .admin-premium-hero-actions button.is-light { border-color:rgba(255,255,255,.48); background:rgba(255,255,255,.1); color:#fff; }
-body.admin-ux-v2 .admin-premium-hero-art { position:relative; z-index:1; width:210px; height:175px; margin-right:4%; display:flex; align-items:center; justify-content:center; }
-body.admin-ux-v2 .admin-cooler-art { position:relative; z-index:2; width:94px; height:142px; padding:8px 7px 10px; border:4px solid #EAF4E7; border-radius:13px 13px 8px 8px; background:linear-gradient(90deg,#FFC300,#F4A900 48%,#D88B00); box-shadow:12px 13px 20px rgba(0,0,0,.25),inset 3px 0 5px rgba(255,255,255,.65); transform:perspective(350px) rotateY(-13deg) rotateZ(-2deg); }
-body.admin-ux-v2 .cooler-brand { margin:-2px -3px 7px; padding:3px 1px; border-radius:4px; background:#08723D; color:#fff; font-size:11px; font-weight:900; text-align:center; }
-body.admin-ux-v2 .cooler-door { display:grid; grid-template-columns:repeat(2,1fr); gap:4px; height:100px; padding:5px; border:2px solid #D5E8D5; border-radius:4px; background:linear-gradient(90deg,#DDF4EF,#F8FFF9); }
-body.admin-ux-v2 .cooler-door i { display:block; border-radius:2px; background:linear-gradient(180deg,#F4C62E 0 22%,#F8FAE9 23% 75%,#DCA51B 76%); border:1px solid rgba(7,93,48,.24); }
-body.admin-ux-v2 .cooler-base { height:8px; margin:3px -8px -10px; border-radius:0 0 7px 7px; background:#E5A400; }
-body.admin-ux-v2 .admin-art-leaf { position:absolute; display:block; width:48px; height:78px; border-radius:100% 0 100% 0; background:linear-gradient(140deg,#B6D85D,#3E9C4C); opacity:.9; transform:rotate(-28deg); }
-body.admin-ux-v2 .leaf-one { right:10px; bottom:12px; }.admin-art-leaf.leaf-two { left:7px; bottom:17px; transform:rotate(32deg) scale(.72); }
-body.admin-ux-v2 .admin-premium-section-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin:22px 2px 12px; }
-body.admin-ux-v2 .admin-premium-section-head h3 { margin-top:3px; color:var(--admin-ink); font-size:18px; font-weight:850; }
-body.admin-ux-v2 .admin-premium-kicker { color:#8A9B8D; }
-body.admin-ux-v2 .admin-live-label { color:#688274; font-size:11px; }
-body.admin-ux-v2 .admin-live-label i { display:inline-block; width:7px; height:7px; margin-right:4px; border-radius:50%; background:#22A34A; }
-body.admin-ux-v2 .admin-premium-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; }
-body.admin-ux-v2 .admin-stat-card { display:grid; grid-template-columns:46px 1fr; grid-template-rows:auto auto auto; align-items:center; column-gap:12px; min-width:0; padding:16px; text-align:left; border:1px solid var(--admin-border); border-radius:16px; background:#fff; box-shadow:0 4px 13px rgba(30,64,42,.055); cursor:pointer; transition:transform .18s,box-shadow .18s; }
-body.admin-ux-v2 .admin-stat-card:hover, body.admin-ux-v2 .admin-premium-menu-card:hover { transform:translateY(-3px); box-shadow:0 10px 22px rgba(30,64,42,.11); }
-body.admin-ux-v2 .admin-stat-icon { grid-row:1/4; display:grid; place-items:center; width:44px; height:44px; border-radius:13px; font-size:25px; font-weight:800; }
-body.admin-ux-v2 .stat-green { color:#08733C; background:#E5F4E8; }.stat-gold { color:#B77B00; background:#FFF4D3; }.stat-blue { color:#176AB2; background:#E5F1FF; }.stat-red { color:#C34A35; background:#FCEBE6; }
-body.admin-ux-v2 .admin-stat-label { color:#64786C; font-size:11px; font-weight:700; }
-body.admin-ux-v2 .admin-stat-card strong { color:#173A29; font-size:25px; line-height:1.2; font-weight:850; font-variant-numeric:tabular-nums; }
-body.admin-ux-v2 .admin-stat-card small { color:#839188; font-size:10px; }
-body.admin-ux-v2 .admin-menu-heading { margin-top:26px; }
-body.admin-ux-v2 .admin-menu-heading > span { color:#7B8B80; font-size:11px; }
-body.admin-ux-v2 .admin-premium-menu-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; }
-body.admin-ux-v2 .admin-premium-menu-card { display:flex; flex-direction:column; align-items:flex-start; min-height:165px; padding:16px; border:1px solid var(--admin-border); border-radius:16px; background:linear-gradient(180deg,#fff 0%,#FFFEFA 100%); box-shadow:0 4px 13px rgba(30,64,42,.05); text-align:left; cursor:pointer; transition:transform .18s,box-shadow .18s; }
-body.admin-ux-v2 .admin-menu-illustration { display:grid; place-items:center; width:54px; height:54px; margin-bottom:10px; border-radius:15px; font-size:31px; font-weight:800; box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 5px 10px rgba(0,0,0,.08); }
-body.admin-ux-v2 .ill-users { color:#08733C; background:linear-gradient(145deg,#E9F7E8,#BFE5C7); }.ill-mde { color:#B77B00; background:linear-gradient(145deg,#FFF8DB,#F8D979); }.ill-dsm { color:#176AB2; background:linear-gradient(145deg,#E7F3FF,#BBD9F5); }.ill-budget { color:#A66A00; background:linear-gradient(145deg,#FFF2D2,#F5D18B); }.ill-catalog { color:#08733C; background:linear-gradient(145deg,#E6F5E8,#B8DCC0); }.ill-warehouse { color:#08733C; background:linear-gradient(145deg,#E6F5E8,#B8DCC0); }.ill-outlet { color:#B77B00; background:linear-gradient(145deg,#FFF7DB,#F2D47D); }.ill-news { color:#176AB2; background:linear-gradient(145deg,#E8F3FF,#BBD9F5); }
-body.admin-ux-v2 .admin-premium-menu-card b { color:#1C3A2B; font-size:13px; font-weight:850; }.admin-premium-menu-card small { margin-top:3px; color:#77867C; font-size:10px; }.admin-premium-menu-card em { margin-top:auto; padding-top:12px; color:#08733C; font-size:10px; font-style:normal; font-weight:800; }
-body.admin-ux-v2 #view-admin-dashboard > .page-header { margin-top:8px; }
-@media(max-width:1050px) { body.admin-ux-v2 .admin-premium-stats, body.admin-ux-v2 .admin-premium-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media(max-width:640px) {
- body.admin-ux-v2 #adminPremiumOverview { margin-bottom:4px; }
- body.admin-ux-v2 .admin-premium-hero { min-height:190px; padding:21px 18px; border-radius:17px; }
- body.admin-ux-v2 .admin-premium-hero-art { width:112px; height:135px; margin-right:-20px; transform:scale(.78); transform-origin:center right; }
- body.admin-ux-v2 .admin-premium-hero h2 { font-size:23px; }
- body.admin-ux-v2 .admin-premium-hero p { max-width:240px; font-size:12px; }
- body.admin-ux-v2 .admin-premium-hero-actions { gap:7px; margin-top:14px; }
- body.admin-ux-v2 .admin-premium-hero-actions button { padding:9px 10px; font-size:11px; }
- body.admin-ux-v2 .admin-premium-section-head { align-items:flex-start; flex-direction:column; margin-top:18px; }
- body.admin-ux-v2 .admin-premium-section-head h3 { font-size:16px; }
- body.admin-ux-v2 .admin-live-label { font-size:10px; }
- body.admin-ux-v2 .admin-premium-stats { gap:8px; }
- body.admin-ux-v2 .admin-stat-card { grid-template-columns:34px 1fr; column-gap:8px; padding:11px 9px; border-radius:13px; }
- body.admin-ux-v2 .admin-stat-icon { width:34px; height:34px; font-size:20px; border-radius:10px; }
- body.admin-ux-v2 .admin-stat-card strong { font-size:21px; }
- body.admin-ux-v2 .admin-stat-label { font-size:10px; }
- body.admin-ux-v2 .admin-stat-card small { font-size:9px; }
- body.admin-ux-v2 .admin-premium-menu-grid { gap:8px; }
- body.admin-ux-v2 .admin-premium-menu-card { min-height:148px; padding:12px; border-radius:13px; }
- body.admin-ux-v2 .admin-menu-illustration { width:45px; height:45px; font-size:26px; }
- body.admin-ux-v2 .admin-premium-menu-card b { font-size:11px; }
- body.admin-ux-v2 .admin-premium-menu-card small, body.admin-ux-v2 .admin-premium-menu-card em { font-size:9px; }
-}
-@media(prefers-reduced-motion:reduce) { body.admin-ux-v2 .admin-stat-card, body.admin-ux-v2 .admin-premium-menu-card { transition:none; } }
-</style>
-
-
-<style id="beerlao-admin-insights-phase7">
-/* Phase 7 — live management insights. Admin-only; no fabricated cooler inventory metrics. */
-body.admin-ux-v2 .admin-premium-insights{margin-top:18px;padding:20px 22px;border:1px solid #E8E3D6;border-radius:18px;background:linear-gradient(135deg,#fff 0%,#FFFEFA 72%,#F7F8EF 100%);box-shadow:0 4px 14px rgba(30,64,42,.045)}
-body.admin-ux-v2 .admin-insights-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
-body.admin-ux-v2 .admin-insights-heading h3{margin:4px 0;color:#15372A;font-size:17px;font-weight:850}
-body.admin-ux-v2 .admin-insights-heading p{margin:0;color:#829087;font-size:11px}
-body.admin-ux-v2 .admin-insights-live{flex:none;padding:6px 10px;border:1px solid #DCEBDD;border-radius:99px;background:#F1F8F0;color:#38784A;font-size:10px;font-weight:800}
-body.admin-ux-v2 .admin-insights-live i{display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:#27A65B;box-shadow:0 0 0 3px #DDF1E2}
-body.admin-ux-v2 .admin-insights-content{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(220px,1fr);align-items:center;gap:22px}
-body.admin-ux-v2 .admin-insights-chart{display:grid;gap:13px}
-body.admin-ux-v2 .admin-insight-bar-row{display:grid;grid-template-columns:112px minmax(70px,1fr) 54px;align-items:center;gap:12px;width:100%;padding:0;border:0;background:transparent;text-align:left;cursor:pointer}
-body.admin-ux-v2 .admin-insight-bar-row>span{color:#50675A;font-size:11px;font-weight:700}
-body.admin-ux-v2 .admin-insight-track{height:11px;overflow:hidden;border-radius:99px;background:#EDF1E9}
-body.admin-ux-v2 .admin-insight-track i{display:block;width:0;height:100%;border-radius:99px;background:linear-gradient(90deg,#0B6B3A,#64B76C);transition:width .35s ease}
-body.admin-ux-v2 .admin-insight-bar-row:nth-child(2) .admin-insight-track i{background:linear-gradient(90deg,#D99B00,#FFC300)}
-body.admin-ux-v2 .admin-insight-bar-row:nth-child(3) .admin-insight-track i{background:linear-gradient(90deg,#2674B9,#75B5E8)}
-body.admin-ux-v2 .admin-insight-bar-row:nth-child(4) .admin-insight-track i{background:linear-gradient(90deg,#C65B43,#F19A77)}
-body.admin-ux-v2 .admin-insight-bar-row>b{color:#173A29;font-size:12px;font-weight:850;text-align:right;font-variant-numeric:tabular-nums}
-body.admin-ux-v2 .admin-insight-bar-row:hover>span{color:#08733C}
-body.admin-ux-v2 .admin-insights-note{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid #E4EBDD;border-radius:14px;background:#F7FAF4}
-body.admin-ux-v2 .admin-insights-note-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:#E4F1E5;color:#0B6B3A;font-size:19px}
-body.admin-ux-v2 .admin-insights-note b{display:block;color:#28533A;font-size:11px}
-body.admin-ux-v2 .admin-insights-note p{margin:5px 0 0;color:#7C8B80;font-size:10px;line-height:1.55}
-@media(max-width:760px){body.admin-ux-v2 .admin-premium-insights{margin-top:12px;padding:15px 13px;border-radius:15px}body.admin-ux-v2 .admin-insights-content{grid-template-columns:1fr;gap:14px}body.admin-ux-v2 .admin-insights-heading h3{font-size:15px}body.admin-ux-v2 .admin-insight-bar-row{grid-template-columns:92px minmax(45px,1fr) 43px;gap:8px}body.admin-ux-v2 .admin-insight-bar-row>span{font-size:10px}body.admin-ux-v2 .admin-insights-note{padding:12px}}
-@media(prefers-reduced-motion:reduce){body.admin-ux-v2 .admin-insight-track i{transition:none}}
-</style>
-
-
-<style id="beerlao-admin-cooler-stock-phase8-js">
-/* Phase 8 — cooler inventory snapshot. Scoped to Admin only. */
-body.admin-ux-v2 .admin-cooler-overview{margin:20px 0 8px;padding:22px;border:1px solid #E8E3D6;border-radius:20px;background:linear-gradient(135deg,#fff 0%,#FFFEFA 72%,#F5F8EF 100%);box-shadow:0 5px 16px rgba(30,64,42,.05)}
-body.admin-ux-v2 .admin-cooler-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:17px}
-body.admin-ux-v2 .admin-cooler-head h3{margin:4px 0;color:#15372A;font-size:18px;font-weight:850}
-body.admin-ux-v2 .admin-cooler-head p{margin:0;color:#829087;font-size:11px}
-body.admin-ux-v2 .admin-cooler-refresh{display:flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid #D9E7D9;border-radius:11px;background:#F1F8F0;color:#0B6B3A;font-size:11px;font-weight:800;cursor:pointer}
-body.admin-ux-v2 .admin-cooler-refresh:disabled{opacity:.55;cursor:wait}
-body.admin-ux-v2 .admin-cooler-refresh span{font-size:17px;line-height:12px}
-body.admin-ux-v2 .admin-cooler-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-body.admin-ux-v2 .admin-cooler-kpi{position:relative;display:grid;grid-template-columns:38px 1fr;grid-template-rows:auto auto auto;align-items:center;column-gap:10px;min-width:0;padding:14px;border:1px solid #EAE7DE;border-radius:15px;background:#fff;box-shadow:0 3px 10px rgba(30,64,42,.035)}
-body.admin-ux-v2 .admin-cooler-kpi-icon{grid-row:1/4;display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#E8F3E9;color:#0B6B3A;font-size:21px;font-weight:900}
-body.admin-ux-v2 .admin-cooler-kpi-icon.is-green{background:#E5F4E8;color:#0B6B3A}
-body.admin-ux-v2 .admin-cooler-kpi-icon.is-gold{background:#FFF4D3;color:#B77B00}
-body.admin-ux-v2 .admin-cooler-kpi-icon.is-blue{background:#E5F1FF;color:#176AB2}
-body.admin-ux-v2 .admin-cooler-kpi small{color:#6D7E72;font-size:10px;font-weight:700}
-body.admin-ux-v2 .admin-cooler-kpi strong{color:#173A29;font-size:24px;line-height:1.25;font-weight:900;font-variant-numeric:tabular-nums}
-body.admin-ux-v2 .admin-cooler-kpi em{color:#94A097;font-size:9px;font-style:normal}
-body.admin-ux-v2 .admin-cooler-analytics{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);gap:13px;margin-top:13px}
-body.admin-ux-v2 .admin-cooler-chart-card{min-width:0;padding:17px;border:1px solid #EAE7DE;border-radius:15px;background:#fff}
-body.admin-ux-v2 .admin-cooler-card-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
-body.admin-ux-v2 .admin-cooler-card-title b{color:#254A34;font-size:12px;font-weight:850}
-body.admin-ux-v2 .admin-cooler-card-title span{color:#99A39B;font-size:9px}
-body.admin-ux-v2 .admin-cooler-donut-wrap{display:flex;align-items:center;justify-content:center;gap:25px;min-height:150px}
-body.admin-ux-v2 .admin-cooler-donut{display:grid;place-items:center;flex:none;width:142px;height:142px;border-radius:50%;background:conic-gradient(#0B6B3A 0deg,#0B6B3A 0deg,#FFC300 0deg,#FFC300 0deg,#3B91D1 0deg,#3B91D1 0deg,#D9DED8 0deg,#D9DED8 360deg);position:relative}
-body.admin-ux-v2 .admin-cooler-donut:before{content:"";position:absolute;inset:17px;border-radius:50%;background:#fff}
-body.admin-ux-v2 .admin-cooler-donut>div{position:relative;z-index:1;display:grid;text-align:center}
-body.admin-ux-v2 .admin-cooler-donut strong{color:#173A29;font-size:23px;font-weight:900;line-height:1.1}
-body.admin-ux-v2 .admin-cooler-donut small{color:#98A39A;font-size:8px;font-weight:800;letter-spacing:1px}
-body.admin-ux-v2 .admin-cooler-legend{display:grid;gap:10px;min-width:130px}
-body.admin-ux-v2 .admin-cooler-legend span{display:grid;grid-template-columns:9px 1fr auto;align-items:center;gap:7px;color:#627368;font-size:10px}
-body.admin-ux-v2 .admin-cooler-legend i{width:8px;height:8px;border-radius:50%}
-body.admin-ux-v2 .admin-cooler-legend i.is-wh{background:#0B6B3A}
-body.admin-ux-v2 .admin-cooler-legend i.is-out{background:#FFC300}
-body.admin-ux-v2 .admin-cooler-legend i.is-transit{background:#3B91D1}
-body.admin-ux-v2 .admin-cooler-legend i.is-write{background:#D9DED8}
-body.admin-ux-v2 .admin-cooler-legend b{color:#234632;font-size:10px;font-variant-numeric:tabular-nums}
-body.admin-ux-v2 .admin-cooler-status-card{display:flex;flex-direction:column}
-body.admin-ux-v2 .admin-cooler-status-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #F0F1EB;color:#68796D;font-size:11px}
-body.admin-ux-v2 .admin-cooler-status-row b{color:#173A29;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums}
-body.admin-ux-v2 .admin-cooler-status-foot{margin-top:auto;padding-top:13px;color:#96A198;font-size:9px}
-body.admin-ux-v2 .admin-cooler-empty{padding:17px;border-radius:12px;background:#F8F8F3;color:#87948A;font-size:11px;text-align:center}
-@media(max-width:900px){body.admin-ux-v2 .admin-cooler-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}body.admin-ux-v2 .admin-cooler-analytics{grid-template-columns:1fr}}
-@media(max-width:520px){body.admin-ux-v2 .admin-cooler-overview{padding:15px;border-radius:16px}body.admin-ux-v2 .admin-cooler-head{align-items:flex-start}body.admin-ux-v2 .admin-cooler-head h3{font-size:15px}body.admin-ux-v2 .admin-cooler-refresh{padding:8px 9px;font-size:10px}body.admin-ux-v2 .admin-cooler-kpis{gap:8px}body.admin-ux-v2 .admin-cooler-kpi{grid-template-columns:30px 1fr;column-gap:7px;padding:10px}body.admin-ux-v2 .admin-cooler-kpi-icon{width:29px;height:29px;font-size:17px}body.admin-ux-v2 .admin-cooler-kpi strong{font-size:20px}body.admin-ux-v2 .admin-cooler-donut-wrap{gap:14px;justify-content:space-around}body.admin-ux-v2 .admin-cooler-donut{width:118px;height:118px}body.admin-ux-v2 .admin-cooler-donut:before{inset:14px}body.admin-ux-v2 .admin-cooler-legend{min-width:115px;gap:8px}}
-@media(max-width:360px){body.admin-ux-v2 .admin-cooler-donut-wrap{flex-direction:column;padding:8px 0}body.admin-ux-v2 .admin-cooler-legend{width:100%}}
-</style>
-
-
-<style id="beerlao-admin-document-center-final">
-/* All-in-one final polish — Admin-only document workflow and responsive layout. */
-body.admin-ux-v2 .admin-document-center{margin:20px 0 8px;padding:21px 22px;border:1px solid #E8E3D6;border-radius:20px;background:linear-gradient(135deg,#fff 0%,#FFFEFA 78%,#F7F8EF 100%);box-shadow:0 5px 16px rgba(30,64,42,.045)}
-body.admin-ux-v2 .admin-document-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
-body.admin-ux-v2 .admin-document-head h3{margin:4px 0;color:#15372A;font-size:18px;font-weight:850}
-body.admin-ux-v2 .admin-document-head p{margin:0;color:#829087;font-size:11px}
-body.admin-ux-v2 .admin-document-workflow-tag{padding:6px 10px;border:1px solid #E7EBD9;border-radius:99px;background:#F5F8EF;color:#71834B;font-size:9px;font-weight:850;letter-spacing:.8px}
-body.admin-ux-v2 .admin-document-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
-body.admin-ux-v2 .admin-document-card{display:flex;align-items:center;gap:12px;min-width:0;min-height:94px;padding:14px;border:1px solid #EAE7DE;border-radius:15px;background:#fff;text-align:left;cursor:pointer;box-shadow:0 3px 10px rgba(30,64,42,.035);transition:transform .18s,box-shadow .18s,border-color .18s}
-body.admin-ux-v2 .admin-document-card:hover{transform:translateY(-2px);border-color:#C9DEC9;box-shadow:0 8px 18px rgba(30,64,42,.085)}
-body.admin-ux-v2 .admin-document-icon{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:13px;font-size:24px;font-weight:900}
-body.admin-ux-v2 .doc-loan{background:#E6F3E8;color:#0B6B3A}body.admin-ux-v2 .doc-cancel{background:#FCEDE8;color:#C45B43}body.admin-ux-v2 .doc-pending{background:#FFF4D5;color:#B77B00}body.admin-ux-v2 .doc-complete{background:#E6F4E9;color:#16834B}body.admin-ux-v2 .doc-sign{background:#E9F1FF;color:#3979B9}body.admin-ux-v2 .doc-history{background:#F0ECFA;color:#7657A6}
-body.admin-ux-v2 .admin-document-copy{display:grid;gap:4px;min-width:0}
-body.admin-ux-v2 .admin-document-copy b{color:#234632;font-size:12px;font-weight:850}
-body.admin-ux-v2 .admin-document-copy small{color:#7D8B81;font-size:10px;line-height:1.35}
-body.admin-ux-v2 .admin-document-copy em{color:#0B6B3A;font-size:9px;font-style:normal;font-weight:750}
-body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
-@media(max-width:1000px){body.admin-ux-v2 .admin-document-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:760px){
- body.admin-ux-v2 #view-admin-dashboard{gap:13px}
- body.admin-ux-v2 .admin-premium-hero{min-height:180px;padding:21px 22px}
- body.admin-ux-v2 .admin-premium-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
- body.admin-ux-v2 .admin-premium-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
- body.admin-ux-v2 .admin-premium-insights,body.admin-ux-v2 .admin-cooler-overview,body.admin-ux-v2 .admin-document-center{margin-top:13px;padding:16px}
- body.admin-ux-v2 .admin-document-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- body.admin-ux-v2 .admin-document-card{min-height:82px;padding:10px;gap:9px}
- body.admin-ux-v2 .admin-document-icon{width:36px;height:36px;border-radius:11px;font-size:20px}
- body.admin-ux-v2 .admin-document-copy b{font-size:11px}
- body.admin-ux-v2 .admin-document-copy small{font-size:9px}
- body.admin-ux-v2 .admin-document-copy em{font-size:8px}
-}
-@media(max-width:390px){
- body.admin-ux-v2 .admin-document-grid{grid-template-columns:1fr}
- body.admin-ux-v2 .admin-document-card{min-height:72px}
- body.admin-ux-v2 .admin-premium-hero{padding:17px}
- body.admin-ux-v2 .admin-premium-hero-art{transform:scale(.82);transform-origin:right center}
-}
-@media(prefers-reduced-motion:reduce){body.admin-ux-v2 .admin-document-card{transition:none}}
-</style>
-
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol><symbol id="ic-map" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0112 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></symbol><symbol id="ic-bell" viewBox="0 0 24 24"><path d="M6 17v-6a6 6 0 1112 0v6l1.5 2h-15L6 17z"/><path d="M10 21.5h4"/></symbol><symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 7h9"/><path d="M19 7h1"/><circle cx="16" cy="7" r="2"/><path d="M4 17h1"/><path d="M11 17h9"/><circle cx="8" cy="17" r="2"/></symbol><symbol id="ic-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol><symbol id="ic-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></symbol><symbol id="ic-file-plus" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 11.5v5"/><path d="M9.5 14h5"/></symbol><symbol id="ic-history" viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8 8 8 0 00-5.7 2.4L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M12 8v4l3 2"/></symbol><symbol id="ic-handoff" viewBox="0 0 24 24"><path d="M4 8h13"/><path d="M13 4l4 4-4 4"/><path d="M20 16H7"/><path d="M11 12l-4 4 4 4"/></symbol><symbol id="ic-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v9h-11z"/><path d="M13.5 10h4.2l2.8 3.2v2.3h-7"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/></symbol><symbol id="ic-scan" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 012-2h2"/><path d="M16 4h2a2 2 0 012 2v2"/><path d="M20 16v2a2 2 0 01-2 2h-2"/><path d="M8 20H6a2 2 0 01-2-2v-2"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="ic-file-sign" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 16c.9-1.8 1.6-1.8 2 0s1.1 1.2 2.2-.3"/></symbol><symbol id="ic-warehouse" viewBox="0 0 24 24"><path d="M3 9.5L12 4l9 5.5V20H3z"/><path d="M8 20v-6h8v6"/><path d="M8 17h8"/></symbol><symbol id="ic-count" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5v-1h6v1"/><path d="M9 13.5l2.2 2.2 3.8-4.2"/></symbol><symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="1.6"/><path d="M15.5 15.5l5 5"/></symbol><symbol id="ic-alert" viewBox="0 0 24 24"><path d="M12 3.8l9 15.7H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/></symbol><symbol id="ic-snowflake" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M4.2 7.5l15.6 9"/><path d="M4.2 16.5l15.6-9"/><path d="M9.5 4.5L12 7l2.5-2.5"/><path d="M9.5 19.5L12 17l2.5 2.5"/></symbol><symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 016.5 5H18v3"/><path d="M4 7.5V18a2 2 0 002 2h13a1 1 0 001-1V9a1 1 0 00-1-1H6.5A2.5 2.5 0 014 7.5z"/><path d="M16 14h.01"/></symbol><symbol id="ic-shield-user" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 7.7-7 9.5-4-1.8-7-5.1-7-9.5V6z"/><circle cx="12" cy="10" r="2"/><path d="M8.8 16c.6-1.6 1.9-2.4 3.2-2.4s2.6.8 3.2 2.4"/></symbol><symbol id="ic-sign" viewBox="0 0 24 24"><path d="M15 5l4 4L9 19H5v-4z"/><path d="M13 7l4 4"/><path d="M13 20h7"/></symbol><symbol id="ic-pie" viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9h-9V3z"/><path d="M15 3.5a9 9 0 015.5 5.5H15z"/></symbol><symbol id="ic-city" viewBox="0 0 24 24"><path d="M4 21V9l6-3v15"/><path d="M10 21V4l10 4v13"/><path d="M3 21h18"/><path d="M14 11h2"/><path d="M14 15h2"/></symbol><symbol id="ic-megaphone" viewBox="0 0 24 24"><path d="M4 10v4a1 1 0 001 1h2l7 4V5L7 9H5a1 1 0 00-1 1z"/><path d="M17.5 9a4.2 4.2 0 010 6"/></symbol><symbol id="ic-book" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 016.5 3H19v15H6.5A1.5 1.5 0 005 19.5z"/><path d="M5 19.5A1.5 1.5 0 006.5 21H19v-3"/><path d="M13.5 3v6l-2-1.5-2 1.5V3"/></symbol><symbol id="ic-book-open" viewBox="0 0 24 24"><path d="M3 5.5c3-1 6-.8 9 1.5 3-2.3 6-2.5 9-1.5V18c-3-1-6-.8-9 1.5-3-2.3-6-2.5-9-1.5z"/><path d="M12 7v11.5"/></symbol><symbol id="ic-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2"/><path d="M12 17h.01"/></symbol><symbol id="ic-bars" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20v-6"/><path d="M12 20V6"/><path d="M17 20v-9"/></symbol><symbol id="ic-archive" viewBox="0 0 24 24"><path d="M3.5 5h17v4h-17z"/><path d="M5 9v10h14V9"/><path d="M10 13h4"/></symbol><symbol id="ic-file-up" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-5"/><path d="M9.5 14.2l2.5-2.5 2.5 2.5"/></symbol><symbol id="ic-file-down" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v5"/><path d="M9.5 14.8l2.5 2.5 2.5-2.5"/></symbol><symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></symbol><symbol id="ic-file-check" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M9 15l2.2 2.2L15 13"/></symbol><symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></symbol><symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M8 3.5v4"/><path d="M16 3.5v4"/></symbol><symbol id="ic-trash" viewBox="0 0 24 24"><path d="M5 7h14"/><path d="M9 7V4.5h6V7"/><path d="M7 7l.8 12.5h8.4L17 7"/><path d="M10.2 11v5"/><path d="M13.8 11v5"/></symbol><symbol id="ic-tray-in" viewBox="0 0 24 24"><path d="M12 4v10"/><path d="M8.5 10.5L12 14l3.5-3.5"/><path d="M4.5 15v3.5h15V15"/></symbol><symbol id="ic-inbox" viewBox="0 0 24 24"><path d="M3.5 13l2.7-7.5h11.6L20.5 13v5.5h-17z"/><path d="M3.5 13h5l1 2h5l1-2h5"/></symbol><symbol id="ic-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M18 18h2v2h-2z"/></symbol><symbol id="ic-calculator" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8" y="6" width="8" height="3.5" rx=".5"/><path d="M8.5 13.5h.01"/><path d="M12 13.5h.01"/><path d="M15.5 13.5h.01"/><path d="M8.5 17h.01"/><path d="M12 17h.01"/><path d="M15.5 17h.01"/></symbol><symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6.5a3.5 3.5 0 000-7h-5a3.5 3.5 0 010-7H16"/></symbol><symbol id="ic-chev2" viewBox="0 0 24 24"><path d="M7 7l5 5-5 5"/><path d="M13 7l5 5-5 5"/></symbol><symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol><symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol></defs></svg>
@@ -4263,116 +3290,6 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
 
       <!-- VIEW 2: ADMIN DASHBOARD -->
       <div id="view-admin-dashboard" class="hidden">
-      <section id="adminPremiumOverview" aria-label="Beerlao Admin overview">
-        <div class="admin-premium-hero">
-          <div class="admin-premium-hero-copy">
-            <div class="admin-premium-eyebrow">BEERLAO · COOLER TRACKING & MANAGEMENT</div>
-            <h2>ສະບາຍດີ, Admin</h2>
-            <p>ສູນກາງຈັດການລະບົບ ແລະ ຂໍ້ມູນຕູ້ແຊ່ Beerlao</p>
-            <div class="admin-premium-hero-actions">
-              <button type="button" onclick="switchAdminTab('users')">ຈັດການຜູ້ໃຊ້ <span>→</span></button>
-              <button type="button" class="is-light" onclick="switchAdminTab('warehouse')">ຈັດການສາງ <span>→</span></button>
-            </div>
-          </div>
-          <div class="admin-premium-hero-art" aria-hidden="true"><div class="admin-cooler-art"><div class="cooler-brand">Beerlao</div><div class="cooler-door"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="cooler-base"></div></div><span class="admin-art-leaf leaf-one"></span><span class="admin-art-leaf leaf-two"></span></div>
-        </div>
-        <div class="admin-premium-section-head"><div><span class="admin-premium-kicker">AT A GLANCE</span><h3>ພາບລວມການຈັດການ</h3></div><span class="admin-live-label"><i></i> ຂໍ້ມູນຈາກລາຍການປັດຈຸບັນ</span></div>
-        <div class="admin-premium-stats">
-          <button type="button" class="admin-stat-card" onclick="switchAdminTab('users')"><span class="admin-stat-icon stat-green">♙</span><span class="admin-stat-label">User Accounts</span><strong id="adminStatUsers">—</strong><small>ຈັດການສິດຜູ້ໃຊ້</small></button>
-          <button type="button" class="admin-stat-card" onclick="switchAdminTab('mde')"><span class="admin-stat-icon stat-gold">▤</span><span class="admin-stat-label">MDE List</span><strong id="adminStatMde">—</strong><small>ລາຍການ MDE</small></button>
-          <button type="button" class="admin-stat-card" onclick="switchAdminTab('dsm')"><span class="admin-stat-icon stat-blue">♧</span><span class="admin-stat-label">DSM List</span><strong id="adminStatDsm">—</strong><small>ລາຍການ DSM</small></button>
-          <button type="button" class="admin-stat-card" onclick="switchAdminTab('warehouse')"><span class="admin-stat-icon stat-red">▣</span><span class="admin-stat-label">Warehouses</span><strong id="adminStatWarehouse">—</strong><small>ຈັດການສາງ</small></button>
-        </div>
-        <section class="admin-premium-insights" aria-label="Admin management records overview">
-          <div class="admin-insights-heading">
-            <div><span class="admin-premium-kicker">MANAGEMENT INSIGHTS</span><h3>ພາບລວມລາຍການຈັດການ</h3><p>ສັດສ່ວນຈຳນວນລາຍການຈາກຂໍ້ມູນທີ່ໂຫຼດໃນໜ້າ Admin</p></div>
-            <span class="admin-insights-live"><i></i> Live count</span>
-          </div>
-          <div class="admin-insights-content">
-            <div class="admin-insights-chart" role="img" aria-label="Bar chart showing counts of users, MDE, DSM and warehouses">
-              <button type="button" class="admin-insight-bar-row" data-insight="users" onclick="switchAdminTab('users')" aria-label="Open users management"><span>User Accounts</span><div class="admin-insight-track"><i id="adminInsightBarUsers"></i></div><b id="adminInsightValueUsers">—</b></button>
-              <button type="button" class="admin-insight-bar-row" data-insight="mde" onclick="switchAdminTab('mde')" aria-label="Open mde management"><span>MDE List</span><div class="admin-insight-track"><i id="adminInsightBarMde"></i></div><b id="adminInsightValueMde">—</b></button>
-              <button type="button" class="admin-insight-bar-row" data-insight="dsm" onclick="switchAdminTab('dsm')" aria-label="Open dsm management"><span>DSM List</span><div class="admin-insight-track"><i id="adminInsightBarDsm"></i></div><b id="adminInsightValueDsm">—</b></button>
-              <button type="button" class="admin-insight-bar-row" data-insight="warehouse" onclick="switchAdminTab('warehouse')" aria-label="Open warehouse management"><span>Warehouses</span><div class="admin-insight-track"><i id="adminInsightBarWarehouse"></i></div><b id="adminInsightValueWarehouse">—</b></button>
-            </div>
-            <div class="admin-insights-note"><span class="admin-insights-note-icon">✦</span><div><b>ຂໍ້ມູນອັບເດດຕາມລາຍການ</b><p>ກົດກາດສະຖິຕິ ຫຼື ແຖບກາຟ ເພື່ອເຂົ້າໄປຈັດການຂໍ້ມູນສ່ວນນັ້ນ</p></div></div>
-          </div>
-        </section>
-
-        <section class="admin-cooler-overview" id="adminCoolerOverview" aria-label="Cooler stock overview">
-          <div class="admin-cooler-head">
-            <div><span class="admin-premium-kicker">COOLER INVENTORY</span><h3>ພາບລວມສະຕັອກຕູ້ແຊ່</h3><p>ສະຖານະຕູ້ແຊ່ຈາກຂໍ້ມູນສາງຈິງ</p></div>
-            <button type="button" class="admin-cooler-refresh" id="adminCoolerRefresh" onclick="refreshAdminCoolerOverview()"><span aria-hidden="true">↻</span> ໂຫຼດຂໍ້ມູນ</button>
-          </div>
-          <div class="admin-cooler-kpis">
-            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon">▣</span><small>ຕູ້ແຊ່ທັງໝົດ</small><strong id="adminCoolerTotal">—</strong><em>Cooler Total</em></article>
-            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon is-green">⌂</span><small>ຢູ່ໃນສາງ</small><strong id="adminCoolerWarehouse">—</strong><em>In Warehouse</em></article>
-            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon is-gold">↗</span><small>ອອກໄປຮ້ານແລ້ວ</small><strong id="adminCoolerOutlet">—</strong><em>At Outlet</em></article>
-            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon is-blue">◷</span><small>ຈອງ / ຂົນສົ່ງ</small><strong id="adminCoolerTransit">—</strong><em>Reserved & Transit</em></article>
-          </div>
-          <div class="admin-cooler-analytics">
-            <div class="admin-cooler-chart-card">
-              <div class="admin-cooler-card-title"><b>ສັດສ່ວນສະຖານະຕູ້ແຊ່</b><span>Stock distribution</span></div>
-              <div class="admin-cooler-donut-wrap">
-                <div class="admin-cooler-donut" id="adminCoolerDonut" role="img" aria-label="Cooler stock status distribution"><div><strong id="adminCoolerDonutTotal">—</strong><small>COOLERS</small></div></div>
-                <div class="admin-cooler-legend" id="adminCoolerLegend">
-                  <span><i class="is-wh"></i>ຢູ່ໃນສາງ <b id="adminCoolerLegendWh">—</b></span>
-                  <span><i class="is-out"></i>ອອກໄປຮ້ານ <b id="adminCoolerLegendOut">—</b></span>
-                  <span><i class="is-transit"></i>ຈອງ / ຂົນສົ່ງ <b id="adminCoolerLegendTransit">—</b></span>
-                  <span><i class="is-write"></i>ສະສາງ <b id="adminCoolerLegendWrite">—</b></span>
-                </div>
-              </div>
-            </div>
-            <div class="admin-cooler-chart-card admin-cooler-status-card">
-              <div class="admin-cooler-card-title"><b>ສະຖານະອື່ນໆ</b><span>Operational status</span></div>
-              <div class="admin-cooler-status-row"><span>ກຳລັງໃຊ້ງານ Event</span><b id="adminCoolerEvent">—</b></div>
-              <div class="admin-cooler-status-row"><span>ລໍຖ້າສະສາງ</span><b id="adminCoolerPending">—</b></div>
-              <div class="admin-cooler-status-row"><span>ສະສາງແລ້ວ</span><b id="adminCoolerWritten">—</b></div>
-              <div class="admin-cooler-status-foot" id="adminCoolerUpdated">ລໍຖ້າໂຫຼດຂໍ້ມູນສະຕັອກ…</div>
-            </div>
-          </div>
-        </section>
-
-
-        <section class="admin-document-center" id="adminDocumentCenter" aria-label="Admin document center">
-          <div class="admin-document-head">
-            <div><span class="admin-premium-kicker">DOCUMENT WORKFLOW</span><h3>ສູນກາງເອກະສານ</h3><p>ຈັດການໃບສັນຍາ, ລາຍການຄ້າງເຊັນ ແລະ ເອກະສານທີ່ອອກແລ້ວ</p></div>
-            <span class="admin-document-workflow-tag">WORKFLOW</span>
-          </div>
-          <div class="admin-document-grid">
-            <button type="button" class="admin-document-card" onclick="switchView('loanContract')">
-              <span class="admin-document-icon doc-loan">✎</span><span class="admin-document-copy"><b>Loan Contract</b><small>ສ້າງໃບສັນຍາຢືມຕູ້</small><em>ເປີດຈັດການ →</em></span>
-            </button>
-            <button type="button" class="admin-document-card" onclick="switchView('loanContract')">
-              <span class="admin-document-icon doc-cancel">⊗</span><span class="admin-document-copy"><b>Cancel Document</b><small>ສ້າງໃບຍົກເລີກຕູ້</small><em>ເປີດຈັດການ →</em></span>
-            </button>
-            <button type="button" class="admin-document-card" onclick="adminOpenLoanQueue()">
-              <span class="admin-document-icon doc-pending">◷</span><span class="admin-document-copy"><b>Pending Signature</b><small>ເອກະສານລໍຖ້າເຊັນ</small><em><strong id="adminDocPendingCount">—</strong> ລາຍການ · ເປີດເບິ່ງ →</em></span>
-            </button>
-            <button type="button" class="admin-document-card" onclick="adminOpenCompletedDocs()">
-              <span class="admin-document-icon doc-complete">✓</span><span class="admin-document-copy"><b>Completed Documents</b><small>ເອກະສານສຳເລັດແລ້ວ</small><em><strong id="adminDocCompletedCount">—</strong> ລາຍການ · ເປີດເບິ່ງ →</em></span>
-            </button>
-            <button type="button" class="admin-document-card" onclick="adminOpenLoanQueue()">
-              <span class="admin-document-icon doc-sign">✍</span><span class="admin-document-copy"><b>Signature Tracking</b><small>ຕິດຕາມເອກະສານລໍຖ້າເຊັນ</small><em>ເປີດຈັດການ →</em></span>
-            </button>
-            <button type="button" class="admin-document-card" onclick="switchView('historyHub')">
-              <span class="admin-document-icon doc-history">↻</span><span class="admin-document-copy"><b>Asset History</b><small>ປະຫວັດການເຄື່ອນໄຫວຕູ້ແຊ່</small><em>ເປີດປະຫວັດ →</em></span>
-            </button>
-          </div>
-        </section>
-
-        <div class="admin-premium-section-head admin-menu-heading"><div><span class="admin-premium-kicker">MANAGEMENT CENTER</span><h3>ເມນູຫຼັກ</h3></div><span>ເລືອກເຂົ້າໄປຈັດການແຕ່ລະສ່ວນ</span></div>
-        <div class="admin-premium-menu-grid">
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('users')"><span class="admin-menu-illustration ill-users">♙</span><b>User Management</b><small>ຈັດການຜູ້ໃຊ້ ແລະ ສິດ</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('mde')"><span class="admin-menu-illustration ill-mde">▤</span><b>MDE Management</b><small>ຈັດການ MDE List</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('dsm')"><span class="admin-menu-illustration ill-dsm">♧</span><b>DSM Management</b><small>ຈັດການ DSM List</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('budget')"><span class="admin-menu-illustration ill-budget">◔</span><b>Budget Management</b><small>ຈັດການໂຄຕ້າ ແລະ ງົບ</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('catalog')"><span class="admin-menu-illustration ill-catalog">▦</span><b>Cooler Catalog</b><small>Brand, Type, Model, Doc Type</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('warehouse')"><span class="admin-menu-illustration ill-warehouse">▣</span><b>Warehouse</b><small>ຈັດການຂໍ້ມູນສາງ</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('outlet')"><span class="admin-menu-illustration ill-outlet">⌂</span><b>Outlet Management</b><small>ຈັດການຮ້ານຄ້າ</small><em>ເຂົ້າຈັດການ →</em></button>
-          <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('announcements')"><span class="admin-menu-illustration ill-news">▱</span><b>Announcements</b><small>ຂ່າວສານ ແລະ ປະກາດ</small><em>ເຂົ້າຈັດການ →</em></button>
-        </div>
-      </section>
       <div id="maintenanceCard" class="maint-card hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
@@ -5554,7 +4471,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
             <div id="dsmDoneReview"></div>
             <div class="loan-nav-btns">
               <button type="button" class="btn-submit" style="margin-left:0;" onclick="dsmOpenPdf()"><i class="fa-solid fa-file-pdf mr-1"></i> ເປີດ/ດາວໂຫຼດ PDF</button>
-              <button type="button" class="btn-submit" style="margin-left:0; background:#0A7890;" onclick="dsmSharePack()"><i class="fa-solid fa-share-nodes mr-1"></i> PDF ລວມເອກະສານ (ສົ່ງ Power App)</button>
+              <button type="button" class="btn-submit" style="margin-left:0; background:#0B6B3A;" onclick="dsmSharePack()"><i class="fa-solid fa-share-nodes mr-1"></i> PDF ລວມເອກະສານ (ສົ່ງ Power App)</button>
               <button type="button" class="btn-back" onclick="dsmWaitFinish()"><i class="fa-solid fa-check mr-1"></i> ປິດ</button>
             </div>
           </div>
@@ -8026,7 +6943,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
             <div class="profile-info-list" style="margin-bottom: 16px;">
               <div class="profile-info-item"><span>ສະຖານະ</span><span id="installStatusText">ກຳລັງກວດສອບ...</span></div>
             </div>
-            <button id="btnInstallApp" onclick="handleInstallApp()" class="btn-submit hidden" style="background: linear-gradient(135deg, #0A7890 0%, #075C70 100%);">
+            <button id="btnInstallApp" onclick="handleInstallApp()" class="btn-submit hidden" style="background: linear-gradient(135deg, #0B6B3A 0%, #075C70 100%);">
               <i class="fa-solid fa-download mr-2"></i> ຕິດຕັ້ງແອັບໃສ່ໜ້າຈໍຫຼັກ
             </button>
             <div id="installIosHint" class="alert hidden" style="margin-top: 6px; background:#eff6ff; color:#1e3a8a; border:1px solid #bfdbfe;">
@@ -8043,7 +6960,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
             <div class="profile-info-list" style="margin-bottom: 16px;">
               <div class="profile-info-item"><span>ເວີຊັນໃນເຄື່ອງນີ້</span><span id="appVerText">-</span></div>
             </div>
-            <button type="button" id="btnCheckUpdate" onclick="appCheckUpdate(this)" class="btn-submit" style="background: linear-gradient(135deg, #0A7890 0%, #075C70 100%);">
+            <button type="button" id="btnCheckUpdate" onclick="appCheckUpdate(this)" class="btn-submit" style="background: linear-gradient(135deg, #0B6B3A 0%, #075C70 100%);">
               <i class="fa-solid fa-arrows-rotate mr-2"></i> ກວດການອັບເດດ / ເບິ່ງວ່າມີຫຍັງໃໝ່
             </button>
             <a id="btnDownloadApk" href="/app/lbc.apk" download class="btn-submit hidden" style="display:none; margin-top: 10px; text-align:center; text-decoration:none; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);">
@@ -8763,7 +7680,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
   <!-- ==================== MODAL (ຂໍອະນຸຍາດເຂົ້າເຖິງກ້ອງ ກ່ອນສະແກນ QR) ==================== -->
   <div id="cameraPermModal" class="modal-overlay hidden" style="z-index: 1100;">
     <div class="modal-card" style="max-width: 380px; text-align: center;">
-      <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:rgba(12,140,166,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:28px;">
+      <div style="width:64px; height:64px; margin:0 auto 14px; border-radius:50%; background:rgba(11, 107, 58,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:28px;">
         <i class="fa-solid fa-camera"></i>
       </div>
       <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">ຂໍອະນຸຍາດໃຊ້ກ້ອງ</h3>
@@ -11892,39 +10809,6 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
       updateSignReminderSummary();
     }
 
-    function updateAdminPremiumStats() {
-      const countItems = (id) => {
-        const el = document.getElementById(id);
-        if (!el) return '—';
-        const rows = el.querySelectorAll('tr');
-        if (rows.length) return Math.max(0, rows.length - (el.querySelector('thead') ? 0 : 0)).toLocaleString();
-        const children = Array.from(el.children).filter(x => !x.classList.contains('hidden'));
-        return children.length.toLocaleString();
-      };
-      const map = [['adminStatUsers','userTableBody'],['adminStatMde','mdeTableBody'],['adminStatDsm','dsmTableBody'],['adminStatWarehouse','warehouseTableBody']];
-      const values = {};
-      map.forEach(([target,source]) => { const node=document.getElementById(target); const value=countItems(source); if(node) node.textContent=value; values[target]=value==='—'?0:(Number(String(value).replace(/,/g,''))||0); });
-      const keys=[['Users','adminStatUsers'],['Mde','adminStatMde'],['Dsm','adminStatDsm'],['Warehouse','adminStatWarehouse']];
-      const max=Math.max(1,...keys.map(([,id])=>values[id]||0));
-      keys.forEach(([suffix,id])=>{
-        const value=values[id]||0;
-        const bar=document.getElementById('adminInsightBar'+suffix);
-        const label=document.getElementById('adminInsightValue'+suffix);
-        if(bar) bar.style.width=(value?Math.max(3,(value/max)*100):0)+'%';
-        if(label) label.textContent=(value||0).toLocaleString();
-      });
-    }
-    (function initAdminPremiumStats() {
-      const refresh = () => { if (document.body.classList.contains('admin-ux-v2')) updateAdminPremiumStats(); };
-      document.addEventListener('DOMContentLoaded', refresh);
-      const ids=['userTableBody','mdeTableBody','dsmTableBody','warehouseTableBody'];
-      const attach=()=>ids.forEach(id=>{const el=document.getElementById(id);if(el&&!el.dataset.premiumObserved){el.dataset.premiumObserved='1';new MutationObserver(refresh).observe(el,{childList:true,subtree:true});}});
-      setTimeout(()=>{attach();refresh();},500);
-      const originalEnter=window.enterApp;
-      if(typeof originalEnter==='function') { /* app entry already toggles the scoped theme */ }
-      setTimeout(()=>{attach();refresh();},1800);
-    })();
-
     function switchAdminTab(tabName) {
       document.getElementById('admin-sec-users').classList.add('hidden');
       document.getElementById('admin-sec-mde').classList.add('hidden');
@@ -12306,7 +11190,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
     function mmApplyBrand(on) {
       const P = '/icons/premium/';
       const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', on ? '#087A45' : '#0A7890');
+      if (meta) meta.setAttribute('content', on ? '#0B6B3A' : '#0B6B3A');
       ['link[rel="icon"]', 'link[rel="apple-touch-icon"]'].forEach((sel) => {
         const el = document.querySelector(sel); if (!el) return;
         if (!el.dataset.o) el.dataset.o = el.getAttribute('href');
@@ -12647,7 +11531,6 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
     function renderMobileTabbar(role) {
       const bar = document.getElementById('mobileTabbar');
       if (!bar) return;
-      document.body.classList.toggle('admin-ux-v2', role === 'admin');
       const order = MOBILE_TABS_BY_ROLE[role] || [];
       if (!order.length) { bar.innerHTML = ''; bar.classList.add('hidden'); return; }
       const home = mmHomeFor(role);
@@ -13507,7 +12390,6 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
         user = Object.assign({}, user, { role: 'admin', isAssistantAdmin: true });
       }
       currentUser = user;
-      document.body.classList.toggle('admin-ux-v2', !!(user && user.role === 'admin'));
       if (isMaintBypassUser(user)) hideMaintenanceScreen(); // admin / ADMIN TEAM ຜ່ານໂໝດປັບປຸງໄດ້ສະເໝີ
       if (!Array.isArray(dbMdeList) || !dbMdeList.length) fetchMdeList();
       if (!appCatalog || !appCatalog.docTypes || !appCatalog.docTypes.length) fetchCatalog();
@@ -15730,7 +14612,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
 
     /* ===================== Dashboard ພາບລວມສະຕັອກສາງ ===================== */
     const STOCK_STATUS_COLOR_HEX = {
-      in_warehouse: '#15803d', reserved: '#f59e0b', on_truck: '#2563EB', outlet: '#0A7890',
+      in_warehouse: '#15803d', reserved: '#f59e0b', on_truck: '#2563EB', outlet: '#0B6B3A',
       event: '#8b5cf6', shipped_out: '#6d28d9', pending_write_off: '#f97316', write_off: '#dc2626'
     };
     const STOCK_STATUS_ORDER = ['in_warehouse', 'reserved', 'on_truck', 'outlet', 'event', 'shipped_out', 'pending_write_off', 'write_off'];
@@ -15783,7 +14665,7 @@ body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
       brand: s => sdNone(s.cooler_brand), type: s => sdNone(s.cooler_type), model: s => sdNone(s.cooler_model)
     };
     const SD_COND_COLOR = { new: '#15803d', second_hand: '#f59e0b', broken: '#dc2626' };
-    const SD_PALETTE = ['#0A7890', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6', '#94a3b8'];
+    const SD_PALETTE = ['#0B6B3A', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6', '#94a3b8'];
     function sdFilter(list, skip) {
       return list.filter(s => Object.keys(sdSl).every(k => k === skip || !sdSl[k].size || sdSl[k].has(SD_KEY[k](s))));
     }
@@ -18816,7 +17698,7 @@ td.c { text-align: center; }
       position: absolute; left: 0; top: calc(var(--lift) * -1 - 4px);
       width: var(--ind); height: var(--ind); border-radius: 50%; box-sizing: border-box;
       pointer-events: none; z-index: 0;
-      background: linear-gradient(135deg, #22D3BF, #0A7890); border: 5px solid var(--pt-bg, var(--bg-body));
+      background: linear-gradient(135deg, #22D3BF, #0B6B3A); border: 5px solid var(--pt-bg, var(--bg-body));
       box-shadow: 0 8px 18px -6px rgba(34, 211, 191, 0.65);
       transform: translateX(var(--ind-x, 0px)) scale(.4); opacity: 0;
       transition: transform .55s cubic-bezier(0.22, 1, 0.36, 1), opacity .2s ease;
@@ -18880,7 +17762,7 @@ td.c { text-align: center; }
       box-shadow: none; transform: none;
     }
     .loan-stepper .loan-step.active .loan-step-dot {
-      background: linear-gradient(135deg, #22D3BF, #0A7890); border-color: transparent; color: #fff;
+      background: linear-gradient(135deg, #22D3BF, #0B6B3A); border-color: transparent; color: #fff;
       transform: scale(1.1); animation: none !important;
       box-shadow: 0 0 0 4px rgba(34, 211, 191, 0.2), 0 8px 18px -6px rgba(34, 211, 191, 0.65) !important;
     }
@@ -18892,7 +17774,7 @@ td.c { text-align: center; }
     .loan-stepper .loan-step.active .loan-step-label { color: #6FE3D6; font-weight: 700; }
     .loan-stepper .loan-step.done .loan-step-label { color: #C5DDE2; }
     .loan-stepper .loan-step-line { height: 3px; margin-top: 15px; background: rgba(255,255,255,0.12); }
-    .loan-stepper .loan-step-line::after { background: linear-gradient(90deg, #22D3BF, #0A7890); }
+    .loan-stepper .loan-step-line::after { background: linear-gradient(90deg, #22D3BF, #0B6B3A); }
     @media (max-width: 480px) {
       .loan-stepper { padding: 12px 8px 10px !important; border-radius: 22px; }
       .loan-stepper .loan-step { width: 58px; }
@@ -18910,7 +17792,7 @@ td.c { text-align: center; }
       .loan-stepper.loan-stepper-6 .loan-step-label { font-size: 10px; }
     }
     .data-card.dsm-clickable { cursor: pointer; transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
-    .data-card.dsm-clickable:hover { border-color: var(--primary); box-shadow: 0 6px 16px -8px rgba(12, 140, 166, .45); transform: translateY(-1px); }
+    .data-card.dsm-clickable:hover { border-color: var(--primary); box-shadow: 0 6px 16px -8px rgba(11, 107, 58, .45); transform: translateY(-1px); }
     .data-card.dsm-clickable:active { transform: translateY(0); }
     .dsm-mini { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 12px; font-weight: 600; color: #b45309; }
     .dsm-mini-dots { display: inline-flex; align-items: center; gap: 3px; }
@@ -19050,135 +17932,6 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
   var photoReady = new Promise(function (r) { var im = document.getElementById('dpPhoto'); if (!im || im.complete) return r(); im.onload = im.onerror = function () { r(); }; });
   Promise.all([document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(), logoReady, photoReady]).then(function () { ${autoPrint ? 'setTimeout(function () { window.print(); }, 300);' : ''} });
 <\/script>
-
-<script id="beerlao-admin-cooler-stock-phase8-js">
-/* Phase 8 — fetch actual warehouse stock; no sample/demo inventory values. */
-let adminCoolerOverviewLoaded = false;
-async function refreshAdminCoolerOverview(forceReload) {
-  const root = document.getElementById('adminCoolerOverview');
-  if (!root || !document.body.classList.contains('admin-ux-v2')) return;
-  const btn = document.getElementById('adminCoolerRefresh');
-  const stamp = document.getElementById('adminCoolerUpdated');
-  if (btn) btn.disabled = true;
-  if (stamp) stamp.textContent = 'ກຳລັງໂຫຼດຂໍ້ມູນສະຕັອກ…';
-  let items = (typeof dbStockList !== 'undefined' && Array.isArray(dbStockList)) ? dbStockList : [];
-  try {
-    if (forceReload || !adminCoolerOverviewLoaded) {
-      const response = await fetch('/api/warehouse-stock', { credentials: 'same-origin' });
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      const data = await response.json();
-      if (!Array.isArray(data)) throw new Error('Invalid stock response');
-      items = data;
-      adminCoolerOverviewLoaded = true;
-      if (typeof dbStockList !== 'undefined') dbStockList = data;
-    }
-    const count = status => items.filter(item => String(item.status || '').toLowerCase() === status).length;
-    const total = items.length;
-    const wh = count('in_warehouse');
-    const reserved = count('reserved');
-    const outlet = count('outlet');
-    const event = count('event');
-    const truck = count('on_truck') + count('shipped_out');
-    const write = count('write_off');
-    const pending = count('pending_write_off');
-    const transit = reserved + truck;
-    const fmt = n => Number(n || 0).toLocaleString();
-    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = fmt(value); };
-    set('adminCoolerTotal', total);
-    set('adminCoolerWarehouse', wh);
-    set('adminCoolerOutlet', outlet);
-    set('adminCoolerTransit', transit);
-    set('adminCoolerEvent', event);
-    set('adminCoolerPending', pending);
-    set('adminCoolerWritten', write);
-    set('adminCoolerDonutTotal', total);
-    set('adminCoolerLegendWh', wh);
-    set('adminCoolerLegendOut', outlet);
-    set('adminCoolerLegendTransit', transit + event);
-    set('adminCoolerLegendWrite', write + pending);
-    const parts = [wh, outlet, transit + event, write + pending];
-    const colors = ['#0B6B3A', '#FFC300', '#3B91D1', '#D9DED8'];
-    let angle = 0;
-    const stops = [];
-    parts.forEach((value, index) => {
-      const next = angle + (total ? value / total * 360 : 0);
-      stops.push(colors[index] + ' ' + angle + 'deg ' + next + 'deg');
-      angle = next;
-    });
-    if (angle < 360) stops.push('#EDF0EA ' + angle + 'deg 360deg');
-    const donut = document.getElementById('adminCoolerDonut');
-    if (donut) donut.style.background = 'conic-gradient(' + (total ? stops.join(',') : '#EDF0EA 0deg 360deg') + ')';
-    if (stamp) stamp.textContent = 'ອັບເດດ ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' · ອ່ານຈາກ /api/warehouse-stock';
-  } catch (error) {
-    adminCoolerOverviewLoaded = false;
-    if (stamp) stamp.textContent = 'ບໍ່ສາມາດໂຫຼດສະຕັອກໄດ້ · ' + (error.message || 'API error');
-    ['adminCoolerTotal','adminCoolerWarehouse','adminCoolerOutlet','adminCoolerTransit','adminCoolerEvent','adminCoolerPending','adminCoolerWritten','adminCoolerDonutTotal','adminCoolerLegendWh','adminCoolerLegendOut','adminCoolerLegendTransit','adminCoolerLegendWrite'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent='—'; });
-    const donut=document.getElementById('adminCoolerDonut'); if(donut) donut.style.background='#EDF0EA';
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-(function initAdminCoolerOverview() {
-  const run = () => {
-    if (document.body.classList.contains('admin-ux-v2') && window.currentUser && window.currentUser.role === 'admin') refreshAdminCoolerOverview(false);
-  };
-  document.addEventListener('DOMContentLoaded', run);
-  const watch = new MutationObserver(() => {
-    if (document.body.classList.contains('admin-ux-v2') && window.currentUser && window.currentUser.role === 'admin') run();
-  });
-  document.addEventListener('DOMContentLoaded', () => {
-    const view = document.getElementById('view-admin-dashboard');
-    if (view) watch.observe(view, {attributes:true,attributeFilter:['class']});
-  });
-})();
-</script>
-
-
-<script id="beerlao-admin-document-center-final-js">
-function adminOpenLoanQueue(){
-  switchView('loanContract');
-  setTimeout(()=>{ if(typeof loanSwitchTab==='function') loanSwitchTab('queue'); },120);
-}
-function adminOpenCompletedDocs(){
-  switchView('loanContract');
-  setTimeout(()=>{ if(typeof loanSwitchTab==='function') loanSwitchTab('docs'); },120);
-}
-function refreshAdminDocumentCounts(){
-  if(!document.body.classList.contains('admin-ux-v2')) return;
-  const pendingNode=document.getElementById('loanQueueCount');
-  const pendingText=pendingNode ? (pendingNode.textContent||'').replace(/[^\d]/g,'') : '';
-  const queue=document.getElementById('loanQueueCardList');
-  const completed=document.getElementById('loanHistoryCardList');
-  const visibleCount=(node)=>{
-    if(!node) return null;
-    const cards=Array.from(node.children).filter(el=>!el.classList.contains('hidden') && !el.classList.contains('card-list-empty') && !el.classList.contains('card-list-loading'));
-    return cards.length;
-  };
-  const pendingDom=visibleCount(queue);
-  const completedDom=visibleCount(completed);
-  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val===null?'—':Number(val).toLocaleString();};
-  set('adminDocPendingCount', pendingText!==''?Number(pendingText):pendingDom);
-  set('adminDocCompletedCount', completedDom);
-}
-(function initAdminDocumentCenter(){
-  const refresh=()=>refreshAdminDocumentCounts();
-  document.addEventListener('DOMContentLoaded',()=>{
-    ['loanQueueCardList','loanHistoryCardList','loanQueueCount'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el&&!el.dataset.adminDocObserved){
-        el.dataset.adminDocObserved='1';
-        new MutationObserver(refresh).observe(el,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
-      }
-    });
-    refresh();
-  });
-  const dashboard=document.getElementById('view-admin-dashboard');
-  if(dashboard)new MutationObserver(refresh).observe(dashboard,{attributes:true,attributeFilter:['class']});
-  setTimeout(refresh,900);
-  setTimeout(refresh,2200);
-})();
-</script>
-
 </body></html>`;
       w.document.open();
       w.document.write(html);
@@ -31083,7 +29836,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       { key: 'Upper North', color: '#6366F1', provs: ['ຜົ້ງສາລີ', 'ບໍ່ແກ້ວ', 'ຫຼວງນ້ຳທາ', 'ອຸດົມໄຊ'] },
       { key: 'Middle North', color: '#0EA5E9', provs: ['ຫຼວງພະບາງ', 'ໄຊຍະບູລີ'] },
       { key: 'Lower North', color: '#8B5CF6', provs: ['ໄຊສົມບູນ', 'ຫົວພັນ', 'ຊຽງຂວາງ'] },
-      { key: 'Vientiane Pro', color: '#0A7890', provs: ['ວຽງຈັນ'] },
+      { key: 'Vientiane Pro', color: '#0B6B3A', provs: ['ວຽງຈັນ'] },
       { key: 'Central', color: '#12915D', provs: ['ບໍລິຄຳໄຊ', 'ຄຳມ່ວນ', 'ສະຫວັນນະເຂດ'] },
       { key: 'South', color: '#F97316', provs: ['ຈຳປາສັກ', 'ສາລະວັນ', 'ເຊກອງ', 'ອັດຕະປື'] }
     ];
@@ -31095,7 +29848,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
     }
     function pbRegionIdx(key) { const i = PB_REGIONS.findIndex(x => x.key === key); return i < 0 ? 99 : i; }
     function pbRegionColor(key) { const r = PB_REGIONS.find(x => x.key === key); return r ? r.color : '#94A3B8'; }
-    const PB_COLORS = ['#0A7890', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6'];
+    const PB_COLORS = ['#0B6B3A', '#6366F1', '#F97316', '#12915D', '#E11D74', '#EAB308', '#0EA5E9', '#8B5CF6'];
     let pbAnimate = true;
 
     function pbSlFilter(list, skip) {
@@ -33422,7 +32175,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
         document.getElementById('announcementPopupBody').innerHTML = unread.map(a => `
           <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
             <div style="font-weight:700; font-size:14px;">
-              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0A7890;"></i>' : ''}${esc(a.title)}
+              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0B6B3A;"></i>' : ''}${esc(a.title)}
             </div>
             <div style="font-size:13px; color:var(--text-muted); margin-top:6px; white-space:pre-line;">${esc(a.content)}</div>
             ${announcementImageHtml(a)}
@@ -33472,11 +32225,11 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       }
 
       list.innerHTML = items.map(a => `
-        <div class="mgmt-card" style="${a.is_read ? '' : 'border-left: 3px solid #0A7890;'}" onclick="handleAnnouncementClick(${a.id})">
+        <div class="mgmt-card" style="${a.is_read ? '' : 'border-left: 3px solid #0B6B3A;'}" onclick="handleAnnouncementClick(${a.id})">
           <div class="mgmt-card-top">
             <div class="mgmt-card-title">
-              ${!a.is_read ? '<i class="fa-solid fa-circle" style="font-size:7px; color:#0A7890; margin-right:6px;"></i>' : ''}
-              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0A7890;"></i>' : ''}
+              ${!a.is_read ? '<i class="fa-solid fa-circle" style="font-size:7px; color:#0B6B3A; margin-right:6px;"></i>' : ''}
+              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0B6B3A;"></i>' : ''}
               ${esc(a.title)}
             </div>
             <span class="badge badge-default">${esc(fmtLaoTs(a.created_at) || '')}</span>
@@ -33695,7 +32448,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
         <div class="mgmt-card">
           <div class="mgmt-card-top">
             <div class="mgmt-card-title">
-              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0A7890;"></i>' : ''}
+              ${a.is_pinned ? '<i class="fa-solid fa-thumbtack mr-1" style="color:#0B6B3A;"></i>' : ''}
               ${esc(a.title)}
               ${a.always_show ? '<span class="badge badge-pending" style="margin-left:6px;" title="ຂຶ້ນ Popup ທຸກຄັ້ງທີ່ເຂົ້າແອັບ"><i class="fa-solid fa-repeat mr-1"></i>ຂຶ້ນຊ້ຳ</span>' : ''}
             </div>
@@ -34222,7 +32975,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   .gs-opt { display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%; padding: 12px 14px; border: 1.5px solid var(--border-color); border-radius: 14px; background: #fff; color: var(--text-main); font: inherit; text-align: left; cursor: pointer; }
   .gs-opt b { font-size: 15px; font-weight: 700; }
   .gs-opt small { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
-  .gs-opt[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(12,140,166,.16); }
+  .gs-opt[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(11, 107, 58,.16); }
   .gs-opt:focus-visible, .gs-chip:focus-visible, .gs-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
   /* Preview ຂະໜາດນ້ອຍ (ໜ້າຈໍມືຖືຈຳລອງ) */
   .gs-mini { margin-top: 8px; border-radius: 12px; background: #f1f5f9; border: 1px solid var(--border-color); padding: 8px; pointer-events: none; }
@@ -34236,8 +32989,8 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   .gs-mt i.l { display: block; height: 4px; width: 70%; border-radius: 3px; background: #cbd5e1; }
   .gs-mt.big i.l { height: 6px; width: 82%; }
   .gs-mt.cls .ic { color: #fff; border: 0; box-shadow: 0 2px 5px rgba(0,0,0,.18); }
-  .gs-mt.prm .ic { background: #FFF8DF; color: #087A45; border: 1.5px solid #F5C21B; }
-  .gs-mt.prm.png .ic { background: linear-gradient(135deg,#16B070,#075B35); color: #FFF8DF; border: 1.5px solid #F5C21B; }
+  .gs-mt.prm .ic { background: #FFF8DF; color: #0B6B3A; border: 1.5px solid #FFC300; }
+  .gs-mt.prm.png .ic { background: linear-gradient(135deg,#16B070,#075B35); color: #FFF8DF; border: 1.5px solid #FFC300; }
   .gs-mt.cls.t1 .ic { background: linear-gradient(135deg,#14b8a6,#0d9488); } .gs-mt.cls.t2 .ic { background: linear-gradient(135deg,#fb923c,#ea580c); }
   .gs-mt.cls.t3 .ic { background: linear-gradient(135deg,#60a5fa,#2563eb); } .gs-mt.cls.t4 .ic { background: linear-gradient(135deg,#a78bfa,#7c3aed); }
   .gs-mini-nav { display: flex; justify-content: space-around; align-items: center; margin-top: 8px; padding: 6px 4px; border-radius: 10px; background: #fff; border-top: 1px solid #e2e8f0; }
