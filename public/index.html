@@ -3111,8 +3111,19 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .wl-round:active { transform: scale(.92); }
     .wl-round svg { width: 22px; height: 22px; }
     .wl-round .menu-badge { position: absolute; top: -4px; right: -4px; background: #FFC300; color: #063D24; font-size: 10px; min-width: 16px; line-height: 16px; padding: 0 4px; }
-    .wl-hero-cooler { position: absolute; right: 8px; top: 62px; height: 150px; width: auto; max-width: 46%; object-fit: contain; z-index: 0; pointer-events: none; filter: drop-shadow(0 8px 12px rgba(0,0,0,.3)); }
+    .wl-cooler { display: none; position: absolute; right: 8px; top: 62px; height: 150px; z-index: 0; pointer-events: none; }
+    .wl-cooler.on { display: block; }
+    .wl-hero-cooler { position: relative; z-index: 2; display: block; height: 100%; width: auto; max-width: 150px; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0,0,0,.38)) drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
     .wl-hero-cooler:not([src]) { display: none; }
+    /* ເງົາພື້ນ + ແສງທອງຫຼັງຕູ້ + ປະກາຍ/ເກັດນ້ຳແຂງ ເປັນລາຍລະອຽດປະກອບ */
+    .wl-cooler-glow { position: absolute; z-index: 0; left: 50%; top: 52%; width: 170%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(255,214,64,.42) 0%, rgba(255,195,0,.16) 40%, rgba(255,195,0,0) 68%); }
+    .wl-cooler-floor { position: absolute; z-index: 1; left: 50%; bottom: -9px; width: 120%; height: 18px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse at center, rgba(0,0,0,.45) 0%, rgba(0,0,0,.18) 45%, rgba(0,0,0,0) 72%); filter: blur(2px); }
+    .wl-sp { position: absolute; z-index: 3; width: 14px; height: 14px; background: #FFE36B; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 4px rgba(255,214,64,.9)); animation: wlTwinkle 2.8s ease-in-out infinite; }
+    .wl-sp.s1 { left: -10px; top: 8%; } .wl-sp.s2 { right: -4px; top: -4px; width: 10px; height: 10px; animation-delay: .9s; } .wl-sp.s3 { left: 6%; bottom: 14%; width: 9px; height: 9px; animation-delay: 1.7s; }
+    .wl-ice { position: absolute; z-index: 3; border-radius: 50%; background: rgba(255,255,255,.85); box-shadow: 0 0 6px rgba(255,255,255,.8); }
+    .wl-ice.i1 { width: 6px; height: 6px; left: -16px; top: 46%; } .wl-ice.i2 { width: 4px; height: 4px; right: -10px; top: 38%; opacity: .8; } .wl-ice.i3 { width: 5px; height: 5px; right: 2px; bottom: 6%; opacity: .7; }
+    @keyframes wlTwinkle { 0%, 100% { transform: scale(.7) rotate(0); opacity: .55; } 50% { transform: scale(1.1) rotate(20deg); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .wl-sp { animation: none; } }
     html[data-mm-style="premium"] .wl-hero {
       position: relative; overflow: hidden; padding: 16px 16px 18px;
       background:
@@ -3129,8 +3140,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     html[data-mm-style="premium"] .wl-hero .wl-search input { border-radius: 999px; height: 48px; padding-left: 46px; box-shadow: 0 6px 16px -8px rgba(0,0,0,.4); }
     html[data-mm-style="premium"] .wl-hero .wl-scan { width: 48px; height: 48px; border: 0; border-radius: 16px; background: #fff; color: #0B6B3A; box-shadow: 0 6px 16px -8px rgba(0,0,0,.4); }
     .wl-scan-svg { width: 26px; height: 26px; }
-    @media (max-width: 380px) { .wl-hero-cooler { height: 120px; top: 70px; } html[data-mm-style="premium"] .wl-hero .wl-hello { font-size: 22px; } .wl-brand-t b { font-size: 18px; } }
-    @media (min-width: 993px) { .wl-hero-cooler { height: 190px; right: 24px; top: 20px; } html[data-mm-style="premium"] .wl-hero { padding: 22px 26px 24px; } html[data-mm-style="premium"] .wl-hero .wl-search { max-width: 520px; } }
+    @media (max-width: 380px) { .wl-cooler { height: 120px; top: 70px; } html[data-mm-style="premium"] .wl-hero .wl-hello { font-size: 22px; } .wl-brand-t b { font-size: 18px; } }
+    @media (min-width: 993px) { .wl-cooler { height: 190px; right: 24px; top: 20px; } .wl-hero-cooler { max-width: 190px; } html[data-mm-style="premium"] .wl-hero { padding: 22px 26px 24px; } html[data-mm-style="premium"] .wl-hero .wl-search { max-width: 520px; } }
         /* ເອົາ chip Team/MDE ອອກຈາກ hero (ຊື່ MDE ສະແດງໃນແຖວຊື່ແລ້ວ) */
     #wlChips { display: none !important; }
     /*HERO_END*/
@@ -3565,7 +3576,11 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       <!-- VIEW 1: ໜ້າຫຼັກຂອງ User = ໜ້າຕ້ອນຮັບ (ງົບຂອງທີມຍ້າຍໄປເມນູ "ງົບປະມານຕູ້ຂອງທີມ") -->
       <div id="view-user-dashboard" class="hidden">
         <section class="wl-hero" id="wlHero" aria-label="ຍິນດີຕ້ອນຮັບ">
-          <img class="wl-hero-cooler" id="wlHeroCooler" alt="" aria-hidden="true" draggable="false">
+          <div class="wl-cooler" id="wlCooler" aria-hidden="true">
+            <span class="wl-cooler-glow"></span><span class="wl-cooler-floor"></span>
+            <img class="wl-hero-cooler" id="wlHeroCooler" alt="" draggable="false">
+            <i class="wl-sp s1"></i><i class="wl-sp s2"></i><i class="wl-sp s3"></i><i class="wl-ice i1"></i><i class="wl-ice i2"></i><i class="wl-ice i3"></i>
+          </div>
           <div class="wl-top">
             <div class="wl-brand">
               <img class="wl-logo" id="wlLogo" alt="Beerlao" draggable="false">
@@ -28625,7 +28640,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       const lg = document.getElementById('wlLogo');
       if (lg && !lg.getAttribute('src')) { lg.onerror = () => { lg.onerror = null; lg.src = '/icons/beerlao-logo.png'; }; lg.src = '/icons/home/hero-logo.png?v=' + WL_HERO_V; }
       const co = document.getElementById('wlHeroCooler');
-      if (co && !co.getAttribute('src') && !co.dataset.tried) { co.dataset.tried = '1'; co.onerror = () => co.removeAttribute('src'); co.src = '/icons/home/hero-cooler.png?v=' + WL_HERO_V; }
+      if (co && !co.getAttribute('src') && !co.dataset.tried) { co.dataset.tried = '1'; co.onerror = () => { co.removeAttribute('src'); const w = document.getElementById('wlCooler'); if (w) w.classList.remove('on'); }; co.onload = () => { const w = document.getElementById('wlCooler'); if (w) w.classList.add('on'); }; co.src = '/icons/home/hero-cooler.png?v=' + WL_HERO_V; }
       const hero = document.getElementById('wlHero');
       if (!hero) return;
       if (wlHeroBgUrl !== undefined) { if (wlHeroBgUrl) hero.style.setProperty('--wl-hero-bg', 'url("' + wlHeroBgUrl + '")'); return; }
