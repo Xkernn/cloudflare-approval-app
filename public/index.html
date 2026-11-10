@@ -2824,6 +2824,59 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html[data-mm-style="premium"] .card-auth .brand-header h1 { font-size: 24px; }
     }
 
+    /* ===== Desktop v2: green sidebar with white active pill, top bar, dashboard charts ===== */
+    .desk-topbar { display: none; }
+    html[data-mm-style="premium"] .sidebar::before { background: linear-gradient(170deg, #12894B 0%, #0B6B3A 55%, #085530 100%); border: 0; box-shadow: 0 16px 34px -14px rgba(6, 61, 36, .65); }
+    html[data-mm-style="premium"] .sidebar-brand { border-bottom-color: rgba(255, 255, 255, .18); }
+    html[data-mm-style="premium"] .sidebar-brand-title { color: #fff; }
+    html[data-mm-style="premium"] .sidebar-brand-sub { color: #CFE9D6; }
+    html[data-mm-style="premium"] .menu-item { color: #E6F4EA; }
+    html[data-mm-style="premium"] .menu-item:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+    html[data-mm-style="premium"] .menu-item.active { background: #fff; color: #0B6B3A; font-weight: 700; box-shadow: 0 8px 18px -10px rgba(3, 40, 22, .6); }
+    html[data-mm-style="premium"] .menu-item.active i { background: #FFF3C4; box-shadow: none; }
+    html[data-mm-style="premium"] .sidebar-footer { border-top-color: rgba(255, 255, 255, .18); }
+    html[data-mm-style="premium"] .menu-item .menu-badge { background: #FFC300; color: #063D24; }
+    .wl-charts { display: none; }
+    @media (min-width: 993px) {
+      .desk-topbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        position: sticky; top: 12px; z-index: 60; margin: 0 0 22px; padding: 10px 14px 10px 20px;
+        background: #fff; border-radius: 18px; box-shadow: var(--shadow-card);
+      }
+      .dt-title { font-size: 17px; font-weight: 800; color: #0B6B3A; letter-spacing: -.01em; }
+      .dt-title span { font-weight: 600; font-size: 13.5px; color: var(--text-muted); margin-left: 6px; }
+      .dt-right { display: flex; align-items: center; gap: 10px; }
+      .dt-bell { position: relative; width: 42px; height: 42px; border: 0; border-radius: 50%; background: #E6F2E8; color: #0B6B3A; font-size: 17px; cursor: pointer; transition: background .15s, transform .15s; }
+      .dt-bell:hover { background: #D5EAD9; } .dt-bell:active { transform: scale(.94); }
+      .dt-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #D93025; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 18px; text-align: center; box-sizing: border-box; border: 2px solid #fff; }
+      .dt-badge.hidden { display: none; }
+      .dt-user { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 4px 8px 4px 4px; border-radius: 999px; cursor: pointer; font-family: var(--font-ui); text-align: left; transition: background .15s; }
+      .dt-user:hover { background: #F1F7F2; }
+      .dt-avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #12894B, #0B6B3A); color: #fff; font-weight: 800; font-size: 16px; }
+      .dt-who { display: flex; flex-direction: column; line-height: 1.25; max-width: 200px; }
+      .dt-who b { font-size: 13.5px; color: #0B3D24; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .dt-who small { font-size: 11.5px; color: var(--text-muted); }
+      .wl-stats { max-width: none; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
+      .wl-stat { padding: 18px 10px 16px; border-radius: 18px; } .wl-stat i { font-size: 30px; margin-bottom: 6px; } .wl-stat b { font-size: 28px; } .wl-stat span { font-size: 13px; }
+      .wl-charts { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 1.7fr); gap: 16px; margin-top: 16px; }
+      .wl-charts:empty { display: none; }
+      .wl-chart { background: #fff; border-radius: 18px; padding: 18px 20px 20px; box-shadow: var(--shadow-card); min-width: 0; }
+      .wl-chart h3 { font-size: 15px; font-weight: 700; color: #0B3D24; margin-bottom: 14px; }
+      .wl-donut-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+      .wl-donut { width: 150px; height: 150px; flex: none; }
+      .wl-donut-n { font: 800 17px var(--font-ui); fill: #0B3D24; } .wl-donut-l { font: 500 9px var(--font-ui); fill: #5A6A55; }
+      .wl-legend { list-style: none; flex: 1 1 130px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+      .wl-legend li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-main); }
+      .wl-legend li i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+      .wl-legend li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .wl-legend li b { font-weight: 700; color: #0B3D24; }
+      .wl-bars { display: flex; align-items: flex-end; gap: 12px; height: 190px; padding-top: 6px; }
+      .wl-bar { flex: 1 1 0; min-width: 0; height: 100%; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; align-items: end; gap: 4px; }
+      .wl-bar em { font-style: normal; font-size: 11px; font-weight: 700; color: #0B3D24; }
+      .wl-bar i { width: 70%; max-width: 38px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, #2F9E5F, #0B6B3A); align-self: end; }
+      .wl-bar span { font-size: 11px; color: var(--text-muted); max-width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
+
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
     html[data-mm-style="premium"] { --pr-green:#0B6B3A; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#FFC300; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
     html[data-mm-style="premium"] body { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
@@ -3414,6 +3467,17 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     </div>
 
     <main class="main-content">
+      <!-- Desktop top bar (≥993px): ຊື່ລະບົບ + ແຈ້ງເຕືອນ + ຜູ້ໃຊ້ -->
+      <div class="desk-topbar" id="deskTopbar">
+        <div class="dt-title">Beerlao <span>Cooler Tracking &amp; Management</span></div>
+        <div class="dt-right">
+          <button type="button" class="dt-bell" onclick="switchView('notifications')" aria-label="ແຈ້ງເຕືອນ"><i class="fa-solid fa-bell"></i><span id="dtBadge" class="dt-badge hidden">0</span></button>
+          <button type="button" class="dt-user" onclick="switchView('profile')" aria-label="ຂໍ້ມູນສ່ວນຕົວ">
+            <span class="dt-avatar" id="dtAvatar">?</span>
+            <span class="dt-who"><b id="dtName">-</b><small id="dtRole"></small></span>
+          </button>
+        </div>
+      </div>
       <!-- ມືຖື: ປຸ່ມກັບໄປໜ້າເມນູ (ສະແດງເມື່ອຢູ່ໜ້າທີ່ເຂົ້າຈາກເມນູ ແລະ ບໍ່ແມ່ນແຖບລຸ່ມ) -->
       <div id="mobileBackBar" class="mobile-backbar">
         <button type="button" class="btn-back" onclick="openMenuPage()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນເມນູ</button>
@@ -3434,6 +3498,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </div>
         </section>
         <div class="wl-stats" id="wlStats" aria-live="polite"></div>
+        <div class="wl-charts" id="wlCharts"></div>
         <div class="wl-sec">ເມນູຫຼັກ</div>
         <div class="wl-grid" id="wlGrid"></div>
         <div class="wl-empty hidden" id="wlEmpty">ບໍ່ພົບເມນູທີ່ຄົ້ນຫາ</div>
@@ -28442,6 +28507,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
         `<button type="button" class="wl-card" style="--i:${i}" onclick="switchView('${x.view}')"><span class="wl-ic">${WL_OWN[x.nav] ? wlOwnIc(WL_OWN[x.nav], WL_PR[x.nav]) : (window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
       wlFilter((document.getElementById('wlSearch')||{}).value||'');
       wlLoadStats();
+      deskTopbarSync();
     }
 
 
@@ -28462,25 +28528,50 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
         if (n && !n.classList.contains('hidden')) { switchView(view); return; }
       }
     }
-    let wlStatsCache = { t: 0, uid: null, html: '' };
+    let wlStatsCache = { t: 0, uid: null, html: '', charts: '' };
+    const WL_PALETTE = ['#0B6B3A', '#FFC300', '#2F9E5F', '#E59A1F', '#7BC47F', '#B7C9BC'];
+    function wlChartsHtml(prov, total) {
+      if (!prov.length) return '';
+      const top = prov.slice(0, 5), rest = prov.slice(5).reduce((a, p) => a + p.n, 0);
+      const parts = top.concat(rest > 0 ? [{ name: 'ອື່ນໆ', n: rest }] : []);
+      const sum = parts.reduce((a, p) => a + p.n, 0) || 1;
+      const R = 52, C = 2 * Math.PI * R; let off = 0;
+      const arcs = parts.map((p, k) => {
+        const len = p.n / sum * C;
+        const el = `<circle cx="70" cy="70" r="${R}" fill="none" stroke="${WL_PALETTE[k % WL_PALETTE.length]}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 70 70)"/>`;
+        off += len; return el;
+      }).join('');
+      const legend = parts.map((p, k) => `<li><i style="background:${WL_PALETTE[k % WL_PALETTE.length]}"></i><span>${esc(p.name)}</span><b>${(p.n / sum * 100).toFixed(1)}%</b></li>`).join('');
+      const bars = prov.slice(0, 8), max = bars[0].n || 1;
+      const cols = bars.map((p) => `<div class="wl-bar"><em>${Number(p.n).toLocaleString('en-US')}</em><i style="height:${Math.max(4, Math.round(p.n / max * 100))}%"></i><span title="${esc(p.name)}">${esc(p.name)}</span></div>`).join('');
+      return `<section class="wl-chart"><h3>ສັດສ່ວນຕູ້ແຊ່ຕາມແຂວງ</h3>
+          <div class="wl-donut-row"><svg viewBox="0 0 140 140" class="wl-donut" role="img" aria-label="ສັດສ່ວນຕູ້ແຊ່ຕາມແຂວງ"><circle cx="70" cy="70" r="${R}" fill="none" stroke="#EEF3EE" stroke-width="22"/>${arcs}<text x="70" y="68" text-anchor="middle" class="wl-donut-n">${Number(total).toLocaleString('en-US')}</text><text x="70" y="86" text-anchor="middle" class="wl-donut-l">ຕູ້ (100%)</text></svg>
+          <ul class="wl-legend">${legend}</ul></div></section>
+        <section class="wl-chart"><h3>ຈຳນວນຕູ້ແຊ່ແຕ່ລະແຂວງ (Top ${bars.length})</h3><div class="wl-bars">${cols}</div></section>`;
+    }
     async function wlLoadStats() {
-      const box = document.getElementById('wlStats');
+      const box = document.getElementById('wlStats'), chartBox = document.getElementById('wlCharts');
       if (!box) return;
       const u = currentUser || {};
       const uid = u.id || u.email || '';
-      if (wlStatsCache.html && wlStatsCache.uid === uid && Date.now() - wlStatsCache.t < 60000) { box.innerHTML = wlStatsCache.html; return; }
+      if (wlStatsCache.html && wlStatsCache.uid === uid && Date.now() - wlStatsCache.t < 60000) { box.innerHTML = wlStatsCache.html; if (chartBox) chartBox.innerHTML = wlStatsCache.charts; return; }
       const fmt = (n) => Number(n || 0).toLocaleString('en-US');
       const canGo = (nav) => { const n = document.getElementById(nav); return !!(n && !n.classList.contains('hidden')); };
       const items = [];
+      let charts = '';
       try {
         const r = await fetch('/api/cooler-master/stats');
         const d = await r.json().catch(() => ({}));
         if (r.ok && d.total) {
           items.push({ cls: 'total', ic: 'fa-snowflake', n: d.total, l: 'ຕູ້ແຊ່ທັງໝົດ', go: canGo('nav-cooler-master') ? 'coolerMaster' : '' });
-          if (Array.isArray(d.provinces) && d.provinces.length) items.push({ cls: 'prov', ic: 'fa-map-location-dot', n: d.provinces.length, l: 'ແຂວງ', go: canGo('nav-map') ? 'map' : '' });
+          if (Array.isArray(d.provinces) && d.provinces.length) {
+            items.push({ cls: 'prov', ic: 'fa-map-location-dot', n: d.provinces.length, l: 'ແຂວງ', go: canGo('nav-map') ? 'map' : '' });
+            const prov = d.provinces.map((p) => ({ name: p.province || '-', n: Number(p.n) || 0 })).filter((p) => p.n > 0).sort((a, b) => b.n - a.n);
+            charts = wlChartsHtml(prov, d.total);
+          }
         }
       } catch (e) {}
-      /* TODO(backend): ເພີ່ມ endpoint ສະຫຼຸບ "ຢູ່ໃນສາຂາ" / "ຢູ່ໜ້າງານ" ແລ້ວ push ເຂົ້າ items ຢູ່ບ່ອນນີ້ (ຕອນນີ້ຍັງບໍ່ມີຂໍ້ມູນ ຈຶ່ງບໍ່ສະແດງ) */
+      /* TODO(backend): ເພີ່ມ endpoint ສະຫຼຸບ "ຢູ່ໃນສາຂາ" / "ຢູ່ໜ້າງານ" ແລະ ແນວໂນ້ມລາຍເດືອນ ແລ້ວເພີ່ມເຂົ້າ items / charts ຢູ່ບ່ອນນີ້ (ຕອນນີ້ຍັງບໍ່ມີຂໍ້ມູນ ຈຶ່ງບໍ່ສະແດງ) */
       if (u.role === 'admin') {
         try {
           const r = await fetch('/api/admin/lost-coolers/list?status=active&limit=1');
@@ -28490,8 +28581,30 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       }
       const html = items.map((x) => `<${x.go ? 'button type="button"' : 'div'} class="wl-stat ${x.cls}"${x.go ? ` onclick="switchView('${x.go}')"` : ''}><i class="fa-solid ${x.ic}"></i><b>${fmt(x.n)}</b><span>${x.l}</span></${x.go ? 'button' : 'div'}>`).join('');
       box.innerHTML = html;
-      wlStatsCache = { t: Date.now(), uid, html };
+      if (chartBox) chartBox.innerHTML = charts;
+      wlStatsCache = { t: Date.now(), uid, html, charts };
     }
+
+    /* ===== Desktop top bar: ຊື່ຜູ້ໃຊ້ + ໝາຍເລກແຈ້ງເຕືອນ ===== */
+    function deskTopbarSync() {
+      const u = (typeof currentUser !== 'undefined' && currentUser) || null;
+      const nm = document.getElementById('dtName'); if (!nm) return;
+      if (u) {
+        const name = u.mde_name || u.email || '-';
+        nm.textContent = name;
+        document.getElementById('dtAvatar').textContent = String(name).trim().charAt(0).toUpperCase() || '?';
+        document.getElementById('dtRole').textContent = u.isAssistantAdmin ? 'ຜູ້ຊ່ວຍ Admin' : (u.role === 'admin' ? 'Admin' : u.role === 'dsm' ? 'DSM' : u.role === 'warehouse' ? 'ພະນັກງານສາງ' : (u.team ? 'Team: ' + u.team : (u.role || '')));
+      }
+      const src = document.getElementById('notifUnreadBadge'), b = document.getElementById('dtBadge');
+      if (src && b) { b.textContent = src.textContent; b.classList.toggle('hidden', src.classList.contains('hidden')); }
+    }
+    (function initDeskTopbar() {
+      const src = document.getElementById('notifUnreadBadge');
+      if (src && window.MutationObserver) new MutationObserver(deskTopbarSync).observe(src, { attributes: true, childList: true, characterData: true, subtree: true });
+      const app = document.getElementById('appContainer');
+      if (app && window.MutationObserver) new MutationObserver(deskTopbarSync).observe(app, { attributes: true, attributeFilter: ['class'] });
+      deskTopbarSync();
+    })();
 
     /* ===== ມຸມມອງ "ພາບລວມ": card ຕໍ່ລາຍການ ເຫັນ % ການໃຊ້ໂຄຕ້າທັນທີ ເລີ່ມຈາກລາຍການທີ່ໃຊ້ໄປຫຼາຍສຸດ ===== */
     // items: [{ name, sub, q, u, click? }]
