@@ -2731,6 +2731,46 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     }
     @media (min-width: 993px) { .wl-stats { max-width: 640px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); } }
 
+    /* ===== Menu page v2 ("ຈັດການຕູ້ແຊ່"): green header + full-width list rows (icon left, 2-line title, chevron right) ===== */
+    .mm-en { display: none; }
+    .mm-head h2 small { display: block; margin-top: 2px; font-size: 12px; font-weight: 500; opacity: .9; letter-spacing: .01em; }
+    @media (max-width: 992px) {
+      html[data-mm-style="premium"] .mm-head {
+        justify-content: space-between; align-items: center; padding-bottom: 20px;
+        background:
+          radial-gradient(circle at 92% 0%, rgba(255, 195, 0, .35), transparent 45%),
+          linear-gradient(135deg, #0B6B3A 0%, #12894B 100%);
+        box-shadow: 0 12px 26px -16px rgba(11, 107, 58, .75);
+      }
+      html[data-mm-style="premium"] .mm-head h2 { position: static; margin: 0; text-align: left; color: #fff; font-size: 20px; line-height: 1.25; pointer-events: none; }
+      html[data-mm-style="premium"] .mm-sec-title { color: #0B6B3A; font-size: 15px; }
+      html[data-mm-style="premium"] .mm-count { color: #0B6B3A; background: rgba(11, 107, 58, .12); }
+      html[data-mm-style="premium"] .mm-hint { color: #0B6B3A; background: rgba(255, 195, 0, .14); border-color: rgba(255, 195, 0, .75); }
+      html[data-mm-style="premium"] .mm-fav-panel.mm-drop { border-color: #FFC300; background: rgba(255, 195, 0, .14); }
+
+      /* list rows (not while editing: edit mode keeps the 4-column icon grid for drag & pin) */
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) { grid-template-columns: 1fr; gap: 10px; }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-tile {
+        display: grid; grid-template-columns: 56px minmax(0, 1fr) 14px; column-gap: 14px; row-gap: 1px; align-items: center;
+        text-align: left; padding: 10px 16px 10px 12px; background: #fff; border-radius: 18px; box-shadow: var(--shadow-card);
+        transition: background .15s, transform .15s;
+      }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-tile:active { background: #E6F2E8; transform: scale(.99); }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-ic { grid-column: 1; grid-row: 1 / 3; width: 52px; justify-self: center; }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-lbl {
+        grid-column: 2; grid-row: 1 / 3; align-self: center; text-align: left; font-size: 15px; font-weight: 700; color: #0B3D24;
+      }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-tile:has(.mm-en) .mm-lbl { grid-row: 1; align-self: end; }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-en {
+        display: block; grid-column: 2; grid-row: 2; align-self: start; font-size: 12px; line-height: 1.3; color: var(--text-muted);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      html[data-mm-style="premium"] .mm-page:not(.editing) :is(#mmAllGrid, #mmSubGrid) .mm-tile::after {
+        content: ''; grid-column: 3; grid-row: 1 / 3; justify-self: end; width: 9px; height: 9px;
+        border-right: 2.5px solid #0B6B3A; border-top: 2.5px solid #0B6B3A; transform: rotate(45deg);
+      }
+    }
+
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
     html[data-mm-style="premium"] { --pr-green:#0B6B3A; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#FFC300; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
     html[data-mm-style="premium"] body { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
@@ -3304,7 +3344,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     <!-- ໜ້າເມນູເຕັມຈໍ (ມືຖື): ເປີດຈາກປຸ່ມ "ເມນູ" ຢູ່ແຖບລຸ່ມ — ສ້າງເນື້ອຫາໂດຍ mmRender() -->
     <div id="mobileMenuPage" class="mm-page hidden" aria-hidden="true">
       <div class="mm-head">
-        <h2>ເມນູ</h2>
+        <h2>ຈັດການຕູ້ແຊ່<small>Cooler Management</small></h2>
         <button type="button" id="mmEditBtn" class="mm-edit" onclick="mmToggleEdit()">ແກ້ໄຂ</button>
       </div>
       <div class="mm-body" id="mmBody">
@@ -11332,6 +11372,21 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       { key: 'guide',     nav: 'nav-user-guide',     view: 'userGuide',      icon: 'fa-book-open',         label: 'ຄູ່ມືການໃຊ້',        badge: null,                    tone: 'purple' },
       { key: 'tour',      nav: 'nav-tour',           action: 'tour',          icon: 'fa-circle-question',   label: 'ແນະນຳການໃຊ້',        badge: null,                    tone: 'slate' }
     ];
+    /* ຊື່ອັງກິດ (ແຖວທີ 2 ຂອງລາຍການເມນູ) — ບໍ່ມີ key ໃດ = ບໍ່ສະແດງແຖວທີ 2 */
+    const MM_EN = {
+      asset: 'Asset Tracking', request: 'Asset Request', history: 'Asset History', delivery: 'Delivery Report',
+      dispatch: 'Scan Load to Truck', dlvscan: 'Scan Delivery Report', loan: 'Create Loan Document', stock: 'Warehouse Stock',
+      count: 'Stock Count', cmaster: 'Cooler Master Search', lostcooler: 'Lost Cooler Master Data', cns: 'Cooler Not Scan',
+      vo: 'Virtual Company 3D', newcooler: 'New Cooler / Inter-province', prov: 'Province Cooler Budget', adminmgmt: 'Admin Management',
+      dsmsign: 'DSM Document Signing', teambudget: 'Team Cooler Budget', vte: 'Vientiane Cooler Budget', ann: 'Announcements',
+      playbook: 'Cooler Size Guide', guide: 'User Guide', tour: 'App Tour',
+      'stock:dashboard': 'Stock Dashboard', 'stock:history': 'History Stock Cooler', 'stock:scan': 'Scan Find Cooler in Warehouse',
+      'cm:scan': 'Scan Source of Cooler', 'loan:issue': 'Create Loan Contract', 'loan:return': 'Create Return Document',
+      'loan:survey': 'Create Survey Return Document', 'loan:queue': 'Pending Signature', 'loan:docs': 'Completed Documents',
+      'hist:request': 'Request History', 'hist:delivery': 'Delivery History', 'dlv:event': 'Event Cooler', 'dlv:writeoff': 'Write-off Cooler',
+      'nc:imported': 'Imported Coolers', 'nc:receive': 'Receive New Coolers', 'nc:fill': 'Scan New Coolers',
+      'sp:plan': 'Shipping Plan Calculator', 'sp:trip': 'Inter-province Truck Trips'
+    };
     /* ເມນູຍ່ອຍ (ແຖບ/ໜ້າດ້ານໃນ) — ປັກໝຸດໄວ້ໃນ "ລາຍການທີ່ມັກ" ໄດ້ຄືກັນ. nav = ເມນູແມ່ (ໃຊ້ກວດສິດ/ການຊ່ອນ) · go = ເປີດໜ້າແມ່ກ່ອນ ແລ້ວຄ່ອຍໄປແຖບຍ່ອຍ (ທຸກຢ່າງ synchronous) */
     const MM_SUBS = [
       { key: 'stock:dashboard', sub: true, nav: 'nav-warehouse-stock', icon: 'fa-solid fa-chart-column',          label: 'Stock Dashbroad',        tone: 'amber',  go: () => { switchView('warehouseStock'); switchStockTab('dashboard'); } },
@@ -11402,7 +11457,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       const mark = it.sub ? '<span class="mm-sub-mark"><i class="fa-solid fa-angles-right"></i>' + icSvg('chev2') + '</span>' : '';
       return `<button type="button" class="mm-tile${it.sub ? ' mm-is-sub' : ''}"${id} data-key="${it.key}" onclick="mmTileClick('${it.key}', event)">
           <span class="mm-ic mm-t-${it.tone}${it.key === 'lostcooler' ? ' mm-danger' : ''}"><i class="fa-solid ${it.icon}"></i>${(window.mmPr?mmPr(it.key):'')}${icSvg(MM_IC[it.key] || 'cube')}${mark}${badge}<span class="mm-pin ${pinCls}"><i class="fa-solid ${pinIc}"></i>${icSvg(pinIc === 'fa-minus' ? 'minus' : (pinIc === 'fa-check' ? 'check' : 'plus'))}</span></span>
-          <span class="mm-lbl">${esc(it.label)}</span>
+          <span class="mm-lbl">${esc(it.label)}</span>${MM_EN[it.key] ? `<span class="mm-en">${esc(MM_EN[it.key])}</span>` : ''}
         </button>`;
     }
     function mmRender() {
