@@ -3117,7 +3117,7 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       position: relative; overflow: hidden; padding: 16px 16px 18px;
       background:
         linear-gradient(90deg, rgba(6,61,36,.55) 0%, rgba(6,61,36,.15) 60%, rgba(6,61,36,0) 100%),
-        var(--wl-hero-bg, none) center / cover no-repeat,
+        var(--wl-hero-bg, none) center / 100% 100% no-repeat,
         radial-gradient(circle at 88% 8%, rgba(255, 195, 0, .30), transparent 42%),
         radial-gradient(circle at 0% 100%, rgba(255, 255, 255, .10), transparent 45%),
         linear-gradient(160deg, #12894B 0%, #0B6B3A 58%, #085530 100%);
@@ -3131,6 +3131,8 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .wl-scan-svg { width: 26px; height: 26px; }
     @media (max-width: 380px) { .wl-hero-cooler { height: 120px; top: 70px; } html[data-mm-style="premium"] .wl-hero .wl-hello { font-size: 22px; } .wl-brand-t b { font-size: 18px; } }
     @media (min-width: 993px) { .wl-hero-cooler { height: 190px; right: 24px; top: 20px; } html[data-mm-style="premium"] .wl-hero { padding: 22px 26px 24px; } html[data-mm-style="premium"] .wl-hero .wl-search { max-width: 520px; } }
+        /* ເອົາ chip Team/MDE ອອກຈາກ hero (ຊື່ MDE ສະແດງໃນແຖວຊື່ແລ້ວ) */
+    #wlChips { display: none !important; }
     /*HERO_END*/
 
 
@@ -28588,7 +28590,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       const u = currentUser || {};
       const h = new Date().getHours();
       document.getElementById('wlHello').textContent = h < 12 ? 'ສະບາຍດີຕອນເຊົ້າ' : (h < 17 ? 'ສະບາຍດີຕອນບ່າຍ' : 'ສະບາຍດີຕອນແລງ');
-      document.getElementById('wlName').textContent = u.mde_name || u.email || '-';
+      document.getElementById('wlName').textContent = (u.mde_code && u.mde_name) ? (u.mde_code + ' - ' + u.mde_name) : (u.mde_name || u.mde_code || u.email || '-');
       wlHeroAssets(); wlSyncBell();
       const chips = [];
       if (u.team) chips.push(`<span class="tb-chip-id">${wlChipIc('chip-team','teambudget')}<i class="fa-solid fa-users"></i>Team: ${esc(u.team)}</span>`);
