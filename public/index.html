@@ -2648,6 +2648,36 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
       html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-label { color: #075B35; font-weight: 700; }
     }
 
+    /* ===== Tab bar v2 (design system v2): white floating bar + green pill on the active tab (icon + label turn white) ===== */
+    @media (max-width: 992px) {
+      html[data-mm-style="premium"] .mobile-tabbar {
+        --tab-h: 64px; --ind: 62px; padding: 0 6px;
+        background: #FFFFFF; border: 0; border-radius: 24px;
+        box-shadow: 0 12px 28px -10px rgba(11, 107, 58, 0.38), 0 2px 8px rgba(11, 107, 58, 0.12);
+      }
+      /* sliding indicator = rounded green pill behind the active tab */
+      html[data-mm-style="premium"] .mobile-tab-indicator {
+        top: 6px; width: var(--ind); height: 52px; border: 0; border-radius: 18px;
+        background: linear-gradient(160deg, #12894B 0%, #0B6B3A 100%);
+        box-shadow: 0 6px 14px -6px rgba(11, 107, 58, 0.65);
+      }
+      /* flat icons (FontAwesome glyphs) instead of the cream tile images; full icon pack comes with step 2 */
+      html[data-mm-style="premium"] .mobile-tab-icon .ic-pr,
+      html[data-mm-style="premium"] .mobile-tab-icon svg.ic { display: none !important; }
+      html[data-mm-style="premium"] .mobile-tab-icon i.fa-solid { display: inline-block !important; font-size: 21px; color: #0B6B3A; transition: color .2s; }
+      html[data-mm-style="premium"] .mobile-tab { color: #6B7A66; justify-content: center; gap: 3px; }
+      html[data-mm-style="premium"] .mobile-tab-label { color: #6B7A66; font-size: 11px; font-weight: 600; }
+      html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon { transform: none !important; }
+      html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-icon i.fa-solid,
+      html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-label { color: #FFFFFF; }
+      html[data-mm-style="premium"] .mobile-tab.active .mobile-tab-label { font-weight: 700; }
+      html[data-mm-style="premium"] .mobile-tab .menu-badge { background: #FFC300; color: #063D24; }
+    }
+    @media (max-width: 380px) {
+      html[data-mm-style="premium"] .mobile-tabbar { --ind: 56px; }
+      html[data-mm-style="premium"] .mobile-tab-label { font-size: 10px; }
+    }
+
     /* ===== Beerlao Premium skin v2: green / gold / cream surfaces + background pattern (matches the custom SVG pack) ===== */
     html[data-mm-style="premium"] { --pr-green:#0B6B3A; --pr-deep:#075B35; --pr-forest:#063D24; --pr-gold:#FFC300; --pr-gold-lt:#FFD84A; --pr-cream:#FFF8DF; --pr-pattern:url("/icons/premium/pattern.svg?v=3"); }
     html[data-mm-style="premium"] body { background-color: #FFF8E6; background-image: var(--pr-pattern); background-size: 96px 96px; background-attachment: fixed; }
