@@ -3812,6 +3812,95 @@ body.admin-ux-v2 .admin-insights-note p{margin:5px 0 0;color:#7C8B80;font-size:1
 @media(prefers-reduced-motion:reduce){body.admin-ux-v2 .admin-insight-track i{transition:none}}
 </style>
 
+
+<style id="beerlao-admin-cooler-stock-phase8-js">
+/* Phase 8 — cooler inventory snapshot. Scoped to Admin only. */
+body.admin-ux-v2 .admin-cooler-overview{margin:20px 0 8px;padding:22px;border:1px solid #E8E3D6;border-radius:20px;background:linear-gradient(135deg,#fff 0%,#FFFEFA 72%,#F5F8EF 100%);box-shadow:0 5px 16px rgba(30,64,42,.05)}
+body.admin-ux-v2 .admin-cooler-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:17px}
+body.admin-ux-v2 .admin-cooler-head h3{margin:4px 0;color:#15372A;font-size:18px;font-weight:850}
+body.admin-ux-v2 .admin-cooler-head p{margin:0;color:#829087;font-size:11px}
+body.admin-ux-v2 .admin-cooler-refresh{display:flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid #D9E7D9;border-radius:11px;background:#F1F8F0;color:#0B6B3A;font-size:11px;font-weight:800;cursor:pointer}
+body.admin-ux-v2 .admin-cooler-refresh:disabled{opacity:.55;cursor:wait}
+body.admin-ux-v2 .admin-cooler-refresh span{font-size:17px;line-height:12px}
+body.admin-ux-v2 .admin-cooler-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+body.admin-ux-v2 .admin-cooler-kpi{position:relative;display:grid;grid-template-columns:38px 1fr;grid-template-rows:auto auto auto;align-items:center;column-gap:10px;min-width:0;padding:14px;border:1px solid #EAE7DE;border-radius:15px;background:#fff;box-shadow:0 3px 10px rgba(30,64,42,.035)}
+body.admin-ux-v2 .admin-cooler-kpi-icon{grid-row:1/4;display:grid;place-items:center;width:36px;height:36px;border-radius:11px;background:#E8F3E9;color:#0B6B3A;font-size:21px;font-weight:900}
+body.admin-ux-v2 .admin-cooler-kpi-icon.is-green{background:#E5F4E8;color:#0B6B3A}
+body.admin-ux-v2 .admin-cooler-kpi-icon.is-gold{background:#FFF4D3;color:#B77B00}
+body.admin-ux-v2 .admin-cooler-kpi-icon.is-blue{background:#E5F1FF;color:#176AB2}
+body.admin-ux-v2 .admin-cooler-kpi small{color:#6D7E72;font-size:10px;font-weight:700}
+body.admin-ux-v2 .admin-cooler-kpi strong{color:#173A29;font-size:24px;line-height:1.25;font-weight:900;font-variant-numeric:tabular-nums}
+body.admin-ux-v2 .admin-cooler-kpi em{color:#94A097;font-size:9px;font-style:normal}
+body.admin-ux-v2 .admin-cooler-analytics{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);gap:13px;margin-top:13px}
+body.admin-ux-v2 .admin-cooler-chart-card{min-width:0;padding:17px;border:1px solid #EAE7DE;border-radius:15px;background:#fff}
+body.admin-ux-v2 .admin-cooler-card-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
+body.admin-ux-v2 .admin-cooler-card-title b{color:#254A34;font-size:12px;font-weight:850}
+body.admin-ux-v2 .admin-cooler-card-title span{color:#99A39B;font-size:9px}
+body.admin-ux-v2 .admin-cooler-donut-wrap{display:flex;align-items:center;justify-content:center;gap:25px;min-height:150px}
+body.admin-ux-v2 .admin-cooler-donut{display:grid;place-items:center;flex:none;width:142px;height:142px;border-radius:50%;background:conic-gradient(#0B6B3A 0deg,#0B6B3A 0deg,#FFC300 0deg,#FFC300 0deg,#3B91D1 0deg,#3B91D1 0deg,#D9DED8 0deg,#D9DED8 360deg);position:relative}
+body.admin-ux-v2 .admin-cooler-donut:before{content:"";position:absolute;inset:17px;border-radius:50%;background:#fff}
+body.admin-ux-v2 .admin-cooler-donut>div{position:relative;z-index:1;display:grid;text-align:center}
+body.admin-ux-v2 .admin-cooler-donut strong{color:#173A29;font-size:23px;font-weight:900;line-height:1.1}
+body.admin-ux-v2 .admin-cooler-donut small{color:#98A39A;font-size:8px;font-weight:800;letter-spacing:1px}
+body.admin-ux-v2 .admin-cooler-legend{display:grid;gap:10px;min-width:130px}
+body.admin-ux-v2 .admin-cooler-legend span{display:grid;grid-template-columns:9px 1fr auto;align-items:center;gap:7px;color:#627368;font-size:10px}
+body.admin-ux-v2 .admin-cooler-legend i{width:8px;height:8px;border-radius:50%}
+body.admin-ux-v2 .admin-cooler-legend i.is-wh{background:#0B6B3A}
+body.admin-ux-v2 .admin-cooler-legend i.is-out{background:#FFC300}
+body.admin-ux-v2 .admin-cooler-legend i.is-transit{background:#3B91D1}
+body.admin-ux-v2 .admin-cooler-legend i.is-write{background:#D9DED8}
+body.admin-ux-v2 .admin-cooler-legend b{color:#234632;font-size:10px;font-variant-numeric:tabular-nums}
+body.admin-ux-v2 .admin-cooler-status-card{display:flex;flex-direction:column}
+body.admin-ux-v2 .admin-cooler-status-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #F0F1EB;color:#68796D;font-size:11px}
+body.admin-ux-v2 .admin-cooler-status-row b{color:#173A29;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums}
+body.admin-ux-v2 .admin-cooler-status-foot{margin-top:auto;padding-top:13px;color:#96A198;font-size:9px}
+body.admin-ux-v2 .admin-cooler-empty{padding:17px;border-radius:12px;background:#F8F8F3;color:#87948A;font-size:11px;text-align:center}
+@media(max-width:900px){body.admin-ux-v2 .admin-cooler-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}body.admin-ux-v2 .admin-cooler-analytics{grid-template-columns:1fr}}
+@media(max-width:520px){body.admin-ux-v2 .admin-cooler-overview{padding:15px;border-radius:16px}body.admin-ux-v2 .admin-cooler-head{align-items:flex-start}body.admin-ux-v2 .admin-cooler-head h3{font-size:15px}body.admin-ux-v2 .admin-cooler-refresh{padding:8px 9px;font-size:10px}body.admin-ux-v2 .admin-cooler-kpis{gap:8px}body.admin-ux-v2 .admin-cooler-kpi{grid-template-columns:30px 1fr;column-gap:7px;padding:10px}body.admin-ux-v2 .admin-cooler-kpi-icon{width:29px;height:29px;font-size:17px}body.admin-ux-v2 .admin-cooler-kpi strong{font-size:20px}body.admin-ux-v2 .admin-cooler-donut-wrap{gap:14px;justify-content:space-around}body.admin-ux-v2 .admin-cooler-donut{width:118px;height:118px}body.admin-ux-v2 .admin-cooler-donut:before{inset:14px}body.admin-ux-v2 .admin-cooler-legend{min-width:115px;gap:8px}}
+@media(max-width:360px){body.admin-ux-v2 .admin-cooler-donut-wrap{flex-direction:column;padding:8px 0}body.admin-ux-v2 .admin-cooler-legend{width:100%}}
+</style>
+
+
+<style id="beerlao-admin-document-center-final">
+/* All-in-one final polish — Admin-only document workflow and responsive layout. */
+body.admin-ux-v2 .admin-document-center{margin:20px 0 8px;padding:21px 22px;border:1px solid #E8E3D6;border-radius:20px;background:linear-gradient(135deg,#fff 0%,#FFFEFA 78%,#F7F8EF 100%);box-shadow:0 5px 16px rgba(30,64,42,.045)}
+body.admin-ux-v2 .admin-document-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+body.admin-ux-v2 .admin-document-head h3{margin:4px 0;color:#15372A;font-size:18px;font-weight:850}
+body.admin-ux-v2 .admin-document-head p{margin:0;color:#829087;font-size:11px}
+body.admin-ux-v2 .admin-document-workflow-tag{padding:6px 10px;border:1px solid #E7EBD9;border-radius:99px;background:#F5F8EF;color:#71834B;font-size:9px;font-weight:850;letter-spacing:.8px}
+body.admin-ux-v2 .admin-document-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+body.admin-ux-v2 .admin-document-card{display:flex;align-items:center;gap:12px;min-width:0;min-height:94px;padding:14px;border:1px solid #EAE7DE;border-radius:15px;background:#fff;text-align:left;cursor:pointer;box-shadow:0 3px 10px rgba(30,64,42,.035);transition:transform .18s,box-shadow .18s,border-color .18s}
+body.admin-ux-v2 .admin-document-card:hover{transform:translateY(-2px);border-color:#C9DEC9;box-shadow:0 8px 18px rgba(30,64,42,.085)}
+body.admin-ux-v2 .admin-document-icon{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:13px;font-size:24px;font-weight:900}
+body.admin-ux-v2 .doc-loan{background:#E6F3E8;color:#0B6B3A}body.admin-ux-v2 .doc-cancel{background:#FCEDE8;color:#C45B43}body.admin-ux-v2 .doc-pending{background:#FFF4D5;color:#B77B00}body.admin-ux-v2 .doc-complete{background:#E6F4E9;color:#16834B}body.admin-ux-v2 .doc-sign{background:#E9F1FF;color:#3979B9}body.admin-ux-v2 .doc-history{background:#F0ECFA;color:#7657A6}
+body.admin-ux-v2 .admin-document-copy{display:grid;gap:4px;min-width:0}
+body.admin-ux-v2 .admin-document-copy b{color:#234632;font-size:12px;font-weight:850}
+body.admin-ux-v2 .admin-document-copy small{color:#7D8B81;font-size:10px;line-height:1.35}
+body.admin-ux-v2 .admin-document-copy em{color:#0B6B3A;font-size:9px;font-style:normal;font-weight:750}
+body.admin-ux-v2 .admin-document-copy em strong{font-size:11px}
+@media(max-width:1000px){body.admin-ux-v2 .admin-document-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ body.admin-ux-v2 #view-admin-dashboard{gap:13px}
+ body.admin-ux-v2 .admin-premium-hero{min-height:180px;padding:21px 22px}
+ body.admin-ux-v2 .admin-premium-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.admin-ux-v2 .admin-premium-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.admin-ux-v2 .admin-premium-insights,body.admin-ux-v2 .admin-cooler-overview,body.admin-ux-v2 .admin-document-center{margin-top:13px;padding:16px}
+ body.admin-ux-v2 .admin-document-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body.admin-ux-v2 .admin-document-card{min-height:82px;padding:10px;gap:9px}
+ body.admin-ux-v2 .admin-document-icon{width:36px;height:36px;border-radius:11px;font-size:20px}
+ body.admin-ux-v2 .admin-document-copy b{font-size:11px}
+ body.admin-ux-v2 .admin-document-copy small{font-size:9px}
+ body.admin-ux-v2 .admin-document-copy em{font-size:8px}
+}
+@media(max-width:390px){
+ body.admin-ux-v2 .admin-document-grid{grid-template-columns:1fr}
+ body.admin-ux-v2 .admin-document-card{min-height:72px}
+ body.admin-ux-v2 .admin-premium-hero{padding:17px}
+ body.admin-ux-v2 .admin-premium-hero-art{transform:scale(.82);transform-origin:right center}
+}
+@media(prefers-reduced-motion:reduce){body.admin-ux-v2 .admin-document-card{transition:none}}
+</style>
+
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol><symbol id="ic-map" viewBox="0 0 24 24"><path d="M12 21s-6-5.2-6-10a6 6 0 0112 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></symbol><symbol id="ic-bell" viewBox="0 0 24 24"><path d="M6 17v-6a6 6 0 1112 0v6l1.5 2h-15L6 17z"/><path d="M10 21.5h4"/></symbol><symbol id="ic-sliders" viewBox="0 0 24 24"><path d="M4 7h9"/><path d="M19 7h1"/><circle cx="16" cy="7" r="2"/><path d="M4 17h1"/><path d="M11 17h9"/><circle cx="8" cy="17" r="2"/></symbol><symbol id="ic-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol><symbol id="ic-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></symbol><symbol id="ic-file-plus" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 11.5v5"/><path d="M9.5 14h5"/></symbol><symbol id="ic-history" viewBox="0 0 24 24"><path d="M4 12a8 8 0 108-8 8 8 0 00-5.7 2.4L4 8.5"/><path d="M4 4v4.5h4.5"/><path d="M12 8v4l3 2"/></symbol><symbol id="ic-handoff" viewBox="0 0 24 24"><path d="M4 8h13"/><path d="M13 4l4 4-4 4"/><path d="M20 16H7"/><path d="M11 12l-4 4 4 4"/></symbol><symbol id="ic-truck" viewBox="0 0 24 24"><path d="M2.5 6.5h11v9h-11z"/><path d="M13.5 10h4.2l2.8 3.2v2.3h-7"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/></symbol><symbol id="ic-scan" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 012-2h2"/><path d="M16 4h2a2 2 0 012 2v2"/><path d="M20 16v2a2 2 0 01-2 2h-2"/><path d="M8 20H6a2 2 0 01-2-2v-2"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="ic-file-sign" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 16c.9-1.8 1.6-1.8 2 0s1.1 1.2 2.2-.3"/></symbol><symbol id="ic-warehouse" viewBox="0 0 24 24"><path d="M3 9.5L12 4l9 5.5V20H3z"/><path d="M8 20v-6h8v6"/><path d="M8 17h8"/></symbol><symbol id="ic-count" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5v-1h6v1"/><path d="M9 13.5l2.2 2.2 3.8-4.2"/></symbol><symbol id="ic-locate" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><circle cx="10.5" cy="10.5" r="1.6"/><path d="M15.5 15.5l5 5"/></symbol><symbol id="ic-alert" viewBox="0 0 24 24"><path d="M12 3.8l9 15.7H3z"/><path d="M12 10v4.2"/><path d="M12 17h.01"/></symbol><symbol id="ic-snowflake" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M4.2 7.5l15.6 9"/><path d="M4.2 16.5l15.6-9"/><path d="M9.5 4.5L12 7l2.5-2.5"/><path d="M9.5 19.5L12 17l2.5 2.5"/></symbol><symbol id="ic-wallet" viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 016.5 5H18v3"/><path d="M4 7.5V18a2 2 0 002 2h13a1 1 0 001-1V9a1 1 0 00-1-1H6.5A2.5 2.5 0 014 7.5z"/><path d="M16 14h.01"/></symbol><symbol id="ic-shield-user" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 7.7-7 9.5-4-1.8-7-5.1-7-9.5V6z"/><circle cx="12" cy="10" r="2"/><path d="M8.8 16c.6-1.6 1.9-2.4 3.2-2.4s2.6.8 3.2 2.4"/></symbol><symbol id="ic-sign" viewBox="0 0 24 24"><path d="M15 5l4 4L9 19H5v-4z"/><path d="M13 7l4 4"/><path d="M13 20h7"/></symbol><symbol id="ic-pie" viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9h-9V3z"/><path d="M15 3.5a9 9 0 015.5 5.5H15z"/></symbol><symbol id="ic-city" viewBox="0 0 24 24"><path d="M4 21V9l6-3v15"/><path d="M10 21V4l10 4v13"/><path d="M3 21h18"/><path d="M14 11h2"/><path d="M14 15h2"/></symbol><symbol id="ic-megaphone" viewBox="0 0 24 24"><path d="M4 10v4a1 1 0 001 1h2l7 4V5L7 9H5a1 1 0 00-1 1z"/><path d="M17.5 9a4.2 4.2 0 010 6"/></symbol><symbol id="ic-book" viewBox="0 0 24 24"><path d="M5 4.5A1.5 1.5 0 016.5 3H19v15H6.5A1.5 1.5 0 005 19.5z"/><path d="M5 19.5A1.5 1.5 0 006.5 21H19v-3"/><path d="M13.5 3v6l-2-1.5-2 1.5V3"/></symbol><symbol id="ic-book-open" viewBox="0 0 24 24"><path d="M3 5.5c3-1 6-.8 9 1.5 3-2.3 6-2.5 9-1.5V18c-3-1-6-.8-9 1.5-3-2.3-6-2.5-9-1.5z"/><path d="M12 7v11.5"/></symbol><symbol id="ic-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2"/><path d="M12 17h.01"/></symbol><symbol id="ic-bars" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20v-6"/><path d="M12 20V6"/><path d="M17 20v-9"/></symbol><symbol id="ic-archive" viewBox="0 0 24 24"><path d="M3.5 5h17v4h-17z"/><path d="M5 9v10h14V9"/><path d="M10 13h4"/></symbol><symbol id="ic-file-up" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-5"/><path d="M9.5 14.2l2.5-2.5 2.5 2.5"/></symbol><symbol id="ic-file-down" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v5"/><path d="M9.5 14.8l2.5 2.5 2.5-2.5"/></symbol><symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></symbol><symbol id="ic-file-check" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/><path d="M9 15l2.2 2.2L15 13"/></symbol><symbol id="ic-list" viewBox="0 0 24 24"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></symbol><symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M8 3.5v4"/><path d="M16 3.5v4"/></symbol><symbol id="ic-trash" viewBox="0 0 24 24"><path d="M5 7h14"/><path d="M9 7V4.5h6V7"/><path d="M7 7l.8 12.5h8.4L17 7"/><path d="M10.2 11v5"/><path d="M13.8 11v5"/></symbol><symbol id="ic-tray-in" viewBox="0 0 24 24"><path d="M12 4v10"/><path d="M8.5 10.5L12 14l3.5-3.5"/><path d="M4.5 15v3.5h15V15"/></symbol><symbol id="ic-inbox" viewBox="0 0 24 24"><path d="M3.5 13l2.7-7.5h11.6L20.5 13v5.5h-17z"/><path d="M3.5 13h5l1 2h5l1-2h5"/></symbol><symbol id="ic-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3h-3z"/><path d="M20 14v.01"/><path d="M14 20h.01"/><path d="M18 18h2v2h-2z"/></symbol><symbol id="ic-calculator" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8" y="6" width="8" height="3.5" rx=".5"/><path d="M8.5 13.5h.01"/><path d="M12 13.5h.01"/><path d="M15.5 13.5h.01"/><path d="M8.5 17h.01"/><path d="M12 17h.01"/><path d="M15.5 17h.01"/></symbol><symbol id="ic-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6.5a3.5 3.5 0 000-7h-5a3.5 3.5 0 010-7H16"/></symbol><symbol id="ic-chev2" viewBox="0 0 24 24"><path d="M7 7l5 5-5 5"/><path d="M13 7l5 5-5 5"/></symbol><symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol><symbol id="ic-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="ic-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol></defs></svg>
@@ -4209,6 +4298,69 @@ body.admin-ux-v2 .admin-insights-note p{margin:5px 0 0;color:#7C8B80;font-size:1
             <div class="admin-insights-note"><span class="admin-insights-note-icon">✦</span><div><b>ຂໍ້ມູນອັບເດດຕາມລາຍການ</b><p>ກົດກາດສະຖິຕິ ຫຼື ແຖບກາຟ ເພື່ອເຂົ້າໄປຈັດການຂໍ້ມູນສ່ວນນັ້ນ</p></div></div>
           </div>
         </section>
+
+        <section class="admin-cooler-overview" id="adminCoolerOverview" aria-label="Cooler stock overview">
+          <div class="admin-cooler-head">
+            <div><span class="admin-premium-kicker">COOLER INVENTORY</span><h3>ພາບລວມສະຕັອກຕູ້ແຊ່</h3><p>ສະຖານະຕູ້ແຊ່ຈາກຂໍ້ມູນສາງຈິງ</p></div>
+            <button type="button" class="admin-cooler-refresh" id="adminCoolerRefresh" onclick="refreshAdminCoolerOverview()"><span aria-hidden="true">↻</span> ໂຫຼດຂໍ້ມູນ</button>
+          </div>
+          <div class="admin-cooler-kpis">
+            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon">▣</span><small>ຕູ້ແຊ່ທັງໝົດ</small><strong id="adminCoolerTotal">—</strong><em>Cooler Total</em></article>
+            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon is-green">⌂</span><small>ຢູ່ໃນສາງ</small><strong id="adminCoolerWarehouse">—</strong><em>In Warehouse</em></article>
+            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon is-gold">↗</span><small>ອອກໄປຮ້ານແລ້ວ</small><strong id="adminCoolerOutlet">—</strong><em>At Outlet</em></article>
+            <article class="admin-cooler-kpi"><span class="admin-cooler-kpi-icon is-blue">◷</span><small>ຈອງ / ຂົນສົ່ງ</small><strong id="adminCoolerTransit">—</strong><em>Reserved & Transit</em></article>
+          </div>
+          <div class="admin-cooler-analytics">
+            <div class="admin-cooler-chart-card">
+              <div class="admin-cooler-card-title"><b>ສັດສ່ວນສະຖານະຕູ້ແຊ່</b><span>Stock distribution</span></div>
+              <div class="admin-cooler-donut-wrap">
+                <div class="admin-cooler-donut" id="adminCoolerDonut" role="img" aria-label="Cooler stock status distribution"><div><strong id="adminCoolerDonutTotal">—</strong><small>COOLERS</small></div></div>
+                <div class="admin-cooler-legend" id="adminCoolerLegend">
+                  <span><i class="is-wh"></i>ຢູ່ໃນສາງ <b id="adminCoolerLegendWh">—</b></span>
+                  <span><i class="is-out"></i>ອອກໄປຮ້ານ <b id="adminCoolerLegendOut">—</b></span>
+                  <span><i class="is-transit"></i>ຈອງ / ຂົນສົ່ງ <b id="adminCoolerLegendTransit">—</b></span>
+                  <span><i class="is-write"></i>ສະສາງ <b id="adminCoolerLegendWrite">—</b></span>
+                </div>
+              </div>
+            </div>
+            <div class="admin-cooler-chart-card admin-cooler-status-card">
+              <div class="admin-cooler-card-title"><b>ສະຖານະອື່ນໆ</b><span>Operational status</span></div>
+              <div class="admin-cooler-status-row"><span>ກຳລັງໃຊ້ງານ Event</span><b id="adminCoolerEvent">—</b></div>
+              <div class="admin-cooler-status-row"><span>ລໍຖ້າສະສາງ</span><b id="adminCoolerPending">—</b></div>
+              <div class="admin-cooler-status-row"><span>ສະສາງແລ້ວ</span><b id="adminCoolerWritten">—</b></div>
+              <div class="admin-cooler-status-foot" id="adminCoolerUpdated">ລໍຖ້າໂຫຼດຂໍ້ມູນສະຕັອກ…</div>
+            </div>
+          </div>
+        </section>
+
+
+        <section class="admin-document-center" id="adminDocumentCenter" aria-label="Admin document center">
+          <div class="admin-document-head">
+            <div><span class="admin-premium-kicker">DOCUMENT WORKFLOW</span><h3>ສູນກາງເອກະສານ</h3><p>ຈັດການໃບສັນຍາ, ລາຍການຄ້າງເຊັນ ແລະ ເອກະສານທີ່ອອກແລ້ວ</p></div>
+            <span class="admin-document-workflow-tag">WORKFLOW</span>
+          </div>
+          <div class="admin-document-grid">
+            <button type="button" class="admin-document-card" onclick="switchView('loanContract')">
+              <span class="admin-document-icon doc-loan">✎</span><span class="admin-document-copy"><b>Loan Contract</b><small>ສ້າງໃບສັນຍາຢືມຕູ້</small><em>ເປີດຈັດການ →</em></span>
+            </button>
+            <button type="button" class="admin-document-card" onclick="switchView('loanContract')">
+              <span class="admin-document-icon doc-cancel">⊗</span><span class="admin-document-copy"><b>Cancel Document</b><small>ສ້າງໃບຍົກເລີກຕູ້</small><em>ເປີດຈັດການ →</em></span>
+            </button>
+            <button type="button" class="admin-document-card" onclick="adminOpenLoanQueue()">
+              <span class="admin-document-icon doc-pending">◷</span><span class="admin-document-copy"><b>Pending Signature</b><small>ເອກະສານລໍຖ້າເຊັນ</small><em><strong id="adminDocPendingCount">—</strong> ລາຍການ · ເປີດເບິ່ງ →</em></span>
+            </button>
+            <button type="button" class="admin-document-card" onclick="adminOpenCompletedDocs()">
+              <span class="admin-document-icon doc-complete">✓</span><span class="admin-document-copy"><b>Completed Documents</b><small>ເອກະສານສຳເລັດແລ້ວ</small><em><strong id="adminDocCompletedCount">—</strong> ລາຍການ · ເປີດເບິ່ງ →</em></span>
+            </button>
+            <button type="button" class="admin-document-card" onclick="adminOpenLoanQueue()">
+              <span class="admin-document-icon doc-sign">✍</span><span class="admin-document-copy"><b>Signature Tracking</b><small>ຕິດຕາມເອກະສານລໍຖ້າເຊັນ</small><em>ເປີດຈັດການ →</em></span>
+            </button>
+            <button type="button" class="admin-document-card" onclick="switchView('historyHub')">
+              <span class="admin-document-icon doc-history">↻</span><span class="admin-document-copy"><b>Asset History</b><small>ປະຫວັດການເຄື່ອນໄຫວຕູ້ແຊ່</small><em>ເປີດປະຫວັດ →</em></span>
+            </button>
+          </div>
+        </section>
+
         <div class="admin-premium-section-head admin-menu-heading"><div><span class="admin-premium-kicker">MANAGEMENT CENTER</span><h3>ເມນູຫຼັກ</h3></div><span>ເລືອກເຂົ້າໄປຈັດການແຕ່ລະສ່ວນ</span></div>
         <div class="admin-premium-menu-grid">
           <button type="button" class="admin-premium-menu-card" onclick="switchAdminTab('users')"><span class="admin-menu-illustration ill-users">♙</span><b>User Management</b><small>ຈັດການຜູ້ໃຊ້ ແລະ ສິດ</small><em>ເຂົ້າຈັດການ →</em></button>
@@ -18898,6 +19050,135 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
   var photoReady = new Promise(function (r) { var im = document.getElementById('dpPhoto'); if (!im || im.complete) return r(); im.onload = im.onerror = function () { r(); }; });
   Promise.all([document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve(), logoReady, photoReady]).then(function () { ${autoPrint ? 'setTimeout(function () { window.print(); }, 300);' : ''} });
 <\/script>
+
+<script id="beerlao-admin-cooler-stock-phase8-js">
+/* Phase 8 — fetch actual warehouse stock; no sample/demo inventory values. */
+let adminCoolerOverviewLoaded = false;
+async function refreshAdminCoolerOverview(forceReload) {
+  const root = document.getElementById('adminCoolerOverview');
+  if (!root || !document.body.classList.contains('admin-ux-v2')) return;
+  const btn = document.getElementById('adminCoolerRefresh');
+  const stamp = document.getElementById('adminCoolerUpdated');
+  if (btn) btn.disabled = true;
+  if (stamp) stamp.textContent = 'ກຳລັງໂຫຼດຂໍ້ມູນສະຕັອກ…';
+  let items = (typeof dbStockList !== 'undefined' && Array.isArray(dbStockList)) ? dbStockList : [];
+  try {
+    if (forceReload || !adminCoolerOverviewLoaded) {
+      const response = await fetch('/api/warehouse-stock', { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error('Invalid stock response');
+      items = data;
+      adminCoolerOverviewLoaded = true;
+      if (typeof dbStockList !== 'undefined') dbStockList = data;
+    }
+    const count = status => items.filter(item => String(item.status || '').toLowerCase() === status).length;
+    const total = items.length;
+    const wh = count('in_warehouse');
+    const reserved = count('reserved');
+    const outlet = count('outlet');
+    const event = count('event');
+    const truck = count('on_truck') + count('shipped_out');
+    const write = count('write_off');
+    const pending = count('pending_write_off');
+    const transit = reserved + truck;
+    const fmt = n => Number(n || 0).toLocaleString();
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = fmt(value); };
+    set('adminCoolerTotal', total);
+    set('adminCoolerWarehouse', wh);
+    set('adminCoolerOutlet', outlet);
+    set('adminCoolerTransit', transit);
+    set('adminCoolerEvent', event);
+    set('adminCoolerPending', pending);
+    set('adminCoolerWritten', write);
+    set('adminCoolerDonutTotal', total);
+    set('adminCoolerLegendWh', wh);
+    set('adminCoolerLegendOut', outlet);
+    set('adminCoolerLegendTransit', transit + event);
+    set('adminCoolerLegendWrite', write + pending);
+    const parts = [wh, outlet, transit + event, write + pending];
+    const colors = ['#0B6B3A', '#FFC300', '#3B91D1', '#D9DED8'];
+    let angle = 0;
+    const stops = [];
+    parts.forEach((value, index) => {
+      const next = angle + (total ? value / total * 360 : 0);
+      stops.push(colors[index] + ' ' + angle + 'deg ' + next + 'deg');
+      angle = next;
+    });
+    if (angle < 360) stops.push('#EDF0EA ' + angle + 'deg 360deg');
+    const donut = document.getElementById('adminCoolerDonut');
+    if (donut) donut.style.background = 'conic-gradient(' + (total ? stops.join(',') : '#EDF0EA 0deg 360deg') + ')';
+    if (stamp) stamp.textContent = 'ອັບເດດ ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' · ອ່ານຈາກ /api/warehouse-stock';
+  } catch (error) {
+    adminCoolerOverviewLoaded = false;
+    if (stamp) stamp.textContent = 'ບໍ່ສາມາດໂຫຼດສະຕັອກໄດ້ · ' + (error.message || 'API error');
+    ['adminCoolerTotal','adminCoolerWarehouse','adminCoolerOutlet','adminCoolerTransit','adminCoolerEvent','adminCoolerPending','adminCoolerWritten','adminCoolerDonutTotal','adminCoolerLegendWh','adminCoolerLegendOut','adminCoolerLegendTransit','adminCoolerLegendWrite'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent='—'; });
+    const donut=document.getElementById('adminCoolerDonut'); if(donut) donut.style.background='#EDF0EA';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+(function initAdminCoolerOverview() {
+  const run = () => {
+    if (document.body.classList.contains('admin-ux-v2') && window.currentUser && window.currentUser.role === 'admin') refreshAdminCoolerOverview(false);
+  };
+  document.addEventListener('DOMContentLoaded', run);
+  const watch = new MutationObserver(() => {
+    if (document.body.classList.contains('admin-ux-v2') && window.currentUser && window.currentUser.role === 'admin') run();
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    const view = document.getElementById('view-admin-dashboard');
+    if (view) watch.observe(view, {attributes:true,attributeFilter:['class']});
+  });
+})();
+</script>
+
+
+<script id="beerlao-admin-document-center-final-js">
+function adminOpenLoanQueue(){
+  switchView('loanContract');
+  setTimeout(()=>{ if(typeof loanSwitchTab==='function') loanSwitchTab('queue'); },120);
+}
+function adminOpenCompletedDocs(){
+  switchView('loanContract');
+  setTimeout(()=>{ if(typeof loanSwitchTab==='function') loanSwitchTab('docs'); },120);
+}
+function refreshAdminDocumentCounts(){
+  if(!document.body.classList.contains('admin-ux-v2')) return;
+  const pendingNode=document.getElementById('loanQueueCount');
+  const pendingText=pendingNode ? (pendingNode.textContent||'').replace(/[^\d]/g,'') : '';
+  const queue=document.getElementById('loanQueueCardList');
+  const completed=document.getElementById('loanHistoryCardList');
+  const visibleCount=(node)=>{
+    if(!node) return null;
+    const cards=Array.from(node.children).filter(el=>!el.classList.contains('hidden') && !el.classList.contains('card-list-empty') && !el.classList.contains('card-list-loading'));
+    return cards.length;
+  };
+  const pendingDom=visibleCount(queue);
+  const completedDom=visibleCount(completed);
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val===null?'—':Number(val).toLocaleString();};
+  set('adminDocPendingCount', pendingText!==''?Number(pendingText):pendingDom);
+  set('adminDocCompletedCount', completedDom);
+}
+(function initAdminDocumentCenter(){
+  const refresh=()=>refreshAdminDocumentCounts();
+  document.addEventListener('DOMContentLoaded',()=>{
+    ['loanQueueCardList','loanHistoryCardList','loanQueueCount'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&!el.dataset.adminDocObserved){
+        el.dataset.adminDocObserved='1';
+        new MutationObserver(refresh).observe(el,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class']});
+      }
+    });
+    refresh();
+  });
+  const dashboard=document.getElementById('view-admin-dashboard');
+  if(dashboard)new MutationObserver(refresh).observe(dashboard,{attributes:true,attributeFilter:['class']});
+  setTimeout(refresh,900);
+  setTimeout(refresh,2200);
+})();
+</script>
+
 </body></html>`;
       w.document.open();
       w.document.write(html);
