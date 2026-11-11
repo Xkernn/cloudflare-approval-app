@@ -680,6 +680,76 @@ function contractSaveName(row) {
 // ຟັງຊັນນີ້ຄືນ bytes ຮູບເອກະສານ ເພື່ອສົ່ງເຂົ້າ build*Pdf(env, row, { ownerDocBytes }) — ຄືນ null ຖ້າບໍ່ຕ້ອງລວມ
 // - ລວມສະເພາະ admin ແລະ MDE ເຈົ້າຂອງໃບ (session != null); DSM ເຫັນຜ່ານລິ້ງເຊັນ (session = null, forDsm = true); ສາງ/ຂົນສົ່ງ ໄດ້ PDF ສັນຍາປົກກະຕິ
 // - ໃບທີ່ບໍ່ມີເອກະສານແນບ ຫຼື ອ່ານ R2 ບໍ່ໄດ້ -> null (ຍັງເປີດ PDF ສັນຍາເດີມໄດ້)
+// ==========================================================================
+// Cache PDF ໃບທີ່ເຊັນຄົບແລ້ວ (completed) ໃນ R2 — ເປີດຄັ້ງຕໍ່ໄປບໍ່ຕ້ອງສ້າງໃໝ່ (ການສ້າງ PDF ກິນ CPU ຫຼາຍ ເຄີຍຖືກ Cloudflare ຕັດ Error 1102)
+// - key: pdf-cache/<loan|cancel>/<id>-<hash>-<n|o>.pdf  (hash = SHA-256 ຂອງແຖວໃບ + version + ຮູບຮ້ານ; n/o = ບໍ່ມີ/ມີໜ້າເອກະສານເຈົ້າຂອງຮ້ານ)
+// - ຂໍ້ມູນໃບປ່ຽນ (ແກ້ໄຂ/ເຊັນເພີ່ມ) -> hash ປ່ຽນ -> ສ້າງໃໝ່ ແລ້ວລຶບ cache ເກົ່າຂອງໃບນັ້ນ; ລຶບໃບ -> ລຶບ cache ນຳ
+// - ບໍ່ cache ໃບທີ່ຍັງບໍ່ completed · printed_at/printed_by/mde_seen_at ບໍ່ກະທົບ PDF ຈຶ່ງບໍ່ນັບໃນ hash
+// - ແກ້ໂຄດ/ຟອນ/ແມ່ແບບ PDF ແລ້ວ ໃຫ້ເພີ່ມເລກ PDF_CACHE_VERSION ເພື່ອຍົກເລີກ cache ເກົ່າທັງໝົດ
+// - /api/photo ບໍ່ເປີດ prefix pdf-cache/ ຈຶ່ງເບິ່ງຜ່ານ URL ກົງບໍ່ໄດ້ (ເບິ່ງໄດ້ສະເພາະຜ່ານ endpoint PDF ທີ່ກວດສິດແລ້ວ)
+// ==========================================================================
+const PDF_CACHE_VERSION = "v1";
+const PDF_CACHE_VOLATILE = new Set(["printed_at", "printed_by", "mde_seen_at"]);
+
+function pdfCacheHeaders(row, docFallback, kind) {
+  return {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `inline; filename="${row.doc_no || docFallback}.pdf"`,
+    "X-Save-Name": encodeURIComponent(contractSaveName(row)),
+    "Cache-Control": "no-store",
+  };
+}
+
+/** build() ຕ້ອງຄືນ { bytes, cacheable } — cacheable=false ເມື່ອຜົນບໍ່ຄົບ (ເຊັ່ນ ອ່ານເອກະສານເຈົ້າຂອງຮ້ານຈາກ R2 ບໍ່ໄດ້) */
+async function contractPdfCached(env, kind, row, variant, extraKey, build) {
+  if (!env.PHOTOS || row.status !== "completed") return (await build()).bytes;
+  let key = null;
+  try {
+    const slim = {};
+    for (const k of Object.keys(row).sort()) if (!PDF_CACHE_VOLATILE.has(k)) slim[k] = row[k];
+    const hash = (await sha256Hex(PDF_CACHE_VERSION + "|" + variant + "|" + (extraKey || "") + "|" + JSON.stringify(slim))).slice(0, 24);
+    key = `pdf-cache/${kind}/${row.id}-${hash}-${variant}.pdf`;
+    const hit = await env.PHOTOS.get(key);
+    if (hit) return new Uint8Array(await hit.arrayBuffer());
+  } catch (e) {
+    console.error("ອ່ານ cache PDF ບໍ່ໄດ້ (ຈະສ້າງໃໝ່):", e);
+    key = null;
+  }
+  const { bytes, cacheable } = await build();
+  if (key && cacheable) {
+    try {
+      await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: "application/pdf" } });
+      // ລຶບ cache ເກົ່າຂອງໃບນີ້ (hash ອື່ນ) — ຄົງໄວ້ສະເພາະອັນທີ່ຫາກໍ່ສ້າງ + ແບບ n/o ອື່ນທີ່ hash ຕົງກັນ
+      const prefix = `pdf-cache/${kind}/${row.id}-`;
+      const curHash = key.slice(prefix.length).split("-")[0];
+      const listed = await env.PHOTOS.list({ prefix });
+      const stale = (listed.objects || []).map((o) => o.key).filter((k) => k.slice(prefix.length).split("-")[0] !== curHash);
+      if (stale.length) await env.PHOTOS.delete(stale);
+    } catch (e) {
+      console.error("ບັນທຶກ cache PDF ບໍ່ສຳເລັດ:", e);
+    }
+  }
+  return bytes;
+}
+
+async function purgePdfCache(env, kind, id) {
+  try {
+    if (!env.PHOTOS) return;
+    const listed = await env.PHOTOS.list({ prefix: `pdf-cache/${kind}/${id}-` });
+    const keys = (listed.objects || []).map((o) => o.key);
+    if (keys.length) await env.PHOTOS.delete(keys);
+  } catch (e) {
+    console.error("ລຶບ cache PDF ບໍ່ສຳເລັດ:", e);
+  }
+}
+
+// ຜູ້ໃດເບິ່ງໜ້າເອກະສານເຈົ້າຂອງຮ້ານໃນ PDF ໄດ້ (ກົດດຽວກັບ ownerDocBytesFor ແບບບໍ່ແມ່ນ DSM) — ກວດສິດໂດຍບໍ່ຕ້ອງອ່ານຮູບຈາກ R2
+function ownerDocVisible(session, row) {
+  if (!row || !row.owner_doc_photo || !session) return false;
+  const isOwner = !!row.mde_code && String(row.mde_code).trim().toUpperCase() === String(session.mde_code || "").trim().toUpperCase();
+  return isAdminLike(session.role) || isOwner;
+}
+
 async function ownerDocBytesFor(env, session, row, forDsm) {
   if (!row || !row.owner_doc_photo) return null;
   if (!forDsm) {
@@ -12598,6 +12668,7 @@ export default {
 
       await env.DB.prepare("DELETE FROM loan_contracts WHERE id = ?").bind(id).run();
       await deleteDsmLinks(env, "loan", row.id);
+      await purgePdfCache(env, "loan", row.id);
       await deleteR2Photos(env, [row.sig_old_outlet, row.sig_mde, row.sig_dsm, row.sig_admin, row.sig_outlet, row.owner_doc_photo, (row.layout_plan && !String(row.layout_plan).startsWith("data:")) ? row.layout_plan : null]);
       return Response.json({ message: "ລຶບໃບສັນຍາຢືມຮຽບຮ້ອຍແລ້ວ" });
     }
@@ -12872,15 +12943,20 @@ export default {
         try { await env.DB.prepare("UPDATE loan_contracts SET mde_seen_at = CURRENT_TIMESTAMP WHERE id = ? AND mde_seen_at IS NULL").bind(row.id).run(); } catch (e) { /* ຍັງບໍ່ໄດ້ຮັນ migration */ }
       }
       try {
-        const pdfBytes = await buildLoanPdf(env, row, { ownerDocBytes: await ownerDocBytesFor(env, session, row, false) });
-        return new Response(pdfBytes, {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `inline; filename="${row.doc_no || "loan-contract"}.pdf"`,
-            "X-Save-Name": encodeURIComponent(contractSaveName(row)),
-            "Cache-Control": "no-store",
-          },
+        const ownerOk = ownerDocVisible(session, row);
+        let shopKey = "";
+        if (row.status === "completed" && row.asset_id) {
+          // ຮູບຮ້ານຄ້າທີ່ຕໍ່ທ້າຍ PDF ມາຈາກ asset_requests — ເຂົ້າ hash ເພື່ອໃຫ້ cache ອັບເດດເມື່ອຮູບປ່ຽນ
+          try {
+            const sp = await env.DB.prepare("SELECT shop_photo FROM asset_requests WHERE asset_id = ? AND shop_photo IS NOT NULL ORDER BY id DESC LIMIT 1").bind(row.asset_id).first();
+            shopKey = (sp && sp.shop_photo) || "";
+          } catch (e) { /* ບໍ່ມີຄໍລຳ/ຕາຕະລາງ -> ປ່ອຍວ່າງ */ }
+        }
+        const pdfBytes = await contractPdfCached(env, "loan", row, ownerOk ? "o" : "n", shopKey, async () => {
+          const ownerBytes = ownerOk ? await ownerDocBytesFor(env, session, row, false) : null;
+          return { bytes: await buildLoanPdf(env, row, { ownerDocBytes: ownerBytes }), cacheable: !ownerOk || !!ownerBytes };
         });
+        return new Response(pdfBytes, { headers: pdfCacheHeaders(row, "loan-contract") });
       } catch (e) {
         console.error("ສ້າງ PDF ໃບສັນຍາຢືມບໍ່ສຳເລັດ:", e);
         return Response.json({ error: "ບໍ່ສາມາດສ້າງ PDF ໄດ້: " + String((e && e.message) || e).slice(0, 160) }, { status: 500 });
@@ -13114,6 +13190,7 @@ export default {
       if (!row) return Response.json({ error: "ບໍ່ພົບໃບນີ້" }, { status: 404 });
       await env.DB.prepare("DELETE FROM cancel_contracts WHERE id = ?").bind(id).run();
       await deleteDsmLinks(env, "cancel", row.id);
+      await purgePdfCache(env, "cancel", row.id);
       await deleteR2Photos(env, [row.sig_mde, row.sig_dsm, row.sig_admin, row.sig_outlet, row.owner_doc_photo]);
       return Response.json({ message: "ລຶບໃບຮັບຕູ້ເຂົ້າສາງ (T-) ຮຽບຮ້ອຍແລ້ວ" });
     }
@@ -13282,15 +13359,12 @@ export default {
         try { await env.DB.prepare("UPDATE cancel_contracts SET mde_seen_at = CURRENT_TIMESTAMP WHERE id = ? AND mde_seen_at IS NULL").bind(row.id).run(); } catch (e) { /* ຍັງບໍ່ໄດ້ຮັນ migration */ }
       }
       try {
-        const pdfBytes = await buildCancelPdf(env, row, { ownerDocBytes: await ownerDocBytesFor(env, session, row, false) });
-        return new Response(pdfBytes, {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `inline; filename="${row.doc_no || "cancel-contract"}.pdf"`,
-            "X-Save-Name": encodeURIComponent(contractSaveName(row)),
-            "Cache-Control": "no-store",
-          },
+        const ownerOk = ownerDocVisible(session, row);
+        const pdfBytes = await contractPdfCached(env, "cancel", row, ownerOk ? "o" : "n", "", async () => {
+          const ownerBytes = ownerOk ? await ownerDocBytesFor(env, session, row, false) : null;
+          return { bytes: await buildCancelPdf(env, row, { ownerDocBytes: ownerBytes }), cacheable: !ownerOk || !!ownerBytes };
         });
+        return new Response(pdfBytes, { headers: pdfCacheHeaders(row, "cancel-contract") });
       } catch (e) {
         console.error("ສ້າງ PDF ໃບ T- ບໍ່ສຳເລັດ:", e);
         return Response.json({ error: "ບໍ່ສາມາດສ້າງ PDF ໄດ້: " + String((e && e.message) || e).slice(0, 160) }, { status: 500 });

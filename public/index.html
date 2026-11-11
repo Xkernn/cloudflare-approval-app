@@ -26220,6 +26220,8 @@ function assetStatusBadgeClass(status) {
           let msg = '';
           try { msg = (await res.clone().json()).error || ''; } catch (_) {}
           if (!msg) { try { msg = (await res.text()).slice(0, 120); } catch (_) {} }
+          // Cloudflare ຕອບໜ້າ HTML (ເຊັ່ນ Error 1102 Worker ໃຊ້ CPU ເກີນ) -> ບໍ່ສະແດງໂຄດ HTML ໃຫ້ຜູ້ໃຊ້
+          if (/^\s*<(!doctype|html)/i.test(msg)) msg = 'ເຊີບເວີສ້າງ PDF ບໍ່ທັນ (ໃຊ້ເວລາ/CPU ເກີນກຳນົດ) ກະລຸນາລອງໃໝ່ອີກຄັ້ງ ຖ້າຍັງເປັນຢູ່ ແຈ້ງຜູ້ດູແລລະບົບ (HTTP ' + res.status + ')';
           if (res.status === 401) msg = 'ເຊດຊັນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່';
           throw new Error(msg || ('ບໍ່ສາມາດເປີດ PDF ໄດ້ (HTTP ' + res.status + ')'));
         }
