@@ -34231,6 +34231,8 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   .rp-pin.nav { box-shadow: 0 0 0 5px rgba(37,99,235,.35), 0 2px 8px rgba(0,0,0,.35); }
   .rp-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 1300; background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 13.5px; max-width: 90vw; text-align: center; }
   .rp-pop b { color: #0f172a; }
+  .rp-detail { font-size: 12.5px; line-height: 1.7; color: #334155; }
+  .rp-pop { max-height: 52vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .rp-pop .rp-pop-row { padding: 6px 0; border-top: 1px solid #eef2f6; }
   .rp-pop button { margin-top: 5px; border: 0; border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 12.5px; cursor: pointer; background: #0B6B3A; color: #fff; }
   .rp-pop button.on { background: #FFC300; color: #3b2f00; }
@@ -34444,12 +34446,62 @@ function rpTagHtml(s) {
 }
 function rpStopLine(s) { const a = s.a; return esc([a.tracking_no, a.cooler_brand, a.cooler_type].filter(Boolean).join(' · ')); }
 
+/* ລາຍລະອຽດຂອງແຕ່ລະຈຸດ (ເທົ່າກັບ popup ຂອງ Map Tracking): ສະຖານະ, ຮ້ານ, ເບີໂທ+WhatsApp, Brand/Type/QR/Serial/CapEx, MDE, Doc Type, ຮ້ານເດີມ (ຕູ້ເຄື່ອນຍ້າຍ) */
+function rpWaBtn(phone) {
+  const ph = String(phone || '').trim(); if (!ph) return '';
+  return ' <a href="https://wa.me/' + esc(dsmPhoneDigits(ph)) + '" target="_blank" rel="noopener" title="WhatsApp ' + esc(ph) + '" style="display:inline-flex;align-items:center;gap:4px;text-decoration:none;padding:1px 8px;margin-left:4px;font-size:12px;font-weight:700;line-height:1.6;color:#fff;background:#15803d;border-radius:999px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>';
+}
+function rpDetailHtml(s) {
+  const a = s.a || {};
+  const lbl = (t) => '<span style="color:#0f172a;font-weight:700;">' + esc(t) + ':</span>';
+  const outletInfo = findOutletByCode(a.outlet_code);
+  const mdeInfo = (typeof dbMdeList !== 'undefined' && Array.isArray(dbMdeList)) ? dbMdeList.find((m) => m.mde_code === a.mde_code) : null;
+  const color = colorForDocType(a.doc_type);
+  const isOnTruck = a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && !!a.dispatched_at;
+  const isReloc = a.doc_type === RP_RELOC_DOC;
+  const oldMaster = isReloc ? findOutletByCode(a.old_outlet_code) : null;
+  const oldUse = oldMaster && rpHasNum(oldMaster.latitude) && rpHasNum(oldMaster.longitude);
+  const oldLat = oldUse ? oldMaster.latitude : a.old_latitude, oldLng = oldUse ? oldMaster.longitude : a.old_longitude;
+  const oldPhone = (oldMaster && oldMaster.phone) ? String(oldMaster.phone).trim() : '';
+  const shopPhone = (outletInfo && outletInfo.phone) ? outletInfo.phone : (s.phone || '');
+  return '<div class="rp-detail">' +
+    (isOnTruck ? '<span class="badge badge-info" style="margin-bottom:6px;display:inline-block;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</span><br>' : '') +
+    (a.flagged ? '<span class="badge badge-rejected" style="margin-bottom:6px;display:inline-block;">🚩 ດ່ວນ - ຕິດທຸງໄວ້</span><br>' : '') +
+    '<b>' + esc(a.tracking_no || '-') + '</b><br>' +
+    '<span class="badge badge-default">' + esc(assetStatusText(a)) + '</span><br>' +
+    lbl('Outlet Name') + ' ' + esc(a.outlet_name || '-') + '<br>' +
+    lbl('Outlet Code') + ' ' + esc(a.outlet_code || '-') + '<br>' +
+    lbl('ເບີໂທຮ້ານ') + ' ' + esc(shopPhone || '-') + rpWaBtn(shopPhone) + '<br>' +
+    lbl('Brand') + ' ' + esc(a.cooler_brand || '-') + '<br>' +
+    lbl('Type') + ' ' + esc(a.cooler_type || '-') + '<br>' +
+    lbl('QR Code') + ' ' + esc(a.qr_code || '-') + '<br>' +
+    lbl('Serial Number') + ' ' + esc(a.serial_number || '-') + '<br>' +
+    lbl('CapEx') + ' ' + esc(a.capex || '-') + '<br>' +
+    lbl('MDE Code') + ' ' + esc(a.mde_code || '-') + '<br>' +
+    lbl('MDE Name') + ' ' + esc(mdeInfo ? mdeInfo.mde_name : '-') + '<br>' +
+    lbl('ເບີໂທ MDE') + ' ' + esc(mdeInfo && mdeInfo.phone ? mdeInfo.phone : '-') + rpWaBtn(mdeInfo && mdeInfo.phone) + '<br>' +
+    lbl('Doc Type') + ' <span style="color:' + color + ';font-weight:700;">' + esc(a.doc_type || '-') + '</span>' +
+    (isReloc ? '<br><br><b style="color:#0f172a;">ຮ້ານເດີມ:</b><br>' +
+      lbl('Outlet Code') + ' ' + esc(a.old_outlet_code || '-') + '<br>' +
+      lbl('Outlet Name') + ' ' + esc(a.old_outlet_name || '-') + '<br>' +
+      lbl('ເບີໂທຮ້ານເກົ່າ') + ' ' + esc(oldPhone || '-') + rpWaBtn(oldPhone) + '<br>' +
+      lbl('Lat/Long') + ' ' + esc(oldLat ?? '-') + ', ' + esc(oldLng ?? '-') : '') +
+    '</div>';
+}
+/* ສ້າງ popup ຂອງຮ້ານ: 1 ຈຸດ = ສະແດງຕົງ · ຫຼາຍຈຸດ = ແຖບສະຫຼັບ (ໃຊ້ mp-pager ຄືກັບ Map Tracking) · actionFn(s) ຄືນ html ປຸ່ມຂອງແຕ່ລະຈຸດ */
+function rpPopupPager(g, actionFn, extraTop) {
+  const one = (s) => '<div class="rp-pop-row" style="border-top:0;">' + rpTagHtml(s) + '<div style="margin-top:4px;">' + rpDetailHtml(s) + '</div>' + (actionFn ? actionFn(s) : '') + '</div>';
+  const head = '<div style="font-weight:800;font-size:14px;margin-bottom:4px;">' + esc(g.name) + '</div>' + (extraTop || '');
+  if (g.stops.length === 1) return '<div class="rp-pop">' + head + one(g.stops[0]) + '</div>';
+  const tabs = g.stops.map((s, i) => '<button type="button" class="mp-tab' + (i === 0 ? ' active' : '') + '" onclick="mapPopupPick(this, ' + i + ')">' + (i + 1) + '. ' + esc(s.a.tracking_no || s.a.doc_type || '-') + '</button>').join('');
+  const slides = g.stops.map((s, i) => '<div class="mp-slide' + (i === 0 ? ' active' : '') + '">' + one(s) + '</div>').join('');
+  return '<div class="rp-pop mp-pager">' + head + '<div style="font-weight:700;font-size:12.5px;margin-bottom:6px;">ຮ້ານນີ້ມີ ' + g.stops.length + ' ສັນຍາ/Tracking</div><div class="mp-tabs">' + tabs + '</div>' + slides + '</div>';
+}
+
 /* ----- ໂໝດເລືອກຮ້ານ ----- */
 function rpGroupColor(g) { const s = g.stops.find((x) => rpSel.has(x.key)) || g.stops[0]; return s.action === 'collect' ? '#EA580C' : '#0B6B3A'; }
 function rpPopupHtml(g) {
-  return '<div class="rp-pop"><b>' + esc(g.name) + '</b><br><span style="font-size:12px;color:#64748b;">' + esc(g.code || '') + (g.phone ? ' · ' + esc(g.phone) : '') + '</span>' +
-    g.stops.map((s) => '<div class="rp-pop-row">' + rpTagHtml(s) + '<div style="font-size:12px;">' + rpStopLine(s) + '<br>' + esc(s.a.doc_type || '') + '</div>' +
-      '<button type="button" class="' + (rpSel.has(s.key) ? 'on' : '') + '" onclick="rpToggle(\'' + s.key + '\')">' + (rpSel.has(s.key) ? '✓ ຢູ່ໃນແຜນ (ກົດເພື່ອເອົາອອກ)' : '+ ເພີ່ມເຂົ້າແຜນ') + '</button></div>').join('') + '</div>';
+  return rpPopupPager(g, (s) => '<button type="button" class="' + (rpSel.has(s.key) ? 'on' : '') + '" onclick="rpToggle(\'' + s.key + '\')">' + (rpSel.has(s.key) ? '✓ ຢູ່ໃນແຜນ (ກົດເພື່ອເອົາອອກ)' : '+ ເພີ່ມເຂົ້າແຜນ') + '</button>');
 }
 function rpRefreshGroup(g) {
   const m = rpMarkers[g.gkey]; if (!m) return;
@@ -34469,7 +34521,7 @@ function rpRenderSelect() {
   const bounds = [];
   rpGroups.forEach((g) => {
     const n = g.stops.filter((s) => rpSel.has(s.key)).length;
-    const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(rpGroupColor(g), n || g.stops.length, n > 0, false) }).addTo(rpLayer).bindPopup(rpPopupHtml(g), { maxWidth: 300 });
+    const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(rpGroupColor(g), n || g.stops.length, n > 0, false) }).addTo(rpLayer).bindPopup(rpPopupHtml(g), { maxWidth: 340 });
     rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
   });
   if (bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
@@ -34528,8 +34580,7 @@ function rpRenderPlan(keepView) {
     const mixed = g.stops.some((s) => s.action === 'collect') && g.stops.some((s) => s.action === 'deliver');
     const color = mixed ? '#7c3aed' : (g.stops[0].action === 'collect' ? '#EA580C' : '#0B6B3A');
     const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(color, i + 1, true, rpNavTarget === g.gkey) }).addTo(rpLayer)
-      .bindPopup('<div class="rp-pop"><b>' + esc(g.name) + '</b><br>' + g.stops.map((s) => rpTagHtml(s) + '<span style="font-size:12px;">' + rpStopLine(s) + '</span>').join('<br>') +
-        '<br><button type="button" onclick="rpNavigate(\'' + g.gkey + '\')">ນຳທາງໄປຮ້ານນີ້</button></div>');
+      .bindPopup(rpPopupPager(g, null, '') + '<div class="rp-pop"><button type="button" style="width:100%;padding:9px 12px;" onclick="rpNavigate(\'' + g.gkey + '\')"><i class="fa-solid fa-diamond-turn-right"></i> ນຳທາງໄປຮ້ານນີ້</button></div>', { maxWidth: 340 });
     rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
   });
   if (!keepView && bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
