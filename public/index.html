@@ -34457,7 +34457,8 @@ function rpPushGps(pos) {
       if (!r.ok) return;
       if (chip) chip.classList.remove('hidden');
       const nk = 'dg_notice_' + currentUser.id + '_' + rpToday();
-      if (!rpLsGet(nk)) { rpLsSet(nk, '1'); rpToast('📡 admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕະຫຼອດທີ່ແອັບເປີດຢູ່'); }
+      const rpv = document.getElementById('view-route-plan');
+      if (rpv && !rpv.classList.contains('hidden') && !rpLsGet(nk)) { rpLsSet(nk, '1'); rpToast('📡 admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕະຫຼອດທີ່ແອັບເປີດຢູ່'); }
     }).catch(() => {});
 }
 function rpStopGps() { if (rpWatchId !== null) { try { navigator.geolocation.clearWatch(rpWatchId); } catch (e) {} rpWatchId = null; } }
@@ -34684,35 +34685,17 @@ window.addEventListener('resize', () => { try { if (rpMap && !document.getElemen
   .mp-pin.next { background: #2563eb; border-color: #fff; color: #fff; box-shadow: 0 0 0 5px rgba(37,99,235,.4), 0 2px 8px rgba(0,0,0,.35); }
 </style>
 
-<style>
-  #dgPill { position: fixed; left: 8px; top: calc(6px + env(safe-area-inset-top, 0px)); z-index: 1250; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; color: #1d4ed8; background: rgba(219,234,254,.95); box-shadow: 0 1px 4px rgba(0,0,0,.25); cursor: pointer; user-select: none; }
-  #dgPill.off { color: #b91c1c; background: rgba(254,226,226,.95); }
-  #dgPill.hidden { display: none; }
-</style>
 <script>
 /* ແຊຣ໌ GPS ຂອງ delivery ຕະຫຼອດທີ່ແອັບເປີດ (ບໍ່ຕ້ອງເປີດໜ້າແຜນເສັ້ນທາງ) — ສົ່ງຜ່ານ rpPushGps (ຄວບຄຸມຄວາມຖີ່ ~15-60 ວິ)
-   ມີປ້າຍ 📡 ສະແດງຕະຫຼອດ ເພື່ອໃຫ້ delivery ຮູ້ວ່າກຳລັງແຊຣ໌ · ຢຸດເມື່ອ logout */
+   ປ້າຍ 📡 ສະແດງສະເພາະໃນໜ້າແຜນເສັ້ນທາງມື້ນີ້ (#rpShareChip) · ຢຸດເມື່ອ logout */
 let dgWatchId = null, dgLastPos = null, dgHeartbeat = null;
-function dgPill(state) {
-  let el = document.getElementById('dgPill');
-  if (!el) {
-    el = document.createElement('div'); el.id = 'dgPill'; el.className = 'hidden';
-    el.onclick = () => { try { rpToast(el.classList.contains('off') ? 'ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ໃຊ້ຕຳແໜ່ງ - ເປີດສິດ Location ເພື່ອໃຫ້ admin ເຫັນຕຳແໜ່ງລົດ' : 'admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕະຫຼອດທີ່ແອັບເປີດຢູ່ (ເກັບສະເພາະຕຳແໜ່ງລ່າສຸດ)'); } catch (e) {} };
-    document.body.appendChild(el);
-  }
-  if (state === 'on') { el.textContent = '📡 ແຊຣ໌ຕຳແໜ່ງ'; el.className = ''; }
-  else if (state === 'off') { el.textContent = '⚠️ ບໍ່ແຊຣ໌ຕຳແໜ່ງ'; el.className = 'off'; }
-  else el.className = 'hidden';
-}
 function dgStart() {
   if (!currentUser || currentUser.role !== 'delivery' || !navigator.geolocation || dgWatchId !== null) return;
   dgWatchId = navigator.geolocation.watchPosition((pos) => {
     if (!currentUser || currentUser.role !== 'delivery') { dgStop(); return; }
-    dgLastPos = pos; dgPill('on');
+    dgLastPos = pos;
     try { rpPushGps(pos); } catch (e) {}
-  }, (err) => {
-    if (err && err.code === 1) dgPill('off');
-  }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+  }, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
   // ຢືນຢູ່ກັບທີ່ (ບໍ່ມີ fix ໃໝ່) -> ຍັງຕໍ່ເວລາຕຳແໜ່ງລ່າສຸດທຸກ ~60 ວິ ບໍ່ໃຫ້ admin ເຫັນເປັນ "ຕຳແໜ່ງເກົ່າ"
   clearInterval(dgHeartbeat);
   dgHeartbeat = setInterval(() => {
@@ -34725,7 +34708,6 @@ function dgStop() {
   if (dgWatchId !== null) { try { navigator.geolocation.clearWatch(dgWatchId); } catch (e) {} dgWatchId = null; }
   clearInterval(dgHeartbeat); dgHeartbeat = null; dgLastPos = null;
   rpGpsLastAt = 0; rpGpsLastLL = null;
-  dgPill('hide');
 }
 document.addEventListener('visibilitychange', () => { // ກັບມາເປີດແອັບ -> ເລີ່ມ watch ໃໝ່ (ບາງເຄື່ອງຢຸດ watch ຕອນຢູ່ background)
   if (!document.hidden && currentUser && currentUser.role === 'delivery') { try { if (dgWatchId !== null) { navigator.geolocation.clearWatch(dgWatchId); dgWatchId = null; } dgStart(); } catch (e) {} }
@@ -34858,7 +34840,7 @@ function mapPlanBuild(plan, assets, gps) {
   return { rows, done, total: rows.length, next: nextIdx >= 0 ? rows[nextIdx] : null, nextDist };
 }
 function dpAgo(ms) { const m = Math.floor(ms / 60000); if (ms < 60000) return 'ເມື່ອກີ້'; if (m < 60) return m + ' ນາທີກ່ອນ'; return Math.floor(m / 60) + ' ຊມ. ກ່ອນ'; }
-function dpShort(email) { return String(email || '').split('@')[0]; }
+function dpName(p) { return (p && p.name) ? p.name : (String((p && p.email) || '').split('@')[0] || '-'); } // ຊື່ = MDE Name ຈາກ MDE list · ບໍ່ມີ -> ໃຊ້ສ່ວນໜ້າ @ ຂອງບັນຊີ
 
 async function dpLoad(silent) {
   const body = document.getElementById('dpBody'); if (!body) return;
@@ -34894,7 +34876,7 @@ function dpRender() {
     const gpsLine = g ? '<div class="mp-plan-gps ' + (g.fresh ? 'live' : 'stale') + '">' + (g.fresh ? '📡 GPS ສົດ · ' : '⚪ ຕຳແໜ່ງເກົ່າ · ') + dpAgo(g.age) + '</div>'
       : '<div class="mp-plan-gps stale">⚪ ຍັງບໍ່ມີ GPS (delivery ຍັງບໍ່ໄດ້ເປີດໜ້າແຜນເສັ້ນທາງ)</div>';
     const goBtn = g ? '<button type="button" class="mp-plan-show" style="background:#dbeafe;color:#1d4ed8;" onclick="dpFlyLive(' + p.user_id + ')"><i class="fa-solid fa-truck mr-1"></i> ໄປຫາຕຳແໜ່ງລົດ</button>' : '';
-    if (!p.items.length) return '<div class="mp-plan-card"><div style="padding:10px 12px;"><div class="mp-plan-name">' + esc(p.email) + '</div><div class="mp-plan-none">ຍັງບໍ່ໄດ້ສ້າງແຜນໃນວັນນີ້</div>' + gpsLine + '</div>' + goBtn + '</div>';
+    if (!p.items.length) return '<div class="mp-plan-card"><div style="padding:10px 12px;"><div class="mp-plan-name">' + esc(dpName(p)) + '</div><div class="mp-plan-none">ຍັງບໍ່ໄດ້ສ້າງແຜນໃນວັນນີ້</div>' + gpsLine + '</div>' + goBtn + '</div>';
     const pct = b.total ? Math.round(b.done * 100 / b.total) : 0;
     const status = b.total && b.done === b.total ? '<div class="mp-plan-done">🎉 ສຳເລັດທຸກຈຸດແລ້ວ</div>'
       : (b.next ? '<div class="mp-plan-next">📍 ຈຸດຕໍ່ໄປ: ' + esc(b.next.stop.name) + ' (' + (b.next.stop.action === 'collect' ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ')' + (b.nextDist !== null ? ' · ຫ່າງ ~' + rpFmtDist(b.nextDist) : '') + '</div>' : '<div class="mp-plan-none">ຈຸດທີ່ເຫຼືອບໍ່ມີພິກັດ</div>');
@@ -34907,7 +34889,7 @@ function dpRender() {
         '<div class="mp-plan-st">' + esc(rpStopLine(r.stop)) + '</div><div class="mp-plan-st">' + mapPlanStatusText(r) + (r.stop.lat === null ? ' · ບໍ່ມີພິກັດ' : '') + '</div></div></div>';
     }).join('');
     const open = (p.user_id in dpOpenState) ? dpOpenState[p.user_id] : (b.done < b.total);
-    return '<details class="mp-plan-card" data-uid="' + p.user_id + '"' + (open ? ' open' : '') + '><summary><div class="mp-plan-name">' + esc(p.email) + ' <span style="font-weight:700;color:#0B6B3A;">' + b.done + '/' + b.total + '</span></div>' +
+    return '<details class="mp-plan-card" data-uid="' + p.user_id + '"' + (open ? ' open' : '') + '><summary><div class="mp-plan-name">' + esc(dpName(p)) + ' <span style="font-weight:700;color:#0B6B3A;">' + b.done + '/' + b.total + '</span></div>' +
       '<div class="mp-plan-bar"><i style="width:' + pct + '%"></i></div>' + status + gpsLine + '</summary>' +
       '<button type="button" class="mp-plan-show" onclick="dpShow(' + p.user_id + ')"><i class="fa-solid fa-map-location-dot mr-1"></i> ສະແດງເສັ້ນທາງເທິງແຜນທີ່</button>' + goBtn + rowsHtml + '</details>';
   }).join('');
@@ -34928,9 +34910,9 @@ function dpDrawMap(keepView) {
     const g = dpData.gpsOf[p.user_id]; if (!g) return;
     all.push(g.ll);
     const b = dpData.built[p.user_id];
-    const icon = L.divIcon({ className: '', html: '<div style="position:relative;"><div class="dp-live' + (g.fresh ? '' : ' stale') + '">🚚</div><div class="dp-live-lbl">' + esc(dpShort(p.email)) + '</div></div>', iconSize: [38, 38], iconAnchor: [19, 19], popupAnchor: [0, -19] });
+    const icon = L.divIcon({ className: '', html: '<div style="position:relative;"><div class="dp-live' + (g.fresh ? '' : ' stale') + '">🚚</div><div class="dp-live-lbl">' + esc(dpName(p)) + '</div></div>', iconSize: [38, 38], iconAnchor: [19, 19], popupAnchor: [0, -19] });
     const near = b && b.next ? '<div>📍 ຈຸດຕໍ່ໄປ: <b>' + esc(b.next.stop.name) + '</b>' + (b.nextDist !== null ? ' · ~' + rpFmtDist(b.nextDist) : '') + '</div>' : '';
-    L.marker(g.ll, { icon, zIndexOffset: 5000 }).addTo(dpLiveLayer).bindPopup('<div class="rp-pop"><b>' + esc(p.email) + '</b><div style="font-size:12px;">' + (g.fresh ? '📡 GPS ສົດ' : '⚪ ຕຳແໜ່ງເກົ່າ') + ' · ' + dpAgo(g.age) + (g.acc ? ' · ±' + Math.round(g.acc) + ' ມ.' : '') + '</div>' + (b ? '<div style="font-size:12px;">ສຳເລັດ ' + b.done + '/' + b.total + '</div>' : '') + '<div style="font-size:12px;">' + near + '</div></div>', { maxWidth: 260 });
+    L.marker(g.ll, { icon, zIndexOffset: 5000 }).addTo(dpLiveLayer).bindPopup('<div class="rp-pop"><b>' + esc(dpName(p)) + '</b><div style="font-size:12px;">' + (g.fresh ? '📡 GPS ສົດ' : '⚪ ຕຳແໜ່ງເກົ່າ') + ' · ' + dpAgo(g.age) + (g.acc ? ' · ±' + Math.round(g.acc) + ' ມ.' : '') + '</div>' + (b ? '<div style="font-size:12px;">ສຳເລັດ ' + b.done + '/' + b.total + '</div>' : '') + '<div style="font-size:12px;">' + near + '</div></div>', { maxWidth: 260 });
   });
   const pts = [];
   if (dpShown !== null && dpData.built[dpShown]) {

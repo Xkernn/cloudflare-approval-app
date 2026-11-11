@@ -9395,14 +9395,16 @@ export default {
     }
 
     // 6a3. admin ເບິ່ງແຜນເສັ້ນທາງຂອງ delivery ທຸກຄົນ ຂອງວັນໃດໜຶ່ງ (ອ່ານຢ່າງດຽວ) ເພື່ອສະແດງຄວາມຄືບໜ້າໃນ Map Tracking
-    // GET /api/route-plan/overview?date=YYYY-MM-DD -> { date, now, plans:[{user_id,email,items:[{asset_id,action,seq}],gps:{lat,lng,accuracy,updated_at}|null}], assets:{ [id]: asset } }
+    // GET /api/route-plan/overview?date=YYYY-MM-DD -> { date, now, plans:[{user_id,email,name(MDE name),mde_code,items:[{asset_id,action,seq}],gps:{lat,lng,accuracy,updated_at}|null}], assets:{ [id]: asset } }
     if (url.pathname === "/api/route-plan/overview" && request.method === "GET") {
       try {
         const date = String(url.searchParams.get("date") || "");
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
         const me = await env.DB.prepare("SELECT id, role FROM users WHERE id = ?").bind(url.searchParams.get("userId")).first();
         if (!me || !isAdminLike(me.role)) return Response.json({ error: "ສະເພາະ admin ເທົ່ານັ້ນ" }, { status: 403 });
-        const { results: users } = await env.DB.prepare("SELECT id, email FROM users WHERE role = 'delivery' ORDER BY email").all();
+        const { results: users } = await env.DB.prepare(
+          "SELECT u.id, u.email, u.mde_code, m.mde_name FROM users u LEFT JOIN mde_list m ON UPPER(TRIM(m.mde_code)) = UPPER(TRIM(u.mde_code)) WHERE u.role = 'delivery' ORDER BY COALESCE(m.mde_name, u.email)"
+        ).all(); // ຊື່ = MDE Name ຈາກ MDE list (ຜູ້ໃຊ້ delivery ມີ MDE Code)
         const { results: items } = await env.DB.prepare(
           "SELECT user_id, asset_id, action, seq FROM delivery_route_plan_items WHERE plan_date = ? ORDER BY user_id ASC, seq ASC, id ASC"
         ).bind(date).all();
@@ -9411,7 +9413,7 @@ export default {
         let gpsRows = [];
         try { ({ results: gpsRows } = await env.DB.prepare("SELECT user_id, lat, lng, accuracy, updated_at FROM delivery_gps").all()); } catch (e) { gpsRows = []; } // ຍັງບໍ່ໄດ້ຮັນ migration -> ບໍ່ມີ GPS
         const gpsBy = new Map((gpsRows || []).map((g) => [g.user_id, { lat: g.lat, lng: g.lng, accuracy: g.accuracy, updated_at: g.updated_at }]));
-        const plans = (users || []).map((u) => ({ user_id: u.id, email: u.email, items: byUser.get(u.id) || [], gps: gpsBy.get(u.id) || null }));
+        const plans = (users || []).map((u) => ({ user_id: u.id, email: u.email, name: u.mde_name || "", mde_code: u.mde_code || "", items: byUser.get(u.id) || [], gps: gpsBy.get(u.id) || null }));
         const ids = [...new Set((items || []).map((it) => it.asset_id))];
         let rows = [];
         for (let i = 0; i < ids.length; i += 80) {
