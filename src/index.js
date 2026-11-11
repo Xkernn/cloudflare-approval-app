@@ -1591,6 +1591,7 @@ const ROUTE_ROLES = {
   "/api/no-doc-delivery": ROLE_STAFF,
   "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ຂຶ້ນລົດ — warehouse / delivery / admin
   "/api/asset-delivery/on-truck": ROLE_STAFF,
+  "/api/route-plan": ["admin", "delivery"], // ແຜນເສັ້ນທາງປະຈຳວັນ ຂອງທີມຈັດສົ່ງ
   "/api/asset-delivery/dispatch-cancel": ROLE_STAFF, // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ)
   "/api/asset-delivery/close-truck": ROLE_STAFF, // ປິດລົດ (ຈົບການຂຶ້ນຕູ້)
   "/api/asset-delivery/dispatch-stock-lookup": ROLE_STAFF, // ຄົ້ນຫາຕູ້ໃນສະຕັອກ (ຕູ້ດ່ວນທີ່ບໍ່ມີ Asset Tracking)

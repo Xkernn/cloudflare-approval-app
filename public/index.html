@@ -34302,10 +34302,20 @@ function rpPromptLater() { document.getElementById('rpPrompt').classList.add('hi
 
 /* ສ້າງ "ຈຸດແວະ" (stop) ຈາກ Asset: ເກັບຄືນສາງ = ເກັບທີ່ຮ້ານ · ຕູ້ເຄື່ອນຍ້າຍທີ່ລໍເກັບຮ້ານເກົ່າ = ເກັບທີ່ຮ້ານເກົ່າ · ອື່ນໆ = ສົ່ງທີ່ຮ້ານ */
 function rpStopsOf(a) {
+  // ຄືນ undefined = ບໍ່ແມ່ນຈຸດທີ່ຕ້ອງໄປ (ເຊັ່ນ ເກັບຈາກຮ້ານແລ້ວ) · null = ບໍ່ມີພິກັດ · object = ຈຸດແວະ
+  // ອີງຕາມຂັ້ນຕອນຈິງ: ສະແກນຂຶ້ນລົດຂອງ "ເກັບຄືນສາງ/ຕູ້ເຄື່ອນຍ້າຍ" ເກີດຕອນໄປເກັບຢູ່ຮ້ານເກົ່າ ສ່ວນຕູ້ປົກກະຕິສະແກນຕອນອອກຈາກສາງ
+  const dispatched = a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' || a.status === 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ';
   let spec;
-  if (a.doc_type === RP_COLLECT_DOC) spec = ['collect', a.outlet_code, a.outlet_name, a.latitude, a.longitude];
-  else if (a.doc_type === RP_RELOC_DOC && a.status === RP_WAIT_COLLECT) spec = ['collect', a.old_outlet_code, a.old_outlet_name, a.old_latitude, a.old_longitude];
-  else spec = ['deliver', a.outlet_code, a.outlet_name, a.latitude, a.longitude];
+  if (a.doc_type === RP_COLLECT_DOC) {
+    if (dispatched) return undefined; // ເກັບຂຶ້ນລົດແລ້ວ -> ຈຸດຮ້ານນີ້ສຳເລັດແລ້ວ
+    spec = ['collect', a.outlet_code, a.outlet_name, a.latitude, a.longitude];
+  } else if (a.doc_type === RP_RELOC_DOC) {
+    spec = dispatched
+      ? ['deliver', a.outlet_code, a.outlet_name, a.latitude, a.longitude]           // ເກັບຈາກຮ້ານເກົ່າແລ້ວ -> ໄປສົ່ງຮ້ານໃໝ່
+      : ['collect', a.old_outlet_code, a.old_outlet_name, a.old_latitude, a.old_longitude]; // ຍັງບໍ່ໄດ້ເກັບ -> ໄປເກັບຮ້ານເກົ່າກ່ອນ
+  } else {
+    spec = ['deliver', a.outlet_code, a.outlet_name, a.latitude, a.longitude];
+  }
   const o = findOutletByCode(spec[1]);
   const useM = o && rpHasNum(o.latitude) && rpHasNum(o.longitude);
   const lat = useM ? Number(o.latitude) : (rpHasNum(spec[3]) ? Number(spec[3]) : null);
@@ -34343,14 +34353,22 @@ async function rpOpen(forceSelect) {
       fetch('/api/route-plan?userId=' + encodeURIComponent(currentUser.id) + '&date=' + rpToday()).then((r) => (r.ok ? r.json() : { items: [] }))
     ]);
     rpStops = []; rpStopMap = {}; rpSkipped = 0;
-    (assets || []).filter((a) => RP_STATUSES.includes(a.status)).forEach((a) => {
+    // ຕູ້ຕິດທຸງ "ດ່ວນ" ອອກສາງ/ຂຶ້ນລົດໄດ້ທຸກສະຖານະ -> ຕ້ອງຢູ່ໃນລາຍການສະເໝີ (ຄືກັນກັບ Map Tracking)
+    (assets || []).filter((a) => RP_STATUSES.includes(a.status) || a.flagged).forEach((a) => {
       const s = rpStopsOf(a);
+      if (s === undefined) return;
       if (!s) { rpSkipped++; return; }
       rpStops.push(s); rpStopMap[s.key] = s;
     });
     const saved = (pr.items || []).map((i) => i.asset_id + ':' + i.action);
-    rpSavedKeys = saved.filter((k) => rpStopMap[k]);
-    rpDoneCount = saved.length - rpSavedKeys.length; // ຢູ່ໃນແຜນ ແຕ່ບໍ່ຢູ່ໃນລາຍການຄ້າງແລ້ວ = ສຳເລັດ/ປ່ຽນສະຖານະແລ້ວ
+    rpSavedKeys = []; rpDoneCount = 0;
+    saved.forEach((k) => {
+      if (rpStopMap[k]) { if (!rpSavedKeys.includes(k)) rpSavedKeys.push(k); return; }
+      // ຕູ້ເຄື່ອນຍ້າຍ: ເກັບຈາກຮ້ານເກົ່າແລ້ວ -> ຈຸດເກັບຫາຍ ແຕ່ເກີດຈຸດ "ສົ່ງຮ້ານໃໝ່" ຂອງຕູ້ດຽວກັນ ໃຫ້ຕໍ່ເຂົ້າແຜນອັດຕະໂນມັດ
+      const aid = k.split(':')[0], alt = aid + ':' + (k.endsWith(':collect') ? 'deliver' : 'collect');
+      if (k.endsWith(':collect') && rpStopMap[alt]) { if (!rpSavedKeys.includes(alt)) rpSavedKeys.push(alt); return; }
+      rpDoneCount++; // ຢູ່ໃນແຜນ ແຕ່ບໍ່ຢູ່ໃນລາຍການຄ້າງແລ້ວ = ສຳເລັດ (ຈັດສົ່ງແລ້ວ / ເກັບແລ້ວ)
+    });
     rpSel = new Set(rpSavedKeys);
     rpMode = (saved.length && !forceSelect) ? 'plan' : 'select';
     rpNavTarget = null; rpRouteLayer.clearLayers();
@@ -34419,7 +34437,11 @@ function rpRender(keepView) {
 function rpPinIcon(color, label, sel, nav) {
   return L.divIcon({ className: '', html: '<div class="rp-pin' + (sel ? ' sel' : '') + (nav ? ' nav' : '') + '" style="--c:' + color + '">' + esc(String(label)) + '</div>', iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -17] });
 }
-function rpTagHtml(s) { return '<span class="rp-tag ' + s.action + '">' + (s.action === 'collect' ? '📥 ເກັບຕູ້' : '🚚 ສົ່ງຕູ້') + '</span>'; }
+function rpTagHtml(s) {
+  const reloc = s.a && s.a.doc_type === RP_RELOC_DOC;
+  const txt = s.action === 'collect' ? (reloc ? '📥 ເກັບຕູ້ (ຮ້ານເກົ່າ)' : '📥 ເກັບຕູ້') : (reloc ? '🚚 ສົ່ງຕູ້ (ຮ້ານໃໝ່)' : '🚚 ສົ່ງຕູ້');
+  return '<span class="rp-tag ' + s.action + '">' + txt + '</span>';
+}
 function rpStopLine(s) { const a = s.a; return esc([a.tracking_no, a.cooler_brand, a.cooler_type].filter(Boolean).join(' · ')); }
 
 /* ----- ໂໝດເລືອກຮ້ານ ----- */
