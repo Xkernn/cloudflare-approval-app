@@ -12944,6 +12944,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       pingAppActivity(true);
       fetchOutletsLookup();
       if (typeof rpMaybePrompt === 'function') rpMaybePrompt(); // popup ສ້າງແຜນເສັ້ນທາງມື້ນີ້ (ທີມຈັດສົ່ງ)
+      try { if (typeof dgStart === 'function') dgStart(); } catch (e) {} // ແຊຣ໌ GPS ໃຫ້ admin ຕະຫຼອດທີ່ແອັບເປີດ (ສະເພາະ role delivery)
       refreshMaintenanceStatus();
       document.getElementById('authContainer').classList.add('hidden');
       document.getElementById('appContainer').classList.remove('hidden');
@@ -32504,6 +32505,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       logout();
     }
     function logout() {
+      try { if (typeof dgStop === 'function') dgStop(); } catch (e) {}
       currentUser = null;
       specialAlerts = []; currentViewName = null; hideSpecialAlertOverlay();
       stopNotificationPolling();
@@ -34261,7 +34263,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   <div class="rp-head">
     <button type="button" class="btn-back" onclick="rpClose()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
     <div class="rp-head-title"><i class="fa-solid fa-route mr-1" style="color:#0B6B3A;"></i> ແຜນເສັ້ນທາງມື້ນີ້<small id="rpHeadSub"></small></div>
-    <span id="rpShareChip" class="rp-share hidden" title="admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕອນເປີດໜ້ານີ້">📡 ແຊຣ໌ຕຳແໜ່ງ</span>
+    <span id="rpShareChip" class="rp-share hidden" title="admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕະຫຼອດທີ່ແອັບເປີດຢູ່">📡 ແຊຣ໌ຕຳແໜ່ງ</span>
     <button type="button" id="rpEditBtn" class="rp-mini hidden" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ແຜນ</button>
   </div>
   <div id="rpMapContainer"></div>
@@ -34440,7 +34442,7 @@ function rpStartGps() {
     if (err && err.code === 1) rpToast('ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ໃຊ້ຕຳແໜ່ງ - ເປີດສິດ Location ແລ້ວລອງໃໝ່');
   }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
 }
-/* ສົ່ງຕຳແໜ່ງລ່າສຸດໃຫ້ admin (ສະເພາະ role delivery, ຕອນເປີດໜ້ານີ້ເທົ່ານັ້ນ · ເກັບແຖວດຽວ ບໍ່ເກັບປະຫວັດ) */
+/* ສົ່ງຕຳແໜ່ງລ່າສຸດໃຫ້ admin (ສະເພາະ role delivery · ເກັບແຖວດຽວ ບໍ່ເກັບປະຫວັດ) — ໃຊ້ຮ່ວມກັບ dgStart() ທີ່ສົ່ງຕະຫຼອດທີ່ແອັບເປີດ */
 let rpGpsLastAt = 0, rpGpsLastLL = null;
 function rpPushGps(pos) {
   if (!currentUser || currentUser.role !== 'delivery') return;
@@ -34452,10 +34454,13 @@ function rpPushGps(pos) {
     body: JSON.stringify({ userId: currentUser.id, lat: ll[0], lng: ll[1], accuracy: pos.coords.accuracy || null }) })
     .then((r) => {
       const chip = document.getElementById('rpShareChip');
-      if (r.ok && chip && chip.classList.contains('hidden')) { chip.classList.remove('hidden'); rpToast('📡 admin ເຫັນຕຳແໜ່ງຂອງທ່ານໃນຂະນະເປີດໜ້ານີ້'); }
+      if (!r.ok) return;
+      if (chip) chip.classList.remove('hidden');
+      const nk = 'dg_notice_' + currentUser.id + '_' + rpToday();
+      if (!rpLsGet(nk)) { rpLsSet(nk, '1'); rpToast('📡 admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕະຫຼອດທີ່ແອັບເປີດຢູ່'); }
     }).catch(() => {});
 }
-function rpStopGps() { const chip = document.getElementById('rpShareChip'); if (chip) chip.classList.add('hidden'); rpGpsLastAt = 0; rpGpsLastLL = null; if (rpWatchId !== null) { try { navigator.geolocation.clearWatch(rpWatchId); } catch (e) {} rpWatchId = null; } }
+function rpStopGps() { if (rpWatchId !== null) { try { navigator.geolocation.clearWatch(rpWatchId); } catch (e) {} rpWatchId = null; } }
 
 function rpRender(keepView) {
   rpLayer.clearLayers(); rpMarkers = {};
@@ -34678,6 +34683,54 @@ window.addEventListener('resize', () => { try { if (rpMap && !document.getElemen
   .mp-pin.done { background: #94a3b8; border-color: #94a3b8; color: #fff; }
   .mp-pin.next { background: #2563eb; border-color: #fff; color: #fff; box-shadow: 0 0 0 5px rgba(37,99,235,.4), 0 2px 8px rgba(0,0,0,.35); }
 </style>
+
+<style>
+  #dgPill { position: fixed; left: 8px; top: calc(6px + env(safe-area-inset-top, 0px)); z-index: 1250; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; color: #1d4ed8; background: rgba(219,234,254,.95); box-shadow: 0 1px 4px rgba(0,0,0,.25); cursor: pointer; user-select: none; }
+  #dgPill.off { color: #b91c1c; background: rgba(254,226,226,.95); }
+  #dgPill.hidden { display: none; }
+</style>
+<script>
+/* ແຊຣ໌ GPS ຂອງ delivery ຕະຫຼອດທີ່ແອັບເປີດ (ບໍ່ຕ້ອງເປີດໜ້າແຜນເສັ້ນທາງ) — ສົ່ງຜ່ານ rpPushGps (ຄວບຄຸມຄວາມຖີ່ ~15-60 ວິ)
+   ມີປ້າຍ 📡 ສະແດງຕະຫຼອດ ເພື່ອໃຫ້ delivery ຮູ້ວ່າກຳລັງແຊຣ໌ · ຢຸດເມື່ອ logout */
+let dgWatchId = null, dgLastPos = null, dgHeartbeat = null;
+function dgPill(state) {
+  let el = document.getElementById('dgPill');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'dgPill'; el.className = 'hidden';
+    el.onclick = () => { try { rpToast(el.classList.contains('off') ? 'ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ໃຊ້ຕຳແໜ່ງ - ເປີດສິດ Location ເພື່ອໃຫ້ admin ເຫັນຕຳແໜ່ງລົດ' : 'admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕະຫຼອດທີ່ແອັບເປີດຢູ່ (ເກັບສະເພາະຕຳແໜ່ງລ່າສຸດ)'); } catch (e) {} };
+    document.body.appendChild(el);
+  }
+  if (state === 'on') { el.textContent = '📡 ແຊຣ໌ຕຳແໜ່ງ'; el.className = ''; }
+  else if (state === 'off') { el.textContent = '⚠️ ບໍ່ແຊຣ໌ຕຳແໜ່ງ'; el.className = 'off'; }
+  else el.className = 'hidden';
+}
+function dgStart() {
+  if (!currentUser || currentUser.role !== 'delivery' || !navigator.geolocation || dgWatchId !== null) return;
+  dgWatchId = navigator.geolocation.watchPosition((pos) => {
+    if (!currentUser || currentUser.role !== 'delivery') { dgStop(); return; }
+    dgLastPos = pos; dgPill('on');
+    try { rpPushGps(pos); } catch (e) {}
+  }, (err) => {
+    if (err && err.code === 1) dgPill('off');
+  }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+  // ຢືນຢູ່ກັບທີ່ (ບໍ່ມີ fix ໃໝ່) -> ຍັງຕໍ່ເວລາຕຳແໜ່ງລ່າສຸດທຸກ ~60 ວິ ບໍ່ໃຫ້ admin ເຫັນເປັນ "ຕຳແໜ່ງເກົ່າ"
+  clearInterval(dgHeartbeat);
+  dgHeartbeat = setInterval(() => {
+    if (!currentUser || currentUser.role !== 'delivery') { dgStop(); return; }
+    if (document.hidden || !dgLastPos) return;
+    try { rpPushGps(dgLastPos); } catch (e) {}
+  }, 60000);
+}
+function dgStop() {
+  if (dgWatchId !== null) { try { navigator.geolocation.clearWatch(dgWatchId); } catch (e) {} dgWatchId = null; }
+  clearInterval(dgHeartbeat); dgHeartbeat = null; dgLastPos = null;
+  rpGpsLastAt = 0; rpGpsLastLL = null;
+  dgPill('hide');
+}
+document.addEventListener('visibilitychange', () => { // ກັບມາເປີດແອັບ -> ເລີ່ມ watch ໃໝ່ (ບາງເຄື່ອງຢຸດ watch ຕອນຢູ່ background)
+  if (!document.hidden && currentUser && currentUser.role === 'delivery') { try { if (dgWatchId !== null) { navigator.geolocation.clearWatch(dgWatchId); dgWatchId = null; } dgStart(); } catch (e) {} }
+});
+</script>
 
 <style>
   #view-dp-admin { position: fixed; inset: 0; z-index: 960; background: #f4f8f9; display: flex; flex-direction: column; }
