@@ -1592,6 +1592,7 @@ const ROUTE_ROLES = {
   "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ຂຶ້ນລົດ — warehouse / delivery / admin
   "/api/asset-delivery/on-truck": ROLE_STAFF,
   "/api/route-plan": ["admin", "delivery"], // ແຜນເສັ້ນທາງປະຈຳວັນ ຂອງທີມຈັດສົ່ງ
+  "/api/delivery-gps": ["delivery"], // delivery ສົ່ງຕຳແໜ່ງ GPS ລ່າສຸດຂອງຕົນເອງ (ຕອນເປີດໜ້າແຜນເສັ້ນທາງ)
   "/api/route-plan/overview": ["admin"], // admin ເບິ່ງແຜນຂອງ delivery ທຸກຄົນ (ໃຊ້ໃນ Map Tracking) — assistant_admin ນັບເປັນ admin
   "/api/asset-delivery/dispatch-cancel": ROLE_STAFF, // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ)
   "/api/asset-delivery/close-truck": ROLE_STAFF, // ປິດລົດ (ຈົບການຂຶ້ນຕູ້)
@@ -9372,8 +9373,29 @@ export default {
       }
     }
 
+    // 6a2b. delivery ສົ່ງ GPS ລ່າສຸດຂອງຕົນເອງ — upsert ແຖວດຽວຕໍ່ຄົນ (ບໍ່ເກັບປະຫວັດ)
+    // POST /api/delivery-gps { lat, lng, accuracy? } -> { ok:true }
+    if (url.pathname === "/api/delivery-gps" && request.method === "POST") {
+      try {
+        const body = await request.json().catch(() => null);
+        const lat = Number(body && body.lat), lng = Number(body && body.lng);
+        const acc = body && body.accuracy !== undefined && body.accuracy !== null && isFinite(Number(body.accuracy)) ? Math.min(Number(body.accuracy), 100000) : null;
+        if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return Response.json({ error: "ພິກັດບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+        const me = await env.DB.prepare("SELECT id, role FROM users WHERE id = ?").bind(url.searchParams.get("userId")).first();
+        if (!me || me.role !== "delivery") return Response.json({ error: "ສະເພາະທີມຈັດສົ່ງເທົ່ານັ້ນ" }, { status: 403 });
+        await env.DB.prepare(
+          "INSERT INTO delivery_gps (user_id, lat, lng, accuracy, updated_at) VALUES (?, ?, ?, ?, ?) " +
+          "ON CONFLICT(user_id) DO UPDATE SET lat = excluded.lat, lng = excluded.lng, accuracy = excluded.accuracy, updated_at = excluded.updated_at"
+        ).bind(me.id, lat, lng, acc, Date.now()).run();
+        return Response.json({ ok: true });
+      } catch (err) {
+        console.error("/api/delivery-gps", err);
+        return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ" }, { status: 500 });
+      }
+    }
+
     // 6a3. admin ເບິ່ງແຜນເສັ້ນທາງຂອງ delivery ທຸກຄົນ ຂອງວັນໃດໜຶ່ງ (ອ່ານຢ່າງດຽວ) ເພື່ອສະແດງຄວາມຄືບໜ້າໃນ Map Tracking
-    // GET /api/route-plan/overview?date=YYYY-MM-DD -> { date, plans:[{user_id,email,items:[{asset_id,action,seq}]}], assets:{ [id]: asset } }
+    // GET /api/route-plan/overview?date=YYYY-MM-DD -> { date, now, plans:[{user_id,email,items:[{asset_id,action,seq}],gps:{lat,lng,accuracy,updated_at}|null}], assets:{ [id]: asset } }
     if (url.pathname === "/api/route-plan/overview" && request.method === "GET") {
       try {
         const date = String(url.searchParams.get("date") || "");
@@ -9386,7 +9408,10 @@ export default {
         ).bind(date).all();
         const byUser = new Map();
         (items || []).forEach((it) => { if (!byUser.has(it.user_id)) byUser.set(it.user_id, []); byUser.get(it.user_id).push({ asset_id: it.asset_id, action: it.action, seq: it.seq }); });
-        const plans = (users || []).map((u) => ({ user_id: u.id, email: u.email, items: byUser.get(u.id) || [] }));
+        let gpsRows = [];
+        try { ({ results: gpsRows } = await env.DB.prepare("SELECT user_id, lat, lng, accuracy, updated_at FROM delivery_gps").all()); } catch (e) { gpsRows = []; } // ຍັງບໍ່ໄດ້ຮັນ migration -> ບໍ່ມີ GPS
+        const gpsBy = new Map((gpsRows || []).map((g) => [g.user_id, { lat: g.lat, lng: g.lng, accuracy: g.accuracy, updated_at: g.updated_at }]));
+        const plans = (users || []).map((u) => ({ user_id: u.id, email: u.email, items: byUser.get(u.id) || [], gps: gpsBy.get(u.id) || null }));
         const ids = [...new Set((items || []).map((it) => it.asset_id))];
         let rows = [];
         for (let i = 0; i < ids.length; i += 80) {
@@ -9397,7 +9422,7 @@ export default {
         const withDocs = await attachDocStates(env, rows);
         const assets = {};
         (withDocs || []).forEach((a) => { assets[a.id] = a; });
-        return Response.json({ date, plans, assets }, { headers: { "Cache-Control": "no-store" } });
+        return Response.json({ date, now: Date.now(), plans, assets }, { headers: { "Cache-Control": "no-store" } });
       } catch (err) {
         console.error("/api/route-plan/overview", err);
         return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ: " + err.message }, { status: 500 });

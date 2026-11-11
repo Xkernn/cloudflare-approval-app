@@ -6836,21 +6836,12 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <div style="font-weight:800; font-size:16px; line-height:1.2;"><i class="fa-solid fa-map-location-dot mr-1" style="color:var(--primary);"></i> Map Tracking</div>
             <div id="mapPageDesc" style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">ສະແດງຕຳແໜ່ງ Asset ເທິງແຜນທີ່ (ຈາກພິກັດ Latitude/Longitude ທີ່ບັນທຶກໄວ້)</div>
           </div>
-          <button type="button" id="mapPlanBtn" class="mp-plan-btn hidden" onclick="mapPlanToggle()"><i class="fa-solid fa-route mr-1"></i> ແຜນ Delivery</button>
+          <button type="button" id="mapPlanBtn" class="mp-plan-btn hidden" onclick="dpOpen()"><i class="fa-solid fa-route mr-1"></i> ແຜນ Delivery</button>
         </div>
         <p id="mapNoDataMsg" class="hidden" style="text-align:center; color: var(--text-muted); padding: 8px 14px; margin:0; background:#fff; border-bottom:1px solid var(--border-color); font-size:12.5px;">
           ຍັງບໍ່ມີ Asset ທີ່ບັນທຶກພິກັດ Latitude/Longitude ໄວ້ — ເພີ່ມພິກັດໄດ້ຈາກໜ້າ "ແກ້ໄຂ" ໃນ Asset Tracking
         </p>
         <div id="assetMapContainer" style="flex:1; min-height:0; width:100%; position:relative; z-index:0;"></div>
-        <div id="mapPlanPanel" class="mp-plan-panel hidden">
-          <div class="mp-plan-head">
-            <div style="flex:1;min-width:0;font-weight:800;font-size:14px;"><i class="fa-solid fa-route mr-1" style="color:#0B6B3A;"></i> ແຜນເສັ້ນທາງ Delivery</div>
-            <input type="date" id="mapPlanDate" onchange="mapPlanLoad()">
-            <button type="button" class="mp-plan-x" onclick="mapPlanLoad()" title="ໂຫຼດໃໝ່"><i class="fa-solid fa-rotate"></i></button>
-            <button type="button" class="mp-plan-x" onclick="mapPlanToggle(false)" title="ປິດ"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-          <div id="mapPlanBody" class="mp-plan-body"></div>
-        </div>
       </div>
 
       <!-- VIEW 2c: ASSET REQUEST -->
@@ -23553,7 +23544,7 @@ function assetStatusBadgeClass(status) {
       root.querySelectorAll('.mp-slide').forEach((d, k) => d.classList.toggle('active', k === i));
     }
     function mapTrackingGoBack() {
-      try { mapPlanToggle(false); } catch (e) {}
+      try { dpClose(); } catch (e) {}
       let v = 'dashboard';
       try { const h = mmHomeFor(currentUser && currentUser.role); if (h && h.view) v = h.view; } catch (e) {}
       switchView(v);
@@ -34241,10 +34232,16 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   .rp-pin { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 3px solid var(--c, #0B6B3A); color: var(--c, #0B6B3A); font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
   .rp-pin.sel { background: var(--c, #0B6B3A); color: #fff; }
   .rp-pin.nav { box-shadow: 0 0 0 5px rgba(37,99,235,.35), 0 2px 8px rgba(0,0,0,.35); }
+  .rp-share { flex: 0 0 auto; font-size: 11.5px; font-weight: 800; color: #1d4ed8; background: #dbeafe; border-radius: 999px; padding: 4px 9px; white-space: nowrap; }
+  .rp-share.hidden { display: none; }
   .rp-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 1300; background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 13.5px; max-width: 90vw; text-align: center; }
   .rp-pop b { color: #0f172a; }
-  .rp-detail { font-size: 12.5px; line-height: 1.7; color: #334155; }
-  .rp-pop { max-height: 52vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .rp-detail { font-size: 12px; line-height: 1.5; color: #334155; }
+  .rp-dl { margin: 1px 0; word-break: break-word; }
+  .rp-more { margin-top: 5px; }
+  .rp-more > summary { cursor: pointer; font-size: 12px; font-weight: 800; color: #0B6B3A; padding: 3px 0; }
+  .rp-pop { max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch; min-width: 200px; }
+  .rp-pop-row .rp-tag { margin-top: 0; }
   .rp-pop .rp-pop-row { padding: 6px 0; border-top: 1px solid #eef2f6; }
   .rp-pop button { margin-top: 5px; border: 0; border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 12.5px; cursor: pointer; background: #0B6B3A; color: #fff; }
   .rp-pop button.on { background: #FFC300; color: #3b2f00; }
@@ -34264,6 +34261,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   <div class="rp-head">
     <button type="button" class="btn-back" onclick="rpClose()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
     <div class="rp-head-title"><i class="fa-solid fa-route mr-1" style="color:#0B6B3A;"></i> ແຜນເສັ້ນທາງມື້ນີ້<small id="rpHeadSub"></small></div>
+    <span id="rpShareChip" class="rp-share hidden" title="admin ເຫັນຕຳແໜ່ງຂອງທ່ານຕອນເປີດໜ້ານີ້">📡 ແຊຣ໌ຕຳແໜ່ງ</span>
     <button type="button" id="rpEditBtn" class="rp-mini hidden" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ແຜນ</button>
   </div>
   <div id="rpMapContainer"></div>
@@ -34429,6 +34427,7 @@ function rpStartGps() {
     const first = !rpMeLL;
     rpMeLL = [pos.coords.latitude, pos.coords.longitude];
     const acc = pos.coords.accuracy || 0;
+    try { rpPushGps(pos); } catch (e) {}
     if (!rpMeMarker) {
       rpMeAcc = L.circle(rpMeLL, { radius: acc, color: '#2563eb', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.12, interactive: false }).addTo(rpMap);
       rpMeMarker = L.marker(rpMeLL, { icon: L.divIcon({ className: '', html: '<div class="myloc-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }), zIndexOffset: 2000 }).addTo(rpMap).bindPopup('ຕຳແໜ່ງຂອງທ່ານ');
@@ -34441,7 +34440,22 @@ function rpStartGps() {
     if (err && err.code === 1) rpToast('ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ໃຊ້ຕຳແໜ່ງ - ເປີດສິດ Location ແລ້ວລອງໃໝ່');
   }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
 }
-function rpStopGps() { if (rpWatchId !== null) { try { navigator.geolocation.clearWatch(rpWatchId); } catch (e) {} rpWatchId = null; } }
+/* ສົ່ງຕຳແໜ່ງລ່າສຸດໃຫ້ admin (ສະເພາະ role delivery, ຕອນເປີດໜ້ານີ້ເທົ່ານັ້ນ · ເກັບແຖວດຽວ ບໍ່ເກັບປະຫວັດ) */
+let rpGpsLastAt = 0, rpGpsLastLL = null;
+function rpPushGps(pos) {
+  if (!currentUser || currentUser.role !== 'delivery') return;
+  const now = Date.now(), ll = [pos.coords.latitude, pos.coords.longitude];
+  const moved = rpGpsLastLL ? rpDist(rpGpsLastLL, ll) : Infinity;
+  if (now - rpGpsLastAt < 15000 || (moved < 25 && now - rpGpsLastAt < 60000)) return;
+  rpGpsLastAt = now; rpGpsLastLL = ll;
+  fetch('/api/delivery-gps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+    body: JSON.stringify({ userId: currentUser.id, lat: ll[0], lng: ll[1], accuracy: pos.coords.accuracy || null }) })
+    .then((r) => {
+      const chip = document.getElementById('rpShareChip');
+      if (r.ok && chip && chip.classList.contains('hidden')) { chip.classList.remove('hidden'); rpToast('📡 admin ເຫັນຕຳແໜ່ງຂອງທ່ານໃນຂະນະເປີດໜ້ານີ້'); }
+    }).catch(() => {});
+}
+function rpStopGps() { const chip = document.getElementById('rpShareChip'); if (chip) chip.classList.add('hidden'); rpGpsLastAt = 0; rpGpsLastLL = null; if (rpWatchId !== null) { try { navigator.geolocation.clearWatch(rpWatchId); } catch (e) {} rpWatchId = null; } }
 
 function rpRender(keepView) {
   rpLayer.clearLayers(); rpMarkers = {};
@@ -34476,28 +34490,23 @@ function rpDetailHtml(s) {
   const oldLat = oldUse ? oldMaster.latitude : a.old_latitude, oldLng = oldUse ? oldMaster.longitude : a.old_longitude;
   const oldPhone = (oldMaster && oldMaster.phone) ? String(oldMaster.phone).trim() : '';
   const shopPhone = (outletInfo && outletInfo.phone) ? outletInfo.phone : (s.phone || '');
+  const line = (t, v, extra) => '<div class="rp-dl">' + lbl(t) + ' ' + esc(v || '-') + (extra || '') + '</div>';
+  const moreHtml =
+    line('QR Code', a.qr_code) + line('Serial Number', a.serial_number) + line('CapEx', a.capex) +
+    line('MDE Code', a.mde_code) + line('MDE Name', mdeInfo ? mdeInfo.mde_name : '') +
+    line('ເບີໂທ MDE', mdeInfo && mdeInfo.phone ? mdeInfo.phone : '', rpWaBtn(mdeInfo && mdeInfo.phone)) +
+    (isReloc ? '<div class="rp-dl" style="margin-top:4px;"><b style="color:#0f172a;">ຮ້ານເດີມ</b></div>' +
+      line('Outlet Code', a.old_outlet_code) + line('Outlet Name', a.old_outlet_name) +
+      line('ເບີໂທຮ້ານເກົ່າ', oldPhone, rpWaBtn(oldPhone)) +
+      line('Lat/Long', (oldLat ?? '-') + ', ' + (oldLng ?? '-')) : '');
   return '<div class="rp-detail">' +
-    (isOnTruck ? '<span class="badge badge-info" style="margin-bottom:6px;display:inline-block;">🚚 ຢູ່ເທິງລົດ ກຳລັງໄປຮ້ານ</span><br>' : '') +
-    (a.flagged ? '<span class="badge badge-rejected" style="margin-bottom:6px;display:inline-block;">🚩 ດ່ວນ - ຕິດທຸງໄວ້</span><br>' : '') +
-    '<b>' + esc(a.tracking_no || '-') + '</b><br>' +
-    '<span class="badge badge-default">' + esc(assetStatusText(a)) + '</span><br>' +
-    lbl('Outlet Name') + ' ' + esc(a.outlet_name || '-') + '<br>' +
-    lbl('Outlet Code') + ' ' + esc(a.outlet_code || '-') + '<br>' +
-    lbl('ເບີໂທຮ້ານ') + ' ' + esc(shopPhone || '-') + rpWaBtn(shopPhone) + '<br>' +
-    lbl('Brand') + ' ' + esc(a.cooler_brand || '-') + '<br>' +
-    lbl('Type') + ' ' + esc(a.cooler_type || '-') + '<br>' +
-    lbl('QR Code') + ' ' + esc(a.qr_code || '-') + '<br>' +
-    lbl('Serial Number') + ' ' + esc(a.serial_number || '-') + '<br>' +
-    lbl('CapEx') + ' ' + esc(a.capex || '-') + '<br>' +
-    lbl('MDE Code') + ' ' + esc(a.mde_code || '-') + '<br>' +
-    lbl('MDE Name') + ' ' + esc(mdeInfo ? mdeInfo.mde_name : '-') + '<br>' +
-    lbl('ເບີໂທ MDE') + ' ' + esc(mdeInfo && mdeInfo.phone ? mdeInfo.phone : '-') + rpWaBtn(mdeInfo && mdeInfo.phone) + '<br>' +
-    lbl('Doc Type') + ' <span style="color:' + color + ';font-weight:700;">' + esc(a.doc_type || '-') + '</span>' +
-    (isReloc ? '<br><br><b style="color:#0f172a;">ຮ້ານເດີມ:</b><br>' +
-      lbl('Outlet Code') + ' ' + esc(a.old_outlet_code || '-') + '<br>' +
-      lbl('Outlet Name') + ' ' + esc(a.old_outlet_name || '-') + '<br>' +
-      lbl('ເບີໂທຮ້ານເກົ່າ') + ' ' + esc(oldPhone || '-') + rpWaBtn(oldPhone) + '<br>' +
-      lbl('Lat/Long') + ' ' + esc(oldLat ?? '-') + ', ' + esc(oldLng ?? '-') : '') +
+    ((isOnTruck || a.flagged) ? '<div style="margin-bottom:3px;">' + (isOnTruck ? '<span class="badge badge-info">🚚 ຢູ່ເທິງລົດ</span> ' : '') + (a.flagged ? '<span class="badge badge-rejected">🚩 ດ່ວນ</span>' : '') + '</div>' : '') +
+    '<div class="rp-dl"><b>' + esc(a.tracking_no || '-') + '</b> <span class="badge badge-default">' + esc(assetStatusText(a)) + '</span></div>' +
+    line('ຮ້ານ', (a.outlet_name || '-') + (a.outlet_code ? ' (' + a.outlet_code + ')' : '')) +
+    line('ເບີໂທຮ້ານ', shopPhone, rpWaBtn(shopPhone)) +
+    line('Brand/Type', [a.cooler_brand, a.cooler_type].filter(Boolean).join(' · ')) +
+    '<div class="rp-dl">' + lbl('Doc Type') + ' <span style="color:' + color + ';font-weight:700;">' + esc(a.doc_type || '-') + '</span></div>' +
+    '<details class="rp-more"><summary>ເບິ່ງລາຍລະອຽດເພີ່ມ</summary>' + moreHtml + '</details>' +
     '</div>';
 }
 /* ສ້າງ popup ຂອງຮ້ານ: 1 ຈຸດ = ສະແດງຕົງ · ຫຼາຍຈຸດ = ແຖບສະຫຼັບ (ໃຊ້ mp-pager ຄືກັບ Map Tracking) · actionFn(s) ຄືນ html ປຸ່ມຂອງແຕ່ລະຈຸດ */
@@ -34533,7 +34542,7 @@ function rpRenderSelect() {
   const bounds = [];
   rpGroups.forEach((g) => {
     const n = g.stops.filter((s) => rpSel.has(s.key)).length;
-    const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(rpGroupColor(g), n || g.stops.length, n > 0, false) }).addTo(rpLayer).bindPopup(rpPopupHtml(g), { maxWidth: 340 });
+    const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(rpGroupColor(g), n || g.stops.length, n > 0, false) }).addTo(rpLayer).bindPopup(rpPopupHtml(g), { maxWidth: 280 });
     rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
   });
   if (bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
@@ -34592,7 +34601,7 @@ function rpRenderPlan(keepView) {
     const mixed = g.stops.some((s) => s.action === 'collect') && g.stops.some((s) => s.action === 'deliver');
     const color = mixed ? '#7c3aed' : (g.stops[0].action === 'collect' ? '#EA580C' : '#0B6B3A');
     const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(color, i + 1, true, rpNavTarget === g.gkey) }).addTo(rpLayer)
-      .bindPopup(rpPopupPager(g, null, '') + '<div class="rp-pop"><button type="button" style="width:100%;padding:9px 12px;" onclick="rpNavigate(\'' + g.gkey + '\')"><i class="fa-solid fa-diamond-turn-right"></i> ນຳທາງໄປຮ້ານນີ້</button></div>', { maxWidth: 340 });
+      .bindPopup(rpPopupPager(g, null, '') + '<div class="rp-pop"><button type="button" style="width:100%;padding:9px 12px;" onclick="rpNavigate(\'' + g.gkey + '\')"><i class="fa-solid fa-diamond-turn-right"></i> ນຳທາງໄປຮ້ານນີ້</button></div>', { maxWidth: 280 });
     rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
   });
   if (!keepView && bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
@@ -34670,26 +34679,75 @@ window.addEventListener('resize', () => { try { if (rpMap && !document.getElemen
   .mp-pin.next { background: #2563eb; border-color: #fff; color: #fff; box-shadow: 0 0 0 5px rgba(37,99,235,.4), 0 2px 8px rgba(0,0,0,.35); }
 </style>
 
+<style>
+  #view-dp-admin { position: fixed; inset: 0; z-index: 960; background: #f4f8f9; display: flex; flex-direction: column; }
+  #view-dp-admin.hidden { display: none; }
+  .dp-head { display: flex; align-items: center; gap: 8px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+  .dp-title { flex: 1; min-width: 0; font-weight: 800; font-size: 15px; line-height: 1.2; color: #0f172a; }
+  .dp-title small { display: block; font-weight: 600; font-size: 11.5px; color: #64748b; }
+  .dp-head input[type=date] { border: 1px solid #cbd5e1; border-radius: 10px; padding: 5px 6px; font-size: 12.5px; background: #fff; color: #0f172a; max-width: 130px; }
+  .dp-x { border: 0; background: #f1f5f9; color: #334155; width: 34px; height: 34px; border-radius: 10px; cursor: pointer; flex: 0 0 auto; }
+  #dpMapContainer { flex: 1 1 auto; min-height: 200px; width: 100%; }
+  #dpSheet { flex: 0 0 auto; max-height: 46vh; display: flex; flex-direction: column; background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 24px -12px rgba(0,0,0,.35); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #dpBody { overflow-y: auto; padding: 10px 12px 12px; -webkit-overflow-scrolling: touch; }
+  .dp-live { width: 38px; height: 38px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 0 5px rgba(37,99,235,.35), 0 2px 8px rgba(0,0,0,.4); }
+  .dp-live.stale { background: #94a3b8; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  .dp-live-lbl { position: absolute; left: 44px; top: 7px; background: #0f172a; color: #fff; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 8px; white-space: nowrap; }
+  .mp-plan-gps { font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .mp-plan-gps.live { color: #1d4ed8; } .mp-plan-gps.stale { color: #64748b; }
+</style>
+
+<div id="view-dp-admin" class="hidden" role="dialog" aria-label="ແຜນ Delivery">
+  <div class="dp-head">
+    <button type="button" class="btn-back" onclick="dpClose()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
+    <div class="dp-title"><i class="fa-solid fa-route mr-1" style="color:#0B6B3A;"></i> ແຜນ Delivery<small id="dpSub"></small></div>
+    <input type="date" id="dpDate" onchange="dpLoad()">
+    <button type="button" class="dp-x" onclick="dpLoad()" title="ໂຫຼດໃໝ່"><i class="fa-solid fa-rotate"></i></button>
+  </div>
+  <div id="dpMapContainer"></div>
+  <div id="dpSheet"><div id="dpBody"></div></div>
+</div>
+
 <script>
-/* admin ເບິ່ງຄວາມຄືບໜ້າແຜນເສັ້ນທາງຂອງ delivery ໃນ Map Tracking
-   - ສຳເລັດ/ຄ້າງ ຄຳນວນຈາກສະຖານະ Asset ຈິງ (ໃຊ້ກົດດຽວກັບໜ້າແຜນຂອງ delivery: rpStopsOf)
-   - ຈຸດຕໍ່ໄປ = ຈຸດຄ້າງທຳອິດຕາມລຳດັບແຜນ (ບໍ່ມີການເກັບ GPS ສົດຂອງ delivery) */
-let mapPlanLayer = null, mapPlanData = null, mapPlanShown = null;
+/* ໜ້າ "ແຜນ Delivery" ສຳລັບ admin (ແຜນທີ່ແຍກຈາກ Map Tracking ຫຼັກ)
+   - ແຜນ + ຄວາມຄືບໜ້າ ຄຳນວນຈາກສະຖານະ Asset ຈິງ (ກົດດຽວກັບໜ້າແຜນຂອງ delivery: rpStopsOf)
+   - ຕຳແໜ່ງ GPS ສົດ ມາຈາກ delivery ຕອນເປີດໜ້າແຜນເສັ້ນທາງ (/api/delivery-gps) · ໂຫຼດໃໝ່ເອງທຸກ 20 ວິ */
+let dpMap = null, dpPlanLayer = null, dpLiveLayer = null, dpTimer = null, dpData = null, dpShown = null, dpOpenState = {}, dpViewFitted = false;
+const DP_FRESH_MS = 10 * 60 * 1000;
 function mapPlanIsAdmin() { return !!currentUser && (currentUser.role === 'admin' || currentUser.role === 'assistant_admin'); }
 function mapPlanInitBtn() { const b = document.getElementById('mapPlanBtn'); if (b) b.classList.toggle('hidden', !mapPlanIsAdmin()); }
-function mapPlanToggle(force) {
-  const panel = document.getElementById('mapPlanPanel'); if (!panel) return;
-  const open = typeof force === 'boolean' ? force : panel.classList.contains('hidden');
-  if (open && !mapPlanIsAdmin()) return;
-  panel.classList.toggle('hidden', !open);
-  const b = document.getElementById('mapPlanBtn'); if (b) b.classList.toggle('on', open);
-  if (open) { const d = document.getElementById('mapPlanDate'); if (d && !d.value) d.value = rpToday(); mapPlanLoad(); }
-  else mapPlanClearLayer();
-  try { setTimeout(() => assetMapInstance && assetMapInstance.invalidateSize(), 60); } catch (e) {}
-}
-function mapPlanClearLayer() { if (mapPlanLayer) { try { mapPlanLayer.clearLayers(); } catch (e) {} } mapPlanShown = null; }
 
-/* ຈຸດແວະຂອງ asset ຕາມ action ທີ່ບັນທຶກໄວ້ໃນແຜນ (ໃຊ້ພິກັດຈາກ Outlet Master ກ່ອນ ຄືກັບ rpStopsOf) */
+function dpEnsureMap() {
+  if (!dpMap) {
+    dpMap = L.map('dpMapContainer');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(dpMap);
+    dpPlanLayer = L.layerGroup().addTo(dpMap);
+    dpLiveLayer = L.layerGroup().addTo(dpMap);
+    dpMap.setView([17.9757, 102.6331], 12);
+  }
+  setTimeout(() => dpMap.invalidateSize(), 60);
+}
+async function dpOpen() {
+  if (!mapPlanIsAdmin()) return;
+  document.getElementById('view-dp-admin').classList.remove('hidden');
+  document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+  dpEnsureMap();
+  const d = document.getElementById('dpDate'); if (!d.value) d.value = rpToday();
+  dpShown = null; dpOpenState = {}; dpViewFitted = false;
+  await dpLoad();
+  clearInterval(dpTimer);
+  dpTimer = setInterval(() => { if (!document.hidden) dpLoad(true); }, 20000);
+}
+function dpClose() {
+  const v = document.getElementById('view-dp-admin');
+  if (!v || v.classList.contains('hidden')) return;
+  v.classList.add('hidden');
+  clearInterval(dpTimer); dpTimer = null;
+  const mt = document.getElementById('view-map-tracking');
+  if (!mt || mt.classList.contains('hidden')) { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; }
+}
+
+/* ===== ຕັດສິນສະຖານະຂອງແຕ່ລະຈຸດ ===== */
 function mapPlanStopFor(a, action) {
   const reloc = a.doc_type === RP_RELOC_DOC;
   const spec = (action === 'collect' && reloc) ? [a.old_outlet_code, a.old_outlet_name, a.old_latitude, a.old_longitude] : [a.outlet_code, a.outlet_name, a.latitude, a.longitude];
@@ -34716,98 +34774,136 @@ function mapPlanStatusText(row) {
   }
   return '⏳ ລໍໄປເກັບຕູ້';
 }
-function mapPlanBuild(plan, assets) {
+function dpGpsOf(plan, now) {
+  const g = plan.gps; if (!g) return null;
+  const age = Math.max(0, now - g.updated_at);
+  return { ll: [g.lat, g.lng], acc: g.accuracy, age, fresh: age <= DP_FRESH_MS };
+}
+function mapPlanBuild(plan, assets, gps) {
   const rows = [], seen = new Set();
   plan.items.forEach((it) => {
-    const a = assets[it.asset_id];
-    if (!a) return;
-    const stop = mapPlanStopFor(a, it.action);
-    const state = mapPlanState(a, it.action);
-    seen.add(stop.key);
-    rows.push({ stop, state });
-    // ຕູ້ເຄື່ອນຍ້າຍທີ່ເກັບແລ້ວ -> ເກີດຈຸດ \"ສົ່ງຮ້ານໃໝ່\" ຕໍ່ເນື່ອງ
+    const a = assets[it.asset_id]; if (!a) return;
+    const stop = mapPlanStopFor(a, it.action), state = mapPlanState(a, it.action);
+    seen.add(stop.key); rows.push({ stop, state });
     if (it.action === 'collect' && state === 'done' && a.doc_type === RP_RELOC_DOC && (RP_STATUSES.includes(a.status) || a.flagged)) {
       const ns = mapPlanStopFor(a, 'deliver');
       if (!seen.has(ns.key)) { seen.add(ns.key); rows.push({ stop: ns, state: mapPlanState(a, 'deliver') }); }
     }
   });
-  const nextIdx = rows.findIndex((r) => r.state === 'pending' && r.stop.lat !== null);
+  // ຈຸດຕໍ່ໄປ: ມີ GPS ສົດ -> ຈຸດຄ້າງທີ່ໃກ້ຕຳແໜ່ງປັດຈຸບັນສຸດ (delivery ກໍເຫັນລຽງຕາມໄລຍະທາງຄືກັນ) · ບໍ່ມີ -> ຈຸດຄ້າງທຳອິດຕາມລຳດັບແຜນ
+  let nextIdx = -1, nextDist = null;
+  const cand = rows.map((r, i) => ({ r, i })).filter((x) => x.r.state === 'pending' && x.r.stop.lat !== null);
+  if (cand.length) {
+    if (gps && gps.fresh) {
+      let best = cand[0], bd = Infinity;
+      cand.forEach((x) => { const d = rpDist(gps.ll, [x.r.stop.lat, x.r.stop.lng]); if (d < bd) { bd = d; best = x; } });
+      nextIdx = best.i; nextDist = bd;
+    } else nextIdx = cand[0].i;
+  }
   rows.forEach((r, i) => { r.isNext = i === nextIdx; });
   const done = rows.filter((r) => r.state === 'done').length;
-  return { rows, done, total: rows.length, next: nextIdx >= 0 ? rows[nextIdx] : null };
+  return { rows, done, total: rows.length, next: nextIdx >= 0 ? rows[nextIdx] : null, nextDist };
 }
+function dpAgo(ms) { const m = Math.floor(ms / 60000); if (ms < 60000) return 'ເມື່ອກີ້'; if (m < 60) return m + ' ນາທີກ່ອນ'; return Math.floor(m / 60) + ' ຊມ. ກ່ອນ'; }
+function dpShort(email) { return String(email || '').split('@')[0]; }
 
-async function mapPlanLoad() {
-  const body = document.getElementById('mapPlanBody'); if (!body) return;
-  body.innerHTML = '<div class="mp-plan-note" style="text-align:center;padding:14px;"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
+async function dpLoad(silent) {
+  const body = document.getElementById('dpBody'); if (!body) return;
+  if (!silent) body.innerHTML = '<div class="mp-plan-note" style="text-align:center;padding:14px;"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
   try {
     if (!Array.isArray(dbOutletsLookup) || !dbOutletsLookup.length) await fetchOutletsLookup();
-    const d = (document.getElementById('mapPlanDate').value || rpToday());
-    const r = await fetch('/api/route-plan/overview?userId=' + encodeURIComponent(currentUser.id) + '&date=' + encodeURIComponent(d));
+    const d = document.getElementById('dpDate').value || rpToday();
+    const r = await fetch('/api/route-plan/overview?userId=' + encodeURIComponent(currentUser.id) + '&date=' + encodeURIComponent(d), { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    mapPlanData = await r.json();
-    mapPlanData.built = {};
-    (mapPlanData.plans || []).forEach((p) => { mapPlanData.built[p.user_id] = mapPlanBuild(p, mapPlanData.assets || {}); });
-    mapPlanRender();
+    const data = await r.json();
+    const now = data.now || Date.now();
+    data.built = {}; data.gpsOf = {};
+    (data.plans || []).forEach((p) => { const g = dpGpsOf(p, now); data.gpsOf[p.user_id] = g; data.built[p.user_id] = mapPlanBuild(p, data.assets || {}, g); });
+    // ເກັບສະຖານະ details ທີ່ເປີດ/ປິດ ແລະ ຕຳແໜ່ງ scroll ກ່ອນວາດໃໝ່
+    document.querySelectorAll('#dpBody details[data-uid]').forEach((el) => { dpOpenState[el.dataset.uid] = el.open; });
+    const sc = body.scrollTop;
+    dpData = data;
+    dpRender();
+    body.scrollTop = sc;
+    document.getElementById('dpSub').textContent = 'ອັບເດດ ' + new Date().toLocaleTimeString('lo-LA', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · ໂຫຼດໃໝ່ເອງທຸກ 20 ວິ';
   } catch (e) {
     console.error(e);
-    body.innerHTML = '<div class="mp-plan-note" style="text-align:center;padding:14px;">ໂຫຼດແຜນບໍ່ສຳເລັດ - ລອງໃໝ່</div>';
+    if (!silent) body.innerHTML = '<div class="mp-plan-note" style="text-align:center;padding:14px;">ໂຫຼດແຜນບໍ່ສຳເລັດ - ລອງໃໝ່</div>';
   }
 }
-function mapPlanRender() {
-  const body = document.getElementById('mapPlanBody'); if (!body || !mapPlanData) return;
-  const plans = mapPlanData.plans || [];
-  if (!plans.length) { body.innerHTML = '<div class="mp-plan-note" style="text-align:center;padding:14px;">ບໍ່ມີຜູ້ໃຊ້ role delivery</div>'; return; }
-  // ຄົນທີ່ມີແຜນຂຶ້ນກ່ອນ
-  const sorted = plans.slice().sort((x, y) => (y.items.length > 0) - (x.items.length > 0));
-  body.innerHTML = '<div class="mp-plan-note">ສຳເລັດ/ຄ້າງ ອີງຕາມສະຖານະ Asset ຈິງ · ຈຸດຕໍ່ໄປ = ຈຸດຄ້າງທຳອິດຕາມລຳດັບແຜນ (ລະບົບບໍ່ໄດ້ເກັບ GPS ສົດຂອງ delivery)</div>' + sorted.map((p) => {
-    const b = mapPlanData.built[p.user_id];
-    if (!p.items.length) return '<div class="mp-plan-card"><div style="padding:10px 12px;"><div class="mp-plan-name">' + esc(p.email) + '</div><div class="mp-plan-none">ຍັງບໍ່ໄດ້ສ້າງແຜນໃນວັນນີ້</div></div></div>';
+function dpRender() {
+  const body = document.getElementById('dpBody'); if (!body || !dpData) return;
+  const plans = dpData.plans || [];
+  if (!plans.length) { body.innerHTML = '<div class="mp-plan-note" style="text-align:center;padding:14px;">ບໍ່ມີຜູ້ໃຊ້ role delivery</div>'; dpDrawMap(); return; }
+  const sorted = plans.slice().sort((x, y) => (y.items.length > 0) - (x.items.length > 0) || ((dpData.gpsOf[y.user_id] ? 1 : 0) - (dpData.gpsOf[x.user_id] ? 1 : 0)));
+  body.innerHTML = '<div class="mp-plan-note">ສຳເລັດ/ຄ້າງ ອີງຕາມສະຖານະ Asset ຈິງ · ຕຳແໜ່ງລົດມາຈາກ GPS ຂອງ delivery ຕອນເປີດໜ້າແຜນເສັ້ນທາງ (ເກັບສະເພາະຕຳແໜ່ງລ່າສຸດ) · ຈຸດຕໍ່ໄປ = ຈຸດຄ້າງທີ່ໃກ້ລົດສຸດ</div>' + sorted.map((p) => {
+    const b = dpData.built[p.user_id], g = dpData.gpsOf[p.user_id];
+    const gpsLine = g ? '<div class="mp-plan-gps ' + (g.fresh ? 'live' : 'stale') + '">' + (g.fresh ? '📡 GPS ສົດ · ' : '⚪ ຕຳແໜ່ງເກົ່າ · ') + dpAgo(g.age) + '</div>'
+      : '<div class="mp-plan-gps stale">⚪ ຍັງບໍ່ມີ GPS (delivery ຍັງບໍ່ໄດ້ເປີດໜ້າແຜນເສັ້ນທາງ)</div>';
+    const goBtn = g ? '<button type="button" class="mp-plan-show" style="background:#dbeafe;color:#1d4ed8;" onclick="dpFlyLive(' + p.user_id + ')"><i class="fa-solid fa-truck mr-1"></i> ໄປຫາຕຳແໜ່ງລົດ</button>' : '';
+    if (!p.items.length) return '<div class="mp-plan-card"><div style="padding:10px 12px;"><div class="mp-plan-name">' + esc(p.email) + '</div><div class="mp-plan-none">ຍັງບໍ່ໄດ້ສ້າງແຜນໃນວັນນີ້</div>' + gpsLine + '</div>' + goBtn + '</div>';
     const pct = b.total ? Math.round(b.done * 100 / b.total) : 0;
     const status = b.total && b.done === b.total ? '<div class="mp-plan-done">🎉 ສຳເລັດທຸກຈຸດແລ້ວ</div>'
-      : (b.next ? '<div class="mp-plan-next">📍 ກຳລັງໄປ / ຈຸດຕໍ່ໄປ: ' + esc(b.next.stop.name) + ' (' + (b.next.stop.action === 'collect' ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ')</div>' : '<div class="mp-plan-none">ຈຸດທີ່ເຫຼືອບໍ່ມີພິກັດ</div>');
+      : (b.next ? '<div class="mp-plan-next">📍 ຈຸດຕໍ່ໄປ: ' + esc(b.next.stop.name) + ' (' + (b.next.stop.action === 'collect' ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ')' + (b.nextDist !== null ? ' · ຫ່າງ ~' + rpFmtDist(b.nextDist) : '') + '</div>' : '<div class="mp-plan-none">ຈຸດທີ່ເຫຼືອບໍ່ມີພິກັດ</div>');
     const rowsHtml = b.rows.map((r, i) => {
       const cls = r.state === 'done' ? 'done' : (r.isNext ? 'next' : (r.stop.action === 'collect' ? 'collect' : 'pending'));
-      return '<div class="mp-plan-row' + (r.state === 'done' ? ' is-done' : '') + (r.isNext ? ' is-next' : '') + '" onclick="mapPlanFocus(' + p.user_id + ',' + i + ')">' +
+      return '<div class="mp-plan-row' + (r.state === 'done' ? ' is-done' : '') + (r.isNext ? ' is-next' : '') + '" onclick="dpFocus(' + p.user_id + ',' + i + ')">' +
         '<div class="mp-plan-ico ' + cls + '">' + (r.state === 'done' ? '✓' : (i + 1)) + '</div>' +
         '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:13.5px;word-break:break-word;">' + esc(r.stop.name) + (r.isNext ? ' <span style="color:#2563eb;">· ຈຸດຕໍ່ໄປ</span>' : '') + '</div>' +
         '<div>' + rpTagHtml(r.stop) + '</div>' +
         '<div class="mp-plan-st">' + esc(rpStopLine(r.stop)) + '</div><div class="mp-plan-st">' + mapPlanStatusText(r) + (r.stop.lat === null ? ' · ບໍ່ມີພິກັດ' : '') + '</div></div></div>';
     }).join('');
-    return '<details class="mp-plan-card"' + (b.done < b.total ? ' open' : '') + '><summary><div class="mp-plan-name">' + esc(p.email) + ' <span style="font-weight:700;color:#0B6B3A;">' + b.done + '/' + b.total + '</span></div>' +
-      '<div class="mp-plan-bar"><i style="width:' + pct + '%"></i></div>' + status + '</summary>' +
-      '<button type="button" class="mp-plan-show" onclick="mapPlanShow(' + p.user_id + ')"><i class="fa-solid fa-map-location-dot mr-1"></i> ສະແດງເສັ້ນທາງເທິງແຜນທີ່</button>' + rowsHtml + '</details>';
+    const open = (p.user_id in dpOpenState) ? dpOpenState[p.user_id] : (b.done < b.total);
+    return '<details class="mp-plan-card" data-uid="' + p.user_id + '"' + (open ? ' open' : '') + '><summary><div class="mp-plan-name">' + esc(p.email) + ' <span style="font-weight:700;color:#0B6B3A;">' + b.done + '/' + b.total + '</span></div>' +
+      '<div class="mp-plan-bar"><i style="width:' + pct + '%"></i></div>' + status + gpsLine + '</summary>' +
+      '<button type="button" class="mp-plan-show" onclick="dpShow(' + p.user_id + ')"><i class="fa-solid fa-map-location-dot mr-1"></i> ສະແດງເສັ້ນທາງເທິງແຜນທີ່</button>' + goBtn + rowsHtml + '</details>';
   }).join('');
-  if (mapPlanShown !== null) mapPlanShow(mapPlanShown, true);
+  // ມີແຜນຄົນດຽວ -> ສະແດງເທິງແຜນທີ່ອັດຕະໂນມັດ
+  if (dpShown === null) { const wp = plans.filter((p) => p.items.length); if (wp.length === 1) dpShown = wp[0].user_id; }
+  dpDrawMap();
 }
 function mapPlanPinIcon(r, i, color) {
   const cls = r.state === 'done' ? ' done' : (r.isNext ? ' next' : '');
   return L.divIcon({ className: '', html: '<div class="mp-pin' + cls + '" style="--c:' + color + '">' + (r.state === 'done' ? '✓' : (i + 1)) + '</div>', iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -15] });
 }
-function mapPlanShow(uid, keepView) {
-  if (!assetMapInstance || !mapPlanData) return;
-  const b = mapPlanData.built[uid]; if (!b) return;
-  if (!mapPlanLayer) mapPlanLayer = L.layerGroup().addTo(assetMapInstance);
-  mapPlanLayer.clearLayers(); mapPlanShown = uid;
-  const pts = [], line = [];
-  b.rows.forEach((r, i) => {
-    if (r.stop.lat === null) return;
-    const ll = [r.stop.lat, r.stop.lng]; pts.push(ll);
-    if (r.state !== 'done' || (b.rows[i + 1] && b.rows[i + 1].state !== 'done')) line.push(ll);
-    const color = r.stop.action === 'collect' ? '#EA580C' : '#0B6B3A';
-    const g = { name: r.stop.name, stops: [r.stop] };
-    L.marker(ll, { icon: mapPlanPinIcon(r, i, color), zIndexOffset: r.isNext ? 3000 : (r.state === 'done' ? 0 : 1500) }).addTo(mapPlanLayer)
-      .bindPopup('<div class="rp-pop"><div style="font-weight:700;font-size:12.5px;margin-bottom:4px;">' + mapPlanStatusText(r) + (r.isNext ? ' · 📍 ຈຸດຕໍ່ໄປ' : '') + '</div>' + rpPopupPager(g, null, '') + '</div>', { maxWidth: 340 });
+/* ວາດແຜນທີ່: ລົດ delivery ທຸກຄົນ (GPS) + ເສັ້ນທາງຂອງຄົນທີ່ເລືອກ */
+function dpDrawMap(keepView) {
+  if (!dpMap || !dpData) return;
+  dpPlanLayer.clearLayers(); dpLiveLayer.clearLayers();
+  const all = [];
+  (dpData.plans || []).forEach((p) => {
+    const g = dpData.gpsOf[p.user_id]; if (!g) return;
+    all.push(g.ll);
+    const b = dpData.built[p.user_id];
+    const icon = L.divIcon({ className: '', html: '<div style="position:relative;"><div class="dp-live' + (g.fresh ? '' : ' stale') + '">🚚</div><div class="dp-live-lbl">' + esc(dpShort(p.email)) + '</div></div>', iconSize: [38, 38], iconAnchor: [19, 19], popupAnchor: [0, -19] });
+    const near = b && b.next ? '<div>📍 ຈຸດຕໍ່ໄປ: <b>' + esc(b.next.stop.name) + '</b>' + (b.nextDist !== null ? ' · ~' + rpFmtDist(b.nextDist) : '') + '</div>' : '';
+    L.marker(g.ll, { icon, zIndexOffset: 5000 }).addTo(dpLiveLayer).bindPopup('<div class="rp-pop"><b>' + esc(p.email) + '</b><div style="font-size:12px;">' + (g.fresh ? '📡 GPS ສົດ' : '⚪ ຕຳແໜ່ງເກົ່າ') + ' · ' + dpAgo(g.age) + (g.acc ? ' · ±' + Math.round(g.acc) + ' ມ.' : '') + '</div>' + (b ? '<div style="font-size:12px;">ສຳເລັດ ' + b.done + '/' + b.total + '</div>' : '') + '<div style="font-size:12px;">' + near + '</div></div>', { maxWidth: 260 });
   });
-  if (line.length > 1) L.polyline(line, { color: '#2563eb', weight: 3, opacity: 0.7, dashArray: '6 8' }).addTo(mapPlanLayer);
-  if (!keepView && pts.length) assetMapInstance.fitBounds(pts, { padding: [40, 40], maxZoom: 16 });
+  const pts = [];
+  if (dpShown !== null && dpData.built[dpShown]) {
+    const b = dpData.built[dpShown], g = dpData.gpsOf[dpShown], line = [];
+    b.rows.forEach((r, i) => {
+      if (r.stop.lat === null) return;
+      const ll = [r.stop.lat, r.stop.lng]; pts.push(ll);
+      if (r.state !== 'done' || (b.rows[i + 1] && b.rows[i + 1].state !== 'done')) line.push(ll);
+      const color = r.stop.action === 'collect' ? '#EA580C' : '#0B6B3A';
+      L.marker(ll, { icon: mapPlanPinIcon(r, i, color), zIndexOffset: r.isNext ? 3000 : (r.state === 'done' ? 0 : 1500) }).addTo(dpPlanLayer)
+        .bindPopup('<div class="rp-pop"><div style="font-weight:700;font-size:12.5px;margin-bottom:4px;">' + mapPlanStatusText(r) + (r.isNext ? ' · 📍 ຈຸດຕໍ່ໄປ' : '') + '</div>' + rpPopupPager({ name: r.stop.name, stops: [r.stop] }, null, '') + '</div>', { maxWidth: 280 });
+    });
+    if (line.length > 1) L.polyline(line, { color: '#94a3b8', weight: 3, opacity: 0.8, dashArray: '6 8' }).addTo(dpPlanLayer);
+    if (g && b.next && b.next.stop.lat !== null) L.polyline([g.ll, [b.next.stop.lat, b.next.stop.lng]], { color: '#2563eb', weight: 4, opacity: 0.9 }).addTo(dpPlanLayer); // ລົດ -> ຈຸດຕໍ່ໄປ
+  }
+  const fit = pts.concat(all);
+  if (!keepView && !dpViewFitted && fit.length) { dpMap.fitBounds(fit, { padding: [40, 40], maxZoom: 16 }); dpViewFitted = true; }
 }
-function mapPlanFocus(uid, i) {
-  mapPlanShow(uid, true);
-  const b = mapPlanData && mapPlanData.built[uid]; const r = b && b.rows[i];
+function dpShow(uid) { dpShown = uid; dpViewFitted = false; dpDrawMap(); }
+function dpFlyLive(uid) { const g = dpData && dpData.gpsOf[uid]; if (!g) return; dpMap.flyTo(g.ll, Math.max(dpMap.getZoom(), 15)); dpLiveLayer.eachLayer((l) => { if (l.getLatLng && l.getLatLng().lat === g.ll[0] && l.getLatLng().lng === g.ll[1]) l.openPopup(); }); }
+function dpFocus(uid, i) {
+  if (dpShown !== uid) { dpShown = uid; dpDrawMap(true); }
+  const b = dpData && dpData.built[uid]; const r = b && b.rows[i];
   if (!r || r.stop.lat === null) { rpToast('ຈຸດນີ້ບໍ່ມີພິກັດ'); return; }
-  assetMapInstance.flyTo([r.stop.lat, r.stop.lng], Math.max(assetMapInstance.getZoom(), 16));
-  mapPlanLayer.eachLayer((l) => { if (l.getLatLng && l.getLatLng().lat === r.stop.lat && l.getLatLng().lng === r.stop.lng) l.openPopup(); });
+  dpMap.flyTo([r.stop.lat, r.stop.lng], Math.max(dpMap.getZoom(), 16));
+  dpPlanLayer.eachLayer((l) => { if (l.getLatLng && l.getLatLng().lat === r.stop.lat && l.getLatLng().lng === r.stop.lng) l.openPopup(); });
 }
 </script>
 </body>

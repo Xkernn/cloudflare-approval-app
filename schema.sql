@@ -901,3 +901,11 @@ CREATE TABLE IF NOT EXISTS delivery_route_plan_items (
     UNIQUE (user_id, plan_date, asset_id, action)
 );
 CREATE INDEX IF NOT EXISTS idx_route_plan_user_date ON delivery_route_plan_items(user_id, plan_date);
+
+CREATE TABLE IF NOT EXISTS delivery_gps (
+    user_id    INTEGER PRIMARY KEY,   -- users.id (role delivery)
+    lat        REAL NOT NULL,
+    lng        REAL NOT NULL,
+    accuracy   REAL,                  -- ແມັດ
+    updated_at INTEGER NOT NULL       -- unix ms (ເວລາ server)
+);
