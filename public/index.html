@@ -4132,6 +4132,10 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </div>
         </div>
         <div class="loan-type-list">
+          <button type="button" id="deliveryHubCardRoute" class="loan-type-card hidden" onclick="rpOpen()">
+            <div class="loan-type-card-title"><i class="fa-solid fa-route"></i> ແຜນເສັ້ນທາງມື້ນີ້</div>
+            <div class="loan-type-card-sub">ເລືອກຮ້ານທີ່ຈະໄປສົ່ງ / ເກັບຕູ້ແຊ່ ແລ້ວນຳທາງໃນແອັບ</div>
+          </button>
           <button type="button" id="deliveryHubCardDispatch" class="loan-type-card" onclick="openDeliverySub('dispatchOut')">
             <div class="loan-type-card-title"><i class="fa-solid fa-truck-ramp-box"></i> ສະແກນຕູ້ຂຶ້ນລົດ</div>
             <div class="loan-type-card-sub">ສະແກນຕູ້ → ກວດຮ້ານ/ເອກະສານ → ຕູ້ຢູ່ເທິງລົດ (ສົ່ງໄປຮ້ານ / ເກັບຈາກຮ້ານເກົ່າ)</div>
@@ -10401,6 +10405,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       // ລາຍງານຕູ້ແຊ່ສະສາງ: ສະເພາະ admin + warehouse
       const canWriteOff = !!currentUser && ['admin', 'warehouse'].includes(currentUser.role);
       document.getElementById('deliveryHubCardWriteOff').classList.toggle('hidden', !canWriteOff);
+      // ແຜນເສັ້ນທາງປະຈຳວັນ: ທີມຈັດສົ່ງ (ແລະ admin)
+      document.getElementById('deliveryHubCardRoute').classList.toggle('hidden', !(currentUser && (currentUser.role === 'delivery' || currentUser.role === 'admin')));
     }
 
     function openDeliverySub(viewName) {
@@ -12936,6 +12942,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       startNotificationPolling();
       pingAppActivity(true);
       fetchOutletsLookup();
+      if (typeof rpMaybePrompt === 'function') rpMaybePrompt(); // popup ສ້າງແຜນເສັ້ນທາງມື້ນີ້ (ທີມຈັດສົ່ງ)
       refreshMaintenanceStatus();
       document.getElementById('authContainer').classList.add('hidden');
       document.getElementById('appContainer').classList.remove('hidden');
@@ -26220,8 +26227,6 @@ function assetStatusBadgeClass(status) {
           let msg = '';
           try { msg = (await res.clone().json()).error || ''; } catch (_) {}
           if (!msg) { try { msg = (await res.text()).slice(0, 120); } catch (_) {} }
-          // Cloudflare ຕອບໜ້າ HTML (ເຊັ່ນ Error 1102 Worker ໃຊ້ CPU ເກີນ) -> ບໍ່ສະແດງໂຄດ HTML ໃຫ້ຜູ້ໃຊ້
-          if (/^\s*<(!doctype|html)/i.test(msg)) msg = 'ເຊີບເວີສ້າງ PDF ບໍ່ທັນ (ໃຊ້ເວລາ/CPU ເກີນກຳນົດ) ກະລຸນາລອງໃໝ່ອີກຄັ້ງ ຖ້າຍັງເປັນຢູ່ ແຈ້ງຜູ້ດູແລລະບົບ (HTTP ' + res.status + ')';
           if (res.status === 401) msg = 'ເຊດຊັນໝົດອາຍຸ ກະລຸນາເຂົ້າສູ່ລະບົບໃໝ່';
           throw new Error(msg || ('ບໍ່ສາມາດເປີດ PDF ໄດ້ (HTTP ' + res.status + ')'));
         }
@@ -34114,8 +34119,8 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
 </div>
 <script>
 (function () {
-  const APP_BUILD = 6;
-  const APP_VERSION_FALLBACK = '1.1.0';
+  const APP_BUILD = 21;
+  const APP_VERSION_FALLBACK = '1.2.1';
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -34187,5 +34192,366 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
   }, { passive: false });
 })();
 </script>
+
+<!-- ===== Route Plan ປະຈຳວັນ (ທີມຈັດສົ່ງ) ===== -->
+<style>
+  .rp-modal { position: fixed; inset: 0; z-index: 1200; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .rp-modal.hidden { display: none; }
+  .rp-modal-card { width: 100%; max-width: 380px; background: #fff; border-radius: 22px; padding: 24px 20px 18px; text-align: center; box-shadow: 0 24px 60px -20px rgba(0,0,0,.5); }
+  .rp-modal-ico { width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 20px; background: #E6F2E8; color: #0B6B3A; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .rp-modal-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 800; color: #0f172a; }
+  .rp-modal-card p { margin: 0 0 16px; font-size: 14px; color: #475569; line-height: 1.5; }
+  .rp-btn-ghost { display: block; width: 100%; margin-top: 8px; padding: 11px; border: 0; background: transparent; color: #64748b; font-weight: 700; font-size: 14px; cursor: pointer; }
+  #view-route-plan { position: fixed; inset: 0; z-index: 950; background: #f4f8f9; display: flex; flex-direction: column; }
+  #view-route-plan.hidden { display: none; }
+  .rp-head { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+  .rp-head-title { flex: 1; min-width: 0; font-weight: 800; font-size: 16px; line-height: 1.2; color: #0f172a; }
+  .rp-head-title small { display: block; font-weight: 600; font-size: 12px; color: #64748b; }
+  .rp-head button.rp-mini { border: 1px solid #cbd5e1; background: #fff; color: #0B6B3A; font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 12px; cursor: pointer; }
+  #rpMapContainer { flex: 1 1 auto; min-height: 220px; width: 100%; }
+  #rpSheet { flex: 0 0 auto; max-height: 48vh; display: flex; flex-direction: column; background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 24px -12px rgba(0,0,0,.35); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  #rpSheetHead { padding: 12px 14px 8px; font-weight: 800; font-size: 14px; color: #0f172a; }
+  #rpSheetHead .rp-sub { font-weight: 600; font-size: 12.5px; color: #64748b; margin-top: 2px; }
+  #rpList { overflow-y: auto; padding: 0 12px 6px; flex: 1 1 auto; }
+  #rpFooter { padding: 8px 12px 12px; }
+  .rp-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 6px; border-top: 1px solid #eef2f6; }
+  .rp-num { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: #0B6B3A; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .rp-info { flex: 1; min-width: 0; }
+  .rp-name { font-weight: 800; font-size: 14px; color: #0f172a; word-break: break-word; }
+  .rp-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .rp-tag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; margin: 3px 4px 0 0; color: #fff; }
+  .rp-tag.deliver { background: #0B6B3A; } .rp-tag.collect { background: #EA580C; }
+  .rp-act { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+  .rp-act button { border: 0; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; cursor: pointer; background: #0B6B3A; color: #fff; white-space: nowrap; }
+  .rp-act button.alt { background: #E6F2E8; color: #0B6B3A; }
+  .rp-act button.on { background: #FFC300; color: #3b2f00; }
+  .rp-empty { padding: 18px 8px; text-align: center; color: #64748b; font-size: 13.5px; }
+  .rp-pin { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 3px solid var(--c, #0B6B3A); color: var(--c, #0B6B3A); font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .rp-pin.sel { background: var(--c, #0B6B3A); color: #fff; }
+  .rp-pin.nav { box-shadow: 0 0 0 5px rgba(37,99,235,.35), 0 2px 8px rgba(0,0,0,.35); }
+  .rp-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 1300; background: #0f172a; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 13.5px; max-width: 90vw; text-align: center; }
+  .rp-pop b { color: #0f172a; }
+  .rp-pop .rp-pop-row { padding: 6px 0; border-top: 1px solid #eef2f6; }
+  .rp-pop button { margin-top: 5px; border: 0; border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 12.5px; cursor: pointer; background: #0B6B3A; color: #fff; }
+  .rp-pop button.on { background: #FFC300; color: #3b2f00; }
+</style>
+
+<div id="rpPrompt" class="rp-modal hidden" role="dialog" aria-label="ສ້າງແຜນເສັ້ນທາງມື້ນີ້">
+  <div class="rp-modal-card">
+    <div class="rp-modal-ico"><i class="fa-solid fa-route"></i></div>
+    <h3>ສ້າງແຜນເສັ້ນທາງມື້ນີ້</h3>
+    <p>ເລືອກຮ້ານທີ່ຈະໄປ <b>ສົ່ງຕູ້ແຊ່</b> ແລະ <b>ເກັບຕູ້ແຊ່</b> ຂອງມື້ນີ້ເທິງແຜນທີ່ ແລ້ວນຳທາງໄປຫາແຕ່ລະຮ້ານໄດ້ໃນແອັບເລີຍ</p>
+    <button type="button" class="btn-submit" onclick="rpPromptCreate()"><i class="fa-solid fa-map-location-dot mr-1"></i> ສ້າງແຜນມື້ນີ້</button>
+    <button type="button" class="rp-btn-ghost" onclick="rpPromptLater()">ໄວ້ກ່ອນ</button>
+  </div>
+</div>
+
+<div id="view-route-plan" class="hidden" role="dialog" aria-label="ແຜນເສັ້ນທາງມື້ນີ້">
+  <div class="rp-head">
+    <button type="button" class="btn-back" onclick="rpClose()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນ</button>
+    <div class="rp-head-title"><i class="fa-solid fa-route mr-1" style="color:#0B6B3A;"></i> ແຜນເສັ້ນທາງມື້ນີ້<small id="rpHeadSub"></small></div>
+    <button type="button" id="rpEditBtn" class="rp-mini hidden" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ແຜນ</button>
+  </div>
+  <div id="rpMapContainer"></div>
+  <div id="rpSheet">
+    <div id="rpSheetHead"></div>
+    <div id="rpList"></div>
+    <div id="rpFooter"></div>
+  </div>
+</div>
+
+<script>
+/* Route Plan ປະຈຳວັນ ສຳລັບ role delivery
+   1) ເປີດແອັບຄັ້ງທຳອິດຂອງມື້ -> popup ໃຫ້ສ້າງແຜນ  2) ເລືອກຮ້ານເທິງແຜນທີ່ (ສົ່ງ/ເກັບ ຕາມ Asset Tracking)
+   3) ບັນທຶກແລ້ວ ແຜນທີ່ສະແດງສະເພາະຮ້ານໃນແຜນ + ຕຳແໜ່ງປັດຈຸບັນ + ກົດນຳທາງ (ແຕ້ມເສັ້ນທາງໃນແອັບ ບໍ່ເດັ້ງໄປແອັບແຜນທີ່) */
+let rpMap = null, rpLayer = null, rpRouteLayer = null, rpMeMarker = null, rpMeAcc = null;
+let rpMeLL = null, rpWatchId = null, rpLastListLL = null, rpNavTarget = null, rpNavFrom = null, rpNavBusy = false;
+let rpMode = 'select', rpStops = [], rpStopMap = {}, rpGroups = [], rpSel = new Set(), rpSavedKeys = [], rpDoneCount = 0, rpSkipped = 0;
+let rpMarkers = {}, rpAssetsCache = null, rpAssetsAt = 0;
+const RP_COLLECT_DOC = 'ເກັບຄືນສາງ', RP_RELOC_DOC = 'ຕູ້ເຄື່ອນຍ້າຍ', RP_WAIT_COLLECT = 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ';
+const RP_STATUSES = ['ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ'];
+
+function rpToday() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function rpLsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function rpLsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function rpToast(msg) { const t = document.createElement('div'); t.className = 'rp-toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
+function rpDist(a, b) { const R = 6371000, r = Math.PI / 180, dLa = (b[0] - a[0]) * r, dLn = (b[1] - a[1]) * r; const x = Math.sin(dLa / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLn / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
+function rpFmtDist(m) { return m >= 1000 ? (m / 1000).toFixed(1) + ' ກມ.' : Math.round(m) + ' ມ.'; }
+function rpFmtDur(s) { const m = Math.max(1, Math.round(s / 60)); return m >= 60 ? Math.floor(m / 60) + ' ຊມ. ' + (m % 60) + ' ນາທີ' : m + ' ນາທີ'; }
+function rpHasNum(v) { return v !== null && v !== undefined && v !== '' && !isNaN(Number(v)); }
+
+/* popup ເຕືອນສ້າງແຜນ ຕອນເປີດແອັບຄັ້ງທຳອິດຂອງມື້ (ເອີ້ນຈາກ enterApp) */
+async function rpMaybePrompt() {
+  try {
+    if (!currentUser || currentUser.role !== 'delivery') return;
+    const d = rpToday();
+    if (rpLsGet('rp_later_' + currentUser.id + '_' + d)) return;
+    const r = await fetch('/api/route-plan?userId=' + encodeURIComponent(currentUser.id) + '&date=' + d);
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j.items && j.items.length) return; // ມີແຜນມື້ນີ້ແລ້ວ
+    setTimeout(() => {
+      if (!currentUser || currentUser.role !== 'delivery') return;
+      try { if (typeof specialAlertBlocking === 'function' && specialAlertBlocking()) return; } catch (e) {}
+      document.getElementById('rpPrompt').classList.remove('hidden');
+    }, 1500);
+  } catch (e) { /* ບໍ່ສະແດງ popup ຖ້າໂຫຼດບໍ່ໄດ້ */ }
+}
+function rpPromptCreate() { document.getElementById('rpPrompt').classList.add('hidden'); rpOpen(true); }
+function rpPromptLater() { document.getElementById('rpPrompt').classList.add('hidden'); if (currentUser) rpLsSet('rp_later_' + currentUser.id + '_' + rpToday(), '1'); }
+
+/* ສ້າງ "ຈຸດແວະ" (stop) ຈາກ Asset: ເກັບຄືນສາງ = ເກັບທີ່ຮ້ານ · ຕູ້ເຄື່ອນຍ້າຍທີ່ລໍເກັບຮ້ານເກົ່າ = ເກັບທີ່ຮ້ານເກົ່າ · ອື່ນໆ = ສົ່ງທີ່ຮ້ານ */
+function rpStopsOf(a) {
+  let spec;
+  if (a.doc_type === RP_COLLECT_DOC) spec = ['collect', a.outlet_code, a.outlet_name, a.latitude, a.longitude];
+  else if (a.doc_type === RP_RELOC_DOC && a.status === RP_WAIT_COLLECT) spec = ['collect', a.old_outlet_code, a.old_outlet_name, a.old_latitude, a.old_longitude];
+  else spec = ['deliver', a.outlet_code, a.outlet_name, a.latitude, a.longitude];
+  const o = findOutletByCode(spec[1]);
+  const useM = o && rpHasNum(o.latitude) && rpHasNum(o.longitude);
+  const lat = useM ? Number(o.latitude) : (rpHasNum(spec[3]) ? Number(spec[3]) : null);
+  const lng = useM ? Number(o.longitude) : (rpHasNum(spec[4]) ? Number(spec[4]) : null);
+  if (lat === null || lng === null) return null;
+  return { key: a.id + ':' + spec[0], aid: a.id, action: spec[0], a, code: spec[1] || '', name: spec[2] || spec[1] || '-', lat, lng, phone: (o && o.phone) || '' };
+}
+function rpGroupKey(lat, lng) { return Number(lat).toFixed(5) + ',' + Number(lng).toFixed(5); }
+function rpBuildGroups(stops) {
+  const m = new Map();
+  stops.forEach((s) => { const k = rpGroupKey(s.lat, s.lng); if (!m.has(k)) m.set(k, { gkey: k, lat: s.lat, lng: s.lng, name: s.name, code: s.code, phone: s.phone, stops: [] }); m.get(k).stops.push(s); });
+  return [...m.values()];
+}
+
+async function rpLoadAssets() {
+  if (rpAssetsCache && Date.now() - rpAssetsAt < 60000) return rpAssetsCache;
+  const r = await fetch('/api/assets?userId=' + encodeURIComponent(currentUser.id));
+  if (!r.ok) throw new Error('ໂຫຼດ Asset ບໍ່ໄດ້');
+  rpAssetsCache = await r.json(); rpAssetsAt = Date.now();
+  return rpAssetsCache;
+}
+
+async function rpOpen(forceSelect) {
+  document.getElementById('view-route-plan').classList.remove('hidden');
+  document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
+  rpEnsureMap();
+  document.getElementById('rpSheetHead').innerHTML = '';
+  document.getElementById('rpFooter').innerHTML = '';
+  document.getElementById('rpList').innerHTML = '<div class="rp-empty"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
+  rpStartGps();
+  try {
+    if (!Array.isArray(dbOutletsLookup) || !dbOutletsLookup.length) await fetchOutletsLookup();
+    const [assets, pr] = await Promise.all([
+      rpLoadAssets(),
+      fetch('/api/route-plan?userId=' + encodeURIComponent(currentUser.id) + '&date=' + rpToday()).then((r) => (r.ok ? r.json() : { items: [] }))
+    ]);
+    rpStops = []; rpStopMap = {}; rpSkipped = 0;
+    (assets || []).filter((a) => RP_STATUSES.includes(a.status)).forEach((a) => {
+      const s = rpStopsOf(a);
+      if (!s) { rpSkipped++; return; }
+      rpStops.push(s); rpStopMap[s.key] = s;
+    });
+    const saved = (pr.items || []).map((i) => i.asset_id + ':' + i.action);
+    rpSavedKeys = saved.filter((k) => rpStopMap[k]);
+    rpDoneCount = saved.length - rpSavedKeys.length; // ຢູ່ໃນແຜນ ແຕ່ບໍ່ຢູ່ໃນລາຍການຄ້າງແລ້ວ = ສຳເລັດ/ປ່ຽນສະຖານະແລ້ວ
+    rpSel = new Set(rpSavedKeys);
+    rpMode = (saved.length && !forceSelect) ? 'plan' : 'select';
+    rpNavTarget = null; rpRouteLayer.clearLayers();
+    rpRender();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('rpList').innerHTML = '<div class="rp-empty">ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ - ກະລຸນາລອງໃໝ່</div>';
+  }
+}
+function rpClose() {
+  document.getElementById('view-route-plan').classList.add('hidden');
+  document.documentElement.style.overflow = ''; document.body.style.overflow = '';
+  rpStopGps();
+  if (rpRouteLayer) rpRouteLayer.clearLayers();
+  rpNavTarget = null;
+}
+function rpEdit() { rpMode = 'select'; rpSel = new Set(rpSavedKeys); rpNavTarget = null; rpRouteLayer.clearLayers(); rpRender(); }
+
+function rpEnsureMap() {
+  if (!rpMap) {
+    rpMap = L.map('rpMapContainer');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(rpMap);
+    rpLayer = L.layerGroup().addTo(rpMap);
+    rpRouteLayer = L.layerGroup().addTo(rpMap);
+    rpMap.setView([17.9757, 102.6331], 12);
+    const Ctl = L.Control.extend({
+      options: { position: 'bottomright' },
+      onAdd: function () {
+        const btn = L.DomUtil.create('button', 'map-myloc-btn');
+        btn.type = 'button'; btn.title = 'ຕຳແໜ່ງຂອງຂ້ອຍ'; btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i>';
+        L.DomEvent.disableClickPropagation(btn);
+        L.DomEvent.on(btn, 'click', (e) => { L.DomEvent.stop(e); if (rpMeLL) rpMap.flyTo(rpMeLL, Math.max(rpMap.getZoom(), 16)); else { rpToast('ກຳລັງຫາຕຳແໜ່ງ... ກະລຸນາເປີດ GPS / ອະນຸຍາດ Location'); rpStartGps(); } });
+        return btn;
+      }
+    });
+    new Ctl().addTo(rpMap);
+  }
+  setTimeout(() => rpMap.invalidateSize(), 60);
+}
+
+function rpStartGps() {
+  if (!navigator.geolocation || rpWatchId !== null) return;
+  rpWatchId = navigator.geolocation.watchPosition((pos) => {
+    const first = !rpMeLL;
+    rpMeLL = [pos.coords.latitude, pos.coords.longitude];
+    const acc = pos.coords.accuracy || 0;
+    if (!rpMeMarker) {
+      rpMeAcc = L.circle(rpMeLL, { radius: acc, color: '#2563eb', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.12, interactive: false }).addTo(rpMap);
+      rpMeMarker = L.marker(rpMeLL, { icon: L.divIcon({ className: '', html: '<div class="myloc-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }), zIndexOffset: 2000 }).addTo(rpMap).bindPopup('ຕຳແໜ່ງຂອງທ່ານ');
+    } else { rpMeMarker.setLatLng(rpMeLL); rpMeAcc.setLatLng(rpMeLL).setRadius(acc); }
+    if (rpMode === 'plan') {
+      if (first || !rpLastListLL || rpDist(rpMeLL, rpLastListLL) > 80) rpRender(!first); // ຈັດລຳດັບໃໝ່ຕາມໄລຍະທາງ (ຮັກສາ view ແຜນທີ່ ຖ້າບໍ່ແມ່ນຄັ້ງທຳອິດ)
+      if (rpNavTarget && rpNavFrom && rpDist(rpMeLL, rpNavFrom) > 300) rpNavigate(rpNavTarget, true); // ອອກນອກເສັ້ນທາງເກົ່າ -> ຄຳນວນໃໝ່
+    }
+  }, (err) => {
+    if (err && err.code === 1) rpToast('ບໍ່ໄດ້ຮັບອະນຸຍາດໃຫ້ໃຊ້ຕຳແໜ່ງ - ເປີດສິດ Location ແລ້ວລອງໃໝ່');
+  }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+}
+function rpStopGps() { if (rpWatchId !== null) { try { navigator.geolocation.clearWatch(rpWatchId); } catch (e) {} rpWatchId = null; } }
+
+function rpRender(keepView) {
+  rpLayer.clearLayers(); rpMarkers = {};
+  document.getElementById('rpEditBtn').classList.toggle('hidden', rpMode !== 'plan');
+  if (rpMode === 'select') rpRenderSelect(); else rpRenderPlan(keepView);
+}
+function rpPinIcon(color, label, sel, nav) {
+  return L.divIcon({ className: '', html: '<div class="rp-pin' + (sel ? ' sel' : '') + (nav ? ' nav' : '') + '" style="--c:' + color + '">' + esc(String(label)) + '</div>', iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -17] });
+}
+function rpTagHtml(s) { return '<span class="rp-tag ' + s.action + '">' + (s.action === 'collect' ? '📥 ເກັບຕູ້' : '🚚 ສົ່ງຕູ້') + '</span>'; }
+function rpStopLine(s) { const a = s.a; return esc([a.tracking_no, a.cooler_brand, a.cooler_type].filter(Boolean).join(' · ')); }
+
+/* ----- ໂໝດເລືອກຮ້ານ ----- */
+function rpGroupColor(g) { const s = g.stops.find((x) => rpSel.has(x.key)) || g.stops[0]; return s.action === 'collect' ? '#EA580C' : '#0B6B3A'; }
+function rpPopupHtml(g) {
+  return '<div class="rp-pop"><b>' + esc(g.name) + '</b><br><span style="font-size:12px;color:#64748b;">' + esc(g.code || '') + (g.phone ? ' · ' + esc(g.phone) : '') + '</span>' +
+    g.stops.map((s) => '<div class="rp-pop-row">' + rpTagHtml(s) + '<div style="font-size:12px;">' + rpStopLine(s) + '<br>' + esc(s.a.doc_type || '') + '</div>' +
+      '<button type="button" class="' + (rpSel.has(s.key) ? 'on' : '') + '" onclick="rpToggle(\'' + s.key + '\')">' + (rpSel.has(s.key) ? '✓ ຢູ່ໃນແຜນ (ກົດເພື່ອເອົາອອກ)' : '+ ເພີ່ມເຂົ້າແຜນ') + '</button></div>').join('') + '</div>';
+}
+function rpRefreshGroup(g) {
+  const m = rpMarkers[g.gkey]; if (!m) return;
+  const n = g.stops.filter((s) => rpSel.has(s.key)).length;
+  m.setIcon(rpPinIcon(rpGroupColor(g), n || g.stops.length, n > 0, false));
+  m.setPopupContent(rpPopupHtml(g));
+}
+function rpToggle(key) {
+  if (rpSel.has(key)) rpSel.delete(key); else rpSel.add(key);
+  const s = rpStopMap[key]; if (!s) return;
+  const g = rpGroups.find((x) => x.gkey === rpGroupKey(s.lat, s.lng));
+  if (g) rpRefreshGroup(g);
+  rpRenderSelectSheet();
+}
+function rpRenderSelect() {
+  rpGroups = rpBuildGroups(rpStops);
+  const bounds = [];
+  rpGroups.forEach((g) => {
+    const n = g.stops.filter((s) => rpSel.has(s.key)).length;
+    const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(rpGroupColor(g), n || g.stops.length, n > 0, false) }).addTo(rpLayer).bindPopup(rpPopupHtml(g), { maxWidth: 300 });
+    rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
+  });
+  if (bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+  document.getElementById('rpHeadSub').textContent = 'ເລືອກຮ້ານທີ່ຈະໄປສົ່ງ / ເກັບ';
+  rpRenderSelectSheet();
+}
+function rpRenderSelectSheet() {
+  const sel = [...rpSel].map((k) => rpStopMap[k]).filter(Boolean);
+  const nd = sel.filter((s) => s.action === 'deliver').length, nc = sel.length - nd;
+  document.getElementById('rpSheetHead').innerHTML = 'ເລືອກແລ້ວ ' + sel.length + ' ຈຸດ <span style="font-weight:600;color:#64748b;">(ສົ່ງ ' + nd + ' · ເກັບ ' + nc + ')</span>' +
+    '<div class="rp-sub">ກົດໝຸດເທິງແຜນທີ່ ຫຼື ກົດໃນລາຍການລຸ່ມນີ້ ເພື່ອເພີ່ມ/ເອົາອອກ' + (rpSkipped ? ' · ' + rpSkipped + ' ລາຍການບໍ່ມີພິກັດ (ບໍ່ສະແດງ)' : '') + '</div>';
+  const list = document.getElementById('rpList');
+  if (!rpGroups.length) { list.innerHTML = '<div class="rp-empty">ບໍ່ມີ Asset ທີ່ຕ້ອງໄປສົ່ງ/ເກັບ ທີ່ມີພິກັດໃນຕອນນີ້</div>'; }
+  else {
+    list.innerHTML = rpGroups.map((g) => '<div class="rp-row"><div class="rp-info"><div class="rp-name" onclick="rpFocusGroup(\'' + g.gkey + '\')" style="cursor:pointer;">' + esc(g.name) + '</div><div class="rp-meta">' + esc(g.code || '') + '</div>' +
+      g.stops.map((s) => '<div style="margin-top:4px;">' + rpTagHtml(s) + '<span class="rp-meta">' + rpStopLine(s) + '</span></div>').join('') + '</div>' +
+      '<div class="rp-act">' + g.stops.map((s) => '<button type="button" class="' + (rpSel.has(s.key) ? 'on' : 'alt') + '" onclick="rpToggle(\'' + s.key + '\')">' + (rpSel.has(s.key) ? '✓ ໃນແຜນ' : '+ ເພີ່ມ') + '</button>').join('') + '</div></div>').join('');
+  }
+  document.getElementById('rpFooter').innerHTML = '<button type="button" class="btn-submit" style="margin:0;" ' + (sel.length ? '' : 'disabled') + ' onclick="rpSave()"><i class="fa-solid fa-flag-checkered mr-1"></i> ບັນທຶກແຜນ & ເລີ່ມເດີນທາງ (' + sel.length + ')</button>';
+}
+function rpFocusGroup(gkey) { const m = rpMarkers[gkey]; if (m) { rpMap.flyTo(m.getLatLng(), Math.max(rpMap.getZoom(), 16)); m.openPopup(); } }
+
+async function rpSave() {
+  const sel = [...rpSel].map((k) => rpStopMap[k]).filter(Boolean);
+  if (!sel.length) return;
+  // ລຽງຕາມໄລຍະທາງໃກ້ສຸດກ່ອນ ຖ້າຮູ້ຕຳແໜ່ງປັດຈຸບັນ (nearest neighbour)
+  let ordered = sel;
+  if (rpMeLL) {
+    const left = sel.slice(); ordered = []; let cur = rpMeLL;
+    while (left.length) { let bi = 0, bd = Infinity; left.forEach((s, i) => { const d = rpDist(cur, [s.lat, s.lng]); if (d < bd) { bd = d; bi = i; } }); const s = left.splice(bi, 1)[0]; ordered.push(s); cur = [s.lat, s.lng]; }
+  }
+  const btn = document.querySelector('#rpFooter button'); if (btn) { btn.disabled = true; btn.textContent = 'ກຳລັງບັນທຶກ...'; }
+  try {
+    const r = await fetch('/api/route-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, date: rpToday(), items: ordered.map((s) => ({ asset_id: s.aid, action: s.action })) }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(j.error || 'ບັນທຶກແຜນບໍ່ສຳເລັດ'); rpRenderSelectSheet(); return; }
+    rpSavedKeys = ordered.map((s) => s.key); rpDoneCount = 0; rpMode = 'plan';
+    rpLsSet('rp_later_' + currentUser.id + '_' + rpToday(), '1');
+    rpRender();
+    rpToast('ບັນທຶກແຜນມື້ນີ້ແລ້ວ ' + ordered.length + ' ຈຸດ');
+  } catch (e) { console.error(e); alert('ບັນທຶກແຜນບໍ່ສຳເລັດ - ກວດອິນເຕີເນັດແລ້ວລອງໃໝ່'); rpRenderSelectSheet(); }
+}
+
+/* ----- ໂໝດແຜນ: ສະແດງສະເພາະຮ້ານໃນແຜນ + ຕຳແໜ່ງປັດຈຸບັນ + ນຳທາງໃນແອັບ ----- */
+function rpPlanGroups() {
+  const stops = rpSavedKeys.map((k) => rpStopMap[k]).filter(Boolean);
+  const gs = rpBuildGroups(stops);
+  gs.forEach((g) => { g.dist = rpMeLL ? rpDist(rpMeLL, [g.lat, g.lng]) : null; g.seq = Math.min(...g.stops.map((s) => rpSavedKeys.indexOf(s.key))); });
+  gs.sort((a, b) => (a.dist !== null && b.dist !== null) ? a.dist - b.dist : a.seq - b.seq);
+  return gs;
+}
+function rpRenderPlan(keepView) {
+  rpGroups = rpPlanGroups(); rpLastListLL = rpMeLL ? rpMeLL.slice() : null;
+  const bounds = rpMeLL ? [rpMeLL.slice()] : [];
+  rpGroups.forEach((g, i) => {
+    const mixed = g.stops.some((s) => s.action === 'collect') && g.stops.some((s) => s.action === 'deliver');
+    const color = mixed ? '#7c3aed' : (g.stops[0].action === 'collect' ? '#EA580C' : '#0B6B3A');
+    const m = L.marker([g.lat, g.lng], { icon: rpPinIcon(color, i + 1, true, rpNavTarget === g.gkey) }).addTo(rpLayer)
+      .bindPopup('<div class="rp-pop"><b>' + esc(g.name) + '</b><br>' + g.stops.map((s) => rpTagHtml(s) + '<span style="font-size:12px;">' + rpStopLine(s) + '</span>').join('<br>') +
+        '<br><button type="button" onclick="rpNavigate(\'' + g.gkey + '\')">ນຳທາງໄປຮ້ານນີ້</button></div>');
+    rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
+  });
+  if (!keepView && bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+  const nd = rpSavedKeys.filter((k) => k.endsWith(':deliver') && rpStopMap[k]).length, nc = rpGroups.reduce((n, g) => n + g.stops.length, 0) - nd;
+  document.getElementById('rpHeadSub').textContent = rpGroups.length + ' ຮ້ານ · ສົ່ງ ' + nd + ' · ເກັບ ' + nc + (rpDoneCount ? ' · ສຳເລັດແລ້ວ ' + rpDoneCount : '');
+  let head = rpMeLL ? 'ລຽງຕາມໄລຍະທາງຈາກຕຳແໜ່ງປັດຈຸບັນ' : 'ກຳລັງຫາຕຳແໜ່ງຂອງທ່ານ... (ເປີດ GPS ເພື່ອລຽງຕາມໄລຍະທາງ ແລະ ນຳທາງ)';
+  if (rpNavTarget && rpNavInfo) head = '<span style="color:#2563eb;">🧭 ' + esc(rpNavInfo) + '</span> <button type="button" class="rp-mini" style="border:0;background:#fee2e2;color:#b91c1c;font-weight:800;border-radius:10px;padding:4px 10px;margin-left:6px;cursor:pointer;" onclick="rpClearNav()">ປິດເສັ້ນທາງ</button>';
+  document.getElementById('rpSheetHead').innerHTML = 'ແຜນມື້ນີ້<div class="rp-sub">' + head + '</div>';
+  const list = document.getElementById('rpList');
+  if (!rpGroups.length) list.innerHTML = '<div class="rp-empty">🎉 ສຳເລັດທຸກຈຸດໃນແຜນແລ້ວ</div>';
+  else list.innerHTML = rpGroups.map((g, i) => '<div class="rp-row"><div class="rp-num">' + (i + 1) + '</div><div class="rp-info"><div class="rp-name" onclick="rpFocusGroup(\'' + g.gkey + '\')" style="cursor:pointer;">' + esc(g.name) + '</div>' +
+    '<div class="rp-meta">' + esc(g.code || '') + (g.dist !== null ? ' · ຫ່າງ ~' + rpFmtDist(g.dist) : '') + '</div>' +
+    g.stops.map((s) => '<div style="margin-top:3px;">' + rpTagHtml(s) + '<span class="rp-meta">' + rpStopLine(s) + '</span></div>').join('') + '</div>' +
+    '<div class="rp-act"><button type="button" class="' + (rpNavTarget === g.gkey ? 'on' : '') + '" onclick="rpNavigate(\'' + g.gkey + '\')"><i class="fa-solid fa-diamond-turn-right"></i> ນຳທາງ</button></div></div>').join('');
+  document.getElementById('rpFooter').innerHTML = '<button type="button" class="btn-submit" style="margin:0;background:#E6F2E8;color:#0B6B3A;" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂແຜນ / ເພີ່ມຮ້ານ</button>';
+}
+let rpNavInfo = '';
+function rpClearNav() { rpNavTarget = null; rpNavFrom = null; rpNavInfo = ''; rpRouteLayer.clearLayers(); rpRender(true); }
+async function rpNavigate(gkey, silent) {
+  const g = rpGroups.find((x) => x.gkey === gkey); if (!g) return;
+  if (!rpMeLL) { rpToast('ກຳລັງຫາຕຳແໜ່ງຂອງທ່ານ... ກະລຸນາເປີດ GPS / ອະນຸຍາດ Location ແລ້ວກົດອີກຄັ້ງ'); rpStartGps(); return; }
+  if (rpNavBusy) return; rpNavBusy = true;
+  rpNavTarget = gkey; rpNavFrom = rpMeLL.slice();
+  try { rpMap.closePopup(); } catch (e) {}
+  try {
+    const r = await fetch('/api/route?from=' + rpMeLL[0].toFixed(5) + ',' + rpMeLL[1].toFixed(5) + '&to=' + g.lat.toFixed(5) + ',' + g.lng.toFixed(5));
+    rpRouteLayer.clearLayers();
+    if (r.ok) {
+      const j = await r.json();
+      const line = L.polyline(j.points, { color: '#2563eb', weight: 6, opacity: 0.85 }).addTo(rpRouteLayer);
+      rpNavInfo = g.name + ' · ' + rpFmtDist(j.distance) + ' · ~' + rpFmtDur(j.duration);
+      if (!silent) rpMap.fitBounds(line.getBounds(), { padding: [40, 40] });
+    } else {
+      // ຂໍເສັ້ນທາງຖະໜົນບໍ່ໄດ້ -> ເສັ້ນຊື່ຈຸດປະ + ໄລຍະທາງຕາມເສັ້ນຊື່ (ບໍ່ອອກໄປແອັບອື່ນ)
+      L.polyline([rpMeLL, [g.lat, g.lng]], { color: '#2563eb', weight: 4, dashArray: '8 8' }).addTo(rpRouteLayer);
+      rpNavInfo = g.name + ' · ~' + rpFmtDist(rpDist(rpMeLL, [g.lat, g.lng])) + ' (ເສັ້ນຊື່ — ຂໍເສັ້ນທາງຖະໜົນບໍ່ໄດ້)';
+      if (!silent) rpMap.fitBounds([rpMeLL, [g.lat, g.lng]], { padding: [40, 40] });
+    }
+  } catch (e) { console.error(e); rpToast('ຂໍເສັ້ນທາງບໍ່ສຳເລັດ - ລອງໃໝ່'); }
+  rpNavBusy = false;
+  rpRender(true);
+}
+window.addEventListener('resize', () => { try { if (rpMap && !document.getElementById('view-route-plan').classList.contains('hidden')) rpMap.invalidateSize(); } catch (e) {} });
+</script>
+
 </body>
 </html>
