@@ -2629,6 +2629,11 @@ body.is-assistant-admin [onclick*="resetUserPassword"] { display: none !importan
     .badge-printed i, .badge-unprinted i { margin-right: 3px; font-size: .9em; }
     .loan-doc-card.is-printed { box-shadow: inset 5px 0 0 #12915d; }
     .loan-doc-card.not-printed { box-shadow: inset 5px 0 0 #F5A800; }
+    .loan-bulk { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .loan-bulk .btn-act b { margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: rgba(0,0,0,.08); font-size: 12px; }
+    .loan-bulk-tools { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .loan-sel { display: flex; align-items: center; justify-content: center; flex: none; padding: 0 12px 0 4px; cursor: pointer; }
+    .loan-sel input { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
     .print-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .print-tabs button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--border-color); background: #fff; color: var(--text-main); font: 600 13px var(--font-ui, inherit); cursor: pointer; }
     .print-tabs button b { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: rgba(0,0,0,.07); font-size: 12px; text-align: center; }
@@ -4959,6 +4964,16 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
             <button type="button" data-pt="all" class="on" onclick="setLoanPrintFilter('all')">ທັງໝົດ <b>0</b></button>
             <button type="button" data-pt="unprinted" onclick="setLoanPrintFilter('unprinted')"><i class="fa-solid fa-print"></i> ຍັງບໍ່ປິ້ນ <b>0</b></button>
             <button type="button" data-pt="printed" onclick="setLoanPrintFilter('printed')"><i class="fa-solid fa-circle-check"></i> ປິ້ນອອກແລ້ວ <b>0</b></button>
+          </div>
+          <div id="loanBulkBar" class="loan-bulk hidden">
+            <button type="button" id="loanPrintAllBtn" class="btn-act btn-print" onclick="loanPrintAll()"><i class="fa-solid fa-print mr-1"></i> ປິ້ນທັງໝົດ <b id="loanPrintAllN">0</b></button>
+            <button type="button" id="loanExportBtn" class="btn-act" onclick="loanExportDocs()"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel <b id="loanExportN">0</b></button>
+            <button type="button" id="loanSelToggle" class="btn-act" onclick="loanToggleSelMode()"><i class="fa-regular fa-square-check mr-1"></i> <span>ເລືອກຫຼາຍອັນ</span></button>
+            <span id="loanSelTools" class="loan-bulk-tools hidden">
+              <button type="button" class="btn-act" onclick="loanSelectAll(true)">ເລືອກທັງໝົດ</button>
+              <button type="button" class="btn-act" onclick="loanSelectAll(false)">ລ້າງ</button>
+              <button type="button" id="loanPrintSelBtn" class="btn-act btn-print" onclick="loanPrintSelected()"><i class="fa-solid fa-print mr-1"></i> ປິ້ນທີ່ເລືອກ <b id="loanSelN">0</b></button>
+            </span>
           </div>
           <div id="loanHistoryCardList" class="card-list"><div class="card-list-empty">ກຳລັງໂຫລດ...</div></div>
         </div>
@@ -26333,6 +26348,194 @@ function assetStatusBadgeClass(status) {
       } catch (err) { appAlert('ເຊື່ອມຕໍ່ເຊີບເວີບໍ່ໄດ້'); }
     }
 
+
+    /* ===== ປິ້ນຫຼາຍໃບ (ແຖບ "ເອກະສານສຳເລັດແລ້ວ"): ປິ້ນທັງໝົດ / ເລືອກຫຼາຍອັນ — ລວມ PDF ເປັນໄຟລ໌ດຽວ ແລ້ວເປີດໃຫ້ກົດປິ້ນຄັ້ງດຽວ ===== */
+    const LOAN_PRINT_MAX = 60;           // ຈຳນວນສູງສຸດຕໍ່ຄັ້ງ (ກັນໜ່ວຍຄວາມຈຳເຕັມ)
+    let loanShownDocs = [];              // ລາຍການທີ່ກຳລັງສະແດງ (ຫຼັງຄົ້ນຫາ/ກອງ)
+    let loanSelMode = false;
+    const loanSelected = new Set();      // 'loan:12' / 'cancel:5'
+    let loanPrintBusy = false;
+    const loanKey = (c) => (c._kind === 'cancel' ? 'cancel' : 'loan') + ':' + c.id;
+
+    function loanSelBoxHtml(c) {
+      return `<label class="loan-sel" onclick="event.stopPropagation()"><input type="checkbox" ${loanSelected.has(loanKey(c)) ? 'checked' : ''} onchange="loanSelToggleOne('${c._kind === 'cancel' ? 'cancel' : 'loan'}', ${Number(c.id)}, this.checked)" aria-label="ເລືອກເອກະສານ"></label>`;
+    }
+    function loanSelectedDocs() { return loanShownDocs.filter((c) => loanSelected.has(loanKey(c))); }
+    function loanUpdateBulkBar(canSeePrint) {
+      const bar = document.getElementById('loanBulkBar');
+      if (!bar) return;
+      bar.classList.toggle('hidden', !canSeePrint || !loanShownDocs.length);
+      const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      setTxt('loanPrintAllN', loanShownDocs.length);
+      setTxt('loanSelN', loanSelectedDocs().length);
+      setTxt('loanExportN', (loanSelMode && loanSelectedDocs().length) ? loanSelectedDocs().length : loanShownDocs.length);
+      document.getElementById('loanSelTools').classList.toggle('hidden', !loanSelMode);
+      const t = document.querySelector('#loanSelToggle span'); if (t) t.textContent = loanSelMode ? 'ເຊົາເລືອກ' : 'ເລືອກຫຼາຍອັນ';
+    }
+    function loanToggleSelMode() {
+      loanSelMode = !loanSelMode;
+      if (!loanSelMode) loanSelected.clear();
+      filterLoanContractHistory();
+    }
+    function loanSelToggleOne(kind, id, on) {
+      const k = kind + ':' + id;
+      if (on) loanSelected.add(k); else loanSelected.delete(k);
+      loanUpdateBulkBar(true);
+    }
+    function loanSelectAll(on) {
+      loanShownDocs.forEach((c) => { if (on) loanSelected.add(loanKey(c)); else loanSelected.delete(loanKey(c)); });
+      filterLoanContractHistory();
+    }
+    function loanPrintAll() { return loanPrintDocs(loanShownDocs.slice(), 'ທັງໝົດ'); }
+    function loanPrintSelected() {
+      const list = loanSelectedDocs();
+      if (!list.length) { appAlert('ກະລຸນາເລືອກເອກະສານທີ່ຕ້ອງການປິ້ນກ່ອນ'); return; }
+      return loanPrintDocs(list, 'ທີ່ເລືອກ');
+    }
+
+    /* Export Excel ລາຍລະອຽດເອກະສານ: ຖ້າຢູ່ໂໝດເລືອກຫຼາຍອັນ ແລະ ເລືອກໄວ້ -> ສະເພາະທີ່ເລືອກ, ບໍ່ດັ່ງນັ້ນ -> ທັງໝົດທີ່ສະແດງຢູ່ (ຕາມຄົ້ນຫາ/ກອງ) */
+    function loanExportDocs() {
+      if (typeof XLSX === 'undefined') { appAlert('ໂຫລດເຄື່ອງມື Excel ບໍ່ສຳເລັດ ກະລຸນາກວດອິນເຕີເນັດ'); return; }
+      const sel = loanSelMode ? loanSelectedDocs() : [];
+      const list = sel.length ? sel : loanShownDocs;
+      if (!list.length) { appAlert('ບໍ່ມີເອກະສານໃຫ້ Export'); return; }
+      const ts = (v) => (v ? (fmtLaoTs(v) || '') : '');
+      const rows = list.map((c) => {
+        const isCancel = c._kind === 'cancel';
+        const reasons = isCancel ? String(c.reasons || '').split(',').filter(Boolean).map((r) => CANCEL_REASON_LABEL[r] || r).join(', ') : '';
+        return {
+          'ເລກທີໃບ': c.doc_no || ('#' + c.id),
+          'ປະເພດໃບ': isCancel ? 'ໃບເກັບຕູ້ເຂົ້າສາງ (T-)' : 'ໃບສັນຍາຢືມ (DOC-)',
+          'ອ້າງອີງໃບສັນຍາຢືມ': isCancel ? (c.loan_doc_no || '') : '',
+          'Outlet Code': c.outlet_code || '',
+          'Outlet Name': c.outlet_name || '',
+          'MDE Code': c.mde_code || '',
+          'MDE Name': mdeNameFor(c.mde_code) || '',
+          'Cooler Brand': c.cooler_brand || '',
+          'QR Code': c.qr_cd || '',
+          'Serial Number': c.serial_no || '',
+          'CapEx': c.capx || c.capex || '',
+          'ປະເພດສັນຍາ': isCancel ? '' : (LOAN_CONTRACT_TYPE_LABEL[c.contract_type] || c.contract_type || ''),
+          'ປະເພດການມອບ': isCancel ? '' : (LOAN_HANDOVER_TYPE_LABEL[c.handover_type] || c.handover_type || ''),
+          'ຈຳນວນປະຕູ': c.doors || '',
+          'ເຫດຜົນເກັບຄືນ': reasons,
+          'ຮ້ານເດີມ (Code)': c.old_outlet_code || '',
+          'ຮ້ານເດີມ (ຊື່)': c.old_outlet_name || '',
+          'ເຫດຜົນເຄື່ອນຍ້າຍ': c.move_reason || '',
+          'ຍອດຂາຍ Beer': c.sales_beer ?? '',
+          'ຍອດຂາຍ Premium': c.sales_premium ?? '',
+          'ຍອດຂາຍ CSD/Energy': c.sales_csd_energy ?? '',
+          'ຍອດຂາຍ Water/Soda': c.sales_water_soda ?? '',
+          'DSM ເຊັນ': c.sig_dsm_name || '',
+          'ເວລາ DSM ເຊັນ': ts(c.sig_dsm_at),
+          'ສະຖານະ': c.status === 'completed' ? 'ເຊັນຄົບແລ້ວ' : (c.status === 'awaiting_dsm' ? 'ລໍຖ້າ DSM ເຊັນ' : 'ຮ່າງ'),
+          'ຜູ້ອອກໃບ': c.created_by || '',
+          'ວັນທີອອກໃບ': ts(c.created_at),
+          'ປິ້ນແລ້ວ': c.printed_at ? 'ແລ້ວ' : 'ຍັງ',
+          'ວັນທີປິ້ນ': ts(c.printed_at),
+          'ຜູ້ໝາຍປິ້ນ': c.printed_by || '',
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = Object.keys(rows[0]).map((k) => ({ wch: Math.min(Math.max(k.length + 2, 12), 28) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ເອກະສານ');
+      const d = new Date();
+      const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      XLSX.writeFile(wb, `documents_${stamp}.xlsx`);
+    }
+
+    async function loadPdfLib() {
+      if (window.PDFLib) return window.PDFLib;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('ໂຫລດເຄື່ອງມືລວມ PDF ບໍ່ສຳເລັດ ກະລຸນາກວດອິນເຕີເນັດ'));
+        document.head.appendChild(s);
+      });
+      if (!window.PDFLib) throw new Error('ໂຫລດເຄື່ອງມືລວມ PDF ບໍ່ສຳເລັດ');
+      return window.PDFLib;
+    }
+
+    async function loanPrintDocs(list, label) {
+      if (loanPrintBusy) { showPdfSaveNotice('ກຳລັງລວມ PDF ຢູ່ ກະລຸນາລໍຖ້າ', null, null); return; }
+      if (!list.length) { appAlert('ບໍ່ມີເອກະສານໃຫ້ປິ້ນ'); return; }
+      if (list.length > LOAN_PRINT_MAX) {
+        appAlert(`ປິ້ນໄດ້ສູງສຸດ ${LOAN_PRINT_MAX} ໃບຕໍ່ຄັ້ງ (ຕອນນີ້ ${list.length} ໃບ). ແນະນຳ: ເລືອກແຖບ "ຍັງບໍ່ປິ້ນ" ແລ້ວປິ້ນເທື່ອລະຊຸດ, ຫຼື ໃຊ້ "ເລືອກຫຼາຍອັນ"`);
+        return;
+      }
+      if (!await appConfirm(`ລວມເອກະສານ${label} ${list.length} ໃບ ເປັນ PDF ດຽວ ເພື່ອປິ້ນ?`, { danger: false })) return;
+      loanPrintBusy = true;
+      // ເປີດໜ້າຕ່າງໃນ user gesture ກ່ອນ (ກັນ pop-up blocker) ແລ້ວຄ່ອຍໃສ່ PDF
+      let w = null;
+      try { w = window.open('', '_blank'); } catch (_) { w = null; }
+      const say = (t) => { if (w && !w.closed) { try { w.document.body.innerHTML = '<p style="font-family:sans-serif;padding:16px">' + t + '</p>'; } catch (_) {} } };
+      if (w) { try { w.document.write('<title>ກຳລັງລວມ PDF</title><body></body>'); } catch (_) {} }
+      const failed = [];
+      const okDocs = [];
+      try {
+        const { PDFDocument } = await loadPdfLib();
+        const out = await PDFDocument.create();
+        for (let i = 0; i < list.length; i++) {
+          const c = list[i];
+          say(`ກຳລັງລວມ PDF ${i + 1}/${list.length}...`);
+          try {
+            const url = c._kind === 'cancel' ? `/api/cancel-contracts/pdf?id=${encodeURIComponent(c.id)}` : `/api/loan-contracts/pdf?id=${encodeURIComponent(c.id)}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const src = await PDFDocument.load(await res.arrayBuffer(), { ignoreEncryption: true });
+            const pages = await out.copyPages(src, src.getPageIndices());
+            pages.forEach((pg) => out.addPage(pg));
+            okDocs.push(c);
+          } catch (e) {
+            failed.push(c.doc_no || ('#' + c.id));
+          }
+        }
+        if (!okDocs.length) throw new Error('ດຶງ PDF ບໍ່ສຳເລັດທັງໝົດ ກະລຸນາລອງໃໝ່');
+        const bytes = await out.save();
+        const blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+        let viewed = false;
+        if (w && !w.closed) { try { w.location.href = blobUrl; viewed = true; } catch (_) { viewed = false; } }
+        if (!viewed) {
+          const a = document.createElement('a');
+          a.href = blobUrl; a.download = `print-${okDocs.length}-docs.pdf`; a.rel = 'noopener';
+          document.body.appendChild(a); a.click(); a.remove();
+          showPdfSaveNotice('ເປີດໜ້າເບິ່ງບໍ່ໄດ້ ຈຶ່ງບັນທຶກໄຟລ໌ PDF ລົງເຄື່ອງແທນ — ເປີດຈາກໂຟນເດີດາວໂຫຼດ ແລ້ວປິ້ນ', null, null);
+        }
+        if (failed.length) appAlert(`ລວມໄດ້ ${okDocs.length} ໃບ. ດຶງບໍ່ໄດ້ ${failed.length} ໃບ: ${failed.slice(0, 8).join(', ')}${failed.length > 8 ? '...' : ''}`);
+        // admin: ຖາມໝາຍວ່າ "ປິ້ນແລ້ວ" ເປັນຊຸດ (ສະເພາະໃບທີ່ຍັງບໍ່ໄດ້ໝາຍ)
+        const toMark = okDocs.filter((c) => !c.printed_at);
+        if (currentUser && currentUser.role === 'admin' && toMark.length) {
+          if (await appConfirm(`ໝາຍ ${toMark.length} ໃບນີ້ວ່າ "ປິ້ນແລ້ວ"?`, { danger: false })) await loanMarkPrintedBulk(toMark);
+        }
+      } catch (err) {
+        if (w && !w.closed) { try { w.close(); } catch (_) {} }
+        appAlert(err.message || 'ລວມ PDF ບໍ່ສຳເລັດ');
+      } finally {
+        loanPrintBusy = false;
+      }
+    }
+
+    async function loanMarkPrintedBulk(docs) {
+      let fail = 0;
+      for (const c of docs) {
+        try {
+          const kind = c._kind === 'cancel' ? 'cancel' : 'loan';
+          const res = await fetch('/api/contracts/printed', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind, id: c.id, printed: true })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { fail++; continue; }
+          const row = (kind === 'cancel' ? dbCancelHistory : dbLoanContractHistory).find((x) => x.id === c.id);
+          if (row) { row.printed_at = data.printed_at || new Date().toISOString(); row.printed_by = data.printed_by || null; }
+        } catch (e) { fail++; }
+      }
+      filterLoanContractHistory();
+      if (fail) appAlert(`ໝາຍບໍ່ສຳເລັດ ${fail} ໃບ`);
+    }
+
     async function loadLoanContractHistory(forceReload) {
       const listEl = document.getElementById('loanHistoryCardList');
       if (loanHistoryLoaded && !forceReload) { filterLoanContractHistory(); return; }
@@ -26386,7 +26589,9 @@ function assetStatusBadgeClass(status) {
       }
       const pf = canSeePrint ? loanPrintFilter : 'all';
       const shownDocs = pf === 'unprinted' ? filtered.filter((c) => !c.printed_at) : (pf === 'printed' ? filtered.filter((c) => c.printed_at) : filtered);
+      loanShownDocs = shownDocs;
       renderLoanContractHistory(shownDocs, 'loanHistoryCardList', pf !== 'all' ? (pf === 'printed' ? 'ຍັງບໍ່ມີເອກະສານທີ່ໝາຍວ່າປິ້ນແລ້ວ' : 'ເອກະສານທັງໝົດປິ້ນແລ້ວ') : ((q || mdeFilter) ? 'ບໍ່ພົບໃບສັນຍາຢືມ' : 'ຍັງບໍ່ມີເອກະສານທີ່ເຊັນສຳເລັດແລ້ວ'));
+      loanUpdateBulkBar(canSeePrint);
       // ຄິວເຊັນ = ໃບທີ່ຍັງເປັນຮ່າງ (ຍັງບໍ່ທັນເຊັນຮັບ) — ໃບ DOC- ແລະ ໃບ T- (ຖ້າຍັງບໍ່ completed) ເພື່ອບໍ່ໃຫ້ໃບຮ່າງຫາຍໄປຈາກທັງສອງແຖບ
       const queue = all.filter((c) => !isDone(c));
       // Filter MDE (admin) ຂອງແຖບ "ເອກະສານຍັງບໍ່ເຊັນ" — ຕົວເລກ badge ຍັງນັບທັງໝົດ (ບໍ່ຂຶ້ນກັບ filter)
@@ -26414,8 +26619,10 @@ function assetStatusBadgeClass(status) {
       }
       const isAdmin = currentUser && currentUser.role === 'admin';
       const canViewAllRole = currentUser && ['admin', 'warehouse', 'delivery'].includes(currentUser.role);
+      const selMode = loanSelMode && targetId === 'loanHistoryCardList' && canViewAllRole;
       const inQueue = targetId === 'loanQueueCardList'; // ແຖບ "ເອກະສານຍັງບໍ່ເຊັນ": ກົດບັດ -> ເປີດ wizard ສະເຕັບ 4
       listEl.innerHTML = items.map((c) => {
+        const selBox = selMode ? loanSelBoxHtml(c) : '';
         if (c._kind === 'cancel') {
           const reasonTxt = String(c.reasons || '').split(',').filter(Boolean).map((r) => CANCEL_REASON_LABEL[r] || r).join(', ');
           const done = c.status === 'completed';
@@ -26431,6 +26638,7 @@ function assetStatusBadgeClass(status) {
           const cancelClickFn = done ? `openCancelContractPdf(${c.id})` : `dsmWaitOpenFromList('cancel', ${c.id})`;
           return `
         <div class="data-card loan-doc-card${cancelClick ? ' dsm-clickable' : ''}${printCardCls(c, canViewAllRole)}"${cancelClick ? ` onclick="${cancelClickFn}"` : ''}>
+          ${selBox}
           <div class="data-card-main">
             <div class="data-card-title">
               ${esc(c.doc_no || ('#' + c.id))}
@@ -26473,6 +26681,7 @@ function assetStatusBadgeClass(status) {
         const loanClickFn = !isDraft ? `openLoanContractPdf(${c.id})` : (isAwaitingDsm ? `dsmWaitOpenFromList('loan', ${c.id})` : `loanOpenDraftWizard(${c.id})`);
         return `
         <div class="data-card loan-doc-card${(loanClick || !isDraft) ? ' dsm-clickable' : ''}${printCardCls(c, canViewAllRole)}"${(loanClick || !isDraft) ? ` onclick="${loanClickFn}"` : ''}>
+          ${selBox}
           <div class="data-card-main">
             <div class="data-card-title">
               ${esc(c.doc_no || ('#' + c.id))}
