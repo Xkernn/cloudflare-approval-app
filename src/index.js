@@ -1592,6 +1592,7 @@ const ROUTE_ROLES = {
   "/api/asset-delivery/dispatch": ROLE_STAFF, // ສະແກນຕູ້ຂຶ້ນລົດ — warehouse / delivery / admin
   "/api/asset-delivery/on-truck": ROLE_STAFF,
   "/api/route-plan": ["admin", "delivery"], // ແຜນເສັ້ນທາງປະຈຳວັນ ຂອງທີມຈັດສົ່ງ
+  "/api/route-plan/overview": ["admin"], // admin ເບິ່ງແຜນຂອງ delivery ທຸກຄົນ (ໃຊ້ໃນ Map Tracking) — assistant_admin ນັບເປັນ admin
   "/api/asset-delivery/dispatch-cancel": ROLE_STAFF, // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ)
   "/api/asset-delivery/close-truck": ROLE_STAFF, // ປິດລົດ (ຈົບການຂຶ້ນຕູ້)
   "/api/asset-delivery/dispatch-stock-lookup": ROLE_STAFF, // ຄົ້ນຫາຕູ້ໃນສະຕັອກ (ຕູ້ດ່ວນທີ່ບໍ່ມີ Asset Tracking)
@@ -9367,6 +9368,38 @@ export default {
         return Response.json({ message: "ບັນທຶກແຜນເສັ້ນທາງແລ້ວ", count: items.length });
       } catch (err) {
         console.error("/api/route-plan", err);
+        return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ: " + err.message }, { status: 500 });
+      }
+    }
+
+    // 6a3. admin ເບິ່ງແຜນເສັ້ນທາງຂອງ delivery ທຸກຄົນ ຂອງວັນໃດໜຶ່ງ (ອ່ານຢ່າງດຽວ) ເພື່ອສະແດງຄວາມຄືບໜ້າໃນ Map Tracking
+    // GET /api/route-plan/overview?date=YYYY-MM-DD -> { date, plans:[{user_id,email,items:[{asset_id,action,seq}]}], assets:{ [id]: asset } }
+    if (url.pathname === "/api/route-plan/overview" && request.method === "GET") {
+      try {
+        const date = String(url.searchParams.get("date") || "");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        const me = await env.DB.prepare("SELECT id, role FROM users WHERE id = ?").bind(url.searchParams.get("userId")).first();
+        if (!me || !isAdminLike(me.role)) return Response.json({ error: "ສະເພາະ admin ເທົ່ານັ້ນ" }, { status: 403 });
+        const { results: users } = await env.DB.prepare("SELECT id, email FROM users WHERE role = 'delivery' ORDER BY email").all();
+        const { results: items } = await env.DB.prepare(
+          "SELECT user_id, asset_id, action, seq FROM delivery_route_plan_items WHERE plan_date = ? ORDER BY user_id ASC, seq ASC, id ASC"
+        ).bind(date).all();
+        const byUser = new Map();
+        (items || []).forEach((it) => { if (!byUser.has(it.user_id)) byUser.set(it.user_id, []); byUser.get(it.user_id).push({ asset_id: it.asset_id, action: it.action, seq: it.seq }); });
+        const plans = (users || []).map((u) => ({ user_id: u.id, email: u.email, items: byUser.get(u.id) || [] }));
+        const ids = [...new Set((items || []).map((it) => it.asset_id))];
+        let rows = [];
+        for (let i = 0; i < ids.length; i += 80) {
+          const chunk = ids.slice(i, i + 80);
+          const { results } = await env.DB.prepare(`SELECT * FROM assets WHERE id IN (${chunk.map(() => "?").join(",")})`).bind(...chunk).all();
+          rows = rows.concat(results || []);
+        }
+        const withDocs = await attachDocStates(env, rows);
+        const assets = {};
+        (withDocs || []).forEach((a) => { assets[a.id] = a; });
+        return Response.json({ date, plans, assets }, { headers: { "Cache-Control": "no-store" } });
+      } catch (err) {
+        console.error("/api/route-plan/overview", err);
         return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ: " + err.message }, { status: 500 });
       }
     }
