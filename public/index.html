@@ -676,6 +676,10 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .pf-tile:hover { border-color: var(--primary); box-shadow: 0 6px 18px rgba(11, 107, 58,.12); transform: translateY(-1px); }
     .pf-tile:active { transform: scale(.985); }
     .pf-tile:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-left: 6px; padding: 0; vertical-align: middle; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-muted); font-size: 13px; cursor: pointer; flex: none; }
+    .copy-btn:hover { color: var(--primary); border-color: var(--primary); }
+    .copy-btn:active { transform: scale(.92); }
+    .copy-btn.copied { color: #15803d; border-color: #15803d; background: #eefbf3; }
     .pf-tile-danger { border-color: rgba(220, 38, 38, .35); }
     .pf-tile-danger .pf-ico { background: rgba(220, 38, 38, .10); color: #DC2626; }
     .pf-tile-danger .pf-txt b { color: #DC2626; }
@@ -17722,7 +17726,7 @@ async function ncExportLots(lot) {
               ${open ? `<button type="button" class="btn-act btn-edit" onclick="${n.kind === 'stock' ? `ncTripRemoveStock(${n.link_id})` : `ncTripRemoveCooler(${n.id})`}"><i class="fa-solid fa-xmark"></i> ເອົາອອກ</button>` : ''}
             </div>
             <div class="mgmt-card-sub">
-              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}${copyBtn(n.qr_code)}</span>
               <span><i class="fa-solid fa-hashtag"></i>Serial: ${esc(n.serial_number || '-')}</span>
               <span><i class="fa-solid fa-file-invoice-dollar"></i>CapEx: ${esc(n.capex || '-')}</span>
               ${n.kind === 'stock' && n.warehouse_name ? `<span><i class="fa-solid fa-warehouse"></i>${esc(n.warehouse_name)}</span>` : ''}
@@ -17917,10 +17921,10 @@ async function ncExportLots(lot) {
       ncPickDetailItem = x;
       const title = [x.cooler_brand, x.cooler_type, x.cooler_model].filter(Boolean).join(' / ') || 'ຕູ້ແຊ່';
       const wh = ncWhVal('ncPickWh');
-      const row = (icon, label, val) => `<div style="display:flex; gap:8px;"><span style="width:110px; flex:none; color:var(--text-muted);"><i class="fa-solid ${icon} mr-1"></i>${label}</span><b style="word-break:break-all;">${esc(val || '-')}</b></div>`;
+      const row = (icon, label, val, cp) => `<div style="display:flex; gap:8px; align-items:center;"><span style="width:110px; flex:none; color:var(--text-muted);"><i class="fa-solid ${icon} mr-1"></i>${label}</span><b style="word-break:break-all;">${esc(val || '-')}</b>${cp ? copyBtn(val) : ''}</div>`;
       document.getElementById('ncPickDetailBody').innerHTML =
         `<div style="font-size:16px; font-weight:700; margin-bottom:4px;">${esc(title)}</div>`
-        + row('fa-qrcode', 'QR', x.qr_code) + row('fa-hashtag', 'Serial', x.serial_number) + row('fa-file-invoice-dollar', 'CapEx', x.capex)
+        + row('fa-qrcode', 'QR', x.qr_code, true) + row('fa-hashtag', 'Serial', x.serial_number) + row('fa-file-invoice-dollar', 'CapEx', x.capex)
         + row('fa-warehouse', 'ສາງ', x.warehouse_name)
         + row('fa-location-dot', 'ແຂວງປາຍທາງ', province + (wh ? ' / ' + wh : ''));
       document.getElementById('ncPickDetailMsg').innerHTML = '';
@@ -18898,7 +18902,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <div style="display:flex; gap:6px; flex-wrap:wrap;">${acts}</div>
             </div>
             <div class="mgmt-card-sub">
-              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>QR: ${esc(n.qr_code || '-')}${copyBtn(n.qr_code)}</span>
               <span><i class="fa-solid fa-hashtag"></i>Serial: ${esc(n.serial_number || '-')}</span>
               <span><i class="fa-solid fa-file-invoice-dollar"></i>CapEx: ${esc(n.capex || '-')}</span>
               ${n.kind === 'stock' && n.warehouse_name ? `<span><i class="fa-solid fa-warehouse"></i>${esc(n.warehouse_name)}</span>` : ''}
@@ -20154,7 +20158,7 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
               <span class="badge ${st.cls}">${esc(st.label)}</span>
             </div>
             <div class="data-card-sub" style="margin-top:6px;">
-              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}</span>
+              <span><i class="fa-solid fa-qrcode"></i>${esc(it.qr_code || '-')}${copyBtn(it.qr_code)}</span>
               <span><i class="fa-solid fa-barcode"></i>${esc(it.serial_number || '-')}</span>
               <span><i class="fa-solid fa-coins"></i>${esc(it.capex || '-')}</span>
             </div>
@@ -22114,6 +22118,37 @@ ${departPhotoSrc ? `<div class="photo"><div style="font-weight:700; margin-botto
       return m ? m.mde_name : '';
     }
 
+    /* ===== ປຸ່ມ Copy ດ່ວນ (Outlet Code / QR Code) ===== */
+    function copyBtn(text) {
+      const t = String(text == null ? '' : text).trim();
+      if (!t) return '';
+      return `<button type="button" class="copy-btn" data-copy="${esc(t)}" onclick="copyFromBtn(event, this)" title="Copy" aria-label="Copy ${esc(t)}"><i class="fa-regular fa-copy"></i></button>`;
+    }
+    function copyVal(text) {
+      const t = String(text == null ? '' : text).trim();
+      return t ? `${esc(t)}${copyBtn(t)}` : '-';
+    }
+    async function copyFromBtn(ev, btn) {
+      if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+      const text = btn.getAttribute('data-copy') || '';
+      let ok = false;
+      try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed; top:-1000px; opacity:0;';
+          document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+          ok = document.execCommand('copy'); document.body.removeChild(ta);
+        } catch (e2) {}
+      }
+      const ic = btn.querySelector('i');
+      if (ic) {
+        ic.className = ok ? 'fa-solid fa-check' : 'fa-solid fa-xmark';
+        btn.classList.toggle('copied', ok);
+        clearTimeout(btn._cpT);
+        btn._cpT = setTimeout(() => { ic.className = 'fa-regular fa-copy'; btn.classList.remove('copied'); }, 1200);
+      }
+    }
+
     function openDetailModal(title, fields, actionsHtml) {
       amTeardown();
       document.getElementById('detailModalTitle').textContent = title || '-';
@@ -22681,7 +22716,7 @@ function assetStatusBadgeClass(status) {
       const isWarehouse = currentUser.role === 'warehouse';
 
       const fields = [
-        ['Outlet Code', a.outlet_code],
+        ['Outlet Code', raw(copyVal(a.outlet_code))],
         ['Outlet Name', a.outlet_name],
         ['Tracking No', a.tracking_no],
         ['Cooler Brand', a.cooler_brand],
@@ -22689,7 +22724,7 @@ function assetStatusBadgeClass(status) {
         ['MDE Code', a.mde_code],
         ['MDE Name', mdeNameFor(a.mde_code)],
         ['Doc Type', raw(docTypeBadgeHtml(a.doc_type))],
-        ['QR Code', a.qr_code],
+        ['QR Code', raw(copyVal(a.qr_code))],
         ['Serial Number', a.serial_number],
         ['CapEx', a.capex],
         ['ສະຖານະ', raw(`<span class="badge ${assetStatusBadgeClass(a.status)}">${esc(assetStatusText(a))}</span>`)],
@@ -23193,7 +23228,7 @@ function assetStatusBadgeClass(status) {
 
       const fields = [
         ['Tracking No', a.tracking_no],
-        ['Outlet Code', a.outlet_code],
+        ['Outlet Code', raw(copyVal(a.outlet_code))],
         ['Outlet Name', a.outlet_name],
         ['Cooler Brand', a.cooler_brand],
         ['Cooler Type', a.cooler_type],
@@ -23201,7 +23236,7 @@ function assetStatusBadgeClass(status) {
         ['MDE Name', mdeNameFor(a.mde_code)],
         ['Doc Type', raw(docTypeBadgeHtml(a.doc_type))],
         ['ສະພາບ', raw(`<span class="badge ${a.asset_condition === 'used' ? 'badge-pending' : 'badge-approved'}">${a.asset_condition === 'used' ? 'ມືສອງ' : 'ໃໝ່'}</span>`)],
-        ['QR Code', a.qr_code],
+        ['QR Code', raw(copyVal(a.qr_code))],
         ['Serial Number', a.serial_number],
         ['CapEx', a.capex],
         ['ວັນທີ່ຈັດສົ່ງ', fmtLaoTs(a.delivered_at)],
