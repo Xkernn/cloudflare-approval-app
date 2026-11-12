@@ -4132,9 +4132,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           </div>
         </div>
         <div class="loan-type-list">
-          <button type="button" id="deliveryHubCardRoute" class="loan-type-card hidden" onclick="rpOpen()">
-            <div class="loan-type-card-title"><i class="fa-solid fa-route"></i> ແຜນເສັ້ນທາງມື້ນີ້</div>
-            <div class="loan-type-card-sub">ເລືອກຮ້ານທີ່ຈະໄປສົ່ງ / ເກັບຕູ້ແຊ່ ແລ້ວນຳທາງໃນແອັບ</div>
+          <button type="button" id="deliveryHubCardRoute" class="loan-type-card hidden" onclick="rdOpenHub()">
+            <div class="loan-type-card-title"><i class="fa-solid fa-route"></i> ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ <span class="rd-new">ໃໝ່</span></div>
+            <div class="loan-type-card-sub">ແຜນເສັ້ນທາງ · ແຜນທີ່ · ວຽກຈັດສົ່ງ · ເອກະສານ · ລາຍງານ ຢູ່ໃນເມນູດຽວ</div>
           </button>
           <button type="button" id="deliveryHubCardDispatch" class="loan-type-card" onclick="openDeliverySub('dispatchOut')">
             <div class="loan-type-card-title"><i class="fa-solid fa-truck-ramp-box"></i> ສະແກນຕູ້ຂຶ້ນລົດ</div>
@@ -34393,6 +34393,7 @@ async function rpOpen(forceSelect) {
   }
 }
 function rpClose() {
+  try { setTimeout(() => { if (typeof rdAfterRp === 'function') rdAfterRp(); }, 0); } catch (e) {}
   document.getElementById('view-route-plan').classList.add('hidden');
   document.documentElement.style.overflow = ''; document.body.style.overflow = '';
   rpStopGps();
@@ -34939,6 +34940,237 @@ function dpFocus(uid, i) {
   if (!r || r.stop.lat === null) { rpToast('ຈຸດນີ້ບໍ່ມີພິກັດ'); return; }
   dpMap.flyTo([r.stop.lat, r.stop.lng], Math.max(dpMap.getZoom(), 16));
   dpPlanLayer.eachLayer((l) => { if (l.getLatLng && l.getLatLng().lat === r.stop.lat && l.getLatLng().lng === r.stop.lng) l.openPopup(); });
+}
+</script>
+<style>
+  .rd-new { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 800; color: #fff; background: #e11d48; border-radius: 999px; padding: 1px 8px; vertical-align: middle; }
+  .rd-page { position: fixed; inset: 0; z-index: 940; background: #f4f8f9; display: flex; flex-direction: column; }
+  .rd-page.sub { z-index: 945; }
+  .rd-page.hidden { display: none; }
+  .rd-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+  .rd-back { border: 0; background: #f1f5f9; color: #0f172a; width: 36px; height: 36px; border-radius: 12px; cursor: pointer; font-size: 15px; }
+  .rd-title { flex: 1; text-align: center; font-weight: 800; font-size: 16px; color: #0f172a; margin-right: 36px; }
+  .rd-scroll { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 14px 20px; }
+  .rd-banner { border-radius: 18px; padding: 18px 16px; margin-bottom: 14px; color: #fff; background: linear-gradient(135deg, #0B6B3A 0%, #16a34a 60%, #facc15 140%); display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 22px -14px rgba(11,107,58,.8); }
+  .rd-banner i.big { font-size: 46px; opacity: .95; }
+  .rd-banner .t { font-weight: 800; font-size: 17px; line-height: 1.25; }
+  .rd-banner .s { font-size: 12.5px; opacity: .92; margin-top: 3px; }
+  .rd-mini-bar { height: 7px; border-radius: 999px; background: rgba(255,255,255,.35); margin-top: 8px; overflow: hidden; }
+  .rd-mini-bar > i { display: block; height: 100%; background: #fff; border-radius: 999px; }
+  .rd-card { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; margin-bottom: 9px; cursor: pointer; }
+  .rd-card:active { background: #f8fafc; }
+  .rd-ico { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .rd-ico.c1 { background: #dbeafe; color: #1d4ed8; } .rd-ico.c2 { background: #dcfce7; color: #15803d; } .rd-ico.c3 { background: #fef3c7; color: #b45309; } .rd-ico.c4 { background: #e0f2fe; color: #0369a1; } .rd-ico.c5 { background: #ede9fe; color: #6d28d9; }
+  .rd-card .tt { font-weight: 800; font-size: 14.5px; color: #0f172a; } .rd-card .ss { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .rd-card .chev { margin-left: auto; color: #94a3b8; }
+  .rd-date { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 10px; }
+  .rd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .rd-stat { border-radius: 14px; padding: 10px 6px; text-align: center; background: #f1f5f9; }
+  .rd-stat .n { font-size: 24px; font-weight: 800; line-height: 1.1; } .rd-stat .l { font-size: 12px; color: #475569; margin-top: 2px; }
+  .rd-stat.all { background: #dcfce7; color: #15803d; } .rd-stat.ok { background: #dcfce7; color: #15803d; } .rd-stat.rest { background: #ffedd5; color: #c2410c; }
+  .rd-prog { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 10px 12px; margin-bottom: 12px; }
+  .rd-prog .h { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #334155; }
+  .rd-prog .b { height: 9px; border-radius: 999px; background: #e2e8f0; margin-top: 7px; overflow: hidden; } .rd-prog .b > i { display: block; height: 100%; background: #0B6B3A; border-radius: 999px; }
+  .rd-h2 { font-weight: 800; font-size: 14.5px; color: #0f172a; margin: 4px 2px 8px; }
+  .rd-row { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 10px 12px; margin-bottom: 7px; }
+  .rd-row.next { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.18); }
+  .rd-row .no { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: #f1f5f9; color: #334155; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .rd-row .nm { font-weight: 800; font-size: 14px; color: #0f172a; word-break: break-word; } .rd-row .sb { font-size: 12px; color: #64748b; margin-top: 1px; word-break: break-word; }
+  .rd-pill { flex: 0 0 auto; margin-left: auto; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+  .rd-pill.ok { background: #dcfce7; color: #15803d; } .rd-pill.go { background: #dbeafe; color: #1d4ed8; } .rd-pill.wait { background: #ffedd5; color: #c2410c; }
+  .rd-foot { flex: 0 0 auto; padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid #e2e8f0; }
+  .rd-go { width: 100%; border: 0; border-radius: 14px; padding: 14px; font-weight: 800; font-size: 15px; color: #fff; background: #0B6B3A; cursor: pointer; }
+  .rd-empty { text-align: center; color: #64748b; padding: 28px 12px; font-size: 13.5px; line-height: 1.6; }
+  .rd-doc { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+  .rd-doc .nm { font-weight: 800; font-size: 14.5px; color: #0f172a; word-break: break-word; } .rd-doc .sb { font-size: 12px; color: #64748b; margin-top: 2px; word-break: break-word; }
+  .rd-doc .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .rd-doc .acts button { flex: 1; border-radius: 12px; padding: 9px 8px; font-weight: 800; font-size: 13px; cursor: pointer; border: 1px solid #0B6B3A; background: #fff; color: #0B6B3A; }
+  .rd-doc .acts button.pri { background: #0B6B3A; color: #fff; }
+  .rd-doc .acts button:disabled { opacity: .55; }
+  .rd-prev { margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #f8fafc; text-align: center; }
+  .rd-prev canvas { display: block; width: 100%; height: auto; }
+  .rd-prev .msg { padding: 14px; font-size: 12.5px; color: #64748b; }
+  .rd-dstate { display: inline-block; font-size: 11.5px; font-weight: 800; border-radius: 999px; padding: 2px 9px; margin-top: 5px; background: #f1f5f9; color: #475569; }
+  .rd-dstate.ok { background: #dcfce7; color: #15803d; } .rd-dstate.wait { background: #ffedd5; color: #c2410c; } .rd-dstate.none { background: #fee2e2; color: #b91c1c; }
+</style>
+
+<!-- ເມນູລວມ ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ (role delivery) -->
+<div id="view-rd-hub" class="rd-page hidden" role="dialog" aria-label="ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ">
+  <div class="rd-bar"><button type="button" class="rd-back" onclick="rdClose()"><i class="fa-solid fa-arrow-left"></i></button><div class="rd-title">ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ</div></div>
+  <div class="rd-scroll">
+    <div class="rd-banner"><i class="fa-solid fa-truck-fast big"></i>
+      <div style="flex:1;min-width:0;"><div class="t">ລວມທຸກຢ່າງຂອງທີມຈັດສົ່ງ</div><div class="s" id="rdHubSum">ກຳລັງໂຫຼດແຜນຂອງມື້ນີ້...</div><div class="rd-mini-bar"><i id="rdHubBar" style="width:0%"></i></div></div>
+    </div>
+    <button type="button" class="rd-card" onclick="rdOpenPlan()"><div class="rd-ico c1"><i class="fa-solid fa-calendar-check"></i></div><div><div class="tt">ແຜນເສັ້ນທາງຂອງຂ້ອຍ</div><div class="ss">ແຜນຈັດສົ່ງຂອງມື້ນີ້ ແລະ ຄວາມຄືບໜ້າ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
+    <button type="button" class="rd-card" onclick="rpOpen()"><div class="rd-ico c2"><i class="fa-solid fa-map-location-dot"></i></div><div><div class="tt">ແຜນທີ່ເສັ້ນທາງ</div><div class="ss">ເບິ່ງເສັ້ນທາງ ແລະ ນຳທາງໄປແຕ່ລະຮ້ານ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
+    <button type="button" class="rd-card" onclick="rdGoTasks()"><div class="rd-ico c3"><i class="fa-solid fa-box-open"></i></div><div><div class="tt">ວຽກຈັດສົ່ງ</div><div class="ss">ສະແກນ QR, ຖ່າຍຮູບ ແລະ ຢືນຢັນການຈັດສົ່ງ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
+    <button type="button" class="rd-card" onclick="rdOpenDocs()"><div class="rd-ico c4"><i class="fa-solid fa-file-pdf"></i></div><div><div class="tt">ເອກະສານຈັດສົ່ງ</div><div class="ss">ເບິ່ງໜ້າທຳອິດ ແລະ ເປີດໄຟລ໌ PDF ຂອງແຕ່ລະຈຸດ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
+    <button type="button" class="rd-card" onclick="rdGoReports()"><div class="rd-ico c5"><i class="fa-solid fa-chart-column"></i></div><div><div class="tt">ລາຍງານການຈັດສົ່ງ</div><div class="ss">ປະຫວັດການຈັດສົ່ງ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
+  </div>
+</div>
+
+<!-- ແຜນເສັ້ນທາງຂອງຂ້ອຍ -->
+<div id="view-rd-plan" class="rd-page sub hidden" role="dialog" aria-label="ແຜນເສັ້ນທາງຂອງຂ້ອຍ">
+  <div class="rd-bar"><button type="button" class="rd-back" onclick="rdSubBack('view-rd-plan')"><i class="fa-solid fa-arrow-left"></i></button><div class="rd-title">ແຜນເສັ້ນທາງຂອງຂ້ອຍ</div></div>
+  <div class="rd-scroll" id="rdPlanBody"></div>
+  <div class="rd-foot" id="rdPlanFoot"></div>
+</div>
+
+<!-- ເອກະສານຈັດສົ່ງ -->
+<div id="view-rd-docs" class="rd-page sub hidden" role="dialog" aria-label="ເອກະສານຈັດສົ່ງ">
+  <div class="rd-bar"><button type="button" class="rd-back" onclick="rdSubBack('view-rd-docs')"><i class="fa-solid fa-arrow-left"></i></button><div class="rd-title">ເອກະສານຈັດສົ່ງ</div></div>
+  <div class="rd-scroll" id="rdDocsBody"></div>
+</div>
+
+<script>
+/* ເມນູລວມ "ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ" ສຳລັບ role delivery
+   ໃຊ້ຂໍ້ມູນ/ກົດດຽວກັບແຜນເສັ້ນທາງເດີມ (rpStopsOf, mapPlanBuild) · ແຜນທີ່ = ໜ້າ rpOpen ເດີມ */
+let rdData = null, rdDocRows = [], rdDocInfo = {}, rdPdfBlobs = {};
+const RD_MONTHS = ['ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ', 'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'];
+function rdLock(on) { document.documentElement.style.overflow = on ? 'hidden' : ''; document.body.style.overflow = on ? 'hidden' : ''; }
+function rdVisible(id) { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); }
+
+function rdOpenHub() { document.getElementById('view-rd-hub').classList.remove('hidden'); rdLock(true); rdRefreshSummary(); }
+function rdClose() { ['view-rd-docs', 'view-rd-plan', 'view-rd-hub'].forEach((id) => document.getElementById(id).classList.add('hidden')); rdLock(false); }
+function rdSubBack(id) { document.getElementById(id).classList.add('hidden'); if (!rdVisible('view-rd-hub')) rdLock(false); else rdRefreshSummary(); }
+function rdGoTasks() { rdClose(); openDeliverySub('deliverConfirm'); }
+function rdGoReports() { rdClose(); switchView('delivery'); window.scrollTo(0, 0); }
+function rdAfterRp() { // ກັບມາຈາກແຜນທີ່ -> ອັບເດດໜ້າທີ່ເປີດຢູ່
+  if (rdVisible('view-rd-plan')) rdRenderPlan(); else if (rdVisible('view-rd-hub')) rdRefreshSummary();
+}
+
+async function rdFetchMine() {
+  if (!Array.isArray(dbOutletsLookup) || !dbOutletsLookup.length) await fetchOutletsLookup();
+  const r = await fetch('/api/route-plan/mine?userId=' + encodeURIComponent(currentUser.id) + '&date=' + encodeURIComponent(rpToday()), { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const d = await r.json();
+  const gps = rpMeLL ? { ll: rpMeLL, fresh: true } : null;
+  rdData = { items: d.items || [], assets: d.assets || {}, built: mapPlanBuild({ items: d.items || [] }, d.assets || {}, gps) };
+  return rdData;
+}
+async function rdRefreshSummary() {
+  const sum = document.getElementById('rdHubSum'), bar = document.getElementById('rdHubBar');
+  try {
+    const d = await rdFetchMine(), b = d.built;
+    if (!b.total) { sum.textContent = 'ມື້ນີ້ຍັງບໍ່ໄດ້ສ້າງແຜນເສັ້ນທາງ'; bar.style.width = '0%'; return; }
+    sum.textContent = 'ມື້ນີ້ສຳເລັດ ' + b.done + ' / ' + b.total + ' ຈຸດ';
+    bar.style.width = Math.round(b.done * 100 / b.total) + '%';
+  } catch (e) { sum.textContent = 'ໂຫຼດແຜນຂອງມື້ນີ້ບໍ່ສຳເລັດ'; }
+}
+
+/* ===== ແຜນເສັ້ນທາງຂອງຂ້ອຍ ===== */
+function rdPill(r) {
+  if (r.state === 'done') return '<span class="rd-pill ok">✓ ສຳເລັດ</span>';
+  const a = r.stop.a;
+  if (r.stop.action === 'deliver' && (a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' || a.status === 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ')) return '<span class="rd-pill go">🚚 ກຳລັງສົ່ງ</span>';
+  return '<span class="rd-pill wait">⏳ ' + (r.stop.action === 'collect' ? 'ລໍເກັບ' : 'ລໍຈັດສົ່ງ') + '</span>';
+}
+async function rdOpenPlan() {
+  document.getElementById('view-rd-plan').classList.remove('hidden');
+  document.getElementById('rdPlanBody').innerHTML = '<div class="rd-empty"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
+  document.getElementById('rdPlanFoot').innerHTML = '';
+  await rdRenderPlan(true);
+}
+async function rdRenderPlan(refetch) {
+  const body = document.getElementById('rdPlanBody'), foot = document.getElementById('rdPlanFoot');
+  try { await rdFetchMine(); } catch (e) {
+    console.error(e);
+    body.innerHTML = '<div class="rd-empty">ໂຫຼດແຜນບໍ່ສຳເລັດ - ກະລຸນາລອງໃໝ່</div>'; foot.innerHTML = '<button type="button" class="rd-go" onclick="rdRenderPlan()">ລອງໃໝ່</button>'; return;
+  }
+  const b = rdData.built, d = new Date();
+  const dateTxt = 'ມື້ນີ້ · ' + d.getDate() + ' ' + RD_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+  if (!b.total) {
+    body.innerHTML = '<div class="rd-date"><i class="fa-solid fa-calendar-days" style="color:#0B6B3A;"></i> ' + dateTxt + '</div><div class="rd-empty"><i class="fa-solid fa-route" style="font-size:34px;color:#94a3b8;"></i><br><br>ມື້ນີ້ຍັງບໍ່ໄດ້ສ້າງແຜນເສັ້ນທາງ<br>ເລືອກຮ້ານທີ່ຈະໄປສົ່ງ / ເກັບຕູ້ເທິງແຜນທີ່</div>';
+    foot.innerHTML = '<button type="button" class="rd-go" onclick="rpOpen(true)"><i class="fa-solid fa-plus mr-1"></i> ສ້າງແຜນມື້ນີ້</button>'; return;
+  }
+  const rest = b.total - b.done, pct = Math.round(b.done * 1000 / b.total) / 10;
+  const rows = b.rows.map((r, i) => '<div class="rd-row' + (r.isNext ? ' next' : '') + '"><div class="no">' + String(i + 1).padStart(2, '0') + '</div><div style="min-width:0;"><div class="nm">' + esc(r.stop.name) + '</div><div class="sb">' +
+    esc((r.stop.action === 'collect' ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ' · ' + (r.stop.code || '-') + (r.stop.a.tracking_no ? ' · ' + r.stop.a.tracking_no : '')) + (r.isNext ? ' · <b style="color:#2563eb;">ຈຸດຕໍ່ໄປ</b>' : '') + '</div></div>' + rdPill(r) + '</div>').join('');
+  body.innerHTML = '<div class="rd-date"><i class="fa-solid fa-calendar-days" style="color:#0B6B3A;"></i> ' + dateTxt + '</div>' +
+    '<div class="rd-stats"><div class="rd-stat all"><div class="n">' + b.total + '</div><div class="l">ທັງໝົດ</div></div><div class="rd-stat ok"><div class="n">' + b.done + '</div><div class="l">ສຳເລັດ</div></div><div class="rd-stat rest"><div class="n">' + rest + '</div><div class="l">ຄົງເຫຼືອ</div></div></div>' +
+    '<div class="rd-prog"><div class="h"><span>ຄວາມຄືບໜ້າການຈັດສົ່ງ</span><span>' + pct + '%</span></div><div class="b"><i style="width:' + pct + '%"></i></div></div>' +
+    '<div class="rd-h2">ລາຍການຈຸດສົ່ງ (' + b.total + ' ຈຸດ)</div>' + rows;
+  foot.innerHTML = rest > 0
+    ? '<button type="button" class="rd-go" onclick="rpOpen()"><i class="fa-solid fa-play mr-1"></i> ເລີ່ມປະຕິບັດງານຈັດສົ່ງ</button>'
+    : '<button type="button" class="rd-go" style="background:#15803d;" onclick="rpOpen()">🎉 ສຳເລັດທຸກຈຸດແລ້ວ - ເບິ່ງແຜນທີ່</button>';
+}
+
+/* ===== ເອກະສານຈັດສົ່ງ (PDF) ===== */
+function rdDocStateLbl(a) {
+  const st = a.loan_state;
+  if (st === 'completed') return ['ok', 'ເຊັນຄົບແລ້ວ'];
+  if (st === 'awaiting_dsm') return ['wait', 'ລໍ DSM ເຊັນ'];
+  if (st === 'draft') return ['wait', 'ຮ່າງ (ລໍເຊັນ)'];
+  return ['none', 'ຍັງບໍ່ມີເອກະສານ'];
+}
+async function rdOpenDocs() {
+  document.getElementById('view-rd-docs').classList.remove('hidden');
+  const body = document.getElementById('rdDocsBody');
+  body.innerHTML = '<div class="rd-empty"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
+  try { await rdFetchMine(); } catch (e) { body.innerHTML = '<div class="rd-empty">ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ - ກະລຸນາລອງໃໝ່</div>'; return; }
+  const seen = new Set(); rdDocRows = [];
+  rdData.built.rows.forEach((r) => { if (seen.has(r.stop.aid)) return; seen.add(r.stop.aid); rdDocRows.push(r); });
+  if (!rdDocRows.length) { body.innerHTML = '<div class="rd-empty"><i class="fa-solid fa-file-circle-xmark" style="font-size:34px;color:#94a3b8;"></i><br><br>ມື້ນີ້ຍັງບໍ່ມີຈຸດໃນແຜນ<br>ສ້າງແຜນກ່ອນ ຈຶ່ງຈະເຫັນເອກະສານຂອງແຕ່ລະຈຸດ</div>'; return; }
+  body.innerHTML = '<div class="rd-h2">ເອກະສານຂອງແຕ່ລະຈຸດໃນແຜນ (' + rdDocRows.length + ' ໃບ)</div>' + rdDocRows.map((r, i) => {
+    const a = r.stop.a, ds = rdDocStateLbl(a), isCancel = a.contract_kind === 'cancel';
+    return '<div class="rd-doc"><div class="nm">' + esc(r.stop.name) + '</div><div class="sb">' + esc((isCancel ? 'ໃບເກັບຕູ້ເຂົ້າສາງ' : 'ໃບສັນຍາຢືມ') + ' · ' + (a.tracking_no || '-') + ' · ' + (a.doc_type || '-')) + '</div>' +
+      '<span class="rd-dstate ' + ds[0] + '">' + ds[1] + '</span>' +
+      '<div class="acts"><button type="button" id="rdPrevBtn' + i + '" onclick="rdDocPreview(' + i + ')"><i class="fa-solid fa-image mr-1"></i> ເບິ່ງໜ້າທຳອິດ</button>' +
+      '<button type="button" class="pri" onclick="rdDocOpen(' + i + ')"><i class="fa-solid fa-file-pdf mr-1"></i> ເປີດ PDF</button></div>' +
+      '<div class="rd-prev hidden" id="rdPrev' + i + '"></div></div>';
+  }).join('');
+}
+async function rdFindDoc(a) {
+  if (rdDocInfo[a.id]) return rdDocInfo[a.id];
+  const cancel = a.contract_kind === 'cancel';
+  const r = await fetch((cancel ? '/api/cancel-contracts' : '/api/loan-contracts') + '?asset_id=' + encodeURIComponent(a.id));
+  if (!r.ok) { let m = ''; try { m = (await r.json()).error || ''; } catch (e) {} throw new Error(m || ('ບໍ່ສາມາດໂຫຼດເອກະສານ (HTTP ' + r.status + ')')); }
+  const list = await r.json(), c = (list || [])[0];
+  if (!c) throw new Error('ຍັງບໍ່ມີເອກະສານຂອງຕູ້ນີ້ໃນລະບົບ');
+  const info = { id: c.id, docNo: c.doc_no || '', url: (cancel ? '/api/cancel-contracts/pdf?id=' : '/api/loan-contracts/pdf?id=') + encodeURIComponent(c.id) };
+  rdDocInfo[a.id] = info; return info;
+}
+async function rdDocOpen(i) {
+  const r = rdDocRows[i]; if (!r) return;
+  try { const info = await rdFindDoc(r.stop.a); await fetchAndOpenPdf(info.url, info.docNo || ('doc-' + info.id)); }
+  catch (e) { rpToast(e.message || 'ເປີດ PDF ບໍ່ສຳເລັດ'); }
+}
+async function rdLoadPdfJs() {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = res; s.onerror = () => rej(new Error('ໂຫຼດເຄື່ອງມືສະແດງ PDF ບໍ່ສຳເລັດ ກະລຸນາກວດອິນເຕີເນັດ'));
+    document.head.appendChild(s);
+  });
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return window.pdfjsLib;
+}
+async function rdDocPreview(i) {
+  const r = rdDocRows[i]; if (!r) return;
+  const box = document.getElementById('rdPrev' + i), btn = document.getElementById('rdPrevBtn' + i);
+  if (!box.classList.contains('hidden')) { box.classList.add('hidden'); btn.innerHTML = '<i class="fa-solid fa-image mr-1"></i> ເບິ່ງໜ້າທຳອິດ'; return; } // ກົດຊ້ຳ = ພັບເກັບ
+  box.classList.remove('hidden'); box.innerHTML = '<div class="msg"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດເອກະສານ...</div>'; btn.disabled = true;
+  try {
+    const a = r.stop.a, info = await rdFindDoc(a);
+    if (!rdPdfBlobs[info.id]) {
+      const res = await fetch(info.url);
+      if (!res.ok) { let m = ''; try { m = (await res.json()).error || ''; } catch (e) {} throw new Error(m || ('ເປີດ PDF ບໍ່ໄດ້ (HTTP ' + res.status + ')')); }
+      rdPdfBlobs[info.id] = await res.blob();
+    }
+    const lib = await rdLoadPdfJs();
+    const pdf = await lib.getDocument({ data: new Uint8Array(await rdPdfBlobs[info.id].arrayBuffer()) }).promise;
+    const page = await pdf.getPage(1);
+    box.innerHTML = '<canvas></canvas>';
+    const canvas = box.querySelector('canvas'), v0 = page.getViewport({ scale: 1 });
+    const scale = Math.min(2.5, ((box.clientWidth || 320) * (window.devicePixelRatio || 1)) / v0.width), vp = page.getViewport({ scale });
+    canvas.width = vp.width; canvas.height = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    btn.innerHTML = '<i class="fa-solid fa-eye-slash mr-1"></i> ເຊື່ອງໜ້າທຳອິດ';
+  } catch (e) {
+    console.error(e);
+    box.innerHTML = '<div class="msg">' + esc(e.message || 'ສະແດງໜ້າທຳອິດບໍ່ສຳເລັດ') + '<br>ລອງກົດ "ເປີດ PDF" ແທນ</div>';
+  } finally { btn.disabled = false; }
 }
 </script>
 </body>

@@ -1593,6 +1593,7 @@ const ROUTE_ROLES = {
   "/api/asset-delivery/on-truck": ROLE_STAFF,
   "/api/route-plan": ["admin", "delivery"], // ແຜນເສັ້ນທາງປະຈຳວັນ ຂອງທີມຈັດສົ່ງ
   "/api/delivery-gps": ["delivery"], // delivery ສົ່ງຕຳແໜ່ງ GPS ລ່າສຸດຂອງຕົນເອງ (ຕອນເປີດໜ້າແຜນເສັ້ນທາງ)
+  "/api/route-plan/mine": ["admin", "delivery"], // ແຜນມື້ນີ້ຂອງຕົນເອງ + ຂໍ້ມູນ Asset (ລວມຈຸດທີ່ສຳເລັດແລ້ວ) ສຳລັບໜ້າ "ແຜນເສັ້ນທາງຂອງຂ້ອຍ"
   "/api/route-plan/overview": ["admin"], // admin ເບິ່ງແຜນຂອງ delivery ທຸກຄົນ (ໃຊ້ໃນ Map Tracking) — assistant_admin ນັບເປັນ admin
   "/api/asset-delivery/dispatch-cancel": ROLE_STAFF, // ຍົກເລີກການຂຶ້ນລົດ (ຂຶ້ນຜິດ)
   "/api/asset-delivery/close-truck": ROLE_STAFF, // ປິດລົດ (ຈົບການຂຶ້ນຕູ້)
@@ -9391,6 +9392,34 @@ export default {
       } catch (err) {
         console.error("/api/delivery-gps", err);
         return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ" }, { status: 500 });
+      }
+    }
+
+    // 6a2c. ແຜນຂອງຕົນເອງ (ຕາມ session) ຂອງວັນໃດໜຶ່ງ + ຂໍ້ມູນ Asset ຂອງທຸກຈຸດ (ລວມຈຸດທີ່ຈັດສົ່ງ/ເກັບສຳເລັດແລ້ວ ທີ່ /api/assets ບໍ່ສົ່ງມາ)
+    // GET /api/route-plan/mine?date=YYYY-MM-DD -> { date, items:[{asset_id,action,seq}], assets:{ [id]: asset } }
+    if (url.pathname === "/api/route-plan/mine" && request.method === "GET") {
+      try {
+        const date = String(url.searchParams.get("date") || "");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
+        const me = await env.DB.prepare("SELECT id, role FROM users WHERE id = ?").bind(url.searchParams.get("userId")).first();
+        if (!me || !(me.role === "delivery" || isAdminLike(me.role))) return Response.json({ error: "ບໍ່ມີສິດເຂົ້າເຖິງ" }, { status: 403 });
+        const { results: items } = await env.DB.prepare(
+          "SELECT asset_id, action, seq FROM delivery_route_plan_items WHERE user_id = ? AND plan_date = ? ORDER BY seq ASC, id ASC"
+        ).bind(me.id, date).all();
+        const ids = [...new Set((items || []).map((it) => it.asset_id))];
+        let rows = [];
+        for (let i = 0; i < ids.length; i += 80) {
+          const chunk = ids.slice(i, i + 80);
+          const { results } = await env.DB.prepare(`SELECT * FROM assets WHERE id IN (${chunk.map(() => "?").join(",")})`).bind(...chunk).all();
+          rows = rows.concat(results || []);
+        }
+        const withDocs = await attachDocStates(env, rows);
+        const assets = {};
+        (withDocs || []).forEach((a) => { assets[a.id] = a; });
+        return Response.json({ date, items: items || [], assets }, { headers: { "Cache-Control": "no-store" } });
+      } catch (err) {
+        console.error("/api/route-plan/mine", err);
+        return Response.json({ error: "ເກີດຂໍ້ຜິດພາດ: " + err.message }, { status: 500 });
       }
     }
 
