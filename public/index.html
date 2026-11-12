@@ -3685,7 +3685,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       </div>
       <!-- ມືຖື: ປຸ່ມກັບໄປໜ້າເມນູ (ສະແດງເມື່ອຢູ່ໜ້າທີ່ເຂົ້າຈາກເມນູ ແລະ ບໍ່ແມ່ນແຖບລຸ່ມ) -->
       <div id="mobileBackBar" class="mobile-backbar">
-        <button type="button" class="btn-back" onclick="openMenuPage()"><i class="fa-solid fa-arrow-left mr-1"></i> ກັບຄືນເມນູ</button>
+        <button type="button" id="mobileBackBtn" class="btn-back" onclick="mobileBackGo()"><i class="fa-solid fa-arrow-left mr-1"></i> <span id="mobileBackLbl">ກັບຄືນເມນູ</span></button>
       </div>
       
       <!-- VIEW 1: ໜ້າຫຼັກຂອງ User = ໜ້າຕ້ອນຮັບ (ງົບຂອງທີມຍ້າຍໄປເມນູ "ງົບປະມານຕູ້ຂອງທີມ") -->
@@ -10425,7 +10425,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     function deliverySubBack() {
       if (typeof dlvPopupActive !== 'undefined' && dlvPopupActive) { dlvPopupClose(); return; } // ເປີດເປັນ popup ຈາກໜ້າເມນູ -> ປິດ popup ຢູ່ໜ້າເມນູຄືເກົ່າ
       if (deliverySubHistoryPushed) { history.back(); return; }
-      switchView('deliveryHub');
+      switchView(currentUser && currentUser.role === 'delivery' ? 'home' : 'deliveryHub'); // ທີມຈັດສົ່ງ: ເມນູລາຍງານຢູ່ໜ້າຫຼັກ -> ກັບໜ້າຫຼັກ
     }
 
     window.addEventListener('popstate', () => {
@@ -10433,7 +10433,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       deliverySubHistoryPushed = false;
       // ກັບໜ້າ card ສະເພາະຕອນຢູ່ໜ້າຍ່ອຍຂອງເມນູນີ້ (ຖ້າຜູ້ໃຊ້ໄປເມນູອື່ນແລ້ວ ບໍ່ຕ້ອງດຶງກັບ)
       const onSub = Object.values(DELIVERY_SUB_VIEWS).some((id) => !document.getElementById(id).classList.contains('hidden'));
-      if (onSub) switchView('deliveryHub');
+      if (onSub) switchView(currentUser && currentUser.role === 'delivery' ? 'home' : 'deliveryHub');
     });
 
     /* ===== ແຈ້ງເຕືອນພິເສດ: ຖ້າ MDE ມີແຈ້ງເຕືອນທີ່ຍັງຄ້າງ ຈະໄປໄດ້ສະເພາະໜ້າທີ່ຕ້ອງດຳເນີນການ — ເມນູອື່ນ = ຂຶ້ນໜ້າແຈ້ງເຕືອນຄືນ ===== */
@@ -11644,9 +11644,9 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       if (role === 'delivery') {
         navDashboard.classList.add('hidden');
         navAsset.classList.add('hidden');
-        navMap.classList.remove('hidden'); // ທີມຈັດສົ່ງ: ເຫັນ Map Tracking (ເບິ່ງທຸກ Asset ຄືກັບ admin/warehouse)
+        navMap.classList.add('hidden'); // ທີມຈັດສົ່ງ: ໃຊ້ແຜນທີ່ໃນເມນູ "ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ" ແທນ
         navRequest.classList.add('hidden');
-        navHistory.classList.remove('hidden'); // ທີມຈັດສົ່ງ: ເມນູ "ປະຫວັດ Asset" ເປີດປະຫວັດການຈັດສົ່ງໂດຍກົງ
+        navHistory.classList.add('hidden'); // ທີມຈັດສົ່ງ: ບໍ່ໃຊ້ເມນູ "ປະຫວັດ Asset"
         document.getElementById('nav-loan-contract').classList.add('hidden'); // ທີມຈັດສົ່ງ: ບໍ່ອອກໃບສັນຍາຢືມ — ລູກຄ້າເຊັນຮັບໃນຂັ້ນຕອນລາຍງານການຈັດສົ່ງແທນ
         navDeliveryHub.classList.remove('hidden');
         navWarehouseStock.classList.add('hidden');
@@ -11678,6 +11678,8 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         document.getElementById('nav-vte-budget').classList.toggle('hidden', role !== 'admin');
       }
       navProfile.classList.remove('hidden');
+      // ທີມຈັດສົ່ງ: ບໍ່ໃຊ້ ປະກາດ / Playbook
+      ['nav-playbook', 'nav-announcements'].forEach((id) => document.getElementById(id).classList.toggle('hidden', role === 'delivery'));
       // ໜ້າຕ້ອນຮັບ: admin ແລະ warehouse (role user ໃຊ້ "ໜ້າຫຼັກ" ເປັນໜ້າຕ້ອນຮັບຢູ່ແລ້ວ)
       document.getElementById('nav-home').classList.toggle('hidden', !(role === 'admin' || role === 'warehouse' || role === 'delivery'));
       // role warehouse: ເຊື່ອງເມນູ User Dashboard ແລະ ໃບສັນຍາຢືມ/ໃບຍົກເລີກ (ບໍ່ມີສິດອອກໃບສັນຍາ)
@@ -12111,7 +12113,18 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
       // ໜ້າທີ່ບໍ່ຢູ່ໃນແຖບລຸ່ມ (ເຂົ້າຜ່ານໜ້າເມນູ) = ສະແດງປຸ່ມ "ກັບຄືນເມນູ" ເທິງສຸດ
       document.body.classList.toggle('show-mm-back', !menuOpen && !anyTab);
+      syncMobileBackLabel();
       moveTabIndicator(activeBtn);
+    }
+
+    // ປຸ່ມ "ກັບຄືນ" ເທິງສຸດ (ມືຖື): role delivery ບໍ່ມີແຖບເມນູ -> ກັບໄປໜ້າຫຼັກ; role ອື່ນ -> ໜ້າເມນູ
+    function mobileBackGo() {
+      if (currentUser && currentUser.role === 'delivery') { switchView('home'); window.scrollTo(0, 0); return; }
+      openMenuPage();
+    }
+    function syncMobileBackLabel() {
+      const l = document.getElementById('mobileBackLbl');
+      if (l) l.textContent = (currentUser && currentUser.role === 'delivery') ? 'ກັບຄືນໜ້າຫຼັກ' : 'ກັບຄືນເມນູ';
     }
 
     // ເລື່ອນວົງກົມ indicator ໄປຢູ່ກາງປຸ່ມທີ່ active (ບໍ່ມີປຸ່ມ active -> ຫຍໍ້ເກັບ)
@@ -29071,7 +29084,12 @@ function assetStatusBadgeClass(status) {
       { nav: 'nav-prov-budget',   view: 'provBudget',   icon: 'fa-map-location-dot',   t: 'ງົບຕູ້ແຊ່ຕ່າງແຂວງ',     d: 'ໂຄຕ້າຕູ້ ຕໍ່ ແຂວງ / ສາງ' },
       { nav: 'nav-loan-contract', view: 'loanContract', icon: 'fa-file-circle-plus',   t: 'ສ້າງເອກະສານ',          d: 'ໃບສັນຍາຢືມ ແລະ ໃບຍົກເລີກ' },
       { nav: 'nav-history',       view: 'historyHub',   icon: 'fa-clock-rotate-left',  t: 'ປະຫວັດ Asset',         d: 'ຄຳຂໍ ແລະ ເອກະສານທີ່ຜ່ານມາ' },
-      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  icon: 'fa-truck-ramp-box',     t: 'ລາຍງານການຈັດສົ່ງ',      d: 'ສົ່ງຕູ້, Event, ສະສາງ' },
+      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  fn: 'rdOpenHub()', noPr: true, icon: 'fa-route', t: 'ເສັ້ນທາງ ແລະ ການຈັດສົ່ງ', d: 'ແຜນເສັ້ນທາງ · ແຜນທີ່ · ວຽກຈັດສົ່ງ · ເອກະສານ', roles: ['delivery'] },
+      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  fn: 'rpOpen()', noPr: true, icon: 'fa-route', t: 'Route Plan', d: 'ແຜນເສັ້ນທາງຈັດສົ່ງ/ເກັບຕູ້ຂອງມື້ນີ້', roles: ['delivery'] },
+      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  fn: "openDeliverySub('deliverConfirm')", noPr: true, icon: 'fa-qrcode', t: 'ລາຍງານການຈັດສົ່ງ', d: 'ສະແກນ QR ແລະ ຖ່າຍຮູບຢືນຢັນ → ສຳເລັດ', roles: ['delivery'] },
+      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  fn: "openDeliverySub('noDocDelivery')", noPr: true, icon: 'fa-file-circle-exclamation', t: 'ລາຍງານຈັດສົ່ງບໍ່ມີເອກະສານ', d: 'ບັນທຶກເອງ ເມື່ອບໍ່ມີເອກະສານ', roles: ['delivery'] },
+      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  fn: "openDeliverySub('coolerEvent')", noPr: true, icon: 'fa-calendar-days', t: 'ລາຍງານຕູ້ແຊ່ Event', d: 'ຕູ້ທີ່ເອົາໄປໃຊ້ງານ Event ແລະ ຕິດຕາມການສົ່ງຄືນ', roles: ['delivery'] },
+      { nav: 'nav-delivery-hub',  view: 'deliveryHub',  icon: 'fa-truck-ramp-box',     notRoles: ['delivery'], t: 'ລາຍງານການຈັດສົ່ງ',      d: 'ສົ່ງຕູ້, Event, ສະສາງ' },
       { nav: 'nav-warehouse-stock', view: 'warehouseStock', icon: 'fa-warehouse',      t: 'ສະຕັອກສາງ',            d: 'ຈຳນວນຕູ້ໃນສາງ' },
       { nav: 'nav-stock-count',   view: 'stockCount',   icon: 'fa-boxes-stacked',      t: 'ກວດນັບສາງ',            d: 'ບັນທຶກຜົນກວດນັບສະຕັອກ' },
       { nav: 'nav-cooler-master', view: 'coolerMaster', icon: 'fa-magnifying-glass-location', t: 'ຄົ້ນຫາຕູ້ໃນລະບົບ', d: 'ສະແກນ/ຄົ້ນຫາ QR, Serial, CapEx' },
@@ -29099,7 +29117,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       const chips = [];
       if (u.team) chips.push(`<span class="tb-chip-id">${wlChipIc('chip-team','teambudget')}<i class="fa-solid fa-users"></i>Team: ${esc(u.team)}</span>`);
       if (u.mde_code) chips.push(`<span class="tb-chip-id">${wlChipIc('chip-mde','asset')}<i class="fa-solid fa-id-badge"></i>MDE: ${esc(u.mde_code)}</span>`);
-      const tiles = WL_TILES.filter(x => { if (x.roles && !x.roles.includes(u.role)) return false; const n = document.getElementById(x.nav); return n && !n.classList.contains('hidden'); });
+      const tiles = WL_TILES.filter(x => { if (x.roles && !x.roles.includes(u.role)) return false; if (x.notRoles && x.notRoles.includes(u.role)) return false; const n = document.getElementById(x.nav); return n && !n.classList.contains('hidden'); });
       if (u.isAssistantAdmin) chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-assistant-admin','adminmgmt') + '<i class="fa-solid fa-user-shield"></i>ຜູ້ຊ່ວຍ Admin</span>');
       else if (u.role === 'admin') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-admin','adminmgmt') + '<i class="fa-solid fa-user-shield"></i>Admin</span>');
       else if (u.role === 'dsm') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-dsm','dsmsign') + '<i class="fa-solid fa-user-tie"></i>DSM' + (u.team ? ' · ' + esc(u.team) : '') + '</span>');
@@ -29107,7 +29125,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       else if (u.role === 'warehouse') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-warehouse','stock') + '<i class="fa-solid fa-warehouse"></i>ພະນັກງານສາງ</span>');
       document.getElementById('wlChips').innerHTML = chips.join('');
       document.getElementById('wlGrid').innerHTML = tiles.map((x, i) =>
-        `<button type="button" class="wl-card" style="--i:${i}" onclick="switchView('${x.view}')"><span class="wl-ic">${WL_OWN[x.nav] ? wlOwnIc(WL_OWN[x.nav], WL_PR[x.nav]) : (window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
+        `<button type="button" class="wl-card" style="--i:${i}" onclick="${x.fn ? x.fn : `switchView('${x.view}')`}"><span class="wl-ic">${x.noPr ? '' : WL_OWN[x.nav] ? wlOwnIc(WL_OWN[x.nav], WL_PR[x.nav]) : (window.mmPr ? mmPr(WL_PR[x.nav] || '') : '')}<i class="fa-solid ${x.icon}"></i></span><span><b>${esc(x.t)}</b><span class="wl-d">${esc(x.d)}</span></span></button>`).join('');
       wlFilter((document.getElementById('wlSearch')||{}).value||'');
       wlLoadStats();
       deskTopbarSync();
