@@ -34682,7 +34682,20 @@ function rpRenderSelectSheet() {
       g.stops.map((s) => '<div style="margin-top:4px;">' + rpTagHtml(s) + '<span class="rp-meta">' + rpStopLine(s) + '</span></div>').join('') + '</div>' +
       '<div class="rp-act">' + g.stops.map((s) => '<button type="button" class="' + (rpSel.has(s.key) ? 'on' : 'alt') + '" onclick="rpToggle(\'' + s.key + '\')">' + (rpSel.has(s.key) ? '✓ ໃນແຜນ' : '+ ເພີ່ມ') + '</button>').join('') + '</div></div>').join('');
   }
-  document.getElementById('rpFooter').innerHTML = '<button type="button" class="btn-submit" style="margin:0;" ' + (sel.length ? '' : 'disabled') + ' onclick="rpSave()"><i class="fa-solid fa-flag-checkered mr-1"></i> ບັນທຶກແຜນ & ເລີ່ມເດີນທາງ (' + sel.length + ')</button>';
+  document.getElementById('rpFooter').innerHTML = '<button type="button" class="btn-submit" style="margin:0;" ' + (sel.length ? '' : 'disabled') + ' onclick="rpSave()"><i class="fa-solid fa-flag-checkered mr-1"></i> ບັນທຶກແຜນ & ເລີ່ມເດີນທາງ (' + sel.length + ')</button>' + (rpSavedKeys.length ? '<button type="button" class="btn-submit" style="margin:8px 0 0;background:#fee2e2;color:#b91c1c;" onclick="rpDeletePlan()"><i class="fa-solid fa-trash mr-1"></i> ລົບແຜນມື້ນີ້</button>' : '');
+}
+/* ລົບແຜນມື້ນີ້ທັງໝົດ: ສົ່ງ items ຫວ່າງໄປ /api/route-plan -> server ລຶບແຜນ ແລະ ຕູ້ທີ່ "ຢູ່ໃນແຜນຈັດສົ່ງ" ກັບສະຖານະເດີມ */
+async function rpDeletePlan() {
+  if (!(await appConfirm('ລົບແຜນເສັ້ນທາງມື້ນີ້ທັງໝົດ? ຕູ້ທີ່ຢູ່ໃນແຜນ (ຍັງບໍ່ຂຶ້ນລົດ) ຈະກັບເປັນສະຖານະເດີມ'))) return;
+  try {
+    const r = await fetch('/api/route-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: currentUser.id, date: rpToday(), items: [] }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { appAlert(j.error || 'ລົບແຜນບໍ່ສຳເລັດ'); return; }
+    rpAssetsCache = null; rpSavedKeys = []; rpDoneCount = 0; rpDoneStops = [];
+    rpLsSet('rp_later_' + currentUser.id + '_' + rpToday(), '1');
+    rpToast('ລົບແຜນມື້ນີ້ແລ້ວ');
+    rpOpen(true); // ໂຫຼດໃໝ່ -> ກັບໄປໜ້າເລືອກຮ້ານ
+  } catch (e) { console.error(e); appAlert('ລົບແຜນບໍ່ສຳເລັດ - ກວດອິນເຕີເນັດແລ້ວລອງໃໝ່'); }
 }
 function rpFocusGroup(gkey) { const m = rpMarkers[gkey]; if (m) { rpMap.flyTo(m.getLatLng(), Math.max(rpMap.getZoom(), 16)); m.openPopup(); } }
 
@@ -34749,7 +34762,8 @@ function rpRenderPlan(keepView) {
   list.style.display = (rpTab === 'list' || !rpGroups.length) ? '' : 'none';
   document.getElementById('rpFooter').innerHTML =
     (rpGroups.length ? '<button type="button" class="btn-submit" style="margin:0 0 8px;background:#0B6B3A;color:#fff;" onclick="rpNavigate(\'' + rpGroups[0].gkey + '\')"><i class="fa-solid fa-diamond-turn-right mr-1"></i> ນຳທາງໄປຈຸດຖັດໄປ</button>' : '') +
-    '<button type="button" class="btn-submit" style="margin:0;background:#E6F2E8;color:#0B6B3A;" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂແຜນ / ເພີ່ມຮ້ານ</button>';
+    '<button type="button" class="btn-submit" style="margin:0;background:#E6F2E8;color:#0B6B3A;" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂແຜນ / ເພີ່ມຮ້ານ</button>' +
+    '<button type="button" class="btn-submit" style="margin:8px 0 0;background:#fee2e2;color:#b91c1c;" onclick="rpDeletePlan()"><i class="fa-solid fa-trash mr-1"></i> ລົບແຜນມື້ນີ້</button>';
   rpLoadTrip();
 }
 let rpNavInfo = '';
