@@ -989,6 +989,79 @@ async function notifyMdeUserOfStatusChange(env, mdeCode, trackingNo, outletName,
 }
 
 // ==========================================================================
+// ຕູ້ໃນ "ແຜນເສັ້ນທາງ" ຂອງວັນກ່ອນ ທີ່ບໍ່ໄດ້ຈັດສົ່ງ (ຍັງເປັນ "ຢູ່ໃນແຜນຈັດສົ່ງ" = ບໍ່ໄດ້ສະແກນຂຶ້ນລົດ ແລະ ບໍ່ຢູ່ໃນແຜນຂອງມື້ນີ້/ມື້ຕໍ່ໄປ)
+//   -> ກັບເປັນສະຖານະເດີມ (ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ) ເພື່ອໃຫ້ຖືກຈັດໃສ່ແຜນໃໝ່ໄດ້
+//   -> ແຈ້ງເຕືອນ MDE ວ່າ "ຈັດສົ່ງບໍ່ສຳເລັດ ຈະຈັດສົ່ງໃໝ່ໃນມື້ຕໍ່ໄປ"
+// ຮັນອັດຕະໂນມັດທຸກເຊົ້າໃນ scheduled() — ຕູ້ທີ່ຂຶ້ນລົດແລ້ວ (ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ) ບໍ່ຖືກແຕະຕ້ອງ ເພາະມີຂັ້ນຕອນຍົກເລີກ/ປິດລົດຂອງຕົນເອງ
+// ບໍ່ throw error ອອກໄປ ເພື່ອບໍ່ໃຫ້ກະທົບ cron ອື່ນ
+// ==========================================================================
+async function revertStalePlanAssets(env) {
+  const out = { reverted: 0, notified: 0 };
+  try {
+    const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10); // ວັນທີປັດຈຸບັນ ເວລາລາວ (UTC+7)
+    const { results } = await env.DB.prepare(
+      `SELECT a.id, a.mde_code, a.tracking_no, a.outlet_name, a.doc_type, a.dispatch_prev_status
+         FROM assets a
+        WHERE a.status = ? AND a.dispatched_at IS NULL
+          AND EXISTS (SELECT 1 FROM delivery_route_plan_items p WHERE p.asset_id = a.id AND p.plan_date < ?)
+          AND NOT EXISTS (SELECT 1 FROM delivery_route_plan_items p WHERE p.asset_id = a.id AND p.plan_date >= ?)
+        LIMIT 500`
+    ).bind(PLAN_DISPATCH_STATUS, today, today).all();
+    const rows = results || [];
+    if (!rows.length) return out;
+
+    // 1) ກັບສະຖານະເດີມ (ກັນຊົນກັນ: ແກ້ສະເພາະແຖວທີ່ຍັງເປັນ "ຢູ່ໃນແຜນຈັດສົ່ງ" ແລະ ຍັງບໍ່ໄດ້ຂຶ້ນລົດ)
+    const reverted = [];
+    for (let i = 0; i < rows.length; i += 50) {
+      const chunk = rows.slice(i, i + 50);
+      const stmts = chunk.map((a) => {
+        const prev = WAITING_DISPATCH_STATUSES.includes(a.dispatch_prev_status)
+          ? a.dispatch_prev_status
+          : (COLLECT_DOC_TYPES.includes(a.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS);
+        return env.DB.prepare(
+          "UPDATE assets SET status = ?, dispatch_prev_status = NULL, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status = ? AND dispatched_at IS NULL"
+        ).bind(prev, a.id, PLAN_DISPATCH_STATUS);
+      });
+      const res = await env.DB.batch(stmts);
+      res.forEach((r, k) => { if (r && r.meta && r.meta.changes > 0) reverted.push(chunk[k]); });
+    }
+    out.reverted = reverted.length;
+
+    // 2) ແຈ້ງເຕືອນ MDE (ລວມເປັນ 1 push ຕໍ່ MDE ເພື່ອບໍ່ໃຫ້ເກີນຂີດຈຳກັດ subrequest)
+    const byMde = new Map();
+    for (const a of reverted) {
+      if (!a.mde_code) continue;
+      if (!byMde.has(a.mde_code)) byMde.set(a.mde_code, []);
+      byMde.get(a.mde_code).push(a);
+    }
+    let sent = 0;
+    for (const [mdeCode, list] of byMde) {
+      if (sent >= MAX_BULK_MDE_NOTIFY) break;
+      try {
+        const mdeUser = await env.DB.prepare("SELECT id FROM users WHERE mde_code = ? AND role = 'user'").bind(mdeCode).first();
+        if (!mdeUser) continue;
+        const mdeName = await getMdeName(env, mdeCode);
+        let body;
+        if (list.length === 1) {
+          const detailLine = formatMdeOutletLine(mdeCode, mdeName, list[0].outlet_name);
+          body = `${list[0].tracking_no || ''}${detailLine ? '\n' + detailLine : ''}\nຈັດສົ່ງບໍ່ສຳເລັດ ຈະຈັດສົ່ງໃໝ່ໃນມື້ຕໍ່ໄປ`;
+        } else {
+          const shown = list.slice(0, 3).map((a) => `• ${a.tracking_no || ''}${a.outlet_name ? ' - ' + a.outlet_name : ''}`).join('\n');
+          const more = list.length > 3 ? `\nແລະອີກ ${list.length - 3} ຕູ້` : '';
+          body = `ຈັດສົ່ງບໍ່ສຳເລັດ ${list.length} ຕູ້\n${shown}${more}\nຈະຈັດສົ່ງໃໝ່ໃນມື້ຕໍ່ໄປ`;
+        }
+        await sendWebPushToUser(env, mdeUser.id, { title: "ຈັດສົ່ງບໍ່ສຳເລັດ", body, url: "asset" });
+        sent++;
+      } catch (pushErr) { /* ແຈ້ງເຕືອນບໍ່ສຳເລັດ ບໍ່ກະທົບການກັບສະຖານະ */ }
+    }
+    out.notified = sent;
+  } catch (e) {
+    console.error("revertStalePlanAssets", e && e.message ? e.message : e);
+  }
+  return out;
+}
+
+// ==========================================================================
 // ແຈ້ງເຕືອນງົບປະມານຂອງທີມ (Budget Available Notification)
 // ສົ່ງຫາ user (role = 'user', ອະນຸມັດແລ້ວ) ຂອງທີມນັ້ນ ເມື່ອ:
 //   1) Admin ເພີ່ມງົບໃໝ່ (Brand/Type ໃໝ່) ຫຼື ເພີ່ມໂຄຕ້າໃຫ້ງົບເກົ່າ ແລະ ຍັງເຫຼືອໃຫ້ເບີກ
@@ -13590,6 +13663,7 @@ export default {
         .catch((e) => console.error("scheduled runSignReminderEmails", e)));
       return;
     }
+    ctx.waitUntil(revertStalePlanAssets(env)); // ຕູ້ໃນແຜນຂອງວັນກ່ອນທີ່ບໍ່ໄດ້ຈັດສົ່ງ -> ກັບສະຖານະເດີມ + ແຈ້ງ MDE
     ctx.waitUntil(reconcileSignedAssets(env));
     ctx.waitUntil(runAutomatedNotificationChecks(env));
   }
