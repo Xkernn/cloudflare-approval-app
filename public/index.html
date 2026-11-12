@@ -4439,11 +4439,16 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
           <!-- STEP 4: ຮູບເອກະສານ + ຢືນຢັນ -->
           <div id="deliverStep4" class="loan-step-panel hidden">
             <div class="form-group">
-              <label>ຖ່າຍ ຫຼື ເລືອກຮູບເອກະສານ</label>
+              <label>ຮູບເອກະສານ <span style="font-weight:500; color: var(--text-muted);">(ບໍ່ບັງຄັບ)</span></label>
+              <p id="deliverDocAutoMsg" style="font-size:12.5px; margin:2px 0 8px; color: var(--text-muted);">ລະບົບຈະດຶງແຄັບໜ້າທຳອິດຂອງ PDF ໃບສັນຍາ/ໃບເກັບຕູ້ມາໃສ່ໃຫ້ອັດຕະໂນມັດ ຖ້າບໍ່ມີ PDF ກົດ "ຕໍ່ໄປ" ຂ້າມຂັ້ນຕອນນີ້ໄດ້ເລີຍ</p>
               <div class="input-wrapper"><i class="fa-solid fa-file-lines"></i>
                 <input type="file" id="deliverPhotoDocumentInput" class="form-control" accept="image/*" onchange="handleDeliveryPhotoSelect(event, 'document')">
               </div>
-              <img alt="" id="deliverPhotoDocumentPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 16px;">
+              <img alt="" id="deliverPhotoDocumentPreview" class="hidden" style="max-width: 100%; border-radius: 10px; margin-top: 8px; margin-bottom: 8px;">
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+                <button type="button" class="btn-add" onclick="deliverRecaptureDoc()"><i class="fa-solid fa-rotate mr-1"></i> ດຶງໜ້າທຳອິດ PDF ໃໝ່</button>
+                <button type="button" class="btn-add" onclick="deliverClearDoc()"><i class="fa-solid fa-ban mr-1"></i> ບໍ່ໃສ່ຮູບເອກະສານ</button>
+              </div>
             </div>
 
             <div class="loan-nav-btns">
@@ -24528,6 +24533,93 @@ function assetStatusBadgeClass(status) {
     const DELIVER_TOTAL_STEPS = 5;
     let deliverLoanContract = null; // ໃບສັນຍາຢືມທີ່ຜູກກັບ Asset ທີ່ກຳລັງຈັດສົ່ງ (ຖ້າມີ) — ໃຊ້ບອກວ່າລາຍເຊັນລູກຄ້າຈະໄປຢູ່ໃສ
 
+    /* ===== ຮູບເອກະສານ (ຂັ້ນຕອນ 4): ດຶງແຄັບໜ້າທຳອິດຂອງ PDF ໃບສັນຍາ/ໃບເກັບຕູ້ ມາໃສ່ອັດຕະໂນມັດ — ບໍ່ມີ PDF = ຂ້າມໄດ້ ===== */
+    let deliverDocToken = 0;      // ກັນຜົນລັບເກົ່າທັບ ເມື່ອປ່ຽນ/ຣີເຊັດ Asset ລະຫວ່າງກຳລັງໂຫຼດ
+    let deliverDocBusy = false;
+    let deliverCurrentAsset = null;
+
+    function deliverSetDocMsg(text, color) {
+      const el = document.getElementById('deliverDocAutoMsg');
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = color || 'var(--text-muted)';
+    }
+
+    function deliverSetDocImage(dataUrl) {
+      const preview = document.getElementById('deliverPhotoDocumentPreview');
+      deliverPhotos.document = dataUrl || null;
+      if (preview) {
+        if (dataUrl) { preview.src = dataUrl; preview.classList.remove('hidden'); }
+        else { preview.classList.add('hidden'); preview.removeAttribute('src'); }
+      }
+      updateDeliverConfirmBtnState();
+    }
+
+    // ຫາ PDF ຂອງ Asset: doc_type ເກັບຄືນສາງ = ໃບເກັບຕູ້ (T-), ອື່ນໆ = ໃບສັນຍາຢືມ; ໃຊ້ endpoint ເດີມທີ່ delivery ເບິ່ງໄດ້ຢູ່ແລ້ວ
+    async function deliverFetchDocPdfBlob(a) {
+      const cancel = isCancelKind(a);
+      const r = await fetch((cancel ? '/api/cancel-contracts' : '/api/loan-contracts') + '?asset_id=' + encodeURIComponent(a.id));
+      if (!r.ok) return null;
+      const list = await r.json();
+      const c = (list || [])[0];
+      if (!c) return null;
+      const res = await fetch((cancel ? '/api/cancel-contracts/pdf?id=' : '/api/loan-contracts/pdf?id=') + encodeURIComponent(c.id));
+      if (!res.ok) return null;
+      return { blob: await res.blob(), docNo: c.doc_no || '' };
+    }
+
+    async function deliverAutoCaptureDoc(a) {
+      const token = ++deliverDocToken;
+      deliverCurrentAsset = a || null;
+      deliverSetDocImage(null);
+      if (!a) return;
+      deliverDocBusy = true;
+      deliverSetDocMsg('ກຳລັງດຶງແຄັບໜ້າທຳອິດຈາກ PDF...', '#0B6B3A');
+      try {
+        const pdf = await deliverFetchDocPdfBlob(a);
+        if (token !== deliverDocToken) return;
+        if (!pdf) {
+          deliverSetDocMsg('ບໍ່ພົບ PDF ເອກະສານຂອງຕູ້ນີ້ — ຂ້າມຂັ້ນຕອນນີ້ໄດ້ (ກົດ "ຕໍ່ໄປ") ຫຼື ຖ່າຍຮູບເອກະສານເອງ', '#b45309');
+          return;
+        }
+        const lib = await rdLoadPdfJs();
+        const doc = await lib.getDocument({ data: new Uint8Array(await pdf.blob.arrayBuffer()) }).promise;
+        const page = await doc.getPage(1);
+        if (token !== deliverDocToken) return;
+        const v0 = page.getViewport({ scale: 1 });
+        const scale = Math.min(3, 1400 / v0.width);
+        const vp = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        if (token !== deliverDocToken) return;
+        deliverSetDocImage(canvas.toDataURL('image/jpeg', 0.8));
+        const input = document.getElementById('deliverPhotoDocumentInput'); if (input) input.value = '';
+        deliverSetDocMsg('ດຶງແຄັບໜ້າທຳອິດຂອງ PDF' + (pdf.docNo ? ' ' + pdf.docNo : '') + ' ແລ້ວ — ຖ້າຕ້ອງການ ຖ່າຍ/ເລືອກຮູບເອກະສານເອງແທນໄດ້', '#15803d');
+      } catch (e) {
+        console.error('deliverAutoCaptureDoc', e);
+        if (token !== deliverDocToken) return;
+        deliverSetDocImage(null);
+        deliverSetDocMsg('ດຶງແຄັບ PDF ບໍ່ສຳເລັດ — ຂ້າມຂັ້ນຕອນນີ້ໄດ້ (ກົດ "ຕໍ່ໄປ") ຫຼື ຖ່າຍຮູບເອກະສານເອງ', '#b45309');
+      } finally {
+        if (token === deliverDocToken) deliverDocBusy = false;
+      }
+    }
+
+    function deliverRecaptureDoc() {
+      if (!deliverCurrentAsset) { appAlert('ກະລຸນາຄົ້ນຫາ Asset ກ່ອນ'); return; }
+      deliverAutoCaptureDoc(deliverCurrentAsset);
+    }
+
+    function deliverClearDoc() {
+      deliverDocToken++; deliverDocBusy = false;
+      const input = document.getElementById('deliverPhotoDocumentInput'); if (input) input.value = '';
+      deliverSetDocImage(null);
+      deliverSetDocMsg('ຂ້າມຮູບເອກະສານ — ຈະຖືກບັນທຶກວ່າຈັດສົ່ງແບບບໍ່ມີຮູບເອກະສານ', '#b45309');
+    }
+
     /* ຂັ້ນຕອນທີ 5 (ລູກຄ້າເຊັນຮັບ) ສະເພາະ role delivery (tablet ຂອງທີມຈັດສົ່ງ) — role ອື່ນຢືນຢັນທີ່ຂັ້ນຕອນ 4 ຄືເກົ່າ */
     function deliverNeedsSignature() { return !!currentUser && currentUser.role === 'delivery'; }
     function deliverTotalSteps() { return deliverNeedsSignature() ? 5 : 4; }
@@ -24577,8 +24669,8 @@ function assetStatusBadgeClass(status) {
         appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບ CapEx ແລະ Asset ໃຫ້ຄົບກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
         return false;
       }
-      if (step === 4 && !deliverPhotos.document) {
-        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບເອກະສານກ່ອນໄປຂັ້ນຕອນຕໍ່ໄປ');
+      if (step === 4 && deliverDocBusy) {
+        appAlert('ກຳລັງດຶງແຄັບໜ້າທຳອິດຈາກ PDF ກະລຸນາລໍຖ້າສັກຄູ່ ຫຼື ກົດ "ບໍ່ໃສ່ຮູບເອກະສານ" ເພື່ອຂ້າມ');
         return false;
       }
       return true;
@@ -24594,7 +24686,7 @@ function assetStatusBadgeClass(status) {
     }
 
     function updateDeliverConfirmBtnState() {
-      const allDone = deliverPhotos.qr && deliverPhotos.serial && deliverPhotos.capex && deliverPhotos.asset && deliverPhotos.document;
+      const allDone = deliverPhotos.qr && deliverPhotos.serial && deliverPhotos.capex && deliverPhotos.asset; // ຮູບເອກະສານບໍ່ບັງຄັບ
       document.getElementById('deliverConfirmBtn').disabled = !allDone;
       document.getElementById('deliverConfirmBtn4').disabled = !allDone;
     }
@@ -24611,6 +24703,8 @@ function assetStatusBadgeClass(status) {
       });
       deliverPhotos = { qr: null, serial: null, capex: null, asset: null, document: null };
       deliverLoanContract = null;
+      deliverDocToken++; deliverDocBusy = false; deliverCurrentAsset = null;
+      deliverSetDocMsg('ລະບົບຈະດຶງແຄັບໜ້າທຳອິດຂອງ PDF ໃບສັນຍາ/ໃບເກັບຕູ້ມາໃສ່ໃຫ້ອັດຕະໂນມັດ ຖ້າບໍ່ມີ PDF ກົດ "ຕໍ່ໄປ" ຂ້າມຂັ້ນຕອນນີ້ໄດ້ເລີຍ');
       document.getElementById('deliverSigName').value = '';
       clearSignaturePad('deliverSigCanvas');
       document.getElementById('deliverConfirmBtn').disabled = true;
@@ -24665,6 +24759,7 @@ function assetStatusBadgeClass(status) {
         deliverPhotos = { qr: null, serial: null, capex: null, asset: null, document: null };
         document.getElementById('deliverConfirmBtn').disabled = true;
         document.getElementById('deliverAssetInfo').classList.remove('hidden');
+        deliverAutoCaptureDoc(a); // ດຶງແຄັບໜ້າທຳອິດ PDF ມາໃສ່ຮູບເອກະສານ (ເບື້ອງຫຼັງ, ບໍ່ລໍຖ້າ)
       } catch (err) {
         msgEl.textContent = 'ເກີດຂໍ້ຜິດພາດໃນການຄົ້ນຫາ Asset';
         msgEl.style.color = '#dc2626';
@@ -27442,8 +27537,10 @@ function assetStatusBadgeClass(status) {
 
     function handleDeliveryPhotoSelect(event, type) {
       const keyMap = { qr: 'Qr', serial: 'Serial', capex: 'Capex', asset: 'Asset', document: 'Document' };
+      if (type === 'document') { deliverDocToken++; deliverDocBusy = false; } // ຖ່າຍ/ເລືອກຮູບເອງ = ຢຸດການດຶງ PDF ອັດຕະໂນມັດ
       handlePhotoInput(event, `deliverPhoto${keyMap[type]}Preview`, (dataUrl) => {
         deliverPhotos[type] = dataUrl;
+        if (type === 'document') deliverSetDocMsg(dataUrl ? 'ໃຊ້ຮູບເອກະສານທີ່ຖ່າຍ/ເລືອກເອງ' : 'ບໍ່ມີຮູບເອກະສານ — ຂ້າມໄດ້', dataUrl ? '#15803d' : '#b45309');
         updateDeliverConfirmBtnState();
       });
     }
@@ -27451,10 +27548,11 @@ function assetStatusBadgeClass(status) {
         async function confirmAssetDelivery() {
       const id = document.getElementById('deliverAssetId').value;
       if (!id) return;
-      if (!deliverPhotos.qr || !deliverPhotos.serial || !deliverPhotos.capex || !deliverPhotos.asset || !deliverPhotos.document) {
-        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)');
+      if (!deliverPhotos.qr || !deliverPhotos.serial || !deliverPhotos.capex || !deliverPhotos.asset) {
+        appAlert('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບ 4 ຢ່າງ (QR Code, Serial, CapEx, Asset)');
         return;
       }
+      if (deliverDocBusy) { appAlert('ກຳລັງດຶງແຄັບໜ້າທຳອິດຈາກ PDF ກະລຸນາລໍຖ້າສັກຄູ່'); return; }
       const needSig = deliverNeedsSignature();
       const sigName = needSig ? document.getElementById('deliverSigName').value.trim() : '';
       const sigData = needSig ? getSignatureDataUrl('deliverSigCanvas') : null;
@@ -27473,7 +27571,7 @@ function assetStatusBadgeClass(status) {
             userId: currentUser.id, id,
             photo_qr: deliverPhotos.qr, photo_serial: deliverPhotos.serial,
             photo_capex: deliverPhotos.capex, photo_asset: deliverPhotos.asset,
-            photo_document: deliverPhotos.document,
+            photo_document: deliverPhotos.document || null,
             sig_outlet: sigData, sig_outlet_name: sigName
           })
         });

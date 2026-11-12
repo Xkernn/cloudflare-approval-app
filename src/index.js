@@ -11127,8 +11127,10 @@ export default {
       try {
         const { userId, id, photo_qr, photo_serial, photo_capex, photo_asset, photo_document, sig_outlet, sig_outlet_name } = await request.json();
         if (!userId || !id) return Response.json({ error: "ຂໍ້ມູນບໍ່ຄົບຖ້ວນ" }, { status: 400 });
-        if (!photo_qr || !photo_serial || !photo_capex || !photo_asset || !photo_document) {
-          return Response.json({ error: "ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບທັງ 5 ຢ່າງ (QR Code, Serial, CapEx, Asset, ເອກະສານ)" }, { status: 400 });
+        // ຮູບເອກະສານ (photo_document) ບໍ່ບັງຄັບ: ຝັ່ງໜ້າເວັບດຶງແຄັບໜ້າທຳອິດຂອງ PDF ໃບສັນຍາມາໃສ່ໃຫ້ ຖ້າບໍ່ມີ PDF ກໍຂ້າມຂັ້ນຕອນໄດ້
+        // (ບໍ່ມີຮູບເອກະສານ -> delivery_photo_document = NULL -> delivery_doc_state = 'no_doc' ຄືກັບລາຍງານແບບບໍ່ມີເອກະສານ)
+        if (!photo_qr || !photo_serial || !photo_capex || !photo_asset) {
+          return Response.json({ error: "ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບຢືນຢັນໃຫ້ຄົບ 4 ຢ່າງ (QR Code, Serial, CapEx, Asset)" }, { status: 400 });
         }
 
         const requester = await env.DB.prepare("SELECT role, mde_code, email FROM users WHERE id = ?").bind(userId).first();
@@ -11164,7 +11166,7 @@ export default {
           [photo_serial, `delivery/${id}/serial-${stamp}.jpg`],
           [photo_capex, `delivery/${id}/capex-${stamp}.jpg`],
           [photo_asset, `delivery/${id}/asset-${stamp}.jpg`],
-          [photo_document, `delivery/${id}/document-${stamp}.jpg`],
+          [photo_document || null, `delivery/${id}/document-${stamp}.jpg`],
           [sigData, sigKey],
         ]);
 
