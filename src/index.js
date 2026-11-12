@@ -102,6 +102,9 @@ const WAITING_DISPATCH_STATUS = "ລໍຖ້າຂົນສົ່ງອອກ�
 const COLLECT_WAITING_STATUS = "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ";
 const COLLECT_DOC_TYPES = ["ຕູ້ເຄື່ອນຍ້າຍ", "ເກັບຄືນສາງ"];
 const WAITING_DISPATCH_STATUSES = [WAITING_DISPATCH_STATUS, COLLECT_WAITING_STATUS];
+// ຕູ້ທີ່ role delivery ເພີ່ມເຂົ້າ "ແຜນເສັ້ນທາງ" (route plan) -> ສະຖານະເປັນ "ຢູ່ໃນແຜນຈັດສົ່ງ" ອັດຕະໂນມັດ (ເກັບສະຖານະເດີມໃນ dispatch_prev_status)
+// ເອົາອອກຈາກແຜນທຸກແຜນ -> ກັບເປັນສະຖານະເດີມ (ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ)
+const PLAN_DISPATCH_STATUS = "ຢູ່ໃນແຜນຈັດສົ່ງ";
 // ຄ່າໃນ DB ຍັງເປັນ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" ສະເໝີ — ປ່ຽນສະເພາະຂໍ້ຄວາມທີ່ສະແດງ/ແຈ້ງເຕືອນຕາມ Doc Type
 function onTruckLabel(docType) {
   if (docType === "ເກັບຄືນສາງ") return "ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ";
@@ -112,7 +115,7 @@ const SHIPPING_NOTIFY_STATUSES = ["ຢູ່ລະຫວ່າງເຄື່ອ
 // ປ່ຽນເປັນສະຖານະເຫຼົ່ານີ້ -> push ແຈ້ງ warehouse/delivery (ລວມ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ທີ່ເປັນຈຸດເລີ່ມຂອງວຽກຂອງສາງ)
 const DISPATCH_NOTIFY_STATUSES = [...WAITING_DISPATCH_STATUSES, ...SHIPPING_NOTIFY_STATUSES];
 // ສະຖານະທີ່ສະແດງໃນແຜນທີ່: ລໍຖ້າ (ຂົນສົ່ງ/ເກັບຕູ້ຮ້ານເກົ່າ) + ຢູ່ເທິງລົດ (ແລະ ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ ສຳລັບຂໍ້ມູນເກົ່າ)
-const MAP_STATUSES = [...WAITING_DISPATCH_STATUSES, ...SHIPPING_NOTIFY_STATUSES];
+const MAP_STATUSES = [...WAITING_DISPATCH_STATUSES, PLAN_DISPATCH_STATUS, ...SHIPPING_NOTIFY_STATUSES];
 // ຈຳນວນ MDE ສູງສຸດທີ່ Admin ເລືອກສົ່ງແຈ້ງເຕືອນໃນການກົດຄັ້ງດຽວ (ກັນ Worker ເກີນຂີດຈຳກັດ subrequest ຕໍ່ 1 ຄຳຂໍ)
 const MAX_BULK_MDE_NOTIFY = 150;
 // ຈຳນວນອີເມວສູງສຸດທີ່ສົ່ງໃນການກົດຄັ້ງດຽວ (ກັນເກີນຂີດຈຳກັດ subrequest ຂອງ Worker ແລະ ໂຄຕ້າສົ່ງ Gmail ຕໍ່ມື້)
@@ -125,7 +128,7 @@ const POWERAPP_SKIP_STATUSES = ["ຍັງບໍ່ທັນເຊັນເອ�
 // ສະຖານະກ່ອນຈັດສົ່ງຂອງແຖວ Asset (ຖ້າສະແກນຂຶ້ນລົດແລ້ວ ໃຊ້ dispatch_prev_status)
 function powerappPreStatus(row) {
   if (!row) return "";
-  return (row.status === "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" && row.dispatch_prev_status) ? row.dispatch_prev_status : (row.status || "");
+  return ((row.status === "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" || row.status === PLAN_DISPATCH_STATUS) && row.dispatch_prev_status) ? row.dispatch_prev_status : (row.status || "");
 }
 // ໝາຍ Asset ວ່າ "ຂ້າມຂັ້ນຕອນ PowerApp" ເພື່ອໃຫ້ Admin ກວດໃນແທັບ "ລໍຖ້າຢືນຢັນ PowerApp" — ບໍ່ throw (ຖ້າຍັງບໍ່ຮັນ migration ຈະບໍ່ກະທົບການບັນທຶກຈັດສົ່ງ)
 async function markPowerappSkipped(env, assetId, fromLabel) {
@@ -9360,6 +9363,10 @@ export default {
           seen.add(k);
           items.push({ aid, action });
         }
+        // ແຜນເກົ່າຂອງມື້ນີ້ (ເພື່ອຮູ້ວ່າຕູ້ໃດຖືກເອົາອອກຈາກແຜນ)
+        const { results: oldRows } = await env.DB.prepare(
+          "SELECT DISTINCT asset_id FROM delivery_route_plan_items WHERE user_id = ? AND plan_date = ?"
+        ).bind(me.id, date).all();
         const stmts = [env.DB.prepare("DELETE FROM delivery_route_plan_items WHERE user_id = ? AND plan_date = ?").bind(me.id, date)];
         items.forEach((it, i) => {
           stmts.push(env.DB.prepare(
@@ -9367,6 +9374,48 @@ export default {
           ).bind(me.id, date, it.aid, it.action, i));
         });
         await env.DB.batch(stmts);
+
+        // ປ່ຽນສະຖານະ Asset ຕາມແຜນ (ບໍ່ໃຫ້ບັນທຶກແຜນລົ້ມເຫລວ ຖ້າຂັ້ນຕອນນີ້ມີບັນຫາ)
+        try {
+          const newIds = [...new Set(items.map((it) => it.aid))];
+          const newSet = new Set(newIds);
+          const removedIds = (oldRows || []).map((r) => Number(r.asset_id)).filter((id) => !newSet.has(id));
+          const waitPh = WAITING_DISPATCH_STATUSES.map(() => "?").join(",");
+          const changedStatus = []; // [{aid, status}] ສຳລັບແຈ້ງ MDE
+          // ເພີ່ມເຂົ້າແຜນ: ລໍຖ້າ... -> ຢູ່ໃນແຜນຈັດສົ່ງ
+          for (const aid of newIds) {
+            const r = await env.DB.prepare(
+              `UPDATE assets SET dispatch_prev_status = status, status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status IN (${waitPh})`
+            ).bind(PLAN_DISPATCH_STATUS, aid, ...WAITING_DISPATCH_STATUSES).run();
+            if (r.meta && r.meta.changes > 0) changedStatus.push({ aid, status: PLAN_DISPATCH_STATUS });
+          }
+          // ເອົາອອກຈາກແຜນ (ແລະ ບໍ່ຢູ່ໃນແຜນຂອງ delivery ຄົນອື່ນໃນວັນດຽວກັນ) -> ກັບສະຖານະເດີມ
+          for (const aid of removedIds) {
+            const other = await env.DB.prepare(
+              "SELECT 1 AS ok FROM delivery_route_plan_items WHERE asset_id = ? AND plan_date >= ? LIMIT 1"
+            ).bind(aid, date).first();
+            if (other) continue;
+            const a = await env.DB.prepare("SELECT status, doc_type, dispatch_prev_status FROM assets WHERE id = ?").bind(aid).first();
+            if (!a || a.status !== PLAN_DISPATCH_STATUS) continue;
+            const prev = WAITING_DISPATCH_STATUSES.includes(a.dispatch_prev_status)
+              ? a.dispatch_prev_status
+              : (COLLECT_DOC_TYPES.includes(a.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS);
+            const r = await env.DB.prepare(
+              "UPDATE assets SET status = ?, dispatch_prev_status = NULL, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status = ? AND dispatched_at IS NULL"
+            ).bind(prev, aid, PLAN_DISPATCH_STATUS).run();
+            if (r.meta && r.meta.changes > 0) changedStatus.push({ aid, status: prev });
+          }
+          if (changedStatus.length) {
+            runInBackground(ctx, (async () => {
+              for (const c of changedStatus) {
+                const a = await env.DB.prepare("SELECT mde_code, tracking_no, outlet_name FROM assets WHERE id = ?").bind(c.aid).first();
+                if (a) await notifyMdeUserOfStatusChange(env, a.mde_code, a.tracking_no, a.outlet_name, c.status);
+              }
+            })());
+          }
+        } catch (planErr) {
+          console.error("/api/route-plan status sync", planErr);
+        }
         return Response.json({ message: "ບັນທຶກແຜນເສັ້ນທາງແລ້ວ", count: items.length });
       } catch (err) {
         console.error("/api/route-plan", err);
@@ -10977,7 +11026,7 @@ export default {
         }
         // ອອກສາງໄດ້ສະເພາະຕູ້ທີ່ Admin ຕັ້ງ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ແລ້ວ (ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
         // ຍັງຍອມ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
-        const DISPATCHABLE = [...WAITING_DISPATCH_STATUSES, ON_TRUCK_STATUS, MOVE_STATUS];
+        const DISPATCHABLE = [...WAITING_DISPATCH_STATUSES, PLAN_DISPATCH_STATUS, ON_TRUCK_STATUS, MOVE_STATUS];
         // ຕູ້ຕິດທຸງ "ດ່ວນ" ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າສະຖານະ/ເອກະສານຈະຄົບຫຼືບໍ່; ຕູ້ປົກກະຕິຕ້ອງເຊັນເອກະສານຄົບກ່ອນ
         const isUrgent = !!assetRow.flagged;
         // ເກັບຄືນສາງ: ເອກະສານແມ່ນໃບເກັບຕູ້ (T-) ບໍ່ແມ່ນໃບສັນຍາຢືມ — ບໍ່ຕ້ອງກວດໃບສັນຍາຢືມ
@@ -11007,9 +11056,9 @@ export default {
 
         const actor = requester.email || String(userId);
         const upd = await env.DB.prepare(
-          `UPDATE assets SET dispatch_prev_status = status, status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, truck_closed_at = NULL, last_update = CURRENT_TIMESTAMP
+          `UPDATE assets SET dispatch_prev_status = CASE WHEN status = ? THEN dispatch_prev_status ELSE status END, status = ?, dispatched_at = CURRENT_TIMESTAMP, dispatched_by = ?, truck_closed_at = NULL, last_update = CURRENT_TIMESTAMP
            WHERE id = ? AND status != ?`
-        ).bind(ON_TRUCK_STATUS, actor, id, DELIVERED_STATUS).run();
+        ).bind(PLAN_DISPATCH_STATUS, ON_TRUCK_STATUS, actor, id, DELIVERED_STATUS).run();
         if (!upd.meta || upd.meta.changes === 0) return Response.json({ error: "ສະຖານະ Asset ນີ້ຖືກປ່ຽນໄປແລ້ວ ກະລຸນາສະແກນໃໝ່" }, { status: 409 });
 
         await markWarehouseStockOnTruck(
