@@ -34282,6 +34282,7 @@ let rpMap = null, rpLayer = null, rpRouteLayer = null, rpMeMarker = null, rpMeAc
 let rpMeLL = null, rpWatchId = null, rpLastListLL = null, rpNavTarget = null, rpNavFrom = null, rpNavBusy = false;
 let rpMode = 'select', rpStops = [], rpStopMap = {}, rpGroups = [], rpSel = new Set(), rpSavedKeys = [], rpDoneCount = 0, rpSkipped = 0;
 let rpMarkers = {}, rpAssetsCache = null, rpAssetsAt = 0;
+let rpTripLayer = null, rpTripKey = '', rpTripInfo = null, rpTripAt = 0, rpTab = 'map', rpDoneStops = [];
 const RP_COLLECT_DOC = 'ເກັບຄືນສາງ', RP_RELOC_DOC = 'ຕູ້ເຄື່ອນຍ້າຍ', RP_WAIT_COLLECT = 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ';
 const RP_STATUSES = ['ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ'];
 
@@ -34360,12 +34361,16 @@ async function rpOpen(forceSelect) {
   document.getElementById('rpFooter').innerHTML = '';
   document.getElementById('rpList').innerHTML = '<div class="rp-empty"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
   rpStartGps();
+  rpTab = 'map'; rpTripKey = ''; rpTripInfo = null; rpDoneStops = []; if (rpTripLayer) rpTripLayer.clearLayers();
   try {
     if (!Array.isArray(dbOutletsLookup) || !dbOutletsLookup.length) await fetchOutletsLookup();
-    const [assets, pr] = await Promise.all([
+    const [assets, pr, mine] = await Promise.all([
       rpLoadAssets(),
-      fetch('/api/route-plan?userId=' + encodeURIComponent(currentUser.id) + '&date=' + rpToday()).then((r) => (r.ok ? r.json() : { items: [] }))
+      fetch('/api/route-plan?userId=' + encodeURIComponent(currentUser.id) + '&date=' + rpToday()).then((r) => (r.ok ? r.json() : { items: [] })),
+      fetch('/api/route-plan/mine?userId=' + encodeURIComponent(currentUser.id) + '&date=' + rpToday()).then((r) => (r.ok ? r.json() : null)).catch(() => null)
     ]);
+    // ຈຸດທີ່ສຳເລັດແລ້ວ -> ສະແດງເປັນໝຸດສີເທົາ ✓ ເທິງແຜນທີ່
+    try { (mine && mine.items || []).forEach((it) => { const a = mine.assets[it.asset_id]; if (a && mapPlanState(a, it.action) === 'done') { const st = mapPlanStopFor(a, it.action); if (st.lat !== null) rpDoneStops.push(st); } }); } catch (e) { rpDoneStops = []; }
     rpStops = []; rpStopMap = {}; rpSkipped = 0;
     // ຕູ້ຕິດທຸງ "ດ່ວນ" ອອກສາງ/ຂຶ້ນລົດໄດ້ທຸກສະຖານະ -> ຕ້ອງຢູ່ໃນລາຍການສະເໝີ (ຄືກັນກັບ Map Tracking)
     (assets || []).filter((a) => RP_STATUSES.includes(a.status) || a.flagged).forEach((a) => {
@@ -34398,7 +34403,8 @@ function rpClose() {
   document.documentElement.style.overflow = ''; document.body.style.overflow = '';
   rpStopGps();
   if (rpRouteLayer) rpRouteLayer.clearLayers();
-  rpNavTarget = null;
+  if (rpTripLayer) rpTripLayer.clearLayers();
+  rpTripKey = ''; rpNavTarget = null;
 }
 function rpEdit() { rpMode = 'select'; rpSel = new Set(rpSavedKeys); rpNavTarget = null; rpRouteLayer.clearLayers(); rpRender(); }
 
@@ -34407,6 +34413,7 @@ function rpEnsureMap() {
     rpMap = L.map('rpMapContainer');
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(rpMap);
     rpLayer = L.layerGroup().addTo(rpMap);
+    rpTripLayer = L.layerGroup().addTo(rpMap);
     rpRouteLayer = L.layerGroup().addTo(rpMap);
     rpMap.setView([17.9757, 102.6331], 12);
     const Ctl = L.Control.extend({
@@ -34602,7 +34609,7 @@ function rpPlanGroups() {
   return gs;
 }
 function rpRenderPlan(keepView) {
-  rpGroups = rpPlanGroups(); rpLastListLL = rpMeLL ? rpMeLL.slice() : null;
+  rpGroups = rpChainOrder(rpPlanGroups()); rpLastListLL = rpMeLL ? rpMeLL.slice() : null;
   const bounds = rpMeLL ? [rpMeLL.slice()] : [];
   rpGroups.forEach((g, i) => {
     const mixed = g.stops.some((s) => s.action === 'collect') && g.stops.some((s) => s.action === 'deliver');
@@ -34611,21 +34618,82 @@ function rpRenderPlan(keepView) {
       .bindPopup(rpPopupPager(g, null, '') + '<div class="rp-pop"><button type="button" style="width:100%;padding:9px 12px;" onclick="rpNavigate(\'' + g.gkey + '\')"><i class="fa-solid fa-diamond-turn-right"></i> ນຳທາງໄປຮ້ານນີ້</button></div>', { maxWidth: 280 });
     rpMarkers[g.gkey] = m; bounds.push([g.lat, g.lng]);
   });
+  rpDoneStops.forEach((st) => {
+    L.marker([st.lat, st.lng], { icon: L.divIcon({ className: '', html: '<div class="mp-pin done">✓</div>', iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -15] }), zIndexOffset: -500 }).addTo(rpLayer)
+      .bindPopup('<div class="rp-pop"><b>' + esc(st.name) + '</b><div style="font-size:12px;color:#15803d;font-weight:700;margin-top:3px;">✓ ' + (st.action === 'collect' ? 'ເກັບແລ້ວ' : 'ສົ່ງແລ້ວ') + '</div></div>', { maxWidth: 240 });
+    bounds.push([st.lat, st.lng]);
+  });
   if (!keepView && bounds.length) rpMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
   const nd = rpSavedKeys.filter((k) => k.endsWith(':deliver') && rpStopMap[k]).length, nc = rpGroups.reduce((n, g) => n + g.stops.length, 0) - nd;
   document.getElementById('rpHeadSub').textContent = rpGroups.length + ' ຮ້ານ · ສົ່ງ ' + nd + ' · ເກັບ ' + nc + (rpDoneCount ? ' · ສຳເລັດແລ້ວ ' + rpDoneCount : '');
   let head = rpMeLL ? 'ລຽງຕາມໄລຍະທາງຈາກຕຳແໜ່ງປັດຈຸບັນ' : 'ກຳລັງຫາຕຳແໜ່ງຂອງທ່ານ... (ເປີດ GPS ເພື່ອລຽງຕາມໄລຍະທາງ ແລະ ນຳທາງ)';
   if (rpNavTarget && rpNavInfo) head = '<span style="color:#2563eb;">🧭 ' + esc(rpNavInfo) + '</span> <button type="button" class="rp-mini" style="border:0;background:#fee2e2;color:#b91c1c;font-weight:800;border-radius:10px;padding:4px 10px;margin-left:6px;cursor:pointer;" onclick="rpClearNav()">ປິດເສັ້ນທາງ</button>';
-  document.getElementById('rpSheetHead').innerHTML = 'ແຜນມື້ນີ້<div class="rp-sub">' + head + '</div>';
+  document.getElementById('rpSheetHead').innerHTML =
+    '<div class="rp-tabs"><button type="button" class="rp-tab' + (rpTab === 'map' ? ' on' : '') + '" onclick="rpSetTab(\'map\')"><i class="fa-solid fa-map mr-1"></i> ແຜນທີ່</button><button type="button" class="rp-tab' + (rpTab === 'list' ? ' on' : '') + '" onclick="rpSetTab(\'list\')"><i class="fa-solid fa-list mr-1"></i> ລາຍການ</button></div>' +
+    'ເສັ້ນທາງມື້ນີ້ (' + rpGroups.length + ' ຈຸດທີ່ເຫຼືອ' + (rpDoneCount ? ' · ສຳເລັດແລ້ວ ' + rpDoneCount : '') + ')' +
+    '<div id="rpTripSum">' + rpTripSumHtml() + '</div><div class="rp-sub">' + head + '</div>';
   const list = document.getElementById('rpList');
   if (!rpGroups.length) list.innerHTML = '<div class="rp-empty">🎉 ສຳເລັດທຸກຈຸດໃນແຜນແລ້ວ</div>';
   else list.innerHTML = rpGroups.map((g, i) => '<div class="rp-row"><div class="rp-num">' + (i + 1) + '</div><div class="rp-info"><div class="rp-name" onclick="rpFocusGroup(\'' + g.gkey + '\')" style="cursor:pointer;">' + esc(g.name) + '</div>' +
     '<div class="rp-meta">' + esc(g.code || '') + (g.dist !== null ? ' · ຫ່າງ ~' + rpFmtDist(g.dist) : '') + '</div>' +
     g.stops.map((s) => '<div style="margin-top:3px;">' + rpTagHtml(s) + '<span class="rp-meta">' + rpStopLine(s) + '</span></div>').join('') + '</div>' +
     '<div class="rp-act"><button type="button" class="' + (rpNavTarget === g.gkey ? 'on' : '') + '" onclick="rpNavigate(\'' + g.gkey + '\')"><i class="fa-solid fa-diamond-turn-right"></i> ນຳທາງ</button></div></div>').join('');
-  document.getElementById('rpFooter').innerHTML = '<button type="button" class="btn-submit" style="margin:0;background:#E6F2E8;color:#0B6B3A;" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂແຜນ / ເພີ່ມຮ້ານ</button>';
+  list.style.display = (rpTab === 'list' || !rpGroups.length) ? '' : 'none';
+  document.getElementById('rpFooter').innerHTML =
+    (rpGroups.length ? '<button type="button" class="btn-submit" style="margin:0 0 8px;background:#0B6B3A;color:#fff;" onclick="rpNavigate(\'' + rpGroups[0].gkey + '\')"><i class="fa-solid fa-diamond-turn-right mr-1"></i> ນຳທາງໄປຈຸດຖັດໄປ</button>' : '') +
+    '<button type="button" class="btn-submit" style="margin:0;background:#E6F2E8;color:#0B6B3A;" onclick="rpEdit()"><i class="fa-solid fa-pen mr-1"></i> ແກ້ໄຂແຜນ / ເພີ່ມຮ້ານ</button>';
+  rpLoadTrip();
 }
 let rpNavInfo = '';
+function rpSetTab(t) { rpTab = t; rpRender(true); }
+/* ລຽງຈຸດເປັນລຳດັບການເດີນທາງ: ເລີ່ມຈາກຕຳແໜ່ງປັດຈຸບັນ ແລ້ວໄປຈຸດທີ່ໃກ້ສຸດຕໍ່ໆໄປ (ເສັ້ນທາງບໍ່ກັບໄປກັບມາ) */
+function rpChainOrder(gs) {
+  if (!rpMeLL || gs.length < 2) return gs;
+  const left = gs.slice(), out = []; let cur = rpMeLL;
+  while (left.length) {
+    let bi = 0, bd = Infinity;
+    left.forEach((g, i) => { const d = rpDist(cur, [g.lat, g.lng]); if (d < bd) { bd = d; bi = i; } });
+    const g = left.splice(bi, 1)[0]; out.push(g); cur = [g.lat, g.lng];
+  }
+  return out;
+}
+function rpTripSumHtml() {
+  if (!rpTripInfo) return '<div class="rp-trip"><span class="rp-trip-i"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງຄຳນວນເສັ້ນທາງ...</span></div>';
+  if (rpTripInfo.none) return '<div class="rp-trip"><span class="rp-trip-i">ເປີດ GPS ເພື່ອຄຳນວນໄລຍະທາງ ແລະ ເວລາ</span></div>';
+  return '<div class="rp-trip"><span class="rp-trip-i"><i class="fa-solid fa-road"></i> ໄລຍະທາງ ~' + rpFmtDist(rpTripInfo.distance) + '</span>' +
+    (rpTripInfo.duration != null ? '<span class="rp-trip-i"><i class="fa-regular fa-clock"></i> ເວລາຂັບໂດຍປະມານ ~' + rpFmtDur(rpTripInfo.duration) + '</span>' : '') +
+    (rpTripInfo.note ? '<div class="rp-trip-n">' + esc(rpTripInfo.note) + '</div>' : '') + '</div>';
+}
+function rpUpdateTripSummary() { const el = document.getElementById('rpTripSum'); if (el) el.innerHTML = rpTripSumHtml(); }
+/* ເສັ້ນທາງຖະໜົນຈິງຜ່ານທຸກຈຸດທີ່ເຫຼືອ (ຈາກຕຳແໜ່ງປັດຈຸບັນ) + ໄລຍະທາງ/ເວລາລວມ — ຂໍບໍ່ໄດ້ -> ເສັ້ນຊື່ + ໄລຍະທາງໂດຍປະມານ */
+async function rpLoadTrip() {
+  if (rpMode !== 'plan' || !rpTripLayer) return;
+  if (!rpGroups.length) { rpTripLayer.clearLayers(); rpTripInfo = null; rpTripKey = ''; return; }
+  const pts = []; if (rpMeLL) pts.push(rpMeLL.slice());
+  rpGroups.forEach((g) => pts.push([g.lat, g.lng]));
+  if (pts.length < 2) { rpTripLayer.clearLayers(); rpTripInfo = { none: true }; rpTripKey = ''; rpUpdateTripSummary(); return; }
+  const used = pts.slice(0, 25);
+  const key = used.map((q, i) => (rpMeLL && i === 0) ? q[0].toFixed(3) + ',' + q[1].toFixed(3) : q[0].toFixed(5) + ',' + q[1].toFixed(5)).join(';');
+  if (key === rpTripKey) return;
+  if (Date.now() - rpTripAt < 20000 && rpTripInfo) return; // ບໍ່ຂໍຖີ່ເກີນ 20 ວິ ເມື່ອຕຳແໜ່ງປ່ຽນໜ້ອຍ
+  rpTripKey = key; rpTripAt = Date.now();
+  const note = pts.length > used.length ? 'ຄຳນວນສະເພາະ ' + (used.length - (rpMeLL ? 1 : 0)) + ' ຈຸດທຳອິດ' : '';
+  try {
+    const r = await fetch('/api/route-multi?pts=' + used.map((q) => q[0].toFixed(5) + ',' + q[1].toFixed(5)).join(';'));
+    if (key !== rpTripKey) return;
+    rpTripLayer.clearLayers();
+    if (r.ok) {
+      const j = await r.json();
+      L.polyline(j.points, { color: '#3b82f6', weight: 5, opacity: 0.75 }).addTo(rpTripLayer);
+      rpTripInfo = { distance: j.distance, duration: j.duration, note };
+    } else {
+      L.polyline(used, { color: '#3b82f6', weight: 3, opacity: 0.7, dashArray: '8 8' }).addTo(rpTripLayer);
+      let d = 0; for (let i = 1; i < used.length; i++) d += rpDist(used[i - 1], used[i]);
+      rpTripInfo = { distance: d, duration: null, note: 'ເສັ້ນຊື່ — ຂໍເສັ້ນທາງຖະໜົນບໍ່ໄດ້' };
+    }
+    rpUpdateTripSummary();
+  } catch (e) { console.error(e); rpTripKey = ''; }
+}
 function rpClearNav() { rpNavTarget = null; rpNavFrom = null; rpNavInfo = ''; rpRouteLayer.clearLayers(); rpRender(true); }
 async function rpNavigate(gkey, silent) {
   const g = rpGroups.find((x) => x.gkey === gkey); if (!g) return;
@@ -35003,7 +35071,7 @@ function dpFocus(uid, i) {
     </div>
     <button type="button" class="rd-card" onclick="rdOpenPlan()"><div class="rd-ico c1"><i class="fa-solid fa-calendar-check"></i></div><div><div class="tt">ແຜນເສັ້ນທາງຂອງຂ້ອຍ</div><div class="ss">ແຜນຈັດສົ່ງຂອງມື້ນີ້ ແລະ ຄວາມຄືບໜ້າ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
     <button type="button" class="rd-card" onclick="rpOpen()"><div class="rd-ico c2"><i class="fa-solid fa-map-location-dot"></i></div><div><div class="tt">ແຜນທີ່ເສັ້ນທາງ</div><div class="ss">ເບິ່ງເສັ້ນທາງ ແລະ ນຳທາງໄປແຕ່ລະຮ້ານ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
-    <button type="button" class="rd-card" onclick="rdGoTasks()"><div class="rd-ico c3"><i class="fa-solid fa-box-open"></i></div><div><div class="tt">ວຽກຈັດສົ່ງ</div><div class="ss">ສະແກນ QR, ຖ່າຍຮູບ ແລະ ຢືນຢັນການຈັດສົ່ງ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
+    <button type="button" class="rd-card" onclick="rdOpenTasks()"><div class="rd-ico c3"><i class="fa-solid fa-box-open"></i></div><div><div class="tt">ວຽກຈັດສົ່ງ</div><div class="ss">ລາຍການວຽກຂອງມື້ນີ້ ແລະ ຢືນຢັນການຈັດສົ່ງ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
     <button type="button" class="rd-card" onclick="rdOpenDocs()"><div class="rd-ico c4"><i class="fa-solid fa-file-pdf"></i></div><div><div class="tt">ເອກະສານຈັດສົ່ງ</div><div class="ss">ເບິ່ງໜ້າທຳອິດ ແລະ ເປີດໄຟລ໌ PDF ຂອງແຕ່ລະຈຸດ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
     <button type="button" class="rd-card" onclick="rdGoReports()"><div class="rd-ico c5"><i class="fa-solid fa-chart-column"></i></div><div><div class="tt">ລາຍງານການຈັດສົ່ງ</div><div class="ss">ປະຫວັດການຈັດສົ່ງ</div></div><i class="fa-solid fa-chevron-right chev"></i></button>
   </div>
@@ -35031,12 +35099,14 @@ function rdLock(on) { document.documentElement.style.overflow = on ? 'hidden' : 
 function rdVisible(id) { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); }
 
 function rdOpenHub() { document.getElementById('view-rd-hub').classList.remove('hidden'); rdLock(true); rdRefreshSummary(); }
-function rdClose() { ['view-rd-docs', 'view-rd-plan', 'view-rd-hub'].forEach((id) => document.getElementById(id).classList.add('hidden')); rdLock(false); }
+function rdClose() { ['view-rd-task', 'view-rd-tasks', 'view-rd-docs', 'view-rd-plan', 'view-rd-hub'].forEach((id) => document.getElementById(id).classList.add('hidden')); rdLock(false); }
 function rdSubBack(id) { document.getElementById(id).classList.add('hidden'); if (!rdVisible('view-rd-hub')) rdLock(false); else rdRefreshSummary(); }
 function rdGoTasks() { rdClose(); openDeliverySub('deliverConfirm'); }
 function rdGoReports() { rdClose(); switchView('delivery'); window.scrollTo(0, 0); }
 function rdAfterRp() { // ກັບມາຈາກແຜນທີ່ -> ອັບເດດໜ້າທີ່ເປີດຢູ່
-  if (rdVisible('view-rd-plan')) rdRenderPlan(); else if (rdVisible('view-rd-hub')) rdRefreshSummary();
+  if (['view-rd-hub', 'view-rd-plan', 'view-rd-tasks', 'view-rd-task', 'view-rd-docs'].some(rdVisible)) rdLock(true);
+  if (rdVisible('view-rd-task')) return;
+  if (rdVisible('view-rd-tasks')) rdRenderTasks(); else if (rdVisible('view-rd-plan')) rdRenderPlan(); else if (rdVisible('view-rd-hub')) rdRefreshSummary();
 }
 
 async function rdFetchMine() {
@@ -35084,8 +35154,7 @@ async function rdRenderPlan(refetch) {
     foot.innerHTML = '<button type="button" class="rd-go" onclick="rpOpen(true)"><i class="fa-solid fa-plus mr-1"></i> ສ້າງແຜນມື້ນີ້</button>'; return;
   }
   const rest = b.total - b.done, pct = Math.round(b.done * 1000 / b.total) / 10;
-  const rows = b.rows.map((r, i) => '<div class="rd-row' + (r.isNext ? ' next' : '') + '"><div class="no">' + String(i + 1).padStart(2, '0') + '</div><div style="min-width:0;"><div class="nm">' + esc(r.stop.name) + '</div><div class="sb">' +
-    esc((r.stop.action === 'collect' ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ' · ' + (r.stop.code || '-') + (r.stop.a.tracking_no ? ' · ' + r.stop.a.tracking_no : '')) + (r.isNext ? ' · <b style="color:#2563eb;">ຈຸດຕໍ່ໄປ</b>' : '') + '</div></div>' + rdPill(r) + '</div>').join('');
+  const rows = b.rows.map((r, i) => rdRowHtml(r, i)).join('');
   body.innerHTML = '<div class="rd-date"><i class="fa-solid fa-calendar-days" style="color:#0B6B3A;"></i> ' + dateTxt + '</div>' +
     '<div class="rd-stats"><div class="rd-stat all"><div class="n">' + b.total + '</div><div class="l">ທັງໝົດ</div></div><div class="rd-stat ok"><div class="n">' + b.done + '</div><div class="l">ສຳເລັດ</div></div><div class="rd-stat rest"><div class="n">' + rest + '</div><div class="l">ຄົງເຫຼືອ</div></div></div>' +
     '<div class="rd-prog"><div class="h"><span>ຄວາມຄືບໜ້າການຈັດສົ່ງ</span><span>' + pct + '%</span></div><div class="b"><i style="width:' + pct + '%"></i></div></div>' +
@@ -35130,11 +35199,11 @@ async function rdFindDoc(a) {
   const info = { id: c.id, docNo: c.doc_no || '', url: (cancel ? '/api/cancel-contracts/pdf?id=' : '/api/loan-contracts/pdf?id=') + encodeURIComponent(c.id) };
   rdDocInfo[a.id] = info; return info;
 }
-async function rdDocOpen(i) {
-  const r = rdDocRows[i]; if (!r) return;
-  try { const info = await rdFindDoc(r.stop.a); await fetchAndOpenPdf(info.url, info.docNo || ('doc-' + info.id)); }
+async function rdOpenFor(a) {
+  try { const info = await rdFindDoc(a); await fetchAndOpenPdf(info.url, info.docNo || ('doc-' + info.id)); }
   catch (e) { rpToast(e.message || 'ເປີດ PDF ບໍ່ສຳເລັດ'); }
 }
+function rdDocOpen(i) { const r = rdDocRows[i]; if (r) rdOpenFor(r.stop.a); }
 async function rdLoadPdfJs() {
   if (window.pdfjsLib) return window.pdfjsLib;
   await new Promise((res, rej) => {
@@ -35146,13 +35215,14 @@ async function rdLoadPdfJs() {
   window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   return window.pdfjsLib;
 }
-async function rdDocPreview(i) {
-  const r = rdDocRows[i]; if (!r) return;
-  const box = document.getElementById('rdPrev' + i), btn = document.getElementById('rdPrevBtn' + i);
+function rdDocPreview(i) { const r = rdDocRows[i]; if (r) rdPreviewFor(r.stop.a, 'rdPrev' + i, 'rdPrevBtn' + i); }
+async function rdPreviewFor(a, boxId, btnId) {
+  const box = document.getElementById(boxId), btn = document.getElementById(btnId);
+  if (!box || !btn) return;
   if (!box.classList.contains('hidden')) { box.classList.add('hidden'); btn.innerHTML = '<i class="fa-solid fa-image mr-1"></i> ເບິ່ງໜ້າທຳອິດ'; return; } // ກົດຊ້ຳ = ພັບເກັບ
   box.classList.remove('hidden'); box.innerHTML = '<div class="msg"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດເອກະສານ...</div>'; btn.disabled = true;
   try {
-    const a = r.stop.a, info = await rdFindDoc(a);
+    const info = await rdFindDoc(a);
     if (!rdPdfBlobs[info.id]) {
       const res = await fetch(info.url);
       if (!res.ok) { let m = ''; try { m = (await res.json()).error || ''; } catch (e) {} throw new Error(m || ('ເປີດ PDF ບໍ່ໄດ້ (HTTP ' + res.status + ')')); }
@@ -35171,6 +35241,157 @@ async function rdDocPreview(i) {
     console.error(e);
     box.innerHTML = '<div class="msg">' + esc(e.message || 'ສະແດງໜ້າທຳອິດບໍ່ສຳເລັດ') + '<br>ລອງກົດ "ເປີດ PDF" ແທນ</div>';
   } finally { btn.disabled = false; }
+}
+</script>
+<style>
+  .rp-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .rp-tab { flex: 1; border: 0; border-radius: 10px; padding: 8px; font-weight: 800; font-size: 13.5px; background: #f1f5f9; color: #475569; cursor: pointer; }
+  .rp-tab.on { background: #0B6B3A; color: #fff; }
+  .rp-trip { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; font-weight: 700; font-size: 13px; color: #0f172a; }
+  .rp-trip-i i { color: #0B6B3A; margin-right: 4px; } .rp-trip-n { width: 100%; font-weight: 600; font-size: 11.5px; color: #b45309; }
+  .rd-page.sub2 { z-index: 948; }
+  .rd-chips { display: flex; gap: 6px; margin-bottom: 10px; }
+  .rd-chip { flex: 1; border: 0; border-radius: 999px; padding: 8px 6px; font-weight: 800; font-size: 12.5px; background: #e2e8f0; color: #475569; cursor: pointer; }
+  .rd-chip.on { background: #0B6B3A; color: #fff; }
+  .rd-row { cursor: pointer; } .rd-row .chev { color: #94a3b8; margin-left: 4px; }
+  .rd-top { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+  .rd-top .hd { display: flex; align-items: center; gap: 10px; }
+  .rd-top .ic { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .rd-top .nm { font-weight: 800; font-size: 16px; color: #0f172a; word-break: break-word; } .rd-top .pn { font-size: 12.5px; color: #64748b; margin-top: 1px; }
+  .rd-line { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13.5px; color: #334155; word-break: break-word; }
+  .rd-line i { width: 18px; text-align: center; color: #0B6B3A; }
+  .rd-call { margin-left: auto; flex: 0 0 auto; text-decoration: none; font-weight: 800; font-size: 13px; color: #15803d; background: #dcfce7; border-radius: 999px; padding: 5px 12px; white-space: nowrap; }
+  .rd-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .rd-tabs button { flex: 1; border: 0; border-radius: 10px; padding: 9px 4px; font-weight: 800; font-size: 13px; background: #e2e8f0; color: #475569; cursor: pointer; }
+  .rd-tabs button.on { background: #0B6B3A; color: #fff; }
+  .rd-sec { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+  .rd-sec h3 { margin: 0 0 6px; font-size: 14.5px; font-weight: 800; color: #0f172a; }
+  .rd-kv { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid #f1f5f9; font-size: 13.5px; }
+  .rd-kv:first-of-type { border-top: 0; } .rd-kv span { flex: 0 0 42%; color: #64748b; } .rd-kv b { flex: 1; color: #0f172a; word-break: break-word; text-align: right; }
+  .rd-step { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #f1f5f9; font-size: 13.5px; color: #0f172a; }
+  .rd-step:first-of-type { border-top: 0; }
+  .rd-step .ck { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; }
+  .rd-step .ck.on { background: #15803d; border-color: #15803d; }
+  .rd-note { font-size: 12px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+  .rd-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .rd-photos button { border: 1px solid #0B6B3A; background: #fff; color: #0B6B3A; border-radius: 12px; padding: 12px 6px; font-weight: 800; font-size: 13px; cursor: pointer; }
+  .rd-foot2 { display: flex; gap: 8px; }
+  .rd-foot2 button { flex: 1; border-radius: 14px; padding: 13px 8px; font-weight: 800; font-size: 14.5px; cursor: pointer; }
+  .rd-foot2 .sec { background: #fff; color: #0B6B3A; border: 1.5px solid #0B6B3A; } .rd-foot2 .pri { background: #0B6B3A; color: #fff; border: 1.5px solid #0B6B3A; }
+  .rd-foot2 .ok { background: #dcfce7; color: #15803d; border: 0; cursor: default; }
+</style>
+
+<!-- ລາຍການວຽກຈັດສົ່ງ -->
+<div id="view-rd-tasks" class="rd-page sub hidden" role="dialog" aria-label="ວຽກຈັດສົ່ງ">
+  <div class="rd-bar"><button type="button" class="rd-back" onclick="rdSubBack('view-rd-tasks')"><i class="fa-solid fa-arrow-left"></i></button><div class="rd-title">ວຽກຈັດສົ່ງ</div></div>
+  <div class="rd-scroll" id="rdTasksBody"></div>
+  <div class="rd-foot"><button type="button" class="rd-go" style="background:#E6F2E8;color:#0B6B3A;" onclick="rdGoLegacy()"><i class="fa-solid fa-qrcode mr-1"></i> ລາຍງານດ້ວຍການສະແກນ QR (ແບບເດີມ)</button></div>
+</div>
+
+<!-- ລາຍລະອຽດວຽກຈັດສົ່ງ -->
+<div id="view-rd-task" class="rd-page sub2 hidden" role="dialog" aria-label="ລາຍລະອຽດວຽກຈັດສົ່ງ">
+  <div class="rd-bar"><button type="button" class="rd-back" onclick="rdSubBack('view-rd-task')"><i class="fa-solid fa-arrow-left"></i></button><div class="rd-title">ລາຍລະອຽດວຽກຈັດສົ່ງ</div></div>
+  <div class="rd-scroll" id="rdTaskBody"></div>
+  <div class="rd-foot" id="rdTaskFoot"></div>
+</div>
+
+<script>
+/* ວຽກຈັດສົ່ງ: ລາຍການ + ລາຍລະອຽດຂອງແຕ່ລະຈຸດ (ຂໍ້ມູນງານ / ເອກະສານ / ຫຼັກຖານ) + ຂັ້ນຕອນການສົ່ງມອບ
+   ການຢືນຢັນຈິງໃຊ້ flow ເດີມ (ລາຍງານການຈັດສົ່ງ / ສະແກນຕູ້ຂຶ້ນລົດ) ໂດຍເຕີມ QR ໃຫ້ອັດຕະໂນມັດ — ບໍ່ປ່ຽນຂັ້ນຕອນຢືນຢັນເດີມ */
+let rdTaskFilter = 'rest', rdTaskKey = '', rdTaskTab = 'info';
+function rdFindRow(key) { return rdData ? rdData.built.rows.find((r) => r.stop.key === key) : null; }
+function rdRowHtml(r, i) {
+  return '<div class="rd-row' + (r.isNext ? ' next' : '') + '" onclick="rdOpenTask(\'' + r.stop.key + '\')"><div class="no">' + String(i + 1).padStart(2, '0') + '</div><div style="min-width:0;"><div class="nm">' + esc(r.stop.name) + '</div><div class="sb">' +
+    esc((r.stop.action === 'collect' ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ' · ' + (r.stop.code || '-') + (r.stop.a.tracking_no ? ' · ' + r.stop.a.tracking_no : '')) + (r.isNext ? ' · <b style="color:#2563eb;">ຈຸດຕໍ່ໄປ</b>' : '') + '</div></div>' + rdPill(r) + '<i class="fa-solid fa-chevron-right chev"></i></div>';
+}
+function rdGoLegacy() { rdClose(); openDeliverySub('deliverConfirm'); }
+
+async function rdOpenTasks() {
+  document.getElementById('view-rd-tasks').classList.remove('hidden');
+  document.getElementById('rdTasksBody').innerHTML = '<div class="rd-empty"><i class="fa-solid fa-spinner fa-spin"></i> ກຳລັງໂຫຼດ...</div>';
+  await rdRenderTasks(true);
+}
+async function rdRenderTasks(refetch) {
+  const body = document.getElementById('rdTasksBody');
+  try { await rdFetchMine(); } catch (e) { body.innerHTML = '<div class="rd-empty">ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ - ກະລຸນາລອງໃໝ່</div>'; return; }
+  const rows = rdData.built.rows;
+  if (!rows.length) { body.innerHTML = '<div class="rd-empty"><i class="fa-solid fa-box-open" style="font-size:34px;color:#94a3b8;"></i><br><br>ມື້ນີ້ຍັງບໍ່ມີວຽກໃນແຜນ<br>ສ້າງແຜນເສັ້ນທາງກ່ອນ ຈຶ່ງຈະເຫັນວຽກຈັດສົ່ງ</div>'; return; }
+  const nRest = rows.filter((r) => r.state !== 'done').length, nDone = rows.length - nRest;
+  const list = rows.map((r, i) => ({ r, i })).filter((x) => rdTaskFilter === 'all' || (rdTaskFilter === 'done' ? x.r.state === 'done' : x.r.state !== 'done'));
+  const chip = (k, t, n) => '<button type="button" class="rd-chip' + (rdTaskFilter === k ? ' on' : '') + '" onclick="rdTaskFilter=\'' + k + '\';rdRenderTasks()">' + t + ' (' + n + ')</button>';
+  body.innerHTML = '<div class="rd-chips">' + chip('rest', 'ຄົງເຫຼືອ', nRest) + chip('done', 'ສຳເລັດ', nDone) + chip('all', 'ທັງໝົດ', rows.length) + '</div>' +
+    (list.length ? list.map((x) => rdRowHtml(x.r, x.i)).join('') : '<div class="rd-empty">ບໍ່ມີລາຍການໃນໝວດນີ້</div>');
+}
+
+/* ===== ລາຍລະອຽດວຽກ ===== */
+function rdOpenTask(key) {
+  rdTaskKey = key; rdTaskTab = 'info';
+  document.getElementById('view-rd-task').classList.remove('hidden');
+  rdRenderTask();
+}
+function rdTaskSetTab(t) { rdTaskTab = t; rdRenderTask(); }
+function rdPhoto(el) { try { openPhotoKey(el.dataset.key); } catch (e) { rpToast('ເປີດຮູບບໍ່ສຳເລັດ'); } }
+function rdRenderTask() {
+  const body = document.getElementById('rdTaskBody'), foot = document.getElementById('rdTaskFoot');
+  const r = rdFindRow(rdTaskKey);
+  if (!r) { body.innerHTML = '<div class="rd-empty">ບໍ່ພົບວຽກນີ້ - ກັບຄືນແລ້ວລອງໃໝ່</div>'; foot.innerHTML = ''; return; }
+  const a = r.stop.a, idx = rdData.built.rows.indexOf(r), total = rdData.built.rows.length;
+  const collect = r.stop.action === 'collect', done = r.state === 'done', reloc = a.doc_type === RP_RELOC_DOC;
+  const o = findOutletByCode(r.stop.code), phone = String((o && o.phone) || r.stop.phone || '').trim();
+  const addr = o ? [o.address, o.village, o.district, o.province].filter(Boolean).join(', ') : '';
+  const mde = (typeof dbMdeList !== 'undefined' && Array.isArray(dbMdeList)) ? dbMdeList.find((m) => m.mde_code === a.mde_code) : null;
+  const kv = (l, v) => '<div class="rd-kv"><span>' + esc(l) + '</span><b>' + esc(v || '-') + '</b></div>';
+  let content = '';
+  if (rdTaskTab === 'info') {
+    const flags = collect
+      ? [['ສະແກນຕູ້ຂຶ້ນລົດ', done || !!a.dispatched_at], ['ເກັບຕູ້ຈາກຮ້ານສຳເລັດ', done]]
+      : [['ກວດຂໍ້ມູນ Asset (ຄົ້ນຫາດ້ວຍ QR)', done], ['ຮູບ QR Code ແລະ Serial Number', !!(a.delivery_photo_qr && a.delivery_photo_serial)], ['ຮູບ CapEx / ຕູ້ແຊ່', !!(a.delivery_photo_capex || a.delivery_photo_asset)],
+         [a.delivery_doc_state === 'no_doc' ? 'ຖ່າຍເອກະສານ (ບໍ່ມີເອກະສານ)' : 'ຖ່າຍເອກະສານ', !!a.delivery_photo_document || a.delivery_doc_state === 'no_doc'], ['ລູກຄ້າເຊັນຮັບ', done]];
+    content = '<div class="rd-sec"><h3>ລາຍລະອຽດການ' + (collect ? 'ເກັບຕູ້' : 'ຈັດສົ່ງ') + '</h3>' +
+      kv('ປະເພດເອກະສານ', a.doc_type) + kv('ຮຸ່ນ / ຂະໜາດ', [a.cooler_brand, a.cooler_type].filter(Boolean).join(' · ')) + kv('ຈຳນວນ', '1 ຕູ້') +
+      kv('Serial Number', a.serial_number) + kv('QR Code', a.qr_code) + kv('CapEx', a.capex) + kv('Tracking No', a.tracking_no) +
+      kv('MDE', [a.mde_code, mde && mde.mde_name].filter(Boolean).join(' · ')) + (reloc ? kv('ຮ້ານເດີມ', [a.old_outlet_name, a.old_outlet_code && '(' + a.old_outlet_code + ')'].filter(Boolean).join(' ')) : '') + '</div>' +
+      '<div class="rd-sec"><h3>ຂັ້ນຕອນ' + (collect ? 'ການເກັບຕູ້' : 'ການສົ່ງມອບ') + '</h3>' +
+      flags.map((f) => '<div class="rd-step"><span class="ck' + (f[1] ? ' on' : '') + '">' + (f[1] ? '✓' : '') + '</span><span>' + esc(f[0]) + '</span></div>').join('') +
+      (done ? '' : '<div class="rd-note">ກົດ "' + (collect ? 'ສະແກນຕູ້ຂຶ້ນລົດ' : 'ຢືນຢັນການຈັດສົ່ງ') + '" ເພື່ອເຮັດຕາມຂັ້ນຕອນເຫຼົ່ານີ້ຕາມລຳດັບ (ລະບົບເຕີມ QR Code ໃຫ້ອັດຕະໂນມັດ)</div>') + '</div>';
+  } else if (rdTaskTab === 'doc') {
+    const ds = rdDocStateLbl(a);
+    content = '<div class="rd-sec"><h3>' + (a.contract_kind === 'cancel' ? 'ໃບເກັບຕູ້ເຂົ້າສາງ' : 'ໃບສັນຍາຢືມ') + '</h3><div class="rd-note" style="margin:0 0 6px;">' + esc((a.tracking_no || '-') + ' · ' + (a.doc_type || '-')) + '</div><span class="rd-dstate ' + ds[0] + '">' + ds[1] + '</span>' +
+      '<div class="rd-doc" style="border:0;padding:0;margin:0;"><div class="acts"><button type="button" id="rdTPrevBtn" onclick="rdPreviewFor(rdFindRow(rdTaskKey).stop.a, \'rdTPrev\', \'rdTPrevBtn\')"><i class="fa-solid fa-image mr-1"></i> ເບິ່ງໜ້າທຳອິດ</button>' +
+      '<button type="button" class="pri" onclick="rdOpenFor(rdFindRow(rdTaskKey).stop.a)"><i class="fa-solid fa-file-pdf mr-1"></i> ເປີດ PDF</button></div><div class="rd-prev hidden" id="rdTPrev"></div></div></div>';
+  } else {
+    const P = [['ຮູບ QR Code', a.delivery_photo_qr], ['ຮູບ Serial Number', a.delivery_photo_serial], ['ຮູບ CapEx', a.delivery_photo_capex], ['ຮູບຕູ້ແຊ່ທີ່ຮ້ານ', a.delivery_photo_asset], ['ຮູບເອກະສານ', a.delivery_photo_document]].filter((x) => x[1]);
+    content = '<div class="rd-sec"><h3>ຫຼັກຖານການຈັດສົ່ງ</h3>' + (P.length
+      ? '<div class="rd-photos">' + P.map((x) => '<button type="button" data-key="' + esc(x[1]) + '" onclick="rdPhoto(this)"><i class="fa-solid fa-image mr-1"></i> ' + x[0] + '</button>').join('') + '</div>'
+      : '<div class="rd-empty" style="padding:16px 4px;">ຍັງບໍ່ມີຫຼັກຖານ<br>ຮູບແລະລາຍເຊັນຈະຖືກບັນທຶກເມື່ອຢືນຢັນການຈັດສົ່ງ</div>') + '</div>';
+  }
+  const tabs = (k, t) => '<button type="button" class="' + (rdTaskTab === k ? 'on' : '') + '" onclick="rdTaskSetTab(\'' + k + '\')">' + t + '</button>';
+  body.innerHTML = '<div class="rd-top"><div class="hd"><div class="ic"><i class="fa-solid fa-store"></i></div><div style="flex:1;min-width:0;"><div class="nm">' + esc(r.stop.name) + '</div><div class="pn">' + (collect ? 'ເກັບຕູ້' : 'ສົ່ງຕູ້') + ' · ຈຸດທີ່ ' + (idx + 1) + ' / ' + total + '</div></div>' + rdPill(r) + '</div>' +
+    '<div class="rd-line"><i class="fa-solid fa-location-dot"></i><span>' + esc(addr || (r.stop.lat !== null ? 'ພິກັດ ' + r.stop.lat.toFixed(5) + ', ' + r.stop.lng.toFixed(5) : 'ບໍ່ມີພິກັດ')) + '</span></div>' +
+    (phone ? '<div class="rd-line"><i class="fa-solid fa-phone"></i><span>' + esc(phone) + '</span>' + rpWaBtn(phone) + '<a class="rd-call" href="tel:' + esc(phone.replace(/[^\d+]/g, '')) + '"><i class="fa-solid fa-phone mr-1"></i> ໂທ</a></div>' : '<div class="rd-line"><i class="fa-solid fa-phone"></i><span style="color:#94a3b8;">ບໍ່ມີເບີໂທຮ້ານ</span></div>') + '</div>' +
+    '<div class="rd-tabs">' + tabs('info', 'ຂໍ້ມູນງານ') + tabs('doc', 'ເອກະສານ') + tabs('proof', 'ຫຼັກຖານ') + '</div>' + content;
+  foot.innerHTML = done
+    ? '<div class="rd-foot2"><button type="button" class="ok">✓ ' + (collect ? 'ເກັບຕູ້' : 'ຈັດສົ່ງ') + 'ສຳເລັດແລ້ວ</button></div>'
+    : '<div class="rd-foot2"><button type="button" class="sec" onclick="rdTaskNav()"><i class="fa-solid fa-diamond-turn-right mr-1"></i> ນຳທາງ</button><button type="button" class="pri" onclick="rdTaskConfirm()"><i class="fa-solid fa-' + (collect ? 'truck-ramp-box' : 'check') + ' mr-1"></i> ' + (collect ? 'ສະແກນຕູ້ຂຶ້ນລົດ' : 'ຢືນຢັນການຈັດສົ່ງ') + '</button></div>';
+}
+async function rdTaskNav() {
+  const key = rdTaskKey;
+  await rpOpen();
+  if (rpMode !== 'plan') { rpToast('ຍັງບໍ່ມີແຜນ - ສ້າງແຜນກ່ອນ'); return; }
+  const g = rpGroups.find((x) => x.stops.some((s) => s.key === key));
+  if (g) rpNavigate(g.gkey); else rpToast('ບໍ່ພົບຈຸດນີ້ໃນແຜນທີ່');
+}
+function rdTaskConfirm() {
+  const r = rdFindRow(rdTaskKey); if (!r) return;
+  const a = r.stop.a, collect = r.stop.action === 'collect';
+  rdClose();
+  if (collect) {
+    openDeliverySub('dispatchOut');
+    setTimeout(() => { const el = document.getElementById('dispatchQrInput'); if (el && a.qr_code) { el.value = a.qr_code; try { dispatchLookup(); } catch (e) {} } else rpToast('ກະລຸນາສະແກນ ຫຼື ປ້ອນ QR Code ເພື່ອເລີ່ມ'); }, 150);
+  } else {
+    openDeliverySub('deliverConfirm');
+    setTimeout(() => { const el = document.getElementById('deliverQrCodeInput'); if (el && a.qr_code) { el.value = a.qr_code; try { lookupAssetForDelivery(); } catch (e) {} } else rpToast('ກະລຸນາສະແກນ ຫຼື ປ້ອນ QR Code ເພື່ອເລີ່ມ'); }, 150);
+  }
 }
 </script>
 </body>

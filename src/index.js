@@ -9460,6 +9460,56 @@ export default {
       }
     }
 
+    // 6b3. ເສັ້ນທາງຖະໜົນຈິງຜ່ານຫຼາຍຈຸດ (ລຽງຕາມລຳດັບ) — ໃຊ້ໃນ "ແຜນທີ່ເສັ້ນທາງ" ຂອງ delivery (ເສັ້ນທາງລວມທັງມື້ + ໄລຍະທາງ/ເວລາ)
+    // GET /api/route-multi?pts=lat,lng;lat,lng;... (2-25 ຈຸດ) -> { points, distance (m), duration (s), legs:[{distance,duration}] } ; ຂໍບໍ່ໄດ້ -> 502
+    if (url.pathname === "/api/route-multi" && request.method === "GET") {
+      const parsePt = (v) => {
+        const m = /^(-?\d{1,3}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(String(v || "").trim());
+        if (!m) return null;
+        const la = Number(m[1]), ln = Number(m[2]);
+        return (Math.abs(la) <= 90 && Math.abs(ln) <= 180) ? [la, ln] : null;
+      };
+      const parts = String(url.searchParams.get("pts") || "").split(";").filter(Boolean);
+      if (parts.length < 2 || parts.length > 25) return Response.json({ error: "ຕ້ອງມີ 2-25 ຈຸດ" }, { status: 400 });
+      const pts = parts.map(parsePt);
+      if (pts.some((x) => !x)) return Response.json({ error: "ພິກັດບໍ່ຖືກຕ້ອງ" }, { status: 400 });
+      const coordStr = pts.map((q) => `${q[1].toFixed(5)},${q[0].toFixed(5)}`).join(";");
+      const cache = caches.default;
+      const cacheKey = new Request(`https://route-cache.internal/v2/${coordStr}`);
+      try { const hit = await cache.match(cacheKey); if (hit) return hit; } catch (e) { /* ບໍ່ມີ cache ກໍຂໍໃໝ່ */ }
+      const servers = [
+        "https://router.project-osrm.org/route/v1/driving/",
+        "https://routing.openstreetmap.de/routed-car/route/v1/driving/",
+      ];
+      for (const base of servers) {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 8000);
+        try {
+          const r = await fetch(`${base}${coordStr}?overview=full&geometries=geojson&steps=false`, { signal: ctl.signal, headers: { "User-Agent": "cooler-approval-app/1.0" } });
+          clearTimeout(timer);
+          if (!r.ok) continue;
+          const j = await r.json();
+          const route = j && j.code === "Ok" && j.routes && j.routes[0];
+          const coords = route && route.geometry && route.geometry.coordinates;
+          if (!coords || coords.length < 2) continue;
+          const step = Math.max(1, Math.ceil(coords.length / 3500));
+          const out = [];
+          for (let i = 0; i < coords.length; i += step) out.push([Number(coords[i][1].toFixed(5)), Number(coords[i][0].toFixed(5))]);
+          const last = coords[coords.length - 1];
+          const lastPt = [Number(last[1].toFixed(5)), Number(last[0].toFixed(5))];
+          if (out[out.length - 1][0] !== lastPt[0] || out[out.length - 1][1] !== lastPt[1]) out.push(lastPt);
+          const legs = (route.legs || []).map((l) => ({ distance: l.distance, duration: l.duration }));
+          const res = Response.json({ points: out, distance: route.distance, duration: route.duration, legs }, { headers: { "Cache-Control": "public, max-age=3600" } });
+          try { ctx.waitUntil(cache.put(cacheKey, res.clone())); } catch (e) {}
+          return res;
+        } catch (e) {
+          clearTimeout(timer);
+          console.error("/api/route-multi", base, e && e.message);
+        }
+      }
+      return Response.json({ error: "ຂໍເສັ້ນທາງຖະໜົນບໍ່ສຳເລັດ" }, { status: 502 });
+    }
+
     // 6b. ເສັ້ນທາງຖະໜົນຈິງ (ຂັບລົດ) ລະຫວ່າງ 2 ຈຸດ ສຳລັບ mini map — ຂໍຈາກ OSRM ຝັ່ງ server (ກັນ CORS/ບລັອກຝັ່ງ browser) + cache 1 ວັນ
     // GET /api/route?from=lat,lng&to=lat,lng -> { points: [[lat,lng],...], distance (m), duration (s) } ; ຂໍບໍ່ໄດ້ -> 502 (ບໍ່ສົ່ງເສັ້ນຊື່)
     if (url.pathname === "/api/route" && request.method === "GET") {
