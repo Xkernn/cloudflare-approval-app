@@ -11101,29 +11101,7 @@ export default {
         if (assetRow.status === ON_TRUCK_STATUS && assetRow.dispatched_at) {
           return Response.json({ error: `ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ${assetRow.dispatched_at})` }, { status: 400 });
         }
-        // ອອກສາງໄດ້ສະເພາະຕູ້ທີ່ Admin ຕັ້ງ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" ແລ້ວ (ຫຼັງ MDE ຊັບມິດ PowerApp ຜ່ານ)
-        // ຍັງຍອມ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ"/"ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ" ທີ່ຍັງບໍ່ເຄີຍສະແກນຂຶ້ນລົດ (ຂໍ້ມູນເກົ່າກ່ອນມີຂັ້ນຕອນນີ້)
-        const DISPATCHABLE = [...WAITING_DISPATCH_STATUSES, PLAN_DISPATCH_STATUS, ON_TRUCK_STATUS, MOVE_STATUS];
-        // ຕູ້ຕິດທຸງ "ດ່ວນ" ຂຶ້ນລົດໄດ້ເລີຍ ບໍ່ວ່າສະຖານະ/ເອກະສານຈະຄົບຫຼືບໍ່; ຕູ້ປົກກະຕິຕ້ອງເຊັນເອກະສານຄົບກ່ອນ
-        const isUrgent = !!assetRow.flagged;
-        // ເກັບຄືນສາງ: ເອກະສານແມ່ນໃບເກັບຕູ້ (T-) ບໍ່ແມ່ນໃບສັນຍາຢືມ — ບໍ່ຕ້ອງກວດໃບສັນຍາຢືມ
-        if (!isUrgent && assetRow.doc_type !== RETURN_TO_WAREHOUSE_DOC_TYPE) {
-          const loan = await findLoanContractForAsset(env, assetRow);
-          if (loan && loan.status !== "completed") {
-            return Response.json({
-              code: "DOC_NOT_SIGNED",
-              error: loan.status === "awaiting_dsm"
-                ? `ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ໃບສັນຍາຢືມ ${loan.doc_no || ""} ລໍຖ້າ DSM ເຊັນ`
-                : `ຕູ້ນີ້ຂຶ້ນລົດບໍ່ໄດ້ — ໃບສັນຍາຢືມ ${loan.doc_no || ""} ຍັງເຊັນບໍ່ຄົບ`,
-            }, { status: 400 });
-          }
-        }
-        if (!isUrgent && !DISPATCHABLE.includes(assetRow.status)) {
-          return Response.json({
-            code: "NOT_WAITING_DISPATCH",
-            error: `ຕູ້ນີ້ຍັງອອກສາງບໍ່ໄດ້ — ສະຖານະປັດຈຸບັນ "${assetRow.status || "-"}" (ຕ້ອງເປັນ "${COLLECT_DOC_TYPES.includes(assetRow.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS}" ກ່ອນ ຫຼັງຈາກ MDE ຊັບມິດ PowerApp ຜ່ານ ແລະ Admin ຢືນຢັນ)`,
-          }, { status: 400 });
-        }
+        // ບໍ່ກວດສະຖານະ/ເອກະສານເຊັນຄົບ ຕອນສະແກນຂຶ້ນລົດອີກແລ້ວ (ຂັ້ນຕອນນີ້ບໍ່ໄດ້ໃຊ້ແລ້ວ — ຕູ້ເຂົ້າ route plan ໄດ້ທຸກສະຖານະ)
         if (checkCode && String(assetRow.outlet_code || "").trim().toLowerCase() !== checkCode.toLowerCase()) {
           return Response.json({
             code: "WRONG_OUTLET",

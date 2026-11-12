@@ -7109,7 +7109,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
               <div class="guide-status-row"><span class="badge badge-info">ຢູ່ໃນແຜນຈັດສົ່ງ</span><span>Doc Type ຕູ້ເຄື່ອນຍ້າຍ - ເກັບຈາກຮ້ານເກົ່າ ແລະ ຢູ່ໃນແຜນຈັດສົ່ງໄປຮ້ານໃໝ່</span></div>
               <div class="guide-status-row"><span class="badge badge-approved">ສຳເລັດ</span><span>ຈັດສົ່ງສຳເລັດແລ້ວ (ຕູ້ເຄື່ອນຍ້າຍ = ຈັດສົ່ງສຳເລັດ, ເກັບຄືນສາງ = ເກັບກັບສາງສຳເລັດ) - ລາຍການຈະຍ້າຍໄປເບິ່ງທີ່ <b>ປະຫວັດການຈັດສົ່ງ Asset</b></span></div>
             </div>
-            <div class="guide-tip"><i class="fa-solid fa-lightbulb mr-1"></i> ຕູ້ທີ່ເອກະສານຍັງເຊັນບໍ່ຄົບ ສາງຈະສະແກນຂຶ້ນລົດບໍ່ໄດ້ (ເວັ້ນແຕ່ Admin ຕິດທຸງ "ດ່ວນ") - ຈຶ່ງຄວນເຊັນໃບສັນຍາໃຫ້ຄົບໄວໆ.</div>
           </div>
         </details>
 
@@ -24377,8 +24376,8 @@ function assetStatusBadgeClass(status) {
         if (a.status === 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ' && a.dispatched_at) { dispatchSetMsg('ຕູ້ນີ້ຢູ່ເທິງລົດແລ້ວ (ສະແກນຂຶ້ນລົດເມື່ອ ' + a.dispatched_at + ')', '#d97706'); return; }
         dispatchLoan = data.loan_contract || null;
         const urgent = !!a.flagged;
-        const loanBlock = !urgent && a.doc_type !== 'ເກັບຄືນສາງ' && dispatchLoan && dispatchLoan.status !== 'completed'; // ເກັບຄືນສາງ: ເອກະສານແມ່ນໃບເກັບຕູ້ (T-) ບໍ່ຕ້ອງກວດໃບສັນຍາຢືມ
-        const canDispatch = urgent || (!loanBlock && ((a.status === DISPATCH_WAITING_STATUS || a.status === 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ') || DISPATCH_LEGACY_OK.includes(a.status)));
+        const loanBlock = false; // ບໍ່ກວດເອກະສານເຊັນຄົບ ຕອນສະແກນຂຶ້ນລົດອີກແລ້ວ
+        const canDispatch = true; // ບໍ່ກວດສະຖານະ ຕອນສະແກນຂຶ້ນລົດອີກແລ້ວ
         dispatchStockId = null;
         const bn = document.getElementById('dispatchUrgentBanner');
         bn.classList.toggle('hidden', !urgent);
@@ -34388,6 +34387,7 @@ let rpMode = 'select', rpStops = [], rpStopMap = {}, rpGroups = [], rpSel = new 
 let rpMarkers = {}, rpAssetsCache = null, rpAssetsAt = 0;
 let rpTripLayer = null, rpTripKey = '', rpTripInfo = null, rpTripAt = 0, rpTab = 'map', rpDoneStops = [];
 const RP_COLLECT_DOC = 'ເກັບຄືນສາງ', RP_RELOC_DOC = 'ຕູ້ເຄື່ອນຍ້າຍ', RP_WAIT_COLLECT = 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ';
+const RP_SELECT_STATUSES = ['ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ'];
 const RP_STATUSES = ['ຍັງບໍ່ທັນເຊັນເອກະສານ', 'ຍັງບໍ່ຊັບມິດ PowerApp', 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ໃນແຜນຈັດສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ'];
 
 function rpToday() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
@@ -34477,7 +34477,10 @@ async function rpOpen(forceSelect) {
     try { (mine && mine.items || []).forEach((it) => { const a = mine.assets[it.asset_id]; if (a && mapPlanState(a, it.action) === 'done') { const st = mapPlanStopFor(a, it.action); if (st.lat !== null) rpDoneStops.push(st); } }); } catch (e) { rpDoneStops = []; }
     rpStops = []; rpStopMap = {}; rpSkipped = 0;
     // ຕູ້ຕິດທຸງ "ດ່ວນ" ອອກສາງ/ຂຶ້ນລົດໄດ້ທຸກສະຖານະ -> ຕ້ອງຢູ່ໃນລາຍການສະເໝີ (ຄືກັນກັບ Map Tracking)
-    (assets || []).filter((a) => RP_STATUSES.includes(a.status) || a.flagged).forEach((a) => {
+    // ລາຍການທີ່ເລືອກເຂົ້າແຜນໄດ້: ສະເພາະຮ້ານຕິດທຸງ + ສະຖານະ "ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ" / "ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ"
+    // (ຕູ້ທີ່ຢູ່ໃນແຜນມື້ນີ້ແລ້ວ ຍັງຕ້ອງສະແດງຢູ່ ເພື່ອບໍ່ໃຫ້ແຜນທີ່ບັນທຶກໄວ້ຫາຍ/ຖືກນັບເປັນສຳເລັດ)
+    const rpSavedAids = new Set((pr.items || []).map((i) => String(i.asset_id)));
+    (assets || []).filter((a) => RP_SELECT_STATUSES.includes(a.status) || a.flagged || rpSavedAids.has(String(a.id))).forEach((a) => {
       const s = rpStopsOf(a);
       if (s === undefined) return;
       if (!s) { rpSkipped++; return; }
