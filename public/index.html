@@ -285,13 +285,13 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .sigfs { position: fixed; inset: 0; z-index: 2147483000; background: #f1f5f9; display: flex; flex-direction: column; touch-action: none; }
     .sigfs.hidden { display: none; }
     body.sigfs-open { overflow: hidden; }
-    .sigfs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e2e8f0; font-size: 16px; }
+    .sigfs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: #fff; border-bottom: 1px solid #e2e8f0; font-size: 15px; }
     .sigfs-btns { display: flex; gap: 8px; }
     .sigfs-b { min-height: 46px; padding: 0 18px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
     .sigfs-ok { background: #0B6B3A; border-color: #0B6B3A; color: #fff; }
     .sigfs-clear { color: #b91c1c; border-color: #fecaca; }
-    .sigfs-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 12px; }
-    #sigFsCanvas { background: #fff; border: 2px dashed #94a3b8; border-radius: 14px; box-shadow: 0 6px 24px rgba(15,23,42,.12); touch-action: none; cursor: crosshair; }
+    .sigfs-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 4px; }
+    #sigFsCanvas { background: #fff; border: 2px dashed #94a3b8; border-radius: 10px; box-shadow: 0 6px 24px rgba(15,23,42,.12); touch-action: none; cursor: crosshair; }
 
 
     /* ໜ້າ ອອກໃບສັນຍາຢືມ: ແຖບ chip ດ້ານເທິງ + ກາດເລືອກປະເພດເອກະສານ */
@@ -24878,8 +24878,8 @@ function assetStatusBadgeClass(status) {
     }
     function sigFsLayout(keep) {
       const area = document.getElementById('sigFsArea'), cv = sigFs.canvas;
-      const availW = Math.max(220, area.clientWidth - 24), availH = Math.max(120, area.clientHeight - 24);
-      const w = Math.floor(Math.min(availW, availH * 2)), h = Math.floor(w / 2); // ອັດຕາສ່ວນ 2:1 ໃກ້ຄຽງຊ່ອງເຊັນເດີມ
+      // ກອບເຊັນເຕັມພື້ນທີ່ທັງໝົດ (ມືຖື/Tablet ຈະໄດ້ກອບໃຫຍ່ສຸດ) - ຕອນຢືນຢັນຈຶ່ງຕັດ/ຈັດໃຫ້ເປັນສັດສ່ວນ 2:1 ໃຫ້ອັດຕະໂນມັດ
+      const w = Math.max(220, area.clientWidth - 8), h = Math.max(140, area.clientHeight - 8);
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       const old = keep && sigFs.dirty ? cv.toDataURL('image/png') : null;
       cv.style.width = w + 'px'; cv.style.height = h + 'px';
@@ -24946,11 +24946,27 @@ function assetStatusBadgeClass(status) {
       if (st) {
         if (sigFs.dirty) {
           // ຄັດລອກລາຍເຊັນຄວາມລະອຽດເຕັມເຂົ້າ canvas ໃນໜ້າ (ຟັງຊັນອື່ນອ່ານຈາກ canvas ນີ້ຄືເກົ່າ)
+          // ຕັດຂອບເປົ່າອອກ (bbox ຂອງເສັ້ນທີ່ແຕ້ມ) ແລ້ວຈັດກາງໃສ່ canvas ສັດສ່ວນ 2:1 ຄວາມລະອຽດສູງ -> ລາຍເຊັນໃຫຍ່ ຊັດ ແລະ ສັດສ່ວນຄືເກົ່າສະເໝີ
           const src = sigFs.canvas, c = st.canvas;
-          c.width = src.width; c.height = src.height;
+          const sctx = src.getContext('2d');
+          const data = sctx.getImageData(0, 0, src.width, src.height).data;
+          let x0 = src.width, y0 = src.height, x1 = -1, y1 = -1;
+          for (let y = 0; y < src.height; y++) {
+            for (let x = 0; x < src.width; x++) {
+              if (data[(y * src.width + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            }
+          }
+          if (x1 < 0) { clearSignaturePad(id); sigHintSync(id); sigFsClose(); return; }
+          const pad = Math.round(12 * sigFs.dpr);
+          x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(src.width - 1, x1 + pad); y1 = Math.min(src.height - 1, y1 + pad);
+          const sw = x1 - x0 + 1, sh = y1 - y0 + 1;
+          const TW = 1000, TH = 500;
+          c.width = TW; c.height = TH;
           st.ctx.setTransform(1, 0, 0, 1, 0, 0);
-          st.ctx.clearRect(0, 0, c.width, c.height);
-          st.ctx.drawImage(src, 0, 0);
+          st.ctx.clearRect(0, 0, TW, TH);
+          const r = Math.min(TW / sw, TH / sh);
+          const dw = sw * r, dh = sh * r;
+          st.ctx.drawImage(src, x0, y0, sw, sh, (TW - dw) / 2, (TH - dh) / 2, dw, dh);
           st.fs = true; st.dirty = true;
         } else {
           clearSignaturePad(id);
