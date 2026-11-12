@@ -105,6 +105,14 @@ const WAITING_DISPATCH_STATUSES = [WAITING_DISPATCH_STATUS, COLLECT_WAITING_STAT
 // ຕູ້ທີ່ role delivery ເພີ່ມເຂົ້າ "ແຜນເສັ້ນທາງ" (route plan) -> ສະຖານະເປັນ "ຢູ່ໃນແຜນຈັດສົ່ງ" ອັດຕະໂນມັດ (ເກັບສະຖານະເດີມໃນ dispatch_prev_status)
 // ເອົາອອກຈາກແຜນທຸກແຜນ -> ກັບເປັນສະຖານະເດີມ (ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ / ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ)
 const PLAN_DISPATCH_STATUS = "ຢູ່ໃນແຜນຈັດສົ່ງ";
+// ເພີ່ມເຂົ້າ route plan ໄດ້ທຸກສະຖານະ (ລວມ ຍັງບໍ່ທັນເຊັນເອກະສານ / ຍັງບໍ່ຊັບມິດ PowerApp) ຍົກເວັ້ນສະຖານະເຫຼົ່ານີ້: ສຳເລັດແລ້ວ / ຢູ່ໃນແຜນແລ້ວ / ຂຶ້ນລົດແລ້ວ
+const PLAN_BLOCK_STATUSES = ["ສຳເລັດ", PLAN_DISPATCH_STATUS, "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ", "ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ"];
+// ສະຖານະທີ່ຈະກັບໄປ ເມື່ອຕູ້ຖືກເອົາອອກຈາກແຜນ / ຈັດສົ່ງບໍ່ສຳເລັດ = ສະຖານະເດີມກ່ອນເຂົ້າແຜນ (dispatch_prev_status); ບໍ່ມີ -> ລໍຖ້າຂົນສົ່ງ/ເກັບຕູ້
+function planRevertStatus(a) {
+  const p = a && a.dispatch_prev_status;
+  if (p && !PLAN_BLOCK_STATUSES.includes(p)) return p;
+  return COLLECT_DOC_TYPES.includes(a && a.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS;
+}
 // ຄ່າໃນ DB ຍັງເປັນ "ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ" ສະເໝີ — ປ່ຽນສະເພາະຂໍ້ຄວາມທີ່ສະແດງ/ແຈ້ງເຕືອນຕາມ Doc Type
 function onTruckLabel(docType) {
   if (docType === "ເກັບຄືນສາງ") return "ຢູ່ເທິງລົດ / ກຳລັງເກັບກັບ";
@@ -1015,9 +1023,7 @@ async function revertStalePlanAssets(env) {
     for (let i = 0; i < rows.length; i += 50) {
       const chunk = rows.slice(i, i + 50);
       const stmts = chunk.map((a) => {
-        const prev = WAITING_DISPATCH_STATUSES.includes(a.dispatch_prev_status)
-          ? a.dispatch_prev_status
-          : (COLLECT_DOC_TYPES.includes(a.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS);
+        const prev = planRevertStatus(a);
         return env.DB.prepare(
           "UPDATE assets SET status = ?, dispatch_prev_status = NULL, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status = ? AND dispatched_at IS NULL"
         ).bind(prev, a.id, PLAN_DISPATCH_STATUS);
@@ -9453,13 +9459,13 @@ export default {
           const newIds = [...new Set(items.map((it) => it.aid))];
           const newSet = new Set(newIds);
           const removedIds = (oldRows || []).map((r) => Number(r.asset_id)).filter((id) => !newSet.has(id));
-          const waitPh = WAITING_DISPATCH_STATUSES.map(() => "?").join(",");
+          const blockPh = PLAN_BLOCK_STATUSES.map(() => "?").join(",");
           const changedStatus = []; // [{aid, status}] ສຳລັບແຈ້ງ MDE
-          // ເພີ່ມເຂົ້າແຜນ: ລໍຖ້າ... -> ຢູ່ໃນແຜນຈັດສົ່ງ
+          // ເພີ່ມເຂົ້າແຜນ: ທຸກສະຖານະ (ຍົກເວັ້ນ ສຳເລັດ/ຢູ່ໃນແຜນ/ຂຶ້ນລົດ) -> ຢູ່ໃນແຜນຈັດສົ່ງ (ເກັບສະຖານະເດີມໃນ dispatch_prev_status)
           for (const aid of newIds) {
             const r = await env.DB.prepare(
-              `UPDATE assets SET dispatch_prev_status = status, status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status IN (${waitPh})`
-            ).bind(PLAN_DISPATCH_STATUS, aid, ...WAITING_DISPATCH_STATUSES).run();
+              `UPDATE assets SET dispatch_prev_status = status, status = ?, last_update = CURRENT_TIMESTAMP WHERE id = ? AND IFNULL(status,'') NOT IN (${blockPh})`
+            ).bind(PLAN_DISPATCH_STATUS, aid, ...PLAN_BLOCK_STATUSES).run();
             if (r.meta && r.meta.changes > 0) changedStatus.push({ aid, status: PLAN_DISPATCH_STATUS });
           }
           // ເອົາອອກຈາກແຜນ (ແລະ ບໍ່ຢູ່ໃນແຜນຂອງ delivery ຄົນອື່ນໃນວັນດຽວກັນ) -> ກັບສະຖານະເດີມ
@@ -9470,9 +9476,7 @@ export default {
             if (other) continue;
             const a = await env.DB.prepare("SELECT status, doc_type, dispatch_prev_status FROM assets WHERE id = ?").bind(aid).first();
             if (!a || a.status !== PLAN_DISPATCH_STATUS) continue;
-            const prev = WAITING_DISPATCH_STATUSES.includes(a.dispatch_prev_status)
-              ? a.dispatch_prev_status
-              : (COLLECT_DOC_TYPES.includes(a.doc_type) ? COLLECT_WAITING_STATUS : WAITING_DISPATCH_STATUS);
+            const prev = planRevertStatus(a);
             const r = await env.DB.prepare(
               "UPDATE assets SET status = ?, dispatch_prev_status = NULL, last_update = CURRENT_TIMESTAMP WHERE id = ? AND status = ? AND dispatched_at IS NULL"
             ).bind(prev, aid, PLAN_DISPATCH_STATUS).run();

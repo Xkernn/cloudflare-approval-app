@@ -1945,6 +1945,8 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
     .ad-dot { width: 42px; height: 42px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 3px solid #DDE8EA; color: #8FA6AB; font: 700 14px var(--font-mono); transition: background .3s, border-color .3s, color .3s; }
     .ad-step.done .ad-dot { background: var(--primary); border-color: var(--primary); color: #fff; }
     .ad-flow.done .ad-step.done .ad-dot { background: var(--success); border-color: var(--success); }
+    .ad-step.skip .ad-dot { background: #DC2626; border-color: #DC2626; color: #fff; }
+    .ad-step.skip .ad-lbl { color: #DC2626; }
     .ad-step.cur .ad-dot { border-color: transparent; background: transparent; color: transparent; }
     .ad-lbl { margin-top: 10px; padding: 0 4px; font-size: 12.5px; line-height: 1.4; font-weight: 600; color: var(--text-muted); transition: color .3s; }
     .ad-step.done .ad-lbl, .ad-step.cur .ad-lbl { color: var(--text-main); }
@@ -22815,13 +22817,17 @@ function assetStatusBadgeClass(status) {
       const STEPS = adStepsFor(a);
       const box = document.getElementById('detailModalStepper');
       const finished = cur === STEPS.length - 1;
+      // ຕູ້ທີ່ຖືກຈັດເຂົ້າແຜນ/ຂຶ້ນລົດ ໂດຍຍັງບໍ່ທັນເຊັນເອກະສານ ຫຼື ຍັງບໍ່ຊັບມິດ PowerApp -> ຂັ້ນທີ່ຖືກຂ້າມສະແດງເປັນ ✗ ສີແດງ ແທນ ✓
+      const preIdx = AD_STEP_OF[a.dispatch_prev_status];
+      const skipFrom = (cur >= 3 && cur < STEPS.length - 1 && preIdx !== undefined && preIdx < 2) ? preIdx : -1;
+      const isSkip = (k) => skipFrom >= 0 && k >= skipFrom && k < 2;
       document.querySelector('#detailModal .modal-card').classList.add('ad');
       box.innerHTML = `
         <div class="ad-flow ${finished ? 'done' : ''}" style="--n:${STEPS.length}; --st:${finished ? 'var(--success)' : assetStatusColor(a.status)}" role="group" aria-label="ຂັ້ນຕອນ Asset">
           <ol class="ad-rail" style="list-style:none;margin:0;padding:0;">
             <span class="ad-track"></span><span class="ad-fill"></span><span class="ad-ring"></span>
-            ${STEPS.map((t, k) => `<li class="ad-step ${k < cur || (finished && k === STEPS.length - 1) ? 'done' : ''} ${k === cur ? 'cur' : ''}" ${k === cur ? 'aria-current="step"' : ''} style="transition-delay:${(k * 0.3).toFixed(2)}s">
-              <div class="ad-dot" style="transition-delay:${(k * 0.3).toFixed(2)}s">${k < cur || finished && k === STEPS.length - 1 ? '<i class="fa-solid fa-check"></i>' : k + 1}</div>
+            ${STEPS.map((t, k) => `<li class="ad-step ${isSkip(k) ? 'skip' : (k < cur || (finished && k === STEPS.length - 1) ? 'done' : '')} ${k === cur ? 'cur' : ''}" ${k === cur ? 'aria-current="step"' : ''} style="transition-delay:${(k * 0.3).toFixed(2)}s">
+              <div class="ad-dot" style="transition-delay:${(k * 0.3).toFixed(2)}s">${isSkip(k) ? '<i class="fa-solid fa-xmark"></i>' : (k < cur || finished && k === STEPS.length - 1 ? '<i class="fa-solid fa-check"></i>' : k + 1)}</div>
               <div class="ad-lbl">${esc(t)}</div></li>`).join('')}
           </ol>
           <div class="ad-meta">
@@ -34382,7 +34388,7 @@ let rpMode = 'select', rpStops = [], rpStopMap = {}, rpGroups = [], rpSel = new 
 let rpMarkers = {}, rpAssetsCache = null, rpAssetsAt = 0;
 let rpTripLayer = null, rpTripKey = '', rpTripInfo = null, rpTripAt = 0, rpTab = 'map', rpDoneStops = [];
 const RP_COLLECT_DOC = 'ເກັບຄືນສາງ', RP_RELOC_DOC = 'ຕູ້ເຄື່ອນຍ້າຍ', RP_WAIT_COLLECT = 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ';
-const RP_STATUSES = ['ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ໃນແຜນຈັດສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ'];
+const RP_STATUSES = ['ຍັງບໍ່ທັນເຊັນເອກະສານ', 'ຍັງບໍ່ຊັບມິດ PowerApp', 'ລໍຖ້າຂົນສົ່ງອອກຈາກສາງ', 'ລໍຖ້າທີມງານເກັບຕູ້ຮ້ານເກົ່າ', 'ຢູ່ໃນແຜນຈັດສົ່ງ', 'ຢູ່ລະຫວ່າງເຄື່ອນຍ້າຍ', 'ຢູ່ເທິງລົດ / ກຳລັງສົ່ງ'];
 
 function rpToday() { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
 function rpLsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
