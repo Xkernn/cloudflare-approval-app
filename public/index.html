@@ -275,7 +275,23 @@ try{localStorage.setItem('lbc_mm_style_set','png')}catch(e){}</script>
 
     /* ອອກໃບສັນຍາຢືມ — ຊ່ອງແຕ້ມລາຍເຊັນ */
     .sig-pad-wrap { border: 1px dashed var(--border-color, #cbd5e1); border-radius: 9px; background: #fff; touch-action: none; }
-    .sig-pad-canvas { width: 100%; height: 160px; display: block; cursor: crosshair; border-radius: 9px; }
+    .sig-pad-canvas { width: 100%; height: 160px; display: block; cursor: pointer; border-radius: 9px; object-fit: contain; }
+    .sig-pad-wrap.sig-tap { position: relative; cursor: pointer; }
+    .sig-hint { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #0B6B3A; font-weight: 700; font-size: 15px; pointer-events: none; background: rgba(11,107,58,.04); border-radius: 9px; }
+    .sig-hint i { font-size: 26px; }
+    .sig-hint small { font-weight: 500; color: #64748b; font-size: 12px; }
+    .sig-pad-wrap.sig-has .sig-hint { display: none; }
+    .sig-pad-wrap.sig-has::after { content: "\f065"; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; top: 6px; right: 8px; font-size: 12px; color: #64748b; pointer-events: none; }
+    .sigfs { position: fixed; inset: 0; z-index: 2147483000; background: #f1f5f9; display: flex; flex-direction: column; touch-action: none; }
+    .sigfs.hidden { display: none; }
+    body.sigfs-open { overflow: hidden; }
+    .sigfs-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e2e8f0; font-size: 16px; }
+    .sigfs-btns { display: flex; gap: 8px; }
+    .sigfs-b { min-height: 46px; padding: 0 18px; border-radius: 12px; border: 1.5px solid #cbd5e1; background: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .sigfs-ok { background: #0B6B3A; border-color: #0B6B3A; color: #fff; }
+    .sigfs-clear { color: #b91c1c; border-color: #fecaca; }
+    .sigfs-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    #sigFsCanvas { background: #fff; border: 2px dashed #94a3b8; border-radius: 14px; box-shadow: 0 6px 24px rgba(15,23,42,.12); touch-action: none; cursor: crosshair; }
 
 
     /* ໜ້າ ອອກໃບສັນຍາຢືມ: ແຖບ chip ດ້ານເທິງ + ກາດເລືອກປະເພດເອກະສານ */
@@ -11472,9 +11488,10 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
         setupSignaturePad(padId);
         const st = loanSigPads[padId];
         if (!st) return;
+        st.fs = false; st.dirty = false; resizeSignaturePad(padId);
         st.ctx.clearRect(0, 0, st.canvas.width, st.canvas.height);
         mySigDrawFit(st.ctx, img, st.canvas.clientWidth || 300, st.canvas.clientHeight || 160);
-        st.dirty = true;
+        st.dirty = true; sigHintSync(padId);
       } catch (e) { appAlert(e.message || 'ໃຊ້ລາຍເຊັນບໍ່ສຳເລັດ'); }
     }
     function mySigSetMode(m) {
@@ -24824,42 +24841,129 @@ function assetStatusBadgeClass(status) {
       loanSigPads[id] = st;
       resizeSignaturePad(id);
 
-      const pos = (e) => {
-        const r = canvas.getBoundingClientRect();
-        return { x: e.clientX - r.left, y: e.clientY - r.top };
-      };
-      canvas.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        canvas.setPointerCapture(e.pointerId);
-        st.drawing = true;
-        st.last = pos(e);
-        st.dirty = true;
-        ctx.beginPath();
-        ctx.arc(st.last.x, st.last.y, 1.3, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      canvas.addEventListener('pointermove', (e) => {
-        if (!st.drawing) return;
-        e.preventDefault();
-        const pts = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-        for (const ev of (pts.length ? pts : [e])) {
-          const p = pos(ev);
-          ctx.beginPath();
-          ctx.moveTo(st.last.x, st.last.y);
-          ctx.lineTo(p.x, p.y);
-          ctx.stroke();
-          st.last = p;
+      // ຊ່ອງເຊັນໃນໜ້າ = ກ່ອງ preview: ກົດແລ້ວເປີດໜ້າເຊັນໃຫຍ່ເກືອບເຕັມຈໍ (sigFsOpen)
+      const wrap = canvas.closest('.sig-pad-wrap');
+      if (wrap) {
+        wrap.classList.add('sig-tap');
+        if (!wrap.querySelector('.sig-hint')) {
+          const hint = document.createElement('div');
+          hint.className = 'sig-hint';
+          hint.innerHTML = '<i class="fa-solid fa-signature"></i> ກົດເພື່ອເຊັນ <small>ເປີດໜ້າຈໍໃຫຍ່</small>';
+          wrap.appendChild(hint);
         }
-      });
-      const stop = () => { st.drawing = false; st.last = null; };
-      canvas.addEventListener('pointerup', stop);
-      canvas.addEventListener('pointercancel', stop);
-      canvas.addEventListener('pointerleave', stop);
+      }
+      st.wrap = wrap;
+      canvas.addEventListener('click', () => sigFsOpen(id));
+      sigHintSync(id);
+    }
+
+    /* ===== ໜ້າເຊັນຊື່ແບບເກືອບເຕັມຈໍ (ໃຊ້ກັບທຸກຊ່ອງເຊັນທີ່ຜ່ານ setupSignaturePad) ===== */
+    function sigHintSync(id) {
+      const st = loanSigPads[id];
+      if (st && st.wrap) st.wrap.classList.toggle('sig-has', !!st.dirty);
+    }
+    let sigFs = null; // { id, canvas, ctx, drawing, last, dirty, w, h, dpr }
+    function sigFsBuild() {
+      if (document.getElementById('sigFsModal')) return;
+      const el = document.createElement('div');
+      el.id = 'sigFsModal';
+      el.className = 'sigfs hidden';
+      el.innerHTML = '<div class="sigfs-bar"><b><i class="fa-solid fa-signature"></i> ເຊັນຊື່ໃນກອບດ້ານລຸ່ມ</b>'
+        + '<span class="sigfs-btns"><button type="button" class="sigfs-b sigfs-clear" onclick="sigFsClear()"><i class="fa-solid fa-eraser"></i> ລຶບ</button>'
+        + '<button type="button" class="sigfs-b sigfs-cancel" onclick="sigFsClose()">ຍົກເລີກ</button>'
+        + '<button type="button" class="sigfs-b sigfs-ok" onclick="sigFsConfirm()"><i class="fa-solid fa-check"></i> ຢືນຢັນ</button></span></div>'
+        + '<div class="sigfs-area" id="sigFsArea"><canvas id="sigFsCanvas"></canvas></div>';
+      document.body.appendChild(el);
+      window.addEventListener('resize', () => { if (sigFs && !el.classList.contains('hidden')) sigFsLayout(true); });
+    }
+    function sigFsLayout(keep) {
+      const area = document.getElementById('sigFsArea'), cv = sigFs.canvas;
+      const availW = Math.max(220, area.clientWidth - 24), availH = Math.max(120, area.clientHeight - 24);
+      const w = Math.floor(Math.min(availW, availH * 2)), h = Math.floor(w / 2); // ອັດຕາສ່ວນ 2:1 ໃກ້ຄຽງຊ່ອງເຊັນເດີມ
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const old = keep && sigFs.dirty ? cv.toDataURL('image/png') : null;
+      cv.style.width = w + 'px'; cv.style.height = h + 'px';
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      const ctx = cv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineWidth = 3.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#0b1020'; ctx.fillStyle = '#0b1020';
+      sigFs.ctx = ctx; sigFs.w = w; sigFs.h = h; sigFs.dpr = dpr;
+      if (old) { const im = new Image(); im.onload = () => ctx.drawImage(im, 0, 0, w, h); im.src = old; }
+    }
+    function sigFsOpen(id) {
+      const st = loanSigPads[id];
+      if (!st) return;
+      sigFsBuild();
+      const el = document.getElementById('sigFsModal');
+      el.classList.remove('hidden');
+      document.body.classList.add('sigfs-open');
+      const cv = document.getElementById('sigFsCanvas');
+      sigFs = { id, canvas: cv, ctx: null, drawing: false, last: null, dirty: false, w: 0, h: 0, dpr: 1 };
+      sigFsLayout(false);
+      if (st.dirty) { // ເຊັນໄວ້ແລ້ວ -> ສະແດງລາຍເຊັນເດີມໃຫ້ເຫັນ (ເຊັນເພີ່ມ ຫຼື ກົດລຶບໄດ້)
+        const im = new Image();
+        im.onload = () => { const r = Math.min(sigFs.w / im.width, sigFs.h / im.height); const dw = im.width * r, dh = im.height * r; sigFs.ctx.drawImage(im, (sigFs.w - dw) / 2, (sigFs.h - dh) / 2, dw, dh); sigFs.dirty = true; };
+        im.src = st.canvas.toDataURL('image/png');
+      }
+      if (!cv._sigBound) {
+        cv._sigBound = true;
+        const pos = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * (sigFs.w / r.width), y: (e.clientY - r.top) * (sigFs.h / r.height) }; };
+        cv.addEventListener('pointerdown', (e) => {
+          if (!sigFs) return;
+          e.preventDefault(); cv.setPointerCapture(e.pointerId);
+          sigFs.drawing = true; sigFs.last = pos(e); sigFs.dirty = true;
+          sigFs.ctx.beginPath(); sigFs.ctx.arc(sigFs.last.x, sigFs.last.y, 1.8, 0, Math.PI * 2); sigFs.ctx.fill();
+        });
+        cv.addEventListener('pointermove', (e) => {
+          if (!sigFs || !sigFs.drawing) return;
+          e.preventDefault();
+          const pts = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+          for (const ev of (pts.length ? pts : [e])) {
+            const p = pos(ev);
+            sigFs.ctx.beginPath(); sigFs.ctx.moveTo(sigFs.last.x, sigFs.last.y); sigFs.ctx.lineTo(p.x, p.y); sigFs.ctx.stroke();
+            sigFs.last = p;
+          }
+        });
+        const stop = () => { if (sigFs) { sigFs.drawing = false; sigFs.last = null; } };
+        cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop); cv.addEventListener('pointerleave', stop);
+      }
+    }
+    function sigFsClear() {
+      if (!sigFs) return;
+      sigFs.ctx.clearRect(0, 0, sigFs.w, sigFs.h);
+      sigFs.dirty = false;
+    }
+    function sigFsClose() {
+      const el = document.getElementById('sigFsModal');
+      if (el) el.classList.add('hidden');
+      document.body.classList.remove('sigfs-open');
+      sigFs = null;
+    }
+    function sigFsConfirm() {
+      if (!sigFs) return;
+      const st = loanSigPads[sigFs.id], id = sigFs.id;
+      if (st) {
+        if (sigFs.dirty) {
+          // ຄັດລອກລາຍເຊັນຄວາມລະອຽດເຕັມເຂົ້າ canvas ໃນໜ້າ (ຟັງຊັນອື່ນອ່ານຈາກ canvas ນີ້ຄືເກົ່າ)
+          const src = sigFs.canvas, c = st.canvas;
+          c.width = src.width; c.height = src.height;
+          st.ctx.setTransform(1, 0, 0, 1, 0, 0);
+          st.ctx.clearRect(0, 0, c.width, c.height);
+          st.ctx.drawImage(src, 0, 0);
+          st.fs = true; st.dirty = true;
+        } else {
+          clearSignaturePad(id);
+        }
+        sigHintSync(id);
+      }
+      sigFsClose();
     }
 
     function resizeSignaturePad(id) {
       const st = loanSigPads[id];
       if (!st) return;
+      if (st.fs && st.dirty) return; // ລາຍເຊັນຈາກໜ້າເຊັນໃຫຍ່ (ຄວາມລະອຽດເຕັມ) ຢູ່ແລ້ວ - ບໍ່ຕ້ອງປັບຂະໜາດ
       const { canvas, ctx } = st;
       const w = canvas.clientWidth || 300;
       const h = canvas.clientHeight || 160;
@@ -24884,8 +24988,12 @@ function assetStatusBadgeClass(status) {
     function clearSignaturePad(id) {
       const st = loanSigPads[id];
       if (!st) return;
+      const wasFs = st.fs;
+      st.ctx.setTransform(1, 0, 0, 1, 0, 0);
       st.ctx.clearRect(0, 0, st.canvas.width, st.canvas.height);
-      st.dirty = false;
+      st.dirty = false; st.fs = false;
+      if (wasFs) resizeSignaturePad(id); // ກັບເປັນຂະໜາດ canvas ປົກກະຕິ
+      sigHintSync(id);
     }
 
     function getSignatureDataUrl(id) {
