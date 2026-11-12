@@ -10662,7 +10662,6 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       if (viewName === 'vteBudget' && currentUser.role !== 'admin') viewName = 'dashboard';
       // ໜ້າຕ້ອນຮັບ: user ໃຊ້ 'dashboard' · delivery ໃຊ້ໜ້າລາຍງານການຈັດສົ່ງເປັນໜ້າຫຼັກ
       if (viewName === 'home' && currentUser.role === 'user') viewName = 'dashboard';
-      if (viewName === 'home' && currentUser.role === 'delivery') viewName = 'deliveryHub';
       // ງົບປະມານຕູ້ຂອງທີມ: role user ເທົ່ານັ້ນ
       if (viewName === 'teamBudget' && currentUser.role !== 'user' && currentUser.role !== 'dsm') viewName = 'dashboard';
       // role warehouse ບໍ່ມີສິດເຂົ້າ User Dashboard / ອອກໃບສັນຍາຢືມ -> ພາໄປໜ້າແຈ້ງເຕືອນ
@@ -11680,7 +11679,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
       navProfile.classList.remove('hidden');
       // ໜ້າຕ້ອນຮັບ: admin ແລະ warehouse (role user ໃຊ້ "ໜ້າຫຼັກ" ເປັນໜ້າຕ້ອນຮັບຢູ່ແລ້ວ)
-      document.getElementById('nav-home').classList.toggle('hidden', !(role === 'admin' || role === 'warehouse'));
+      document.getElementById('nav-home').classList.toggle('hidden', !(role === 'admin' || role === 'warehouse' || role === 'delivery'));
       // role warehouse: ເຊື່ອງເມນູ User Dashboard ແລະ ໃບສັນຍາຢືມ/ໃບຍົກເລີກ (ບໍ່ມີສິດອອກໃບສັນຍາ)
       if (role === 'warehouse') {
         navDashboard.classList.add('hidden');
@@ -11799,8 +11798,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
     function mmIsMobile() { return window.matchMedia('(max-width: 992px)').matches; }
     // ປຸ່ມ "ໜ້າຫຼັກ" ຂອງແຕ່ລະ role (itemKey = ເມນູທີ່ຖືກໃຊ້ເປັນໜ້າຫຼັກແລ້ວ ບໍ່ຕ້ອງຊ້ຳໃນ grid)
     function mmHomeFor(role) {
-      if (role === 'warehouse' || role === 'admin') return { view: 'home', nav: 'nav-home', itemKey: null };
-      if (role === 'delivery') return { view: 'deliveryHub', nav: 'nav-delivery-hub', itemKey: 'delivery' };
+      if (role === 'warehouse' || role === 'admin' || role === 'delivery') return { view: 'home', nav: 'nav-home', itemKey: null };
       return { view: 'dashboard', nav: 'nav-dashboard', itemKey: null };
     }
     function mmFavStoreKey() { return 'lbc_mm_fav_v1_' + ((currentUser && (currentUser.id || currentUser.email)) || 'anon'); }
@@ -12063,7 +12061,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       user:      ['home', 'menu', 'notif', 'profile'],
       admin:     ['home', 'map', 'menu', 'notif', 'profile'],
       warehouse: ['home', 'map', 'menu', 'notif', 'profile'],
-      delivery:  ['home', 'map', 'menu', 'notif', 'profile'],
+      delivery:  ['home', 'notif', 'profile'], // ທີມຈັດສົ່ງ: ມີແຕ່ ໜ້າຫຼັກ / ແຈ້ງເຕືອນ / ຕັ້ງຄ່າ (ເມນູອື່ນເຂົ້າຜ່ານທາງລັດໃນໜ້າຫຼັກ)
       dsm:       ['home', 'map', 'menu', 'notif', 'profile']
     };
 
@@ -12959,7 +12957,7 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       }
 
       // role user: ໜ້າເລີ່ມຕົ້ນ = ງົບປະມານຂອງທີມ (dashboard) · role ອື່ນ ຄົງເດີມ = ແຈ້ງເຕືອນ
-      const defaultView = currentUser.role === 'dsm' || currentUser.role === 'user' ? 'dashboard' : ((currentUser.role === 'admin' || currentUser.role === 'warehouse') ? 'home' : 'notifications');
+      const defaultView = currentUser.role === 'dsm' || currentUser.role === 'user' ? 'dashboard' : ((currentUser.role === 'admin' || currentUser.role === 'warehouse' || currentUser.role === 'delivery') ? 'home' : 'notifications');
       switchView(consumePendingDeepLink() || defaultView);
       // ຜູ້ໃຊ້ໃໝ່ (ຍັງບໍ່ເຄີຍເບິ່ງ): ເປີດທົວແນະນຳການໃຊ້ງານອັດຕະໂນມັດ
       setTimeout(() => { if (!(typeof startGetStarted === 'function' && startGetStarted(false))) startOnboardingTour(false); }, 900);
@@ -29105,6 +29103,7 @@ const WL_PR = { 'nav-dashboard': 'adminmgmt', 'nav-request': 'request', 'nav-ass
       if (u.isAssistantAdmin) chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-assistant-admin','adminmgmt') + '<i class="fa-solid fa-user-shield"></i>ຜູ້ຊ່ວຍ Admin</span>');
       else if (u.role === 'admin') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-admin','adminmgmt') + '<i class="fa-solid fa-user-shield"></i>Admin</span>');
       else if (u.role === 'dsm') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-dsm','dsmsign') + '<i class="fa-solid fa-user-tie"></i>DSM' + (u.team ? ' · ' + esc(u.team) : '') + '</span>');
+      else if (u.role === 'delivery') chips.unshift('<span class="tb-chip-id"><i class="fa-solid fa-truck-ramp-box"></i>ທີມຈັດສົ່ງ</span>');
       else if (u.role === 'warehouse') chips.unshift('<span class="tb-chip-id">' + wlChipIc('chip-role-warehouse','stock') + '<i class="fa-solid fa-warehouse"></i>ພະນັກງານສາງ</span>');
       document.getElementById('wlChips').innerHTML = chips.join('');
       document.getElementById('wlGrid').innerHTML = tiles.map((x, i) =>
