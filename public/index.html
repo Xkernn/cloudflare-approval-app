@@ -10476,6 +10476,11 @@ html[data-ui-mode="easy"] .xl-io { display: none !important; } /* Export/Import 
       return specialAlerts.some(a => a.action_view && parseNavUrl(a.action_view).view === viewName);
     }
     function switchView(viewName) {
+      // ກັນເລື່ອນໜ້າບໍ່ໄດ້ຄ້າງ: ຖ້າບໍ່ມີໜ້າເຕັມຈໍ (ແຜນ Route / ເມນູຈັດສົ່ງ / ແຜນ Delivery admin) ເປີດຢູ່ ໃຫ້ປົດລັອກ scroll ສະເໝີ
+      try {
+        const lockIds = ['view-route-plan', 'view-dp-admin', 'view-rd-hub', 'view-rd-plan', 'view-rd-tasks', 'view-rd-task', 'view-rd-docs', 'cnsMapPage', 'sigFsModal'];
+        if (!lockIds.some((id) => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); })) { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; }
+      } catch (e) { /* ignore */ }
       if (viewName === 'map' && currentUser && currentUser.role === 'user') viewName = mmHomeFor('user').view; // role user ບໍ່ມີສິດເຂົ້າ Map Tracking
       if (specialAlertBlocking() && !specialAlertViewAllowed(viewName)) {
         showSpecialAlertOverlay();
@@ -35138,8 +35143,9 @@ function dpClose() {
   if (!v || v.classList.contains('hidden')) return;
   v.classList.add('hidden');
   clearInterval(dpTimer); dpTimer = null;
-  const mt = document.getElementById('view-map-tracking');
-  if (!mt || mt.classList.contains('hidden')) { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; }
+  // ປົດລັອກການເລື່ອນໜ້າ ເວັ້ນແຕ່ຍັງມີໜ້າເຕັມຈໍອື່ນເປີດຢູ່ (ແຜນ Route / ເມນູຈັດສົ່ງ). ເມື່ອກ່ອນບໍ່ປົດຖ້າເປີດມາຈາກໜ້າ Map -> ເລື່ອນຂຶ້ນລົງບໍ່ໄດ້ຕະຫຼອດ
+  const anyOverlay = ['view-route-plan', 'view-rd-hub', 'view-rd-plan', 'view-rd-tasks', 'view-rd-task', 'view-rd-docs'].some((id) => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); });
+  if (!anyOverlay) { document.documentElement.style.overflow = ''; document.body.style.overflow = ''; }
 }
 
 /* ===== ຕັດສິນສະຖານະຂອງແຕ່ລະຈຸດ ===== */
